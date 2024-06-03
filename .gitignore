@@ -1,0 +1,4 @@
+node_modules
+*xlsx
+.env
+.vscode
