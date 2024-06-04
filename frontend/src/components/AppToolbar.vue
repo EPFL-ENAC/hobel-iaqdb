@@ -30,15 +30,8 @@
         exact
       />
     </q-tabs>
-    <q-space v-if="!$q.screen.lt.sm" />
+    <q-space />
     <span v-if="!$q.screen.lt.md">
-      <q-btn
-        flat
-        round
-        icon="account_circle"
-        :title="$t('contact_us')"
-        @click="showContact = true"
-      />
       <q-btn
         flat
         round
@@ -52,13 +45,6 @@
         icon="info"
         :title="$t('introduction')"
         @click="showIntro = true"
-      ></q-btn>
-      <q-btn
-        flat
-        round
-        icon="handshake"
-        :title="$t('acknowledgements')"
-        @click="showAcknowledgements = true"
         class="on-left"
       ></q-btn>
     </span>
@@ -85,11 +71,6 @@
             </q-item-section>
           </q-item>
           <q-separator v-if="$q.screen.lt.sm" />
-          <q-item clickable v-close-popup @click="showContact = true">
-            <q-item-section>
-              <q-item-label>{{ $t('contact_us') }}</q-item-label>
-            </q-item-section>
-          </q-item>
           <q-item clickable v-close-popup @click="showResources = true">
             <q-item-section>
               <q-item-label>{{ $t('resources') }}</q-item-label>
@@ -98,11 +79,6 @@
           <q-item clickable v-close-popup @click="showIntro = true">
             <q-item-section>
               <q-item-label>{{ $t('introduction') }}</q-item-label>
-            </q-item-section>
-          </q-item>
-          <q-item clickable v-close-popup @click="showAcknowledgements = true">
-            <q-item-section>
-              <q-item-label>{{ $t('acknowledgements') }}</q-item-label>
             </q-item-section>
           </q-item>
         </q-list>
@@ -121,11 +97,6 @@
     :content="IntroductionMd"/>
 
   <simple-dialog
-    v-model="showAcknowledgements"
-    :title="$t('acknowledgements')"
-    :content="AcknowledgementsMd"/>
-
-  <simple-dialog
     v-model="showResources"
     :title="$t('resources')">
     <q-list separator>
@@ -136,11 +107,6 @@
       />
     </q-list>
   </simple-dialog>
-
-  <simple-dialog
-    v-model="showContact"
-    :title="$t('contact_us')"
-    :content="ContactMd"/>
 
 </template>
 
@@ -153,9 +119,7 @@ export default defineComponent({
 </script>
 <script setup lang="ts">
 import { getSettings, saveSettings } from 'src/utils/settings';
-import ContactMd from 'src/assets/contact.md';
 import IntroductionMd from 'src/assets/introduction.md';
-import AcknowledgementsMd from 'src/assets/acknowledgements.md';
 import essentialLinks from 'src/assets/links.json';
 import EssentialLink from 'src/components/EssentialLink.vue';
 import SimpleDialog from 'src/components/SimpleDialog.vue';
@@ -164,8 +128,6 @@ const emit = defineEmits(['toggle']);
 
 const showIntro = ref(false);
 const showResources = ref(false);
-const showContact = ref(false);
-const showAcknowledgements = ref(false);
 
 onMounted(() => {
   const settings = getSettings();

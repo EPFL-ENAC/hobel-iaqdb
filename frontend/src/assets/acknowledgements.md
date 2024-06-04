@@ -1,3 +1,0 @@
-Explicabo tenetur fuga maiores ad vitae qui culpa sit. Delectus placeat odit rerum voluptas minima illo. Commodi et dolor nulla. Placeat qui et nihil hic velit accusantium. Modi omnis doloribus rem ipsum.
-
-Ullam atque ducimus inventore assumenda accusamus. Nesciunt sed quis suscipit. Recusandae dignissimos sunt tempora. Nihil aut tempore et. Ut illo dolorem consequuntur libero culpa cupiditate rerum.
