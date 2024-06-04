@@ -1,9 +1,9 @@
 {
   "name": "iaqdb",
   "version": "0.0.1",
-  "description": "HOBEL iAQ database",
-  "productName": "iAQ DB",
-  "author": "ymarcon <yannick.marcon@epfl.ch>",
+  "description": "Some app template",
+  "productName": "Some App",
+  "author": "ENAC IT4R <enacit4research@epfl.ch>",
   "private": true,
   "scripts": {
     "lint": "eslint --ext .js,.ts,.vue ./",
