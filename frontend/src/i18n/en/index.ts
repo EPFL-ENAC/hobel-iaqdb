@@ -8,4 +8,5 @@ export default {
   home: 'Home',
   introduction: 'Introduction',
   resources: 'Resources',
+  source_code: 'Source Code',
 };
