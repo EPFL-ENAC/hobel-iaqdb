@@ -60,7 +60,7 @@ module.exports = configure(function (/* ctx */) {
         node: 'node16'
       },
 
-      vueRouterMode: 'hash', // available values: 'hash', 'history'
+      vueRouterMode: 'history', // available values: 'hash', 'history'
       // vueRouterBase,
       // vueDevtools,
       // vueOptionsAPI: false,
@@ -80,13 +80,27 @@ module.exports = configure(function (/* ctx */) {
       // viteVuePluginOptions: {},
 
       vitePlugins: [
+        [
+          'unplugin-auto-import/vite',
+          {
+            imports: ['vue', 'vue-router', 'vue-i18n', 'pinia', 'vue/macros'],
+            dts: 'src/auto-imports.d.ts',
+            dirs: ['src/composables', 'src/models', 'src/stores'],
+            vueTemplate: true,
+            eslintrc: {
+              enabled: true, // Default `false`
+              filepath: './.eslintrc-auto-import.json', // Default `./.eslintrc-auto-import.json`
+              globalsPropValue: true, // Default `true`, (true | false | 'readonly' | 'readable' | 'writable' | 'writeable')
+            },
+          },
+        ],
         ['@intlify/vite-plugin-vue-i18n', {
           // if you want to use Vue I18n Legacy API, you need to set `compositionOnly: false`
           // compositionOnly: false,
 
           // if you want to use named tokens in your Vue I18n messages, such as 'Hello {name}',
           // you need to set `runtimeOnly: false`
-          // runtimeOnly: false,
+          runtimeOnly: false,
 
           // you need to set i18n resource including paths !
           include: path.resolve(__dirname, './src/i18n/**')
@@ -97,7 +111,7 @@ module.exports = configure(function (/* ctx */) {
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#devServer
     devServer: {
       // https: true
-      open: true // opens browser window automatically
+      open: false // opens browser window automatically
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#framework
@@ -115,7 +129,7 @@ module.exports = configure(function (/* ctx */) {
       // directives: [],
 
       // Quasar plugins
-      plugins: []
+      plugins: ['Notify', 'LocalStorage', 'LoadingBar', 'Cookies']
     },
 
     // animations: 'all', // --- includes all animations
