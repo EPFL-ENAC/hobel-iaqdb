@@ -5,6 +5,12 @@ export default {
   app_title: 'App Title',
   error_not_found: 'Oops. Nothing here...',
   filters: 'Filters',
+  it4r_contrib: 'UI/UX design, application development and deployment',
+  layer: {
+    earthquakes: 'Earthquakes',
+    other: 'Other',
+  },
+  layers: 'Layers',
   home: 'Home',
   introduction: 'Introduction',
   resources: 'Resources',

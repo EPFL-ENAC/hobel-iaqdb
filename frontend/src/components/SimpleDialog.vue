@@ -30,7 +30,7 @@ export default defineComponent({
 interface Props {
   modelValue: boolean;
   title?: string;
-  content: string;
+  content?: string;
 }
 const props = defineProps<Props>();
 const emit = defineEmits(['update:modelValue', 'confirm', 'cancel'])

@@ -11,12 +11,7 @@
       bordered
     >
       <div v-if="!miniState">
-        <q-list>
-          <q-item-label header class="text-h6 q-ml-md q-pl-xs">{{
-            $t('filters')
-          }}</q-item-label>
-        </q-list>
-        <experiment-filters></experiment-filters>
+        <layers-drawer />
       </div>
       <div
         v-if="!$q.screen.lt.md"
@@ -41,6 +36,7 @@
 
 <script setup lang="ts">
 import AppToolbar from 'src/components/AppToolbar.vue';
+import LayersDrawer from 'src/components/LayersDrawer.vue';
 
 const leftDrawerOpen = ref(false)
 const miniState = ref(false)

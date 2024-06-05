@@ -15,12 +15,13 @@
     "title": "ENAC IT4R",
     "caption": "go.epfl.ch/it4r",
     "icon": "construction",
+    "contribution": "it4r_contrib",
     "link": "https://www.epfl.ch/schools/enac/about/data-at-enac/enac-it4research/"
   },
   {
     "title": "source_code",
-    "caption": "EPFL-ENAC/some-app",
+    "caption": "EPFL-ENAC/it4r-webmap",
     "icon": "code",
-    "link": "https://github.com/EPFL-ENAC/some-app"
+    "link": "https://github.com/EPFL-ENAC/it4r-webmap"
   }
 ]

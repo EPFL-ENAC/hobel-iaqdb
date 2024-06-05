@@ -1,42 +1,30 @@
 <template>
   <q-page class="row items-center justify-evenly">
-    <example-component
-      title="Example component"
-      active
-      :todos="todos"
-      :meta="meta"
-    ></example-component>
+    <maplibre-map
+      position
+      geocoder
+      zoom="4"
+      @map:loaded="onMapLoaded"
+      @map:click="onMapClick"  />
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { Todo, Meta } from 'components/models';
-import ExampleComponent from 'components/ExampleComponent.vue';
-import { ref } from 'vue';
+import MaplibreMap from 'components/MaplibreMap.vue';
+import { Map, MapMouseEvent } from 'maplibre-gl';
 
-const todos = ref<Todo[]>([
-  {
-    id: 1,
-    content: 'ct1'
-  },
-  {
-    id: 2,
-    content: 'ct2'
-  },
-  {
-    id: 3,
-    content: 'ct3'
-  },
-  {
-    id: 4,
-    content: 'ct4'
-  },
-  {
-    id: 5,
-    content: 'ct5'
-  }
-]);
-const meta = ref<Meta>({
-  totalCount: 1200
-});
+const layersStore = useLayersStore();
+
+function onMapLoaded(map: Map) {
+  layersStore.initLayers(map);
+}
+
+function onMapClick(event: MapMouseEvent, map: Map) {
+  console.log('Map clicked at:', event.lngLat);
+  // custom popup
+  // new Popup()
+  //   .setLngLat(event.lngLat)
+  //   .setHTML('<b>Hello World!</b>')
+  //   .addTo(map as Map);
+}
 </script>

@@ -5,7 +5,7 @@ a {
 }
 
 a.q-markdown--link,
-.field-item > a {
+a.epfl {
   text-decoration: underline;
   text-decoration-color: red;
   text-decoration-thickness: min(0.08em, 0.1rem);
@@ -14,7 +14,7 @@ a.q-markdown--link,
 }
 
 a:hover.q-markdown--link,
-.field-item > a:hover {
+a:hover.epfl {
   text-decoration: underline;
   text-decoration-color: black;
   color: red;
