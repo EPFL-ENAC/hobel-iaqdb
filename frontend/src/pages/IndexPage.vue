@@ -13,13 +13,13 @@
 import MaplibreMap from 'components/MaplibreMap.vue';
 import { Map, MapMouseEvent } from 'maplibre-gl';
 
-const layersStore = useLayersStore();
+const mapStore = useMapStore();
 
 function onMapLoaded(map: Map) {
-  layersStore.initLayers(map);
+  mapStore.initLayers(map);
 }
 
-function onMapClick(event: MapMouseEvent, map: Map) {
+function onMapClick(event: MapMouseEvent) {
   console.log('Map clicked at:', event.lngLat);
   // custom popup
   // new Popup()

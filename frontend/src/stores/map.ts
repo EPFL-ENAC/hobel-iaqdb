@@ -7,13 +7,14 @@ export type LayerSelection = {
   selected: boolean;
 }
 
-export const useLayersStore = defineStore('layers', () => {
+export const useMapStore = defineStore('map', () => {
+
+  const map = ref<Map>();
+
   const layers: LayerSelection[] = [
     { id: 'earthquakes', selected: true },
     { id: 'other', selected: true },
   ];
-
-  const map = ref<Map>();
 
   function toggleLayer(id: string) {
     const layer = layers.find((l) => l.id === id)
@@ -36,8 +37,8 @@ export const useLayersStore = defineStore('layers', () => {
   }
 
   return {
-    layers,
     map,
+    layers,
     toggleLayer,
     initLayers,
   };

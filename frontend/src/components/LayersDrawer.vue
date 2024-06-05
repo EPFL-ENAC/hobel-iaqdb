@@ -7,16 +7,16 @@
     <q-item-section>
       <q-item
         clickable
-        v-for="layer in layersStore.layers"
+        v-for="layer in mapStore.layers"
         :key="layer.id"
-        @click="layersStore.toggleLayer(layer.id)"
+        @click="mapStore.toggleLayer(layer.id)"
         class="q-pl-sm"
       >
         <q-item-section>
           <q-checkbox
             v-model="layer.selected"
             :label="$t(`layer.${layer.id}`)" 
-            @click="layersStore.toggleLayer(layer.id)"
+            @click="mapStore.toggleLayer(layer.id)"
           />
         </q-item-section>
       </q-item>
@@ -34,5 +34,5 @@ export default defineComponent({
 });
 </script>
 <script setup lang="ts">
-const layersStore = useLayersStore()
+const mapStore = useMapStore()
 </script>
