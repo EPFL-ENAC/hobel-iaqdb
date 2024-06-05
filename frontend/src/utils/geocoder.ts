@@ -1,11 +1,13 @@
+import { Feature, FeatureCollection } from 'geojson';
+
 // TODO have it in the parameters
 const countryCode = 'ch'
 const viewBox = '5.80,46.40,6.25,46.10'
 
-function handleNominatimResponse(geojson: any): any[] {
+function handleNominatimResponse(geojson: FeatureCollection): Feature[] {
   const features = []
   const place_names: string[] = []
-  for (const feature of geojson.features.filter((f: any) => f.properties.address.country_code === countryCode)) {
+  for (const feature of geojson.features.filter((f: Feature) => f.properties.address.country_code === countryCode)) {
     if (!place_names.includes(feature.properties.display_name)) {
       const center = [
         feature.bbox[0] + (feature.bbox[2] - feature.bbox[0]) / 2,
@@ -53,6 +55,7 @@ export const geocoderApi = {
       const geojson = await response.json()
       features = handleNominatimResponse(geojson)
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     catch (e: any) {
       if (e.name !== 'AbortError')
         console.error(`Failed to forwardGeocode with error: ${e}`)
@@ -61,7 +64,7 @@ export const geocoderApi = {
       features,
     }
   },
-  reverseGeocode: async (config: { query: any }) => {
+  reverseGeocode: async (config: { query: { lat: number, long: number} }) => {
     let features = []
     try {
       if (reverseController)
@@ -72,6 +75,7 @@ export const geocoderApi = {
       const geojson = await response.json()
       features = handleNominatimResponse(geojson)
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     catch (e: any) {
       if (e.name !== 'AbortError')
         console.error(`Failed to reverseGeocode with error: ${e}`)

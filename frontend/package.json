@@ -15,6 +15,7 @@
   "dependencies": {
     "@maplibre/maplibre-gl-geocoder": "^1.5.0",
     "@quasar/extras": "^1.16.11",
+    "@types/geojson": "^7946.0.14",
     "axios": "^1.7.2",
     "maplibre-gl": "^4.3.2",
     "maplibregl-theme-switcher": "github:EPFL-ENAC/maplibregl-theme-switcher#1.2.0",
