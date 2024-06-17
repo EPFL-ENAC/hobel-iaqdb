@@ -1,7 +1,7 @@
 <template>
   <q-toolbar>
     <q-btn
-      v-if="$q.screen.lt.md"
+      v-if="$q.screen.lt.md && !noMenu"
       flat
       dense
       round
@@ -10,7 +10,7 @@
       @click="toggleLeftDrawer"
     />
     <a href="https://epfl.ch" target="_blank" class="q-mt-sm">
-      <img src="/EPFL_logo.png" style="height: 25px" />
+      <img src="EPFL_logo.png" style="height: 25px" />
     </a>
     <span class="q-ml-md text-h6">{{ $t('app_title') }}</span>
     <q-tabs v-if="!$q.screen.lt.sm" shrink stretch active-color="primary" class="q-ml-md">
@@ -20,13 +20,13 @@
         exact
       />
       <q-route-tab
-        :label="$t('page1')"
-        to="/page1"
+        :label="$t('Page1')"
+        to="/page/1"
         exact
       />
       <q-route-tab
-        :label="$t('page2')"
-        to="/page2"
+        :label="$t('Page2')"
+        to="/page/2"
         exact
       />
     </q-tabs>
@@ -60,14 +60,14 @@
               <q-item-label>{{ $t('home') }}</q-item-label>
             </q-item-section>
           </q-item>
-          <q-item v-if="$q.screen.lt.sm" clickable v-close-popup to="/page1">
+          <q-item v-if="$q.screen.lt.sm" clickable v-close-popup to="/page/1">
             <q-item-section>
-              <q-item-label>{{ $t('page1') }}</q-item-label>
+              <q-item-label>{{ $t('Page1') }}</q-item-label>
             </q-item-section>
           </q-item>
-          <q-item v-if="$q.screen.lt.sm" clickable v-close-popup to="/page2">
+          <q-item v-if="$q.screen.lt.sm" clickable v-close-popup to="/page/2">
             <q-item-section>
-              <q-item-label>{{ $t('page2') }}</q-item-label>
+              <q-item-label>{{ $t('Page2') }}</q-item-label>
             </q-item-section>
           </q-item>
           <q-separator v-if="$q.screen.lt.sm" />
@@ -84,10 +84,8 @@
         </q-list>
       </q-popup-proxy>
     </q-btn>
-    <a href="https://epfl.ch/" target="_blank" class="q-mt-sm">
-      <q-skeleton
-        style="height: 30px; width: 100px"
-        class="float-right q-mb-sm"/>
+    <a href="https://www.epfl.ch/labs/hobel/" target="_blank" class="q-mt-xs">
+      <span class="text-logo q-mb-xs">HOBEL</span>
     </a>
   </q-toolbar>
 
@@ -111,7 +109,6 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
 export default defineComponent({
   components: { SimpleDialog },
   name: 'AppToolbar',
@@ -124,6 +121,13 @@ import essentialLinks from 'src/assets/links.json';
 import EssentialLink from 'src/components/EssentialLink.vue';
 import SimpleDialog from 'src/components/SimpleDialog.vue';
 
+interface Props {
+  noMenu?: boolean;
+}
+
+withDefaults(defineProps<Props>(), {
+  noMenu: false,
+});
 const emit = defineEmits(['toggle']);
 
 const showIntro = ref(false);

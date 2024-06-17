@@ -6,10 +6,10 @@
     "link": "https://epfl.ch"
   },
   {
-    "title": "EPFL Lab",
-    "caption": "epfl.ch/labs/some-lab",
+    "title": "HOBEL",
+    "caption": "epfl.ch/labs/hobel",
     "icon": "engineering",
-    "link": "https://www.epfl.ch/labs/some-lab"
+    "link": "https://www.epfl.ch/labs/hobel"
   },
   {
     "title": "ENAC IT4R",
@@ -20,8 +20,8 @@
   },
   {
     "title": "source_code",
-    "caption": "EPFL-ENAC/it4r-webmap",
+    "caption": "EPFL-ENAC/hobel-iaqdb",
     "icon": "code",
-    "link": "https://github.com/EPFL-ENAC/it4r-webmap"
+    "link": "https://github.com/EPFL-ENAC/hobel-iaqdb"
   }
 ]

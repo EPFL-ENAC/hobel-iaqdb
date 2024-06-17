@@ -13,7 +13,6 @@
 </style>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
 export default defineComponent({
   name: 'MaplibreMap',
 });
@@ -38,6 +37,7 @@ import {
 } from 'maplibre-gl';
 import { DivControl } from 'src/utils/control'
 import { geocoderApi } from 'src/utils/geocoder'
+import { getSettings, saveSettings } from 'src/utils/settings';
 
 interface Props {
   styleSpec: string | StyleSpecification | undefined
@@ -46,20 +46,17 @@ interface Props {
   minZoom?: number
   maxZoom?: number
   themes?: ThemeDefinition[]
-  themeDefault?: string
   position?: boolean | string | undefined
   geocoder?: boolean | string | undefined
   attribution?: string
 }
 const props = withDefaults(defineProps<Props>(), {
-  styleSpec: '/style.json',
+  styleSpec: 'style.json',
   center: [6.566547557495834, 46.521590682027536] as LngLatLike,
   zoom: 12,
   aspectRatio: undefined,
   minZoom: 0,
   maxZoom: undefined,
-  themes: undefined,
-  themeDefault: undefined,
   position: false,
   geocoder: false
 });
@@ -68,6 +65,13 @@ const emit = defineEmits(['map:loaded', 'map:click'])
 
 const { locale } = useI18n({ useScope: 'global' });
 const DEFAULT_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>, <a href="https://www.epfl.ch/" target="_blank">EPFL</a>';
+// to be adapted to the style.json
+const DEFAULT_THEME = 'light';
+const THEMES: ThemeDefinition[] = [
+  { id: 'classic', label: 'Classic' },
+  { id: 'light', label: 'Light' },
+  { id: 'dark', label: 'Dark' },
+];
 
 const loading = ref(true);
 
@@ -76,7 +80,7 @@ let map: Map | undefined = undefined;
 onMounted(() => {
   map = new Map({
     container: 'maplibre-map',
-    style: props.styleSpec || '/style.json',
+    style: props.styleSpec || 'style.json',
     center: props.center,
     zoom: props.zoom,
     minZoom: props.minZoom,
@@ -88,8 +92,20 @@ onMounted(() => {
   map.addControl(new GeolocateControl({}))
   map.addControl(new ScaleControl());
   map.addControl(new FullscreenControl());
-  map.addControl(new ThemeSwitcherControl(props.themes, props.themeDefault));
 
+  const settings = getSettings();
+  map.addControl(new ThemeSwitcherControl(THEMES, {
+    defaultStyle: settings.theme || DEFAULT_THEME,
+    eventListeners: {
+      onChange(event: MouseEvent, style) {
+        // persist the last theme choice
+        const stgs = getSettings();
+        stgs.theme = style;
+        saveSettings(stgs);
+        return false;
+      },
+    }
+  }));
 
   map.addControl(new AttributionControl({
       compact: true,
@@ -127,6 +143,9 @@ onMounted(() => {
   }
 
   map.once('load', () => {
+    THEMES.map((th) => th.id).forEach((id) => {
+      map?.setLayoutProperty(id, 'visibility', (id === settings.theme) ? 'visible' : 'none');
+    });
     emit('map:loaded', map as Map);
     loading.value = false
   })

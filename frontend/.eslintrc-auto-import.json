@@ -90,6 +90,9 @@
     "watchEffect": true,
     "watchPostEffect": true,
     "watchSyncEffect": true,
-    "useMapStore": true
+    "useMapStore": true,
+    "helpStore": true,
+    "useHelpStore": true,
+    "useFiltersStore": true
   }
 }

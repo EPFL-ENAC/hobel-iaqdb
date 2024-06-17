@@ -1,8 +1,8 @@
 {
   "name": "iaqdb",
   "version": "0.0.1",
-  "description": "Some app template",
-  "productName": "Some App",
+  "description": "EPFL HOBEL indoor Air Quality Database",
+  "productName": "iAQ DB",
   "author": "ENAC IT4R <enacit4research@epfl.ch>",
   "private": true,
   "scripts": {
@@ -20,6 +20,7 @@
     "maplibre-gl": "^4.3.2",
     "maplibregl-theme-switcher": "github:EPFL-ENAC/maplibregl-theme-switcher#1.2.0",
     "pinia": "^2.1.7",
+    "pinia-plugin-persistedstate": "^3.2.1",
     "quasar": "^2.16.4",
     "vue": "^3.4.27",
     "vue-i18n": "^9.13.1",
@@ -41,7 +42,7 @@
     "unplugin-auto-import": "^0.17.6"
   },
   "engines": {
-    "node": "^18 || ^16 || ^14.19",
+    "node": "^20 || ^18 || ^16 || ^14.19",
     "npm": ">= 6.13.4",
     "yarn": ">= 1.21.1"
   }

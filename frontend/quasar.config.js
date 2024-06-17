@@ -12,7 +12,7 @@
 const { configure } = require('quasar/wrappers');
 const path = require('path');
 
-module.exports = configure(function (/* ctx */) {
+module.exports = configure(function (ctx) {
   return {
     eslint: {
       // fix: true,
@@ -31,7 +31,7 @@ module.exports = configure(function (/* ctx */) {
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
     boot: [
       'i18n',
-      'axios',
+      'api',
     ],
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css
@@ -60,7 +60,7 @@ module.exports = configure(function (/* ctx */) {
         node: 'node16'
       },
 
-      vueRouterMode: 'history', // available values: 'hash', 'history'
+      vueRouterMode: 'hash', // available values: 'hash', 'history'
       // vueRouterBase,
       // vueDevtools,
       // vueOptionsAPI: false,
@@ -69,7 +69,10 @@ module.exports = configure(function (/* ctx */) {
 
       // publicPath: '/',
       // analyze: true,
-      // env: {},
+      env: {
+        API_URL: ctx.dev ? 'http://localhost:8000' : process.env.API_URL,
+        API_PATH: ctx.dev ? '' : process.env.API_PATH,
+      },
       // rawDefine: {}
       // ignorePublicFolder: true,
       // minify: false,
@@ -77,6 +80,11 @@ module.exports = configure(function (/* ctx */) {
       // distDir
 
       // extendViteConf (viteConf) {},
+      // Needed to have relative assets in the index.html
+      // https://github.com/quasarframework/quasar/issues/8513#issuecomment-1127654470
+      extendViteConf(viteConf, { isServer, isClient }) {
+        viteConf.base = '';
+      },
       // viteVuePluginOptions: {},
 
       vitePlugins: [
@@ -218,7 +226,7 @@ module.exports = configure(function (/* ctx */) {
       builder: {
         // https://www.electron.build/configuration/configuration
 
-        appId: 'iaqdb'
+        appId: 'it4r-webmap'
       }
     },
 

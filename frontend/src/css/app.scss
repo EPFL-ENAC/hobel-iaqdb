@@ -20,6 +20,17 @@ a:hover.epfl {
   color: red;
 }
 
-.text-caption {
-  letter-spacing: normal;
+.text-help {
+  color: $grey-6;
+}
+
+li + li {
+  margin-top: 10px;
+}
+
+.text-logo {
+  color: red;
+  font-family: 'Helvetica';
+  font-weight: bold;
+  font-size: 2.3em;
 }

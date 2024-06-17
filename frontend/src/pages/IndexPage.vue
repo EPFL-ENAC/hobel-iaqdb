@@ -3,7 +3,7 @@
     <maplibre-map
       position
       geocoder
-      zoom="4"
+      :zoom="2"
       @map:loaded="onMapLoaded"
       @map:click="onMapClick"  />
   </q-page>
@@ -14,9 +14,12 @@ import MaplibreMap from 'components/MaplibreMap.vue';
 import { Map, MapMouseEvent } from 'maplibre-gl';
 
 const mapStore = useMapStore();
+const filtersStore = useFiltersStore();
 
 function onMapLoaded(map: Map) {
-  mapStore.initLayers(map);
+  mapStore.initLayers(map).then(() => {
+    mapStore.applyFilters(filtersStore.asParams());
+  });
 }
 
 function onMapClick(event: MapMouseEvent) {
