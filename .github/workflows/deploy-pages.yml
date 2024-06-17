@@ -28,7 +28,6 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 'lts/*'
-          cache: 'npm'
           working-directory: ./frontend
       - run: npm install
       - run: npm run build
