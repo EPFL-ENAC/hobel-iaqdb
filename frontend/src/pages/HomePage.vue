@@ -29,11 +29,6 @@ import AppHeader from 'src/components/AppHeader.vue';
 
 const ReadmeMd = 'https://raw.githubusercontent.com/EPFL-ENAC/hobel-iaqdb/main/README.md'
 
-const stylingMd = `### Style and identity
-* [Quasar: Style and identity](https://quasar.dev/docs)
-* [EPFL brand identity guidelines](https://inside.epfl.ch/corp-id/en/brand-identity-guidelines/)
-`;
-
 const content = ref();
 
 onMounted(async () => {
