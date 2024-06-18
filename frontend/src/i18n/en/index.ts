@@ -3,6 +3,7 @@
 
 export default {
   app_title: 'iAQ DB',
+  app_subtitle: 'The indoor air quality database',
   error_not_found: 'Oops. Nothing here...',
   filters: 'Filters',
   it4r_contrib: 'UI/UX design, application development and deployment',
@@ -19,5 +20,6 @@ export default {
   reset_filters: 'Reset filters',
   resources: 'Resources',
   source_code: 'Source Code',
-  with_tsunami: 'With tsunami'
+  with_tsunami: 'With tsunami',
+  search: 'Search'
 };

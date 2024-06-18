@@ -20,13 +20,8 @@
         exact
       />
       <q-route-tab
-        :label="$t('Page1')"
-        to="/page/1"
-        exact
-      />
-      <q-route-tab
-        :label="$t('Page2')"
-        to="/page/2"
+        :label="$t('Search')"
+        to="/search"
         exact
       />
     </q-tabs>
@@ -60,14 +55,9 @@
               <q-item-label>{{ $t('home') }}</q-item-label>
             </q-item-section>
           </q-item>
-          <q-item v-if="$q.screen.lt.sm" clickable v-close-popup to="/page/1">
+          <q-item v-if="$q.screen.lt.sm" clickable v-close-popup to="/search">
             <q-item-section>
-              <q-item-label>{{ $t('Page1') }}</q-item-label>
-            </q-item-section>
-          </q-item>
-          <q-item v-if="$q.screen.lt.sm" clickable v-close-popup to="/page/2">
-            <q-item-section>
-              <q-item-label>{{ $t('Page2') }}</q-item-label>
+              <q-item-label>{{ $t('search') }}</q-item-label>
             </q-item-section>
           </q-item>
           <q-separator v-if="$q.screen.lt.sm" />
