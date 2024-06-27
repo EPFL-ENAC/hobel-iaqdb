@@ -20,7 +20,12 @@
         exact
       />
       <q-route-tab
-        :label="$t('Search')"
+        :label="$t('map')"
+        to="/map"
+        exact
+      />
+      <q-route-tab
+        :label="$t('search')"
         to="/search"
         exact
       />

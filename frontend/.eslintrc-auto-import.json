@@ -94,6 +94,7 @@
     "helpStore": true,
     "useHelpStore": true,
     "useFiltersStore": true,
-    "useSettingsStore": true
+    "useSettingsStore": true,
+    "useCatalogStore": true
   }
 }

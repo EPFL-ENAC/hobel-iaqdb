@@ -21,5 +21,8 @@ export default {
   resources: 'Resources',
   source_code: 'Source Code',
   with_tsunami: 'With tsunami',
-  search: 'Search'
+  search: 'Search',
+  studies: 'Studies',
+  buildings: 'Buildings',
+  rooms: 'Rooms',
 };

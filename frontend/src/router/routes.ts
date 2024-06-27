@@ -9,10 +9,11 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
-    path: '/search',
+    path: '/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
-      { path: '', component: () => import('src/pages/MapPage.vue') },
+      { path: '/map', component: () => import('src/pages/MapPage.vue') },
+      { path: '/search', component: () => import('src/pages/SearchPage.vue') },
     ],
   },
 
