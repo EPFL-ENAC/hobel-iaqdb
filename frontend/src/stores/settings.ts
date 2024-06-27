@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { LocalStorage } from 'quasar';
 
-const APP_COOKIE_NAME = 'iaq_settings';
+const APP_STORAGE_NAME = 'iaq_settings';
 
 export type Settings = {
   intro_shown: boolean;
@@ -17,7 +17,7 @@ export const useSettingsStore = defineStore('settings', () => {
       intro_shown: false,
       theme: 'light',
     };
-    const settingsSaved = LocalStorage.getItem(APP_COOKIE_NAME);
+    const settingsSaved = LocalStorage.getItem(APP_STORAGE_NAME);
     // cookies.get() declares to return a string but apparently it automatically parses the JSON string to an object
     if (settingsSaved !== null) {
       if (typeof settingsSaved === 'string') {
@@ -32,7 +32,7 @@ export const useSettingsStore = defineStore('settings', () => {
 
   function saveSettings(settingsData: Settings) {
     settings.value = { ...settings.value, ...settingsData };
-    LocalStorage.set(APP_COOKIE_NAME, JSON.stringify(settings.value));
+    LocalStorage.set(APP_STORAGE_NAME, JSON.stringify(settings.value));
   }
 
   return {
