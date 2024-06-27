@@ -24,26 +24,57 @@ async def seed() -> SeedStatus:
         "Quidem dolor dolor deserunt temporibus. Error est quis vitae modi magni. Sed quae quaerat accusamus inventore.",
         "Sed omnis sequi qui recusandae quod iusto aut. Nesciunt mollitia voluptatem rerum error qui temporibus ut. Enim tempore ratione est. Officiis maiores quis reprehenderit quae. In quidem non maiores."
     ]
-    # room = Room(slug=f"seed-{uuid.uuid4()}",
-    #             space="outdoor", ventilation="NA", smoking="yes")
-    # building = Building(slug=f"seed-{uuid.uuid4()}", country="CH",
-    #                     city="Lausanne", altitude=300, climate_zone="Cfb", rooms=[room])
-    # study = Study(
-    #     slug=f"seed-{uuid.uuid4()}", name=random.choice(words), description=lorem[random.randint(0, 4)], buildings=[building])
-    # await Study.insert_one(study, link_rule=WriteRules.WRITE)
+    climate_zones = [
+        "Af ",
+        "Am ",
+        "Aw ",
+        "BWh",
+        "BWk",
+        "BSh",
+        "BSk",
+        "Csa",
+        "Csb",
+        "Csc",
+        "Cwa",
+        "Cwb",
+        "Cwc",
+        "Cfa",
+        "Cfb",
+        "Cfc",
+        "Dsa",
+        "Dsb",
+        "Dsc",
+        "Dsd",
+        "Dwa",
+        "Dwb",
+        "Dwc",
+        "Dwd",
+        "Dfa",
+        "Dfb",
+        "Dfc",
+        "Dfd",
+        "ET ",
+        "EF ",
+    ]
 
-    study = Study(slug=f"seed-{uuid.uuid4()}", name=random.choice(words),
-                  description=lorem[random.randint(0, 4)])
-    study = await Study.insert_one(study)
+    for i in range(1, 10):
+        study = Study(slug=f"seed-{uuid.uuid4()}", name=random.choice(words),
+                      description=lorem[random.randint(0, 4)])
+        study = await Study.insert_one(study)
 
-    building = Building(slug=f"seed-{uuid.uuid4()}", country="CH",
-                        city="Lausanne", altitude=300, climate_zone="Cfb", study=study)
-    building = await Building.insert_one(building)
+        for j in range(1, 10):
+            building = Building(slug=f"seed-{uuid.uuid4()}", country="CH",
+                                city="Lausanne", altitude=random.randint(0, 2500), climate_zone=climate_zones[random.randint(0, 29)],
+                                location=[random.randint(-60, 60),
+                                          random.randint(-60, 60)],
+                                study=study)
+            building = await Building.insert_one(building)
 
-    room = Room(slug=f"seed-{uuid.uuid4()}",
-                space="outdoor", ventilation="NA", smoking="yes",
-                study=study,
-                building=building)
-    room = await Room.insert_one(room)
+            for k in range(1, 10):
+                room = Room(slug=f"seed-{uuid.uuid4()}",
+                            space="outdoor", ventilation="NA", smoking="yes",
+                            study=study,
+                            building=building)
+                room = await Room.insert_one(room)
 
     return SeedStatus(status="OK")

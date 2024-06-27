@@ -7,7 +7,8 @@ from pydantic import BaseModel
 from api.db import init_client
 from api.models import init_models
 from api.views.seed import router as seed_router
-from api.views.study import router as study_router
+from api.views.catalog import router as catalog_router
+from api.views.map import router as map_router
 
 basicConfig(level=INFO)
 
@@ -80,7 +81,13 @@ app.include_router(
 )
 
 app.include_router(
-    study_router,
+    catalog_router,
     prefix="/catalog",
     tags=["Catalog"],
+)
+
+app.include_router(
+    map_router,
+    prefix="/map",
+    tags=["Map"],
 )

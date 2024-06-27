@@ -1,8 +1,6 @@
-from typing import List, Optional, Literal
-
+from typing import List, Literal
 import pymongo
 from pydantic import Field, BaseModel
-
 from beanie import Document, Indexed, Link, BackLink
 
 
@@ -28,6 +26,7 @@ class Building(Document):
     city: str
     altitude: int
     climate_zone: str
+    location: List[int]
     study: Link[Study]
     # rooms: Optional[List[Link["Room"]]]
     # study: BackLink[Study] = Field(original_field="buildings")

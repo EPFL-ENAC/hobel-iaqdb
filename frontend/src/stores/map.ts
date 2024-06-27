@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { EarthquakesLayerManager } from 'src/layers/earthquakes';
+import { BuildingsLayerManager } from 'src/layers/buildings';
 import { Map } from 'maplibre-gl';
 import { FilterParams } from 'src/stores/filters';
 
@@ -12,7 +12,7 @@ export const useMapStore = defineStore('map', () => {
 
   const map = ref<Map>();
 
-  const layerManagers = [new EarthquakesLayerManager()];
+  const layerManagers = [new BuildingsLayerManager()];
 
   const layerSelections: LayerSelection[] = layerManagers.map(
     (lm) => ({ id: lm.getId(), visible: true })

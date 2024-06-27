@@ -2,35 +2,36 @@ import { Map, Popup, GeoJSONSource } from 'maplibre-gl';
 import { Feature, FeatureCollection, GeoJSON, GeoJsonProperties, Geometry, Point } from 'geojson';
 import { LayerManager } from 'src/layers/models';
 import { FilterParams } from 'src/stores/filters';
+import { baseUrl } from 'src/boot/api';
 
-const GEOJSON_URL = 'https://maplibre.org/maplibre-gl-js/docs/assets/earthquakes.geojson';
+const GEOJSON_URL = `${baseUrl}/map/buildings`;
 
-export class EarthquakesLayerManager extends LayerManager<FilterParams> {
+export class BuildingsLayerManager extends LayerManager<FilterParams> {
 
-  earthquakesData: FeatureCollection | null = null;
+  buildingsData: FeatureCollection | null = null;
 
   getId(): string {
-    return 'earthquakes';
+    return 'buildings';
   }
 
   async append(map: Map): Promise<void> {
     const response = await fetch(GEOJSON_URL);
-    this.earthquakesData = await response.json() as FeatureCollection;
+    this.buildingsData = await response.json() as FeatureCollection;
 
-    map.addSource('earthquakes', {
+    map.addSource('buildings', {
       type: 'geojson',
-      // Point to GeoJSON data. This example visualizes all M1.0+ earthquakes
+      // Point to GeoJSON data. This example visualizes all M1.0+ buildings
       // from 12/22/15 to 1/21/16 as logged by USGS' Earthquake hazards program.
-      data: this.earthquakesData,
+      data: this.buildingsData,
       cluster: true,
       clusterMaxZoom: 14, // Max zoom to cluster points on
       clusterRadius: 50 // Radius of each cluster when clustering points (defaults to 50)
     });
 
     map.addLayer({
-      id: 'earthquakes-clusters',
+      id: 'buildings-clusters',
       type: 'circle',
-      source: 'earthquakes',
+      source: 'buildings',
       filter: ['has', 'point_count'],
       paint: {
         // Use step expressions (https://maplibre.org/maplibre-style-spec/#expressions-step)
@@ -60,9 +61,9 @@ export class EarthquakesLayerManager extends LayerManager<FilterParams> {
     });
 
     map.addLayer({
-      id: 'earthquakes-cluster-count',
+      id: 'buildings-cluster-count',
       type: 'symbol',
-      source: 'earthquakes',
+      source: 'buildings',
       filter: ['has', 'point_count'],
       layout: {
         'text-field': '{point_count_abbreviated}',
@@ -72,9 +73,9 @@ export class EarthquakesLayerManager extends LayerManager<FilterParams> {
     });
 
     map.addLayer({
-      id: 'earthquakes-unclustered-point',
+      id: 'buildings-unclustered-point',
       type: 'circle',
-      source: 'earthquakes',
+      source: 'buildings',
       filter: ['!', ['has', 'point_count']],
       paint: {
         'circle-color': '#11b4da',
@@ -85,12 +86,12 @@ export class EarthquakesLayerManager extends LayerManager<FilterParams> {
     });
 
     // inspect a cluster on click
-    map.on('click', 'earthquakes-clusters', async (e) => {
+    map.on('click', 'buildings-clusters', async (e) => {
       const features = map.queryRenderedFeatures(e.point, {
-          layers: ['earthquakes-clusters']
+          layers: ['buildings-clusters']
       });
       const clusterId = features[0].properties.cluster_id;
-      const zoom = await (map.getSource('earthquakes') as GeoJSONSource).getClusterExpansionZoom(clusterId);
+      const zoom = await (map.getSource('buildings') as GeoJSONSource).getClusterExpansionZoom(clusterId);
       map.easeTo({
         center: (features[0].geometry as Point).coordinates as [number, number],
         zoom
@@ -101,17 +102,10 @@ export class EarthquakesLayerManager extends LayerManager<FilterParams> {
     // the unclustered-point layer, open a popup at
     // the location of the feature, with
     // description HTML from its properties.
-    map.on('click', 'earthquakes-unclustered-point', (e) => {
+    map.on('click', 'buildings-unclustered-point', (e) => {
       const feature = e.features ? e.features[0] : null;
       if (!feature) return;
-      const mag = feature.properties.mag;
-      let tsunami;
-
-      if (feature.properties.tsunami === 1) {
-        tsunami = 'yes';
-      } else {
-        tsunami = 'no';
-      }
+      
 
       // Ensure that if the map is zoomed out such that
       // multiple copies of the feature are visible, the
@@ -124,22 +118,22 @@ export class EarthquakesLayerManager extends LayerManager<FilterParams> {
       new Popup()
         .setLngLat(coordinates)
         .setHTML(
-          `Magnitude: ${mag}<br>Was there a tsunami?: ${tsunami}`
+          `<pre>${JSON.stringify(feature.properties, null, 2)}</pre>`
         )
         .addTo(map);
     });
 
-    map.on('mouseenter', 'earthquakes-clusters', () => {
+    map.on('mouseenter', 'buildings-clusters', () => {
         map.getCanvas().style.cursor = 'pointer';
     });
-    map.on('mouseleave', 'earthquakes-clusters', () => {
+    map.on('mouseleave', 'buildings-clusters', () => {
         map.getCanvas().style.cursor = '';
     });
   }
 
   setVisible(map: Map, visible: boolean): void {
     const visibility = visible ? 'visible' : 'none';
-    ['earthquakes-clusters', 'earthquakes-cluster-count', 'earthquakes-unclustered-point'].forEach(id => {
+    ['buildings-clusters', 'buildings-cluster-count', 'buildings-unclustered-point'].forEach(id => {
       map.setLayoutProperty(
         id,
         'visibility',
@@ -149,19 +143,22 @@ export class EarthquakesLayerManager extends LayerManager<FilterParams> {
   }
 
   filter(map: Map, filter: FilterParams): void {
-    if (!this.earthquakesData) return;
-    const filteredFeatures = this.earthquakesData.features.filter((feature: Feature<Geometry, GeoJsonProperties>) => {
-      let filtered = feature.properties?.mag >= filter.magnitudes[0] && feature.properties?.mag <= filter.magnitudes[1];
-      if (filtered && filter.tsunami !== null) {
-        filtered = filter.tsunami ? feature.properties?.tsunami === 1 : feature.properties?.tsunami === 0;
-      }
-      return filtered;
-    });
+    if (!this.buildingsData) return;
+
+    console.log(filter);
+    const filteredFeatures = this.buildingsData.features
+      .filter((feature: Feature<Geometry, GeoJsonProperties>) => {
+        let filtered = feature.properties?.altitude >= filter.altitudes[0] && feature.properties?.altitude <= filter.altitudes[1];
+        if (filtered&& filter.climateZones && filter.climateZones.length) {
+          filtered = filter.climateZones.includes(feature.properties?.climate_zone);
+        }
+        return filtered;
+      });
     const filteredData = {
-      ...this.earthquakesData,
+      ...this.buildingsData,
       features: filteredFeatures
     } as GeoJSON;
-    (map.getSource('earthquakes') as GeoJSONSource).setData(filteredData);
+    (map.getSource('buildings') as GeoJSONSource).setData(filteredData);
   }
 
 }

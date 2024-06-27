@@ -1,32 +1,32 @@
 import { defineStore } from 'pinia';
 
 export type FilterParams = {
-  magnitudes: [number, number]
-  tsunami: boolean | null
+  altitudes: [number, number]
+  climateZones: string[] | null
 }
 
-const DEFAULT_MAGNITUDES = { min: 1, max: 10 };
+const DEFAULT_ALTITUDES = { min: 0, max: 2500 };
 
 export const useFiltersStore = defineStore('filters', () => {
 
-  const magnitudes = ref({...DEFAULT_MAGNITUDES});
-  const tsunami = ref(null);
+  const altitudes = ref({...DEFAULT_ALTITUDES});
+  const climateZones = ref(null);
 
   function reset() {
-    magnitudes.value = {...DEFAULT_MAGNITUDES};
-    tsunami.value = null;
+    altitudes.value = {...DEFAULT_ALTITUDES};
+    climateZones.value = null;
   }
 
   function asParams(): FilterParams {
     return {
-      magnitudes: [magnitudes.value.min, magnitudes.value.max],
-      tsunami: tsunami.value
+      altitudes: [altitudes.value.min, altitudes.value.max],
+      climateZones: climateZones.value ? [...climateZones.value] : []
     }
   }
 
   return {
-    magnitudes,
-    tsunami,
+    altitudes,
+    climateZones,
     reset,
     asParams,
   }

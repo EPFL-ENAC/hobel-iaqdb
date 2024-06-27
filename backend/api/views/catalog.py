@@ -1,6 +1,6 @@
 from typing import List
 from fastapi import APIRouter
-from api.models.study import Study, Building, BuildingView, Room
+from api.models.study import Study, Building, Room
 from beanie import PydanticObjectId
 
 router = APIRouter()
@@ -36,4 +36,4 @@ async def getBuildings() -> List[Building]:
 
 @router.get("/rooms")
 async def getRooms() -> List[Room]:
-    return await Room.find_all(fetch_links=True, nesting_depth=1).to_list()
+    return await Room.find_all(fetch_links=False, nesting_depth=1).to_list()
