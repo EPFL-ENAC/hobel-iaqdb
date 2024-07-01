@@ -57,7 +57,22 @@ async def seed() -> SeedStatus:
         "EF ",
     ]
 
-    for i in range(1, 10):
+    bbox = [
+        # swiss
+        lambda: [random.uniform(5, 10), random.uniform(45, 48)],
+        # europe
+        lambda: [random.uniform(-10, 45), random.uniform(35, 60)],
+        # north america
+        lambda: [random.uniform(-120, -70), random.uniform(20, 50)],
+        # china
+        lambda: [random.uniform(100, 140), random.uniform(10, 40)],
+        # india
+        lambda: [random.uniform(70, 85), random.uniform(10, 30)],
+        # australia
+        lambda: [random.uniform(145, 155), random.uniform(-35, -25)],
+    ]
+
+    for i in range(1, 100):
         study = Study(slug=f"seed-{uuid.uuid4()}", name=random.choice(words),
                       description=lorem[random.randint(0, 4)])
         study = await Study.insert_one(study)
@@ -65,8 +80,7 @@ async def seed() -> SeedStatus:
         for j in range(1, 10):
             building = Building(slug=f"seed-{uuid.uuid4()}", country="CH",
                                 city="Lausanne", altitude=random.randint(0, 2500), climate_zone=climate_zones[random.randint(0, 29)],
-                                location=[random.randint(-60, 60),
-                                          random.randint(-60, 60)],
+                                location=bbox[random.randint(0, 5)](),
                                 study=study)
             building = await Building.insert_one(building)
 

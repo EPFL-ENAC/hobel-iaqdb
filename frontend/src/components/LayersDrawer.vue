@@ -145,15 +145,15 @@ const climateOptions = [
 const clusterColors = [
   {
     color: 'cyan-5',
-    label: '< 5'
+    label: '< 10'
   },  
   {
     color: 'yellow-6',
-    label: '5 - 10'
+    label: '1 - 20'
   },
   {
     color: 'pink-3',
-    label: '> 10'
+    label: '> 20'
   }
 ]
 

@@ -26,7 +26,7 @@ class Building(Document):
     city: str
     altitude: int
     climate_zone: str
-    location: List[int]
+    location: List[float]
     study: Link[Study]
     # rooms: Optional[List[Link["Room"]]]
     # study: BackLink[Study] = Field(original_field="buildings")

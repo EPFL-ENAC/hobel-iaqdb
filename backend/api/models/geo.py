@@ -3,7 +3,7 @@ from pydantic import Field, BaseModel
 
 
 class Geometry(BaseModel):
-    coordinates: List[int]
+    coordinates: List[float]
     type: Literal['Point']
 
 
