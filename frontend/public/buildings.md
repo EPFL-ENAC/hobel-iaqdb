@@ -1,4 +1,4 @@
-### Buildings
+## Buildings
 
 A building or edifice is an enclosed structure with a roof and walls, usually standing permanently in one place,[1] such as a house or factory.[1] Buildings come in a variety of sizes, shapes, and functions, and have been adapted throughout history for numerous factors, from building materials available, to weather conditions, land prices, ground conditions, specific uses, prestige, and aesthetic reasons. To better understand the concept, see Nonbuilding structure for contrast.
 

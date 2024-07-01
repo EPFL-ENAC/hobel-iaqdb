@@ -9,6 +9,7 @@ export default {
   it4r_contrib: 'UI/UX design, application development and deployment',
   layer: {
     buildings: 'Buildings',
+    'climate-zones': 'Climate zones',
   },
   altitudes: 'Elevation',
   altitudes_help: 'Altitude of the building',
@@ -17,7 +18,7 @@ export default {
   home: 'Home',
   introduction: 'Introduction',
   climate_zones: 'Climate zones',
-  climate_zones_hint: 'The Köppen-Geiger climate classes.',
+  climate_zones_hint: 'The Köppen-Geiger climate classes (1991-2020).',
   number_of_buildings: 'Number of buildings',
   reset_filters: 'Reset filters',
   resources: 'Resources',

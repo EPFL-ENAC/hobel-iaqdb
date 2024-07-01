@@ -34,3 +34,17 @@ li + li {
   font-weight: bold;
   font-size: 2.3em;
 }
+
+.app-md {
+  blockquote.q-markdown--note {
+    border-width: 0px 0px 0px 8px;
+    border-radius: 0;
+    border-style: solid;
+    border-color: #9e9e9e #009688;
+    background-color: white;
+  }
+
+  table.q-markdown--table ul {
+    padding-left: 20px;
+  }
+}

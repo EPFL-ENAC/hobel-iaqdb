@@ -14,6 +14,10 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
     return 'buildings';
   }
 
+  isDefaultVisible(): boolean {
+    return true;
+  }
+
   async append(map: Map): Promise<void> {
     const response = await fetch(GEOJSON_URL);
     this.buildingsData = await response.json() as FeatureCollection;
@@ -36,25 +40,25 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
       paint: {
         // Use step expressions (https://maplibre.org/maplibre-style-spec/#expressions-step)
         // with three steps to implement three types of circles:
-        //   * Blue, 20px circles when point count is less than 100
-        //   * Yellow, 30px circles when point count is between 100 and 750
-        //   * Pink, 40px circles when point count is greater than or equal to 750
+        //   * Blue, 20px circles when point count is less than 5
+        //   * Yellow, 30px circles when point count is between 5 and 10
+        //   * Pink, 40px circles when point count is greater than or equal to 10
         'circle-color': [
           'step',
           ['get', 'point_count'],
           '#51bbd6',
-          100,
+          5,
           '#f1f075',
-          750,
+          10,
           '#f28cb1'
         ],
         'circle-radius': [
           'step',
           ['get', 'point_count'],
           20,
-          100,
+          5,
           30,
-          750,
+          10,
           40
         ]
       }
@@ -115,10 +119,16 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
         coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
       }
 
+      const rows = Object.keys(feature.properties)
+        .filter((key) => key !== 'slug')
+        .map((key) => {
+          return `<tr><td>${key}</td><td>${feature.properties[key]}</td></tr>`
+        }).join('');
+
       new Popup()
         .setLngLat(coordinates)
         .setHTML(
-          `<pre>${JSON.stringify(feature.properties, null, 2)}</pre>`
+          `<table>${rows}</table>`
         )
         .addTo(map);
     });
@@ -145,7 +155,6 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
   filter(map: Map, filter: FilterParams): void {
     if (!this.buildingsData) return;
 
-    console.log(filter);
     const filteredFeatures = this.buildingsData.features
       .filter((feature: Feature<Geometry, GeoJsonProperties>) => {
         let filtered = feature.properties?.altitude >= filter.altitudes[0] && feature.properties?.altitude <= filter.altitudes[1];

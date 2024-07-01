@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { BuildingsLayerManager } from 'src/layers/buildings';
+import { ClimateZonesLayerManager } from 'src/layers/climate_zones';
 import { Map } from 'maplibre-gl';
 import { FilterParams } from 'src/stores/filters';
 
@@ -12,10 +13,10 @@ export const useMapStore = defineStore('map', () => {
 
   const map = ref<Map>();
 
-  const layerManagers = [new BuildingsLayerManager()];
+  const layerManagers = [new BuildingsLayerManager(), new ClimateZonesLayerManager()];
 
   const layerSelections: LayerSelection[] = layerManagers.map(
-    (lm) => ({ id: lm.getId(), visible: true })
+    (lm) => ({ id: lm.getId(), visible: lm.isDefaultVisible() })
   );
 
   /**
@@ -67,7 +68,7 @@ export const useMapStore = defineStore('map', () => {
       layerSelections.map((layer) => {
         const manager = getLayerManager(layer.id);
         if (!manager) return Promise.resolve();
-        return manager.append(mapInstance);
+        return manager.append(mapInstance).then(() => applyLayerVisibility(layer.id));
       })
     );
   }
