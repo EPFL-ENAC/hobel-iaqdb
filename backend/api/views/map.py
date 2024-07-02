@@ -1,8 +1,6 @@
-from typing import List
 from fastapi import APIRouter
-from api.models.study import Building
+from api.models.catalog import Building
 from api.models.geo import Geometry, BuildingFeature, BuildingFeatures, BuildingProperties
-from beanie import PydanticObjectId
 
 router = APIRouter()
 

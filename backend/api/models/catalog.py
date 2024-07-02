@@ -1,7 +1,13 @@
 from typing import List, Literal
 import pymongo
 from pydantic import Field, BaseModel
-from beanie import Document, Indexed, Link, BackLink
+from beanie import PydanticObjectId, Document, Indexed, Link, BackLink
+
+
+class ListResult(BaseModel):
+    total: int
+    skip: int | None
+    limit: int | None
 
 
 class Study(Document):
@@ -18,6 +24,10 @@ class Study(Document):
                 ("name", pymongo.TEXT),
             ],
         ]
+
+
+class StudiesResult(ListResult):
+    data: List[Study]
 
 
 class Building(Document):
@@ -40,13 +50,13 @@ class Building(Document):
         ]
 
 
-class BuildingView(BaseModel):
+class BuildingStudy(BaseModel):
     slug: str
-    country: str
-    city: str
-    altitude: int
-    climate_zone: str
-    # rooms: Optional[List[Link["Room"]]]
+    study: Link[Study]
+
+
+class BuildingsResult(ListResult):
+    data: List[Building]
 
 
 class Room(Document):
@@ -64,3 +74,7 @@ class Room(Document):
                 ("slug", pymongo.TEXT),
             ],
         ]
+
+
+class RoomsResult(ListResult):
+    data: List[Room]

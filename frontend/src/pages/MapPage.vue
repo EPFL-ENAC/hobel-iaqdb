@@ -16,6 +16,10 @@ import { Map, MapMouseEvent } from 'maplibre-gl';
 const mapStore = useMapStore();
 const filtersStore = useFiltersStore();
 
+watch(() => filtersStore.updates, () => {
+  mapStore.applyFilters(filtersStore.asParams());
+});
+
 function onMapLoaded(map: Map) {
   mapStore.initLayers(map).then(() => {
     mapStore.applyFilters(filtersStore.asParams());

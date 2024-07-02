@@ -2,8 +2,7 @@ import uuid
 import random
 from fastapi import APIRouter
 from pydantic import BaseModel
-from api.models.study import Study, Building, Room
-from beanie import WriteRules
+from api.models.catalog import Study, Building, Room
 
 router = APIRouter()
 

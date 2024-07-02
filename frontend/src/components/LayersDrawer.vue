@@ -25,6 +25,7 @@
         />
       </q-item-section>
     </q-item>
+  
     <q-item-label header>
       <span class="text-h6">
         <q-icon name="filter_alt" class="q-pb-xs"/>
@@ -72,6 +73,7 @@
         <span class="text-help">{{ $t('altitudes_help') }}</span>
       </q-item-section>
     </q-item>
+
     <q-item-label header class="text-h6">
       <q-icon name="info" class="q-pb-xs"/>
       <span class="q-ml-sm">{{ $t('legends') }}</span>
@@ -110,9 +112,9 @@ const helpStore = useHelpStore();
 const filtersStore = useFiltersStore();
 
 const climateOptions = [
-  { value: 'Af ', label: '[Af]  Tropical, rainforest',},
-  { value: 'Am ', label: '[Am]  Tropical, monsoon',},
-  { value: 'Aw ', label: '[Aw]  Tropical, savannah',},
+  { value: 'Af', label: '[Af]  Tropical, rainforest',},
+  { value: 'Am', label: '[Am]  Tropical, monsoon',},
+  { value: 'Aw', label: '[Aw]  Tropical, savannah',},
   { value: 'BWh', label: '[BWh] Arid, desert, hot',},
   { value: 'BWk', label: '[BWk] Arid, desert, cold',},
   { value: 'BSh', label: '[BSh] Arid, steppe, hot',},
@@ -138,8 +140,8 @@ const climateOptions = [
   { value: 'Dfb', label: '[Dfb] Cold, no dry season, warm summer',},
   { value: 'Dfc', label: '[Dfc] Cold, no dry season, cold summer',},
   { value: 'Dfd', label: '[Dfd] Cold, no dry season, very cold winter',},
-  { value: 'ET ', label: '[ET]  Polar, tundra',},
-  { value: 'EF ', label: '[EF]  Polar, frost',},
+  { value: 'ET', label: '[ET]  Polar, tundra',},
+  { value: 'EF', label: '[EF]  Polar, frost',},
 ];
 
 const clusterColors = [
@@ -201,6 +203,6 @@ function onResetFilters() {
 }
 
 function onUpdatedFilter() {
-  mapStore.applyFilters(filtersStore.asParams());
+  filtersStore.notifyUpdate();
 }
 </script>
