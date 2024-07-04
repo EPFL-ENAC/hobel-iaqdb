@@ -1,7 +1,7 @@
 from typing import List, Literal, Optional
 import pymongo
 from pydantic import Field, BaseModel
-from beanie import Document, Indexed, Link
+from beanie import Document, Indexed, Link, PydanticObjectId
 
 
 class ListResult(BaseModel):
@@ -75,6 +75,10 @@ class Building(Document):
 class BuildingStudy(BaseModel):
     identifier: str
     study: Link[Study]
+
+
+class DocumentId(BaseModel):
+    id: PydanticObjectId = Field(None, alias="_id")
 
 
 class BuildingsResult(ListResult):

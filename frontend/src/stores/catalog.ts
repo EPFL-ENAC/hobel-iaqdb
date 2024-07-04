@@ -37,10 +37,12 @@ export const useCatalogStore = defineStore('catalog', () => {
   }
 
   async function loadRooms(skip: number, limit: number): Promise<RoomsResult> {
+    const filters = getFilterParams();
     return api.get('/catalog/rooms', { 
       params: {
         skip,
         limit,
+        ...filters
       },
       paramsSerializer: {
         indexes: null, // no brackets at all
