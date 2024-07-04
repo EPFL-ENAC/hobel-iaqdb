@@ -160,8 +160,11 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
     const filteredFeatures = this.buildingsData.features
       .filter((feature: Feature<Geometry, GeoJsonProperties>) => {
         let filtered = feature.properties?.altitude >= filter.altitudes[0] && feature.properties?.altitude <= filter.altitudes[1];
-        if (filtered&& filter.climateZones && filter.climateZones.length) {
+        if (filtered && filter.climateZones && filter.climateZones.length) {
           filtered = filter.climateZones.includes(feature.properties?.climate_zone);
+        }
+        if (filtered && filter.ventilations && filter.ventilations.length) {
+          filtered = filter.ventilations.filter((vent) => feature.properties?.ventilations.includes(vent)).length>0;
         }
         return filtered;
       });

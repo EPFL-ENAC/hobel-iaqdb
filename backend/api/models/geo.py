@@ -13,6 +13,7 @@ class BuildingProperties(BaseModel):
     city: str
     altitude: int
     climate_zone: str
+    ventilations: str
 
 
 class BuildingFeature(BaseModel):
