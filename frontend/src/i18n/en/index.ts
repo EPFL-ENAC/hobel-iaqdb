@@ -11,7 +11,7 @@ export default {
     buildings: 'Buildings',
     'climate-zones': 'Climate zones',
   },
-  altitudes: 'Elevation',
+  altitudes: 'Altitude',
   altitudes_help: 'Altitude of the building',
   layers: 'Layers',
   legends: 'Legends',

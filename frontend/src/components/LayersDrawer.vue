@@ -15,7 +15,7 @@
           :label="$t(`layer.${layer.id}`)" 
           @click="onToggleLayer(layer.id)"
         />
-      </q-item-section>
+      </q-item-section> 
       <q-item-section avatar>
         <q-btn 
           flat
@@ -39,7 +39,7 @@
         icon="restart_alt"
         :label="$t('reset_filters')"
         @click="onResetFilters" 
-        class="q-mt-xs q-pl-xs q-pr-xs float-right "/>
+        class="q-mt-none q-pl-xs q-pr-xs float-right "/>
     </q-item-label>
     <q-item>
       <q-item-section>

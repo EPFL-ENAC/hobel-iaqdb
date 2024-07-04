@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 from api.models.catalog import Person, Study, Building, Room
 from faker import Faker
+from api.services.geo import GeoService
 
 router = APIRouter()
 
@@ -52,6 +53,8 @@ async def seed() -> SeedStatus:
     ventilation = ["natural", "mechanical", "NA"]
     smoking = ["yes", "no", "NA"]
 
+    geoService = GeoService()
+
     for i in range(0, 10):
         contact = Person(name=fake.name(), email=fake.email(),
                          institution=fake.company())
@@ -67,6 +70,7 @@ async def seed() -> SeedStatus:
 
         for j in range(0, 10):
             place = fake.location_on_land()
+            zone = geoService.readClimateZone(place[1], place[0], False)
             # TODO get from elevation service
             altitude = random.randint(0, 2500)
             building = Building(identifier=f"seed-{uuid.uuid4()}",
@@ -74,8 +78,7 @@ async def seed() -> SeedStatus:
                                 country=place[3],
                                 timezone=place[4],
                                 altitude=altitude,
-                                climate_zone=fake.word(
-                                    ext_word_list=climate_zones),
+                                climate_zone=zone.name,
                                 location=[place[1], place[0]],
                                 study=study)
             building = await Building.insert_one(building)
