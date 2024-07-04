@@ -71,13 +71,13 @@ async def seed() -> SeedStatus:
         for j in range(0, 10):
             place = fake.location_on_land()
             zone = geoService.readClimateZone(place[1], place[0], False)
-            # TODO get from elevation service
-            altitude = random.randint(0, 2500)
+            elevation = geoService.queryElevation(place[1], place[0])
+
             building = Building(identifier=f"seed-{uuid.uuid4()}",
                                 city=place[2],
                                 country=place[3],
                                 timezone=place[4],
-                                altitude=altitude,
+                                altitude=elevation.altitude,
                                 climate_zone=zone.name,
                                 location=[place[1], place[0]],
                                 study=study)

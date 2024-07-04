@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query
 from api.models.catalog import Building
-from api.models.geo import Geometry, BuildingFeature, BuildingFeatures, BuildingProperties, ClimateZone
+from api.models.geo import Geometry, BuildingFeature, BuildingFeatures, BuildingProperties, ClimateZone, Elevation
 from api.services.geo import GeoService
 
 router = APIRouter()
@@ -27,3 +27,9 @@ async def getBuildings() -> BuildingFeatures:
 async def getClimateZone(lon: float = Query(0), lat: float = Query(0), precise: bool = Query(False)) -> ClimateZone:
     service = GeoService()
     return service.readClimateZone(lon, lat, precise)
+
+
+@router.get("/elevation")
+async def getElevation(lon: float = Query(0), lat: float = Query(0)) -> Elevation:
+    service = GeoService()
+    return service.queryElevation(lon, lat)

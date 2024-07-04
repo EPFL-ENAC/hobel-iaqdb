@@ -31,3 +31,9 @@ class ClimateZone(BaseModel):
     name: str
     lon: float
     lat: float
+
+
+class Elevation(BaseModel):
+    altitude: float
+    lon: float
+    lat: float

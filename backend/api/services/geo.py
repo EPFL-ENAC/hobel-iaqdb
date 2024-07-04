@@ -1,7 +1,10 @@
 import pkg_resources
+import requests
 import rasterio
 from pyproj import Transformer
-from api.models.geo import ClimateZone
+from api.models.geo import ClimateZone, Elevation
+
+ELEVATION_URL = "https://api.open-elevation.com"
 
 CLIMATE_ZONES = [
     "Af",
@@ -41,7 +44,7 @@ class GeoService:
 
     def readClimateZone(self, lon: float = 0, lat: float = 0, precise: bool = True) -> ClimateZone:
         data_file_path = pkg_resources.resource_filename(
-            'api', 'data/koppen_geiger_1991_2020_0p00833333.tif' if precise else 'data/koppen_geiger_1991_2020_0p1.tif')
+            "api", "data/koppen_geiger_1991_2020_0p00833333.tif" if precise else "data/koppen_geiger_1991_2020_0p1.tif")
 
         value = -1
 
@@ -52,7 +55,7 @@ class GeoService:
 
             transformer = Transformer.from_crs(crs, "EPSG:4326")
 
-            # Transform the geolocation to the raster's CRS
+            # Transform the geolocation to the raster"s CRS
             x, y = transformer.transform(lon, lat)
 
             # Get the row and column indices of the raster cell containing the geolocation
@@ -66,3 +69,10 @@ class GeoService:
             name = CLIMATE_ZONES[value - 1]
 
         return ClimateZone(id=value, name=name, lon=lon, lat=lat)
+
+    def queryElevation(self, lon: float = 0, lat: float = 0) -> Elevation:
+        resp = requests.get(f"{ELEVATION_URL}/api/v1/lookup",
+                            params={"locations": f"{lat},{lon}"})
+        content = resp.json()
+        place = content["results"][0]
+        return Elevation(altitude=place["elevation"], lon=lon, lat=lat)
