@@ -8,7 +8,7 @@ class Geometry(BaseModel):
 
 
 class BuildingProperties(BaseModel):
-    slug: str
+    identifier: str
     country: str
     city: str
     altitude: int
@@ -24,3 +24,10 @@ class BuildingFeature(BaseModel):
 class BuildingFeatures(BaseModel):
     features: List[BuildingFeature]
     type: Literal['FeatureCollection']
+
+
+class ClimateZone(BaseModel):
+    id: int
+    name: str
+    lon: float
+    lat: float

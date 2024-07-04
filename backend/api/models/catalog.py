@@ -1,7 +1,7 @@
-from typing import List, Literal
+from typing import List, Literal, Optional
 import pymongo
 from pydantic import Field, BaseModel
-from beanie import PydanticObjectId, Document, Indexed, Link, BackLink
+from beanie import Document, Indexed, Link
 
 
 class ListResult(BaseModel):
@@ -10,18 +10,29 @@ class ListResult(BaseModel):
     limit: int | None
 
 
+class Person(BaseModel):
+    name: str
+    email: str
+    institution: str
+
+
 class Study(Document):
-    slug: str
+    identifier: str
     name: str
     description: str
-    # buildings: Optional[List[Link["Building"]]]
+    contact: Optional[Person] = None
+    building_count: Optional[int] = None
+    room_count: Optional[int] = None
+    start_year: Optional[int] = None
+    end_year: Optional[int] = None
 
     class Settings:
         name = "studies"
         indexes = [
             [
-                ("slug", pymongo.TEXT),
+                ("identifier", pymongo.TEXT),
                 ("name", pymongo.TEXT),
+                ("description", pymongo.TEXT),
             ],
         ]
 
@@ -31,12 +42,13 @@ class StudiesResult(ListResult):
 
 
 class Building(Document):
-    slug: str
+    identifier: str
     country: str
     city: str
+    timezone: str
     altitude: int
     climate_zone: str
-    location: List[float]
+    location: List[float]  # [long, lat]
     study: Link[Study]
     # rooms: Optional[List[Link["Room"]]]
     # study: BackLink[Study] = Field(original_field="buildings")
@@ -45,13 +57,13 @@ class Building(Document):
         name = "buildings"
         indexes = [
             [
-                ("slug", pymongo.TEXT),
+                ("identifier", pymongo.TEXT),
             ],
         ]
 
 
 class BuildingStudy(BaseModel):
-    slug: str
+    identifier: str
     study: Link[Study]
 
 
@@ -60,10 +72,10 @@ class BuildingsResult(ListResult):
 
 
 class Room(Document):
-    slug: str
+    identifier: str
     space: str
     ventilation: Literal['natural', 'mechanical', 'NA']
-    smoking: Literal['yes', 'no', 'dnk']
+    smoking: Literal['yes', 'no', 'NA']
     study: Link[Study]
     building: Link[Building]
 
@@ -71,7 +83,7 @@ class Room(Document):
         name = "rooms"
         indexes = [
             [
-                ("slug", pymongo.TEXT),
+                ("identifier", pymongo.TEXT),
             ],
         ]
 
