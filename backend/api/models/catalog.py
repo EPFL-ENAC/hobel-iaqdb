@@ -77,6 +77,11 @@ class BuildingStudy(BaseModel):
     study: Link[Study]
 
 
+class RoomDigest(BaseModel):
+    identifier: str
+    building: Link[Building]
+
+
 class DocumentId(BaseModel):
     id: PydanticObjectId = Field(None, alias="_id")
 

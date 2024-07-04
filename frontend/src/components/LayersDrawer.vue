@@ -1,31 +1,5 @@
 <template>
   <q-list>
-    <q-item-label header class="text-h6">
-      <q-icon name="layers" class="q-pb-xs"/>
-      <span class="q-ml-sm">{{ $t('layers') }}</span>
-    </q-item-label>
-    <q-item
-      v-for="layer in mapStore.layerSelections"
-      :key="layer.id"
-      class="q-pl-sm q-pr-sm"
-    >
-      <q-item-section>
-        <q-checkbox
-          v-model="layer.visible"
-          :label="$t(`layer.${layer.id}`)" 
-          @click="onToggleLayer(layer.id)"
-        />
-      </q-item-section> 
-      <q-item-section avatar>
-        <q-btn 
-          flat
-          round
-          icon="help_outline"
-          @click="helpStore.toggleHelp(layer.id)"
-        />
-      </q-item-section>
-    </q-item>
-  
     <q-item-label header>
       <span class="text-h6">
         <q-icon name="filter_alt" class="q-pb-xs"/>
@@ -39,7 +13,7 @@
         icon="restart_alt"
         :label="$t('reset_filters')"
         @click="onResetFilters" 
-        class="q-mt-none q-pl-xs q-pr-xs float-right "/>
+        class="q-mt-none q-mr-lg q-pl-xs q-pr-xs float-right "/>
     </q-item-label>
     <q-item>
       <q-item-section>
@@ -53,7 +27,7 @@
           emit-value
           clearable
           @update:model-value="onUpdatedFilter"
-          />
+        />
       </q-item-section>
     </q-item>
     <q-item>
@@ -73,31 +47,75 @@
         <span class="text-help">{{ $t('altitudes_help') }}</span>
       </q-item-section>
     </q-item>
-
-    <q-item-label header class="text-h6">
-      <q-icon name="info" class="q-pb-xs"/>
-      <span class="q-ml-sm">{{ $t('legends') }}</span>
-    </q-item-label>
-    <q-item-label>
-      <span class="q-ml-md">{{ $t('number_of_buildings') }}</span>
-    </q-item-label>
-    <q-item v-for="cluster in clusterColors" :key="cluster.color">
-      <q-item-section avatar>
-        <q-avatar :color="cluster.color" text-color="black" />
-      </q-item-section>
-      <q-item-section>{{ $t(cluster.label) }}</q-item-section>
-    </q-item>
-    <q-item-label class=" q-mt-md">
-      <span class="q-ml-md">{{ $t('climate_zones') }}</span>
-    </q-item-label>
     <q-item>
-      <div class="row">
-        <div v-for="zone in climateZonesColors" :key="zone.color" :title="zone.title" class="col-4">
-          <q-icon name="square" :style="`color: ${zone.color}`" size="sm"/>
-          <span class="q-pl-md">{{ zone.label }}</span>
-        </div>
-      </div>
+      <q-item-section>
+        <q-select
+          v-model="filtersStore.ventilations"
+          :options="ventilationOptions"
+          :label="$t('ventilations')"
+          :hint="$t('ventilations_hint')"
+          multiple
+          use-chips
+          emit-value
+          map-options
+          clearable
+          @update:model-value="onUpdatedFilter"
+        />
+      </q-item-section>
     </q-item>
+
+    <template v-if="isMapPage">
+      <q-item-label header class="text-h6">
+        <q-icon name="layers" class="q-pb-xs"/>
+        <span class="q-ml-sm">{{ $t('layers') }}</span>
+      </q-item-label>
+      <q-item
+        v-for="layer in mapStore.layerSelections"
+        :key="layer.id"
+        class="q-pl-sm q-pr-sm"
+      >
+        <q-item-section>
+          <q-checkbox
+            v-model="layer.visible"
+            :label="$t(`layer.${layer.id}`)" 
+            @click="onToggleLayer(layer.id)"
+          />
+        </q-item-section> 
+        <q-item-section avatar>
+          <q-btn 
+            flat
+            round
+            icon="help_outline"
+            @click="helpStore.toggleHelp(layer.id)"
+          />
+        </q-item-section>
+      </q-item>
+    
+      <q-item-label header class="text-h6">
+        <q-icon name="info" class="q-pb-xs"/>
+        <span class="q-ml-sm">{{ $t('legends') }}</span>
+      </q-item-label>
+      <q-item-label>
+        <span class="q-ml-md">{{ $t('number_of_buildings') }}</span>
+      </q-item-label>
+      <q-item v-for="cluster in clusterColors" :key="cluster.color">
+        <q-item-section avatar>
+          <q-avatar :color="cluster.color" text-color="black" />
+        </q-item-section>
+        <q-item-section>{{ $t(cluster.label) }}</q-item-section>
+      </q-item>
+      <q-item-label class=" q-mt-md">
+        <span class="q-ml-md">{{ $t('climate_zones') }}</span>
+      </q-item-label>
+      <q-item>
+        <div class="row">
+          <div v-for="zone in climateZonesColors" :key="zone.color" :title="zone.title" class="col-4">
+            <q-icon name="square" :style="`color: ${zone.color}`" size="sm"/>
+            <span class="q-pl-md">{{ zone.label }}</span>
+          </div>
+        </div>
+      </q-item>
+    </template>
   </q-list>
 </template>
 
@@ -110,6 +128,10 @@ export default defineComponent({
 const mapStore = useMapStore();
 const helpStore = useHelpStore();
 const filtersStore = useFiltersStore();
+const route = useRoute();
+const { t } = useI18n();
+
+const isMapPage = computed(() => route.path === '/map')
 
 const climateOptions = [
   { value: 'Af', label: '[Af]  Tropical, rainforest',},
@@ -143,6 +165,11 @@ const climateOptions = [
   { value: 'ET', label: '[ET]  Polar, tundra',},
   { value: 'EF', label: '[EF]  Polar, frost',},
 ];
+
+const ventilationOptions = [
+  { value: 'mechanical', label: t('mechanical'),},
+  { value: 'natural', label: t('natural'),},
+]
 
 const clusterColors = [
   {

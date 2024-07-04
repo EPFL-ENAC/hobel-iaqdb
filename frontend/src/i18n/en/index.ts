@@ -28,4 +28,8 @@ export default {
   studies: 'Studies',
   buildings: 'Buildings',
   rooms: 'Rooms',
+  mechanical: 'Mechanical',
+  natural: 'Natural',
+  ventilations: 'Ventilations',
+  ventilations_hint: 'The room ventilation system.'
 };

@@ -55,7 +55,8 @@ export const useCatalogStore = defineStore('catalog', () => {
     return {
       altmin: altitudes.min === DEFAULT_ALTITUDES.min ? undefined : altitudes.min,
       altmax: altitudes.max === DEFAULT_ALTITUDES.max ? undefined : altitudes.max,
-      climates: filterStore.climateZones
+      climates: filterStore.climateZones,
+      ventilations: filterStore.ventilations,
     }
   }
 

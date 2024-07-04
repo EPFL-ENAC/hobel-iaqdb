@@ -3,6 +3,7 @@ import { defineStore } from 'pinia';
 export type FilterParams = {
   altitudes: [number, number]
   climateZones: string[] | null
+  ventilations: string[] | null
 }
 
 export const DEFAULT_ALTITUDES = { min: 0, max: 2500 };
@@ -11,12 +12,14 @@ export const useFiltersStore = defineStore('filters', () => {
 
   const altitudes = ref({...DEFAULT_ALTITUDES});
   const climateZones = ref(null);
+  const ventilations = ref(null);
 
   const updates = ref(0);
 
   function reset() {
     altitudes.value = {...DEFAULT_ALTITUDES};
     climateZones.value = null;
+    ventilations.value = null;
   }
 
   function notifyUpdate() {
@@ -26,13 +29,15 @@ export const useFiltersStore = defineStore('filters', () => {
   function asParams(): FilterParams {
     return {
       altitudes: [altitudes.value.min, altitudes.value.max],
-      climateZones: climateZones.value ? [...climateZones.value] : []
+      climateZones: climateZones.value ? [...climateZones.value] : [],
+      ventilations: ventilations.value ? [...ventilations.value] : [],
     }
   }
 
   return {
     altitudes,
     climateZones,
+    ventilations,
     updates,
     reset,
     asParams,
