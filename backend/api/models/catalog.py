@@ -16,6 +16,11 @@ class Person(BaseModel):
     institution: str
 
 
+class GreenCertification(BaseModel):
+    program: str
+    level: str
+
+
 class Study(Document):
     identifier: str
     name: str
@@ -49,9 +54,14 @@ class Building(Document):
     altitude: int
     climate_zone: str
     location: List[float]  # [long, lat]
+    type: Optional[str] = None                # ex: school
+    special_population: Optional[str] = None  # ex: children
+    outdoor_env: Optional[Literal["rural",
+                                  "urban", "suburban", "other"]] = None
+    construction_year: Optional[int] = None
+    renovation_year: Optional[int] = None
+    certifications: Optional[List[GreenCertification]] = None
     study: Link[Study]
-    # rooms: Optional[List[Link["Room"]]]
-    # study: BackLink[Study] = Field(original_field="buildings")
 
     class Settings:
         name = "buildings"
@@ -74,8 +84,8 @@ class BuildingsResult(ListResult):
 class Room(Document):
     identifier: str
     space: str
-    ventilation: Literal['natural', 'mechanical', 'NA']
-    smoking: Literal['yes', 'no', 'NA']
+    ventilation: Literal["natural", "mechanical", "NA"]
+    smoking: Literal["yes", "no", "NA"]
     study: Link[Study]
     building: Link[Building]
 

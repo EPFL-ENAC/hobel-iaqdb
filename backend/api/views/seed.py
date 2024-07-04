@@ -17,38 +17,7 @@ class SeedStatus(BaseModel):
 @router.put("")
 async def seed() -> SeedStatus:
     fake = Faker()
-    climate_zones = [
-        "Af",
-        "Am",
-        "Aw",
-        "BWh",
-        "BWk",
-        "BSh",
-        "BSk",
-        "Csa",
-        "Csb",
-        "Csc",
-        "Cwa",
-        "Cwb",
-        "Cwc",
-        "Cfa",
-        "Cfb",
-        "Cfc",
-        "Dsa",
-        "Dsb",
-        "Dsc",
-        "Dsd",
-        "Dwa",
-        "Dwb",
-        "Dwc",
-        "Dwd",
-        "Dfa",
-        "Dfb",
-        "Dfc",
-        "Dfd",
-        "ET",
-        "EF",
-    ]
+    outdoor_envs = ["rural", "urban", "suburban", "other"]
     spaces = ["outdoor", "classroom", "NA"]
     ventilation = ["natural", "mechanical", "NA"]
     smoking = ["yes", "no", "NA"]
@@ -80,6 +49,10 @@ async def seed() -> SeedStatus:
                                 altitude=elevation.altitude,
                                 climate_zone=zone.name,
                                 location=[place[1], place[0]],
+                                outdoor_env=fake.word(
+                                    ext_word_list=outdoor_envs),
+                                construction_year=(study.start_year - 1),
+                                renovation_year=(study.start_year + 9),
                                 study=study)
             building = await Building.insert_one(building)
 

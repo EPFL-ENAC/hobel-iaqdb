@@ -107,7 +107,8 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
     // the location of the feature, with
     // description HTML from its properties.
     map.on('click', 'buildings-unclustered-point', (e) => {
-      const feature = e.features ? e.features[0] : null;
+      if (!e.features) return;
+      const feature = e.features[0];
       if (!feature) return;
       
 
@@ -119,17 +120,18 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
         coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
       }
 
-      const rows = Object.keys(feature.properties)
+      const tables = e.features.map((feat) => {
+        const rows = Object.keys(feat.properties)
         .filter((key) => key !== 'slug')
         .map((key) => {
-          return `<tr><td>${key}</td><td>${feature.properties[key]}</td></tr>`
+          return `<tr><td>${key}</td><td>${feat.properties[key]}</td></tr>`
         }).join('');
 
+        return `<table>${rows}</table>`
+      }).join('<hr class="q-separator q-separator--horizontal">');
       new Popup()
         .setLngLat(coordinates)
-        .setHTML(
-          `<table>${rows}</table>`
-        )
+        .setHTML(tables)
         .addTo(map);
     });
 
@@ -170,4 +172,21 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
     (map.getSource('buildings') as GeoJSONSource).setData(filteredData);
   }
 
+  spiderfyFeatures(features: Feature[], center: number[], radius = 20) {
+    const angleStep = (2 * Math.PI) / features.length;
+    return features.map((feature, i) => {
+      const angle = i * angleStep;
+      const xOffset = radius * Math.cos(angle);
+      const yOffset = radius * Math.sin(angle);
+  
+      return {
+        ...feature,
+        geometry: {
+          ...feature.geometry,
+          coordinates: [center[0] + xOffset, center[1] + yOffset]
+        }
+      };
+    });
+  }
+  
 }
