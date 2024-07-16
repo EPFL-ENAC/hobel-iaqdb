@@ -28,6 +28,10 @@ li + li {
   margin-top: 10px;
 }
 
+p:last-child {
+  margin-bottom: 0;
+}
+
 .text-logo {
   color: red;
   font-family: 'Helvetica';

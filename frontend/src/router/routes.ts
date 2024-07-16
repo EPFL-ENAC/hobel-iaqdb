@@ -5,7 +5,8 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     component: () => import('layouts/SimpleLayout.vue'),
     children: [
-      { path: '', component: () => import('pages/HomePage.vue') }
+      { path: '', component: () => import('pages/HomePage.vue') },
+      { path: '/study/:id', component: () => import('src/pages/StudyPage.vue') },
     ],
   },
   {
@@ -13,6 +14,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('layouts/MainLayout.vue'),
     children: [
       { path: '/map', component: () => import('src/pages/MapPage.vue') },
+      { path: '/catalog', component: () => import('src/pages/CatalogPage.vue') },
       { path: '/search', component: () => import('src/pages/SearchPage.vue') },
     ],
   },

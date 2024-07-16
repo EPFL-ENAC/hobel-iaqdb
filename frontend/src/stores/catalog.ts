@@ -1,10 +1,13 @@
 import { defineStore } from 'pinia';
 import { api } from 'src/boot/api';
-import { StudiesResult, BuildingsResult, RoomsResult } from 'src/models';
+import { Study, Building, StudiesResult, BuildingsResult, RoomsResult } from 'src/models';
 import { DEFAULT_ALTITUDES } from 'src/stores/filters';
 
 
 export const useCatalogStore = defineStore('catalog', () => {
+
+  const study = ref<Study>();
+  const buildings = ref<Building[]>([]);
 
   const filterStore = useFiltersStore();
 
@@ -60,10 +63,28 @@ export const useCatalogStore = defineStore('catalog', () => {
     }
   }
 
+  async function loadStudy(id: string) {
+    // 66866e82e2a2c5f0504c88f2
+    return api.get(`/catalog/study/${id}`).then((response) => {
+      study.value = response.data;
+      return loadStudyBuildings();
+    });
+  }
+
+  async function loadStudyBuildings() {
+    buildings.value = [];
+    return api.get(`/catalog/study/${study.value?._id}/buildings`).then((response) => {
+      buildings.value = response.data;
+    })
+  }
+
   return {
     loadStudies,
     loadBuildings,
-    loadRooms
+    loadRooms,
+    loadStudy,
+    study,
+    buildings
   }
 
 });

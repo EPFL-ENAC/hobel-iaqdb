@@ -25,8 +25,8 @@
         exact
       />
       <q-route-tab
-        :label="$t('search')"
-        to="/search"
+        :label="$t('catalog')"
+        to="/catalog"
         exact
       />
     </q-tabs>

@@ -8,6 +8,7 @@
       v-model:pagination="pagination"
       :loading="loading"
       @request="onRequest"
+      @row-click="onRowClick"
       ></q-table>
   </div>
 </template>
@@ -22,6 +23,7 @@ import { Study, StudiesResult } from 'src/models';
 
 const catalogStore = useCatalogStore();
 const filtersStore = useFiltersStore();
+const router = useRouter();
 
 const tableRef = ref();
 const rows = ref<Study[]>([]);
@@ -63,5 +65,9 @@ function onRequest (props) {
       // ...and turn of loading indicator
       loading.value = false
     });
+}
+
+function onRowClick(evt, val: Study) {
+  router.push(`/study/${val._id}`);
 }
 </script>

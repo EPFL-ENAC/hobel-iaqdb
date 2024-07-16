@@ -29,7 +29,7 @@ async def getStudies(skip: int = Query(0), limit: int = Query(100), altmin: int 
     return StudiesResult(total=count, skip=skip, limit=limit, data=data)
 
 
-@router.get("/study/){id}")
+@router.get("/study/{id}")
 async def getStudy(id: PydanticObjectId) -> Study:
     return await Study.get(id)
 

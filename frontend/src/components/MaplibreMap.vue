@@ -2,15 +2,8 @@
   <div v-if="loading" class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90">
     <q-spinner-dots color="primary" size="100px" />
   </div>
-  <div id="maplibre-map"></div>
+  <div id="maplibre-map" :style="`height: ${height}; width: ${width};`"></div>
 </template>
-
-<style scoped>
-#maplibre-map {
-  height: 95vh;
-  width: 100vw;
-}
-</style>
 
 <script lang="ts">
 export default defineComponent({
@@ -48,7 +41,10 @@ interface Props {
   themes?: ThemeDefinition[]
   position?: boolean | string | undefined
   geocoder?: boolean | string | undefined
-  attribution?: string
+  attribution?: string,
+  height?: string,
+  width?: string,
+  navigation?: boolean,
 }
 const props = withDefaults(defineProps<Props>(), {
   styleSpec: 'style.json',
@@ -58,7 +54,9 @@ const props = withDefaults(defineProps<Props>(), {
   minZoom: 0,
   maxZoom: undefined,
   position: false,
-  geocoder: false
+  geocoder: false,
+  height: '95vh',
+  width: '100vw',
 });
 
 const emit = defineEmits(['map:loaded', 'map:click'])
