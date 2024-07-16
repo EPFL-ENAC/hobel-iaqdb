@@ -42,7 +42,6 @@ import { Map } from 'maplibre-gl';
 
 const catalogStore = useCatalogStore();
 const mapStore = useMapStore();
-const filtersStore = useFiltersStore();
 
 const pagination = ref({
   sortBy: '_id',
@@ -91,7 +90,9 @@ const columms = computed(() => {
 
 function onMapLoaded(map: Map) {
   mapStore.initLayers(map).then(() => {
-    mapStore.applyFilters(filtersStore.asParams());
+    mapStore.applyFilters({
+      study_ids: [catalogStore.study?._id]
+    });
   });
 }
 </script>

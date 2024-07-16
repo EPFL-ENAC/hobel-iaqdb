@@ -122,12 +122,12 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
 
       const tables = e.features.map((feat) => {
         const rows = Object.keys(feat.properties)
-        .filter((key) => key !== 'slug')
+        .filter((key) => !['id', 'study_id'].includes(key))
         .map((key) => {
           return `<tr><td>${key}</td><td>${feat.properties[key]}</td></tr>`
         }).join('');
 
-        return `<table>${rows}</table>`
+        return `<a href="#/study/${feat.properties['study_id']}" class="epfl">Study</a></div><table>${rows}</table><div>`
       }).join('<hr class="q-separator q-separator--horizontal">');
       new Popup()
         .setLngLat(coordinates)
@@ -159,12 +159,18 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
 
     const filteredFeatures = this.buildingsData.features
       .filter((feature: Feature<Geometry, GeoJsonProperties>) => {
-        let filtered = feature.properties?.altitude >= filter.altitudes[0] && feature.properties?.altitude <= filter.altitudes[1];
+        let filtered = true;
+        if (filter.altitudes) {
+          filtered = feature.properties?.altitude >= filter.altitudes[0] && feature.properties?.altitude <= filter.altitudes[1];
+        }
         if (filtered && filter.climateZones && filter.climateZones.length) {
           filtered = filter.climateZones.includes(feature.properties?.climate_zone);
         }
         if (filtered && filter.ventilations && filter.ventilations.length) {
           filtered = filter.ventilations.filter((vent) => feature.properties?.ventilations.includes(vent)).length>0;
+        }
+        if (filtered && filter.study_ids && filter.study_ids.length) {
+          filtered = filter.study_ids.includes(feature.properties?.study_id);
         }
         return filtered;
       });

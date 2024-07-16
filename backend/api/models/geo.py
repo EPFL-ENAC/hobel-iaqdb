@@ -8,12 +8,14 @@ class Geometry(BaseModel):
 
 
 class BuildingProperties(BaseModel):
+    id: str
     identifier: str
     country: str
     city: str
     altitude: int
     climate_zone: str
     ventilations: str
+    study_id: str
 
 
 class BuildingFeature(BaseModel):

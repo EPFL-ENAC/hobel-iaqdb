@@ -4,6 +4,7 @@ export type FilterParams = {
   altitudes: [number, number]
   climateZones: string[] | null
   ventilations: string[] | null
+  study_ids: string[] | null
 }
 
 export const DEFAULT_ALTITUDES = { min: 0, max: 2500 };
@@ -31,6 +32,7 @@ export const useFiltersStore = defineStore('filters', () => {
       altitudes: [altitudes.value.min, altitudes.value.max],
       climateZones: climateZones.value ? [...climateZones.value] : [],
       ventilations: ventilations.value ? [...ventilations.value] : [],
+      study_ids: []
     }
   }
 

@@ -18,11 +18,13 @@ async def getBuildings() -> BuildingFeatures:
         ventilations = "|".join(
             map(lambda agg: agg["_id"], filter(lambda agg: agg["count"] > 0, roomAggs)))
         geometry = Geometry(coordinates=building.location, type="Point")
-        properties = BuildingProperties(identifier=building.identifier,
+        properties = BuildingProperties(id=str(building.id),
+                                        identifier=building.identifier,
                                         country=building.country, city=building.city,
                                         climate_zone=building.climate_zone,
                                         altitude=building.altitude,
-                                        ventilations=ventilations)
+                                        ventilations=ventilations,
+                                        study_id=str(building.study.ref.id))
         feature = BuildingFeature(
             geometry=geometry, properties=properties, type="Feature")
         features.append(feature)
