@@ -32,7 +32,7 @@ interface Props {
   content?: string;
 }
 const props = defineProps<Props>();
-const emit = defineEmits(['update:modelValue', 'confirm', 'cancel'])
+const emit = defineEmits(['update:modelValue'])
 
 const showDialog = ref(props.modelValue);
 

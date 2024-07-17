@@ -1,1 +1,1 @@
-The datasets supported formats are.... The dataset files must be named by the associated room unique identifier you have declared in the previous step.
+In this step, you will upload some datasets. The datasets supported formats are delimiter-separated ones, such as CSV (comma-separated) or TSV (tab-separated). A preview of the content of file will be proposed for validation. The dataset dictionary needs to be qualified. Finally, the dataset is to be asociated to one of the building room declared in the previous step.

@@ -50,7 +50,7 @@
         :header-nav="step > 3"
       >
         <q-markdown no-heading-anchor-links :src="StepDatasetsMd" />
-        <pre>{{ contrib.study }}</pre>
+        <datasets-form class="q-mt-lg"/>
         <q-stepper-navigation>
           <q-btn color="primary" @click="done3 = true" label="Finish" />
           <q-btn flat @click="step = 2" color="primary" label="Back" class="on-right" />
@@ -63,7 +63,7 @@
 
 <script lang="ts">
 export default defineComponent({
-  components: { BuildingsForm },
+  components: { BuildingsForm, DatasetsForm },
   name: 'StudyStepper',
 });
 </script>
@@ -72,11 +72,10 @@ import StepStudyMd from 'src/assets/step-study.md';
 import StepBuildingsMd from 'src/assets/step-buildings.md';
 import StepDatasetsMd from 'src/assets/step-datasets.md';
 import StudyForm from 'src/components/contribute/StudyForm.vue';
-import BuildingsForm from 'src/components/contribute/BuildingsForm.vue';  
+import BuildingsForm from 'src/components/contribute/BuildingsForm.vue'; 
+import DatasetsForm from './DatasetsForm.vue';
 
 const emit = defineEmits(['pause']);
-
-const contrib = useContributeStore();
 
 const step = ref(1);
 
