@@ -28,8 +28,7 @@
 
       <q-step
         :name="2"
-        title="Buildings information"
-        caption="Optional"
+        title="Buildings and rooms information"
         icon="domain"
         :done="step > 2"
         :header-nav="step > 2"

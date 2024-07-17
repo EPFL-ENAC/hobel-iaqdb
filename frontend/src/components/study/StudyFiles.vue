@@ -1,22 +1,19 @@
 <template>
   <div>
     <div class="row">
-      <div class="col">
-        <q-btn
+      <q-btn
+        flat
         color="primary"
         icon="download"
         no-caps
         :label="$t('download')"
         class="" />
-      </div>
-      <div class="col">
-        <q-input ref="filterRef" v-model="filter" label="Filter" style="width: 200px">
+      <q-space />
+      <q-input ref="filterRef" v-model="filter" label="Filter" style="width: 200px" dense>
         <template v-slot:append>
           <q-icon v-if="filter !== ''" name="clear" class="cursor-pointer" @click="resetFilter" />
         </template>
       </q-input>
-      </div>
-      
     </div>
 
     <q-card flat bordered class="q-mt-md bg-grey-2">
@@ -25,7 +22,6 @@
           :nodes="simple"
           node-key="label"
           :filter="filter"
-          default-expand-all
         />
         </q-card-section>
       </q-card>
@@ -39,39 +35,67 @@ export default defineComponent({
 });
 </script>
 <script setup lang="ts">
+
+const catalogStore = useCatalogStore();
+
 const filter = ref('');
 const filterRef = ref(null);
 
-const simple = [
+const study = computed(() => catalogStore.study);
+const buildings = computed(() => catalogStore.buildings);
+const rooms = computed(() => catalogStore.rooms);
+
+const simple = computed(() =>  [
     {
-      label: 'Satisfied customers',
+      label: study.value?.name,
       children: [
+        { label: 'README.md' },
+        { label: 'License.md' },
+        { label: 'study.json' },
         {
-          label: 'Good food',
-          children: [
-            { label: 'Quality ingredients' },
-            { label: 'Good recipe' }
-          ]
+          label: 'buildings',
+          children: buildings.value.map((bld) => {
+            return {
+              label: bld.identifier,
+              children: [
+                { label: 'building.json' },
+                {
+                  label: 'rooms',
+                  children: rooms.value.filter((rm) => rm.building.identifier === bld.identifier).map((rm) => {
+                    return {
+                      label: rm.identifier,
+                      children: [
+                        { label: 'room.json' },
+                        {
+                          label: 'datasets',
+                          children: [
+                            'co2_atmotube',
+                            'pm_atmotube',
+                            'ufp_discmini',
+                            'co2_rotronic',
+                            'radon_radonscout',
+                          ].map((ds) => {
+                            return {
+                              label: ds,
+                              children:[
+                                { label: 'dictionary.json' },
+                                { label: 'data.csv' },
+                                { label: 'dataset.json' }
+                              ]
+                            }
+                          })
+                        }
+                      ]
+                    }
+                  })
+                }
+              ]
+            }
+          })
         },
-        {
-          label: 'Good service (disabled node)',
-          disabled: true,
-          children: [
-            { label: 'Prompt attention' },
-            { label: 'Professional waiter' }
-          ]
-        },
-        {
-          label: 'Pleasant surroundings',
-          children: [
-            { label: 'Happy atmosphere' },
-            { label: 'Good table presentation' },
-            { label: 'Pleasing decor' }
-          ]
-        }
       ]
     }
-  ]
+  ]);
 
 function resetFilter () {
   filter.value = ''

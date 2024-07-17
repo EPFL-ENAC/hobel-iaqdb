@@ -7,10 +7,10 @@
       <q-card-section>
 
         <q-stepper
-        flat
+          flat
           v-model="step"
           vertical
-          color="primary"
+          color="secondary"
           animated
         >
           <q-step
@@ -34,7 +34,7 @@
             </div>
 
             <q-stepper-navigation>
-              <q-btn @click="step = 2" color="primary" label="Continue" :disable="!localFile" />
+              <q-btn @click="step = 2" color="secondary" label="Next" :disable="!localFile" />
             </q-stepper-navigation>
           </q-step>
 
@@ -58,8 +58,8 @@
             </div>
 
             <q-stepper-navigation>
-              <q-btn @click="step = 3" color="primary" label="Continue" />
-              <q-btn flat @click="step = 1" color="primary" label="Back" class="q-ml-sm" />
+              <q-btn @click="step = 3" color="secondary" label="Next" />
+              <q-btn flat @click="step = 1" color="secondary" label="Previous" class="q-ml-sm" />
             </q-stepper-navigation>
           </q-step>
 
@@ -90,7 +90,7 @@
             </q-list>
 
             <q-stepper-navigation>
-              <q-btn flat @click="step = 2" color="primary" label="Back" />
+              <q-btn flat @click="step = 2" color="secondary" label="Previous" />
             </q-stepper-navigation>
           </q-step>
         </q-stepper>
