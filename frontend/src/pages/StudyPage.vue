@@ -4,7 +4,7 @@
     <div class="row">
       <div class="col"></div>
       <div class="col-10">
-        <span class="text-h4">{{ catalogStore.study?.identifier }}</span>
+        <span class="text-h4">{{ catalogStore.study?.name }}</span>
       </div>
       <div class="col"></div>
     </div>

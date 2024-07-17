@@ -2,8 +2,8 @@
   <div>
     <div>
       <div>
-        <div class="float-left text-bold">{{ catalogStore.study?.start_year }}</div>
-        <div class="float-right text-bold">{{ catalogStore.study?.end_year }}</div>
+        <div class="float-left text-bold">{{ study?.start_year }}</div>
+        <div class="float-right text-bold">{{ study?.end_year }}</div>
       </div>
       <q-linear-progress stripe size="30px" color="secondary" :value="progress">
         <div class="absolute-full flex flex-center">
@@ -11,11 +11,14 @@
         </div>
       </q-linear-progress>
     </div>
-    <fields-list :dbobject="catalogStore.study" :items="items"/>
+    <fields-list :dbobject="study" :items="items"/>
     <div class="text-bold q-mt-md">{{ $t('Contact') }}</div>
-    <fields-list :dbobject="catalogStore.study" :items="contactItems"/>
+    <fields-list :dbobject="study" :items="contactItems"/>
     <div class="text-bold q-mt-md">{{ $t('Reference') }}</div>
-    <fields-list :dbobject="catalogStore.study" :items="refItems"/>
+    <fields-list :dbobject="study" :items="refItems"/>
+    <div class="q-mt-md">
+      <span class="text-bold">IAQ ID</span>: {{ study?.identifier }}
+    </div>
   </div>
 </template>
 

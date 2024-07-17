@@ -96,6 +96,7 @@
     "useFiltersStore": true,
     "useSettingsStore": true,
     "useCatalogStore": true,
-    "DEFAULT_ALTITUDES": true
+    "DEFAULT_ALTITUDES": true,
+    "useContributeStore": true
   }
 }

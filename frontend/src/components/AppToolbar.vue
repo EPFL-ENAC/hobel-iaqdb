@@ -29,6 +29,11 @@
         to="/catalog"
         exact
       />
+      <q-route-tab
+        :label="$t('contribute')"
+        to="/contribute"
+        exact
+      />
     </q-tabs>
     <q-space />
     <span v-if="!$q.screen.lt.md">
@@ -60,9 +65,14 @@
               <q-item-label>{{ $t('home') }}</q-item-label>
             </q-item-section>
           </q-item>
-          <q-item v-if="$q.screen.lt.sm" clickable v-close-popup to="/search">
+          <q-item v-if="$q.screen.lt.sm" clickable v-close-popup to="/catalog">
             <q-item-section>
-              <q-item-label>{{ $t('search') }}</q-item-label>
+              <q-item-label>{{ $t('catalog') }}</q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-item v-if="$q.screen.lt.sm" clickable v-close-popup to="/contribute">
+            <q-item-section>
+              <q-item-label>{{ $t('contribute') }}</q-item-label>
             </q-item-section>
           </q-item>
           <q-separator v-if="$q.screen.lt.sm" />

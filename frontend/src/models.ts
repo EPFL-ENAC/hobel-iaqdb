@@ -1,14 +1,23 @@
 export interface DBModel {
-  _id: string;
+  _id?: string;
   [Key: string]: unknown;
 }
 
+export interface Person {
+  name: string;
+  email: string;
+  institution: string;
+}
+
 export interface Building extends DBModel {
-  slug: string;
+  identifier: string;
   country: string;
   city: string;
-  altitude: number;
-  climate_zone: string;
+  altitude?: number;
+  climate_zone?: string;
+  longitude?: number;
+  latitude?: number;
+  rooms?: Room[]
 }
 
 interface ListResult {
@@ -22,11 +31,13 @@ export interface BuildingsResult extends ListResult {
 }
 
 export interface Study extends DBModel {
-  slug: string;
+  identifier: string;
   name: string;
   description: string;
-  start_year: number;
-  end_year: number;
+  start_year?: number;
+  end_year?: number;
+  contact?: Person;
+  buildings?: Building[]
 }
 
 export interface StudiesResult extends ListResult {
@@ -34,8 +45,9 @@ export interface StudiesResult extends ListResult {
 }
 
 export interface Room extends DBModel {
-  slug: string;
+  identifier: string;
   space: string;
+  occupancy: string;
   ventilation: string;
   smoking: string;
 }

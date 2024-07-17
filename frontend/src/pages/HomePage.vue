@@ -13,7 +13,7 @@
           flat
           color="primary"
           :label="$t('search')"
-          to="/search"
+          to="/map"
         />
       </div>
       <div class="col"></div>

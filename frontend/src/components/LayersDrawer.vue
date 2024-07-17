@@ -125,51 +125,14 @@ export default defineComponent({
 });
 </script>
 <script setup lang="ts">
+import { climateOptions, ventilationOptions } from 'src/utils/options';
+
 const mapStore = useMapStore();
 const helpStore = useHelpStore();
 const filtersStore = useFiltersStore();
 const route = useRoute();
-const { t } = useI18n();
 
 const isMapPage = computed(() => route.path === '/map')
-
-const climateOptions = [
-  { value: 'Af', label: '[Af]  Tropical, rainforest',},
-  { value: 'Am', label: '[Am]  Tropical, monsoon',},
-  { value: 'Aw', label: '[Aw]  Tropical, savannah',},
-  { value: 'BWh', label: '[BWh] Arid, desert, hot',},
-  { value: 'BWk', label: '[BWk] Arid, desert, cold',},
-  { value: 'BSh', label: '[BSh] Arid, steppe, hot',},
-  { value: 'BSk', label: '[BSk] Arid, steppe, cold',},
-  { value: 'Csa', label: '[Csa] Temperate, dry summer, hot summer',},
-  { value: 'Csb', label: '[Csb] Temperate, dry summer, warm summer',},
-  { value: 'Csc', label: '[Csc] Temperate, dry summer, cold summer',},
-  { value: 'Cwa', label: '[Cwa] Temperate, dry winter, hot summer',},
-  { value: 'Cwb', label: '[Cwb] Temperate, dry winter, warm summer',},
-  { value: 'Cwc', label: '[Cwc] Temperate, dry winter, cold summer',},
-  { value: 'Cfa', label: '[Cfa] Temperate, no dry season, hot summer',},
-  { value: 'Cfb', label: '[Cfb] Temperate, no dry season, warm summer',},
-  { value: 'Cfc', label: '[Cfc] Temperate, no dry season, cold summer',},
-  { value: 'Dsa', label: '[Dsa] Cold, dry summer, hot summer',},
-  { value: 'Dsb', label: '[Dsb] Cold, dry summer, warm summer',},
-  { value: 'Dsc', label: '[Dsc] Cold, dry summer, cold summer',},
-  { value: 'Dsd', label: '[Dsd] Cold, dry summer, very cold winter',},
-  { value: 'Dwa', label: '[Dwa] Cold, dry winter, hot summer',},
-  { value: 'Dwb', label: '[Dwb] Cold, dry winter, warm summer',},
-  { value: 'Dwc', label: '[Dwc] Cold, dry winter, cold summer',},
-  { value: 'Dwd', label: '[Dwd] Cold, dry winter, very cold winter',},
-  { value: 'Dfa', label: '[Dfa] Cold, no dry season, hot summer',},
-  { value: 'Dfb', label: '[Dfb] Cold, no dry season, warm summer',},
-  { value: 'Dfc', label: '[Dfc] Cold, no dry season, cold summer',},
-  { value: 'Dfd', label: '[Dfd] Cold, no dry season, very cold winter',},
-  { value: 'ET', label: '[ET]  Polar, tundra',},
-  { value: 'EF', label: '[EF]  Polar, frost',},
-];
-
-const ventilationOptions = [
-  { value: 'mechanical', label: t('mechanical'),},
-  { value: 'natural', label: t('natural'),},
-]
 
 const clusterColors = [
   {
