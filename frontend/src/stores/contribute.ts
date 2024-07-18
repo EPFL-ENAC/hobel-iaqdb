@@ -1,5 +1,5 @@
 import { spaceTypeOptions, occupancyOptions, ventilationOptions, yesNoOptions } from 'src/utils/options';
-
+import { v4 as uuidv4 } from 'uuid';
 import { defineStore } from 'pinia';
 import { api } from 'src/boot/api';
 import { Study, Building, Room, Person } from 'src/models'; 
@@ -9,6 +9,7 @@ export const useContributeStore = defineStore('contribute', () => {
   const study = ref<Study>({
     contact: {} as Person,
     buildings: [{
+      _id: `__${uuidv4()}`,
       identifier: '1',
       name: '',
       description: '',
@@ -17,6 +18,7 @@ export const useContributeStore = defineStore('contribute', () => {
         level: '',
       },
       rooms: [{
+        _id: `__${uuidv4()}`,
         identifier: '1',
         ...getRoomDefaults(),
       }]
@@ -28,12 +30,14 @@ export const useContributeStore = defineStore('contribute', () => {
       identifier: '1',
       contact: {} as Person,
       buildings: [{
+        _id: `__${uuidv4()}`,
         identifier: '1',
         certification: {
           name: '',
           level: '',
         },
         rooms: [{
+          _id: `__${uuidv4()}`,
           identifier: '1',
         ...getRoomDefaults(),
         }]
@@ -51,12 +55,14 @@ export const useContributeStore = defineStore('contribute', () => {
       country = study.value.buildings[study.value.buildings.length - 1].country;
     }
     study.value.buildings.push({
+      _id: `__${uuidv4()}`,
       identifier: `${id}`,
       certification: {
         name: '',
         level: '',
       },
       rooms: [{
+        _id: `__${uuidv4()}`,
         identifier: '1',
         ...getRoomDefaults(),
       }],
@@ -86,6 +92,7 @@ export const useContributeStore = defineStore('contribute', () => {
       id++;
     }
     building.rooms.push({
+      _id: `__${uuidv4()}`,
       identifier: `${id}`,
       space: spaceTypeOptions[0].value,
       occupancy: occupancyOptions[0].value,

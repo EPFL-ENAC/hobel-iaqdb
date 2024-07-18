@@ -55,12 +55,12 @@ const buildings = computed(() => catalogStore.buildings);
 
 const columms = computed(() => {
   return [
-    {
-      name: 'identifier',
-      label: 'ID',
-      align: 'left',
-      field: 'identifier'
-    },
+    // {
+    //   name: 'identifier',
+    //   label: 'ID',
+    //   align: 'left',
+    //   field: 'identifier'
+    // },
     {
       name: 'city',
       label: 'City',
