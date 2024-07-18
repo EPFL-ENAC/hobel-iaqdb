@@ -15,16 +15,38 @@
           v-model="period.start_date"
           filled
           :label="$t('study.period.start_date')"
-          :hint="$t('study.period.start_date_hint')"
-        />
+          :hint="$t('study.period.start_date_hint')">
+          <template v-slot:append>
+            <q-icon name="event" class="cursor-pointer">
+              <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                <q-date v-model="period.start_date" mask="YYYY-MM-DD">
+                  <div class="row items-center justify-end">
+                    <q-btn v-close-popup label="Close" color="primary" flat />
+                  </div>
+                </q-date>
+              </q-popup-proxy>
+            </q-icon>
+          </template>
+        </q-input>
       </div>
       <div class="col">
         <q-input
           v-model="period.end_date"
           filled
           :label="$t('study.period.end_date')"
-          :hint="$t('study.period.end_date_hint')"
-        />
+          :hint="$t('study.period.end_date_hint')">
+          <template v-slot:append>
+            <q-icon name="event" class="cursor-pointer">
+              <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                <q-date v-model="period.end_date" mask="YYYY-MM-DD">
+                  <div class="row items-center justify-end">
+                    <q-btn v-close-popup label="Close" color="primary" flat />
+                  </div>
+                </q-date>
+              </q-popup-proxy>
+            </q-icon>
+          </template>
+        </q-input>
       </div>
     </div>
 

@@ -110,7 +110,7 @@ export default {
       identifier_hint: 'Period unique identifier in the room.',
       start_date: 'Start date',
       start_date_hint: 'Date at which the measurements were started.',
-      end_date: 'End year',
+      end_date: 'End date',
       end_date_hint: 'Date at which the measurements ended.',
       ventilation_strategy: 'Ventilation strategy',
       ventilation_rate: 'Ventilation rate',

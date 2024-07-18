@@ -1,6 +1,19 @@
 <template>
   <div>
-    <!-- <q-btn label="Reset" push color="white" text-color="primary" @click="step = 1" class="q-mb-md" /> -->
+    <q-card class="q-mb-lg bg-grey-3">
+      <q-card-section>
+        <div class="row">
+          <q-icon name="lightbulb" class="on-left" style="margin-top: 10px;" />
+          <div class="q-mt-sm">Tip: you can prepopulate the study, buildings, rooms etc. forms using an Excel file.</div>
+          <div>
+            <q-btn label="Import from Excel" color="secondary" icon="upload_file" outline no-caps class="on-right" />
+          </div>
+          <div>
+            <q-btn label="Download Excel template" color="grey-8" icon="download" size="sm" flat no-caps class="on-right" style="margin-top: 7px" />
+          </div>
+        </div>
+      </q-card-section>
+    </q-card>
 
     <q-stepper
       v-model="step"
