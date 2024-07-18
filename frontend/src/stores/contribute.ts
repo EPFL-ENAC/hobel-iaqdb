@@ -2,7 +2,7 @@ import { spaceTypeOptions, occupancyOptions, ventilationOptions, yesNoOptions } 
 import { v4 as uuidv4 } from 'uuid';
 import { defineStore } from 'pinia';
 import { api } from 'src/boot/api';
-import { Study, Building, Room, Person } from 'src/models'; 
+import { Study, Building, Room, Period, Person } from 'src/models'; 
 
 export const useContributeStore = defineStore('contribute', () => {
 
@@ -76,36 +76,59 @@ export const useContributeStore = defineStore('contribute', () => {
       occupancy: occupancyOptions[0].value,
       ventilation: ventilationOptions[0].value,
       smoking: yesNoOptions[2].value,
+      periods: []
     };
   }
 
   function deleteBuilding(i: number) {
-    study.value.buildings.splice(i, 1);
+    study.value.buildings?.splice(i, 1);
   }
 
   function addRoom(bId: string) {
-    const building = study.value.buildings.find((bld) => bld.identifier === bId);
+    const building = study.value.buildings?.find((bld) => bld.identifier === bId);
     if (!building) return;
 
     let id = 1;
-    while (building.rooms.find((rm) => rm.identifier === `${id}`)) {
+    while (building.rooms?.find((rm) => rm.identifier === `${id}`)) {
       id++;
     }
-    building.rooms.push({
+    building.rooms?.push({
       _id: `__${uuidv4()}`,
       identifier: `${id}`,
-      space: spaceTypeOptions[0].value,
-      occupancy: occupancyOptions[0].value,
-      ventilation: ventilationOptions[0].value,
-      smoking: yesNoOptions[2].value,
+      ...getRoomDefaults(),
     } as Room);
   }
 
   function deleteRoom(bId: string, i: number) {
-    const building = study.value.buildings.find((bld) => bld.identifier === bId);
+    const building = study.value.buildings?.find((bld) => bld.identifier === bId);
     if (!building) return;
 
-    building.rooms.splice(i, 1);
+    building.rooms?.splice(i, 1);
+  }
+
+  function addPeriod(bId: string, rId: string) {
+    const building = study.value.buildings?.find((bld) => bld.identifier === bId);
+    if (!building) return;
+    const room = building.rooms?.find((rm) => rm.identifier === rId);
+    if (!room) return;
+
+    let id = 1;
+    while (room.periods.find((prd) => prd.identifier === `${id}`)) {
+      id++;
+    }
+    room.periods.push({
+      _id: `__${uuidv4()}`,
+      identifier: `${id}`,
+    } as Period);
+  }
+
+  function deletePeriod(bId: string, rId: string, i: number) {
+    const building = study.value.buildings?.find((bld) => bld.identifier === bId);
+    if (!building) return;
+    const room = building.rooms?.find((rm) => rm.identifier === rId);
+    if (!room) return;
+
+    room.periods.splice(i, 1);
   }
 
   async function fetchAltitude(lon: number, lat: number) {
@@ -123,6 +146,8 @@ export const useContributeStore = defineStore('contribute', () => {
     deleteBuilding,
     addRoom,
     deleteRoom,
+    addPeriod,
+    deletePeriod,
     fetchAltitude,
     fetchClimateZone
   }

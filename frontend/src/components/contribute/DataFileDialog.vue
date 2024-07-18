@@ -139,6 +139,7 @@ const columns = computed(() => fields.value.map((field) => {return { name: field
 const fieldOptions = [
   { value: 'building', label: 'Building ID' },
   { value: 'room', label: 'Room ID' },
+  { value: 'period', label: 'Period ID' },
   { value: 'timestamp', label: 'Timestamp' },
   { value: 'humidity', label: 'Humidity' },
   { value: 'temperature', label: 'Temperature' },

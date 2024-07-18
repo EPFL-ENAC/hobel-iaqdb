@@ -171,11 +171,11 @@
     <div class="text-bold q-mb-md">Rooms</div>
     <q-card flat bordered class="q-mb-md bg-grey-2">
       <q-card-section>
-        <div v-if="building.rooms.length === 0" class="text-help">No rooms defined yet.</div>
+        <div v-if="building.rooms?.length === 0" class="text-help">No rooms defined yet.</div>
         <q-list separator>
           <q-item v-for="(room, i) in building.rooms" :key="room._id" class="q-pl-none q-pr-none">
             <q-item-section>
-              <room-form v-model="building.rooms[i]" class="q-mt-md"/>
+              <room-form v-model="building.rooms[i]" :building="building" class="q-mt-md"/>
             </q-item-section>
             <q-item-section side>
               <q-btn

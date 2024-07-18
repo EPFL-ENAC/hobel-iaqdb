@@ -50,8 +50,34 @@ export interface Room extends DBModel {
   occupancy: string;
   ventilation: string;
   smoking: string;
+  periods: Period[];
 }
 
 export interface RoomsResult extends ListResult {
   data: Room[]
+}
+
+export interface Period extends DBModel {
+  identifier: string;
+  start_date: string;
+  end_data: string;
+
+  ventilation_strategy: string;
+  ventilation_rate: number;
+  air_change_rate: number;
+  particle_filtration_rating: number;
+  cooling_strategy: string;
+  heating_strategy: string;
+  standalone_air_filtration: string;
+
+  combustion_sources: string;
+  major_combustion_sources: string;
+  small_combustion_sources: string;
+
+  printers: string;
+  carpets: string;
+  pets: string;
+  visible_dampness: string;
+  visible_mold: string;
+  cleaning_with_detergents: string;
 }
