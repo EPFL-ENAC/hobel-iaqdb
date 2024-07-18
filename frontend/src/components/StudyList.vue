@@ -49,7 +49,7 @@ const pagination = ref({
   sortBy: '_id',
   descending: false,
   page: 1,
-  rowsPerPage: 10,
+  rowsPerPage: 5,
   rowsNumber: 0,
 });
 const loading = ref(false);

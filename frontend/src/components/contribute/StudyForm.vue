@@ -15,13 +15,36 @@
       :hint="$t('study.description_hint')"
       class="q-mb-md"
     />
-    <q-input
-      v-model="contrib.study.url"
-      filled
-      :label="$t('study.url')"
-      :hint="$t('study.url_hint')"
-      class="q-mb-md"
-    />
+    <div class="row q-col-gutter-md q-mb-md">
+      <div class="col">
+        <q-input
+          v-model="contrib.study.url"
+          filled
+          :label="$t('study.url')"
+          :hint="$t('study.url_hint')"
+        />
+      </div>
+      <div class="col">
+        <q-select
+          v-model="contrib.study.license"
+          :options="licenseOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.license')"
+          :hint="$t('study.license_hint')"
+        >
+          <template v-slot:option="scope">
+            <q-item v-bind="scope.itemProps">
+              <q-item-section>
+                <q-item-label>{{ scope.opt.label }}</q-item-label>
+                <q-item-label caption style="max-width: 500px">{{ scope.opt.description }}</q-item-label>
+              </q-item-section>
+            </q-item>
+          </template>
+        </q-select>
+      </div>
+    </div>
 
     <div class="text-bold q-mb-md">Time range</div>
     <div class="row q-col-gutter-md q-mb-md">
@@ -32,7 +55,7 @@
           type="number"
           :label="$t('study.start_year')"
           :hint="$t('study.start_year_hint')"
-        />  
+        />
       </div>
       <div class="col">
         <q-input
@@ -41,7 +64,7 @@
           type="number"
           :label="$t('study.end_year')"
           :hint="$t('study.end_year_hint')"
-        />  
+        />
       </div>
       <div class="col">
         <q-input
@@ -50,7 +73,7 @@
           type="number"
           :label="$t('study.duration')"
           :hint="$t('study.duration_hint')"
-        />  
+        />
       </div>
     </div>
 
@@ -63,7 +86,7 @@
           filled
           :label="$t('study.contact_name')"
           :hint="$t('study.contact_name_hint')"
-        />  
+        />
       </div>
       <div class="col">
         <q-input
@@ -71,7 +94,7 @@
           filled
           :label="$t('study.contact_email')"
           :hint="$t('study.contact_email_hint')"
-        />  
+        />
       </div>
       <div class="col">
         <q-input
@@ -79,7 +102,7 @@
           filled
           :label="$t('study.contact_institution')"
           :hint="$t('study.contact_institution_hint')"
-        />  
+        />
       </div>
     </div>
 
@@ -92,7 +115,7 @@
           type="textarea"
           :label="$t('study.citation')"
           :hint="$t('study.citation_hint')"
-        />  
+        />
       </div>
       <div class="col">
         <q-input
@@ -100,7 +123,7 @@
           filled
           :label="$t('study.doi')"
           :hint="$t('study.doi_hint')"
-        />  
+        />
       </div>
     </div>
   </div>
@@ -113,5 +136,6 @@ export default defineComponent({
 });
 </script>
 <script setup lang="ts">
+import { licenseOptions } from 'src/utils/options';
 const contrib = useContributeStore();
 </script>

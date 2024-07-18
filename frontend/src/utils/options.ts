@@ -103,3 +103,22 @@ export const countryOptions = [
   { value: 'ZM', label: 'Zambia', },
   { value: 'ZW', label: 'Zimbabwe',}
 ]
+
+export const licenseOptions = [
+    { value: 'CC0', label: 'CC0 (Public Domain Dedication)', description: 'No rights reserved. Data can be used by anyone for any purpose without permission.' },
+    { value: 'CC BY', label: 'CC BY (Attribution)', description: 'Users can distribute, remix, adapt, and build upon the data, even commercially, as long as they credit the original creation.' },
+    { value: 'CC BY-SA', label: 'CC BY-SA (Attribution-ShareAlike)', description: 'Users can distribute, remix, adapt, and build upon the data, even commercially, as long as they credit the original creation and license their new creations under the identical terms.' },
+    { value: 'CC BY-NC', label: 'CC BY-NC (Attribution-NonCommercial)', description: 'Users can distribute, remix, adapt, and build upon the data non-commercially, and although their new works must also acknowledge the original and be non-commercial, they don’t have to license their derivative works on the same terms.' },
+    { value: 'CC BY-NC-SA', label: 'CC BY-NC-SA (Attribution-NonCommercial-ShareAlike)', description: 'Users can distribute, remix, adapt, and build upon the data non-commercially, as long as they credit the original creation and license their new creations under the identical terms.' },
+    { value: 'PDDL', label: 'Public Domain Dedication and License (PDDL)', description: 'Similar to CC0, it allows data to be freely used by anyone for any purpose.' },
+    { value: 'ODC-By', label: 'Attribution License (ODC-By)', description: 'Allows for the sharing, modification, and use of data as long as attribution is given.' },
+    { value: 'ODbL', label: 'Open Database License (ODbL)', description: 'Allows for the sharing, modification, and use of data as long as attribution is given, and any new datasets created from the original are shared under the same terms.' },
+    { value: 'GPL', label: 'GNU General Public License (GPL)', description: 'Allows for the sharing, modification, and use of data, but requires that any derivative works or data be distributed under the same license.' },
+    { value: 'MIT', label: 'MIT License', description: 'A permissive license that allows for reuse, including closed-source use, as long as the original license is included with any substantial portions of the dataset.' },
+    { value: 'Apache2', label: 'Apache License 2.0', description: 'Allows for the reuse of data, including for commercial purposes, as long as the original license is included, and any modifications are clearly noted.' },
+    { value: 'BSD', label: 'BSD License', description: 'A permissive license that allows for the reuse of data, including closed-source use, as long as the original license is included. There are different versions (2-clause, 3-clause) with slight variations.' },
+    { value: 'UK OGL', label: 'UK Open Government License', description: 'Allows the use, modification, and distribution of data provided attribution is given.' },
+    { value: 'Canada OGL', label: 'Canada Open Government License', description: 'Allows the use, modification, and distribution of data provided attribution is given.' },
+    { value: 'Australia OGL', label: 'Australia Open Government License', description: 'Allows the use, modification, and distribution of data provided attribution is given.' },
+    { value: 'EUPL', label: 'European Union Public License (EUPL)', description: 'A license that allows for the use, modification, and distribution of data, with the requirement that derivative works be shared under the same license.' },
+]

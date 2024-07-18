@@ -73,6 +73,16 @@
               Each column needs to be qualified, using the IAQ data schema. Unknown column will be ignored.
             </div>
 
+            <div v-if="errors.length">
+              <q-card bordered class="bg-negative text-white">
+                <div>
+                  <ul>
+                    <li v-for="msg in errors" :key="msg">{{ msg }}</li>
+                  </ul>
+                </div>
+              </q-card>
+            </div>
+
             <q-list separator>
               <q-item v-for="field in fields" :key="field" class="q-pl-none q-pr-none">
                 <q-item-section>
@@ -97,7 +107,7 @@
       </q-card-section>
       <q-card-actions v-if="$q.screen.gt.xs" align="right">
         <q-btn flat :label="$t('cancel')" color="primary" v-close-popup />
-        <q-btn :label="$t('add')" color="primary" v-close-popup />
+        <q-btn :label="$t('add')" color="primary" v-close-popup :disable="!isValid"/>
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -133,10 +143,31 @@ const fieldOptions = [
   { value: 'humidity', label: 'Humidity' },
   { value: 'temperature', label: 'Temperature' },
   { value: 'pressure', label: 'Pressure' },
-  { value: 'measure', label: 'Measure' },
+  { value: 'pm1', label: 'PM1' },
+  { value: 'pm2.5', label: 'PM2.5' },
+  { value: 'pm10', label: 'PM10' },
+  { value: 'co2', label: 'CO2' },
+  { value: 'nox', label: 'NOx' },
+  { value: 'voc', label: 'VOC' },
   { value: 'equipment', label: 'Equipment ID' },
   { value: 'other', label: 'Other' },
 ]
+
+const errors = computed(() => {
+  const rval = [];
+  if (!Object.keys(dictionary.value).find((field) => dictionary.value[field].variable === 'building')) {
+    rval.push('Building ID is missing');
+  }
+  if (!Object.keys(dictionary.value).find((field) => dictionary.value[field].variable === 'room')) {
+    rval.push('Room ID is missing');
+  }
+  if (!Object.keys(dictionary.value).find((field) => dictionary.value[field].variable === 'timestamp')) {
+    rval.push('Timestamp is missing');
+  }
+  return rval;
+});
+
+const isValid = computed(() => localFile.value && errors.value.length === 0);
 
 watch(() => props.modelValue, (value) => {
   showDialog.value = value;
