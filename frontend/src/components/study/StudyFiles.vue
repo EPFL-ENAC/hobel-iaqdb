@@ -65,7 +65,6 @@ const simple = computed(() =>  [
               children:[
                 { label: 'dictionary.json' },
                 { label: 'data.csv' },
-                { label: 'dataset.json' }
               ]
             }
           })

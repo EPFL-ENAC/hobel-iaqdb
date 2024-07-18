@@ -2,8 +2,6 @@
   <div>
     <!-- <q-btn label="Reset" push color="white" text-color="primary" @click="step = 1" class="q-mb-md" /> -->
 
-    <q-btn @click="onPause" color="secondary" label="Pause" class="q-mb-lg" />
-
     <q-stepper
       v-model="step"
       header-nav
@@ -23,6 +21,7 @@
 
         <q-stepper-navigation>
           <q-btn @click="() => { done1 = true; step = 2 }" color="primary" label="Continue" />
+          <q-btn @click="onPause" flat color="secondary" label="Pause" class="on-right" />
         </q-stepper-navigation>
       </q-step>
 
@@ -39,6 +38,7 @@
         <q-stepper-navigation>
           <q-btn @click="() => { done2 = true; step = 3 }" color="primary" label="Continue" />
           <q-btn flat @click="step = 1" color="primary" label="Back" class="on-right" />
+          <q-btn @click="onPause" flat color="secondary" label="Pause" class="on-right" />
         </q-stepper-navigation>
       </q-step>
 
@@ -51,8 +51,9 @@
         <q-markdown no-heading-anchor-links :src="StepDatasetsMd" />
         <datasets-form class="q-mt-lg"/>
         <q-stepper-navigation>
-          <q-btn color="primary" @click="done3 = true" label="Finish" />
+          <q-btn color="primary" @click="onFinish" label="Finish" />
           <q-btn flat @click="step = 2" color="primary" label="Back" class="on-right" />
+          <q-btn @click="onPause" flat color="secondary" label="Pause" class="on-right" />
         </q-stepper-navigation>
       </q-step>
     </q-stepper>
@@ -74,11 +75,15 @@ import StudyForm from 'src/components/contribute/StudyForm.vue';
 import BuildingsForm from 'src/components/contribute/BuildingsForm.vue'; 
 import DatasetsForm from './DatasetsForm.vue';
 
-const emit = defineEmits(['pause']);
+const emit = defineEmits(['pause', 'finish']);
 
 const step = ref(1);
 
 function onPause() {
   emit('pause');
+}
+
+function onFinish() {
+  emit('finish');
 }
 </script>
