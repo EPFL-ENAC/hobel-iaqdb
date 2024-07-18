@@ -24,6 +24,11 @@ a:hover.epfl {
   color: $grey-6;
 }
 
+.text-hint {
+  color: $grey-8;
+  font-size: smaller;
+}
+
 li + li {
   margin-top: 10px;
 }

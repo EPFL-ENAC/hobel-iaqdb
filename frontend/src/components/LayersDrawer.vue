@@ -17,6 +17,38 @@
     </q-item-label>
     <q-item>
       <q-item-section>
+        <span>{{ $t('timeframe') }}</span>
+        <q-range
+          v-model="timeframe"
+          :min="2000"
+          :max="2025"
+          :step="1"
+          label
+          snap
+          color="primary"
+          class="q-pr-sm"
+        />
+        <span class="text-hint">{{ $t('timeframe_help') }}</span>
+      </q-item-section>
+    </q-item>
+    <q-item>
+      <q-item-section>
+        <q-select
+          v-model="buildingTypes"
+          :options="buildingTypeOptions"
+          :label="$t('study.building.type')"
+          :hint="$t('study.building.type_hint')"
+          multiple
+          use-chips
+          emit-value
+          map-options
+          clearable
+          @update:model-value="onUpdatedFilter"
+        />
+      </q-item-section>
+    </q-item>
+    <q-item>
+      <q-item-section>
         <q-select
           v-model="filtersStore.climateZones"
           :options="climateOptions"
@@ -44,7 +76,7 @@
           @change="onUpdatedFilter"
           class="q-pr-sm"
         />
-        <span class="text-help">{{ $t('altitudes_help') }}</span>
+        <span class="text-hint">{{ $t('altitudes_help') }}</span>
       </q-item-section>
     </q-item>
     <q-item>
@@ -54,6 +86,22 @@
           :options="ventilationOptions"
           :label="$t('ventilations')"
           :hint="$t('ventilations_hint')"
+          multiple
+          use-chips
+          emit-value
+          map-options
+          clearable
+          @update:model-value="onUpdatedFilter"
+        />
+      </q-item-section>
+    </q-item>
+    <q-item>
+      <q-item-section>
+        <q-select
+          v-model="vocs"
+          :options="vocOptions"
+          :label="$t('voc')"
+          :hint="$t('voc_hint')"
           multiple
           use-chips
           emit-value
@@ -125,12 +173,20 @@ export default defineComponent({
 });
 </script>
 <script setup lang="ts">
-import { climateOptions, ventilationOptions } from 'src/utils/options';
+import { climateOptions, ventilationOptions, buildingTypeOptions, vocOptions } from 'src/utils/options';
 
 const mapStore = useMapStore();
 const helpStore = useHelpStore();
 const filtersStore = useFiltersStore();
 const route = useRoute();
+
+// mock filters
+const timeframe = ref({
+  min: 2000,
+  max: 2025
+});
+const buildingTypes = ref([]);
+const vocs = ref([]);
 
 const isMapPage = computed(() => route.path === '/map')
 
@@ -189,6 +245,13 @@ function onToggleLayer(layerId: string) {
 
 function onResetFilters() {
   filtersStore.reset();
+  // mock filters
+  timeframe.value = {
+    min: 2000,
+    max: 2025
+  };
+  buildingTypes.value = [];
+  vocs.value = [];
   onUpdatedFilter();
 }
 
