@@ -17,7 +17,7 @@
     </q-item-label>
     <q-item>
       <q-item-section>
-        <span>{{ $t('timeframe') }}</span>
+        <div class="text-grey-8">{{ $t('timeframe') }}</div>
         <q-range
           v-model="timeframe"
           :min="2000"
@@ -28,11 +28,7 @@
           color="primary"
           class="q-pr-sm"
         />
-        <span class="text-hint">{{ $t('timeframe_help') }}</span>
-      </q-item-section>
-    </q-item>
-    <q-item>
-      <q-item-section>
+        <div class="text-hint">{{ $t('timeframe_help') }}</div>
         <q-select
           v-model="buildingTypes"
           :options="buildingTypeOptions"
@@ -43,12 +39,35 @@
           emit-value
           map-options
           clearable
+          dense
           @update:model-value="onUpdatedFilter"
         />
-      </q-item-section>
-    </q-item>
-    <q-item>
-      <q-item-section>
+        <q-select
+          v-model="populations"
+          :options="populationOptions"
+          :label="$t('study.building.population')"
+          :hint="$t('study.building.population_hint')"
+          multiple
+          use-chips
+          emit-value
+          map-options
+          clearable
+          dense
+          @update:model-value="onUpdatedFilter"
+        />
+        <q-select
+          v-model="outdoorEnvs"
+          :options="outdoorEnvOptions"
+          :label="$t('study.building.outdoor_env')"
+          :hint="$t('study.building.outdoor_env_hint')"
+          multiple
+          use-chips
+          emit-value
+          map-options
+          clearable
+          dense
+          @update:model-value="onUpdatedFilter"
+        />
         <q-select
           v-model="filtersStore.climateZones"
           :options="climateOptions"
@@ -58,13 +77,10 @@
           use-chips
           emit-value
           clearable
+          dense
           @update:model-value="onUpdatedFilter"
         />
-      </q-item-section>
-    </q-item>
-    <q-item>
-      <q-item-section>
-        <span>{{ $t('altitudes') }}</span>
+        <div class="q-mt-md text-grey-8">{{ $t('altitudes') }}</div>
         <q-range
           v-model="filtersStore.altitudes"
           :min="0"
@@ -76,11 +92,7 @@
           @change="onUpdatedFilter"
           class="q-pr-sm"
         />
-        <span class="text-hint">{{ $t('altitudes_help') }}</span>
-      </q-item-section>
-    </q-item>
-    <q-item>
-      <q-item-section>
+        <div class="text-hint">{{ $t('altitudes_help') }}</div>
         <q-select
           v-model="filtersStore.ventilations"
           :options="ventilationOptions"
@@ -91,12 +103,9 @@
           emit-value
           map-options
           clearable
+          dense
           @update:model-value="onUpdatedFilter"
         />
-      </q-item-section>
-    </q-item>
-    <q-item>
-      <q-item-section>
         <q-select
           v-model="vocs"
           :options="vocOptions"
@@ -107,6 +116,7 @@
           emit-value
           map-options
           clearable
+          dense
           @update:model-value="onUpdatedFilter"
         />
       </q-item-section>
@@ -173,7 +183,7 @@ export default defineComponent({
 });
 </script>
 <script setup lang="ts">
-import { climateOptions, ventilationOptions, buildingTypeOptions, vocOptions } from 'src/utils/options';
+import { climateOptions, ventilationOptions, buildingTypeOptions, populationOptions, outdoorEnvOptions, vocOptions } from 'src/utils/options';
 
 const mapStore = useMapStore();
 const helpStore = useHelpStore();
@@ -186,6 +196,8 @@ const timeframe = ref({
   max: 2025
 });
 const buildingTypes = ref([]);
+const populations = ref([]);
+const outdoorEnvs = ref([]);
 const vocs = ref([]);
 
 const isMapPage = computed(() => route.path === '/map')
@@ -251,6 +263,8 @@ function onResetFilters() {
     max: 2025
   };
   buildingTypes.value = [];
+  populations.value = [];
+  outdoorEnvs.value = [];
   vocs.value = [];
   onUpdatedFilter();
 }

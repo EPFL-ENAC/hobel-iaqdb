@@ -81,7 +81,7 @@ export default {
       type: 'Type',
       type_hint: 'The type of usage of the building.',
       outdoor_env: 'Outdoor environment',
-      outdoor_env_hint: '',
+      outdoor_env_hint: 'Building surroundings.',
       ventilation: 'Ventilation',
       ventilation_hint: '',
       certification_name: 'Green certification name',
