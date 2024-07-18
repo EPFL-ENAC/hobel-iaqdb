@@ -1,4 +1,10 @@
 <template>
+  <q-toolbar class="bg-warning">
+    <div>
+      <q-icon name="warning" class="on-left q-mb-xs" />Note: this is a preliminary version. A lot of functionalities are mocked, to experiment/propose what could be the final user interface.
+      Make any suggestions at: <a href="https://github.com/EPFL-ENAC/hobel-iaqdb/issues" target="_blank" class="text-bold epfl">HOBEL IAQDB project <q-icon name="arrow_outward"/></a>.
+    </div>
+  </q-toolbar>
   <q-toolbar>
     <q-btn
       v-if="$q.screen.lt.md && !noMenu"
