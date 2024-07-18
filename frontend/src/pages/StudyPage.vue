@@ -1,6 +1,6 @@
 <template>
   <q-page>
-    <div class="q-pt-md q-pb-md bg-accent text-white">
+    <div class="q-pt-md q-pb-md bg-accent text-white text-weight-light">
     <div class="row">
       <div class="col"></div>
       <div class="col-10">

@@ -3,13 +3,31 @@
     <q-table
       ref="tableRef"
       flat
+      grid
       :rows="rows"
       row-key="_id"
       v-model:pagination="pagination"
       :loading="loading"
       @request="onRequest"
-      @row-click="onRowClick"
-      ></q-table>
+      >
+
+      <template v-slot:item="props">
+        <div class="col-12">
+          <q-card flat @click="onRowClick(props.row)" class="cursor-pointer">
+            <q-card-section>
+              <div class="text-h6">{{ props.row.name }}</div>
+              <div class="text-subtitle1 text-grey-8">{{ props.row.description }}</div>
+              <div>
+                <q-chip color="secondary" class="text-white" :label="`${props.row.building_count} buildings`" />
+                <q-chip color="accent" class="on-right text-white" :label="`${props.row.room_count} rooms`" />
+                <q-chip class="on-right" :label="$t('from_to', { from: props.row.start_year, to: props.row.end_year })" />
+              </div>
+            </q-card-section>
+          </q-card>
+          <q-separator />
+        </div>
+      </template>
+    </q-table>
   </div>
 </template>
 
@@ -67,7 +85,7 @@ function onRequest (props) {
     });
 }
 
-function onRowClick(evt, val: Study) {
+function onRowClick(val: Study) {
   router.push(`/study/${val._id}`);
 }
 </script>

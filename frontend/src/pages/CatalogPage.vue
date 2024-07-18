@@ -1,6 +1,6 @@
 <template>
   <q-page>
-    <div class="text-h6 q-pa-md">
+    <div class="text-h4 q-pa-md bg-accent text-white text-weight-light">
       {{ $t('studies') }}
     </div>
     <q-separator />

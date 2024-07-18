@@ -22,6 +22,7 @@
           :nodes="simple"
           node-key="label"
           :filter="filter"
+          default-expand-all
         />
         </q-card-section>
       </q-card>
@@ -42,8 +43,6 @@ const filter = ref('');
 const filterRef = ref(null);
 
 const study = computed(() => catalogStore.study);
-const buildings = computed(() => catalogStore.buildings);
-const rooms = computed(() => catalogStore.rooms);
 
 const simple = computed(() =>  [
     {
@@ -53,42 +52,20 @@ const simple = computed(() =>  [
         { label: 'License.md' },
         { label: 'study.json' },
         {
-          label: 'buildings',
-          children: buildings.value.map((bld) => {
+          label: 'datasets',
+          children: [
+            'co2_atmotube',
+            'pm_atmotube',
+            'ufp_discmini',
+            'co2_rotronic',
+            'radon_radonscout',
+          ].map((ds) => {
             return {
-              label: bld.identifier,
-              children: [
-                { label: 'building.json' },
-                {
-                  label: 'rooms',
-                  children: rooms.value.filter((rm) => rm.building.identifier === bld.identifier).map((rm) => {
-                    return {
-                      label: rm.identifier,
-                      children: [
-                        { label: 'room.json' },
-                        {
-                          label: 'datasets',
-                          children: [
-                            'co2_atmotube',
-                            'pm_atmotube',
-                            'ufp_discmini',
-                            'co2_rotronic',
-                            'radon_radonscout',
-                          ].map((ds) => {
-                            return {
-                              label: ds,
-                              children:[
-                                { label: 'dictionary.json' },
-                                { label: 'data.csv' },
-                                { label: 'dataset.json' }
-                              ]
-                            }
-                          })
-                        }
-                      ]
-                    }
-                  })
-                }
+              label: ds,
+              children:[
+                { label: 'dictionary.json' },
+                { label: 'data.csv' },
+                { label: 'dataset.json' }
               ]
             }
           })

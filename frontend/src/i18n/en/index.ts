@@ -33,6 +33,7 @@ export default {
   ventilations: 'Ventilations',
   ventilations_hint: 'The room ventilation system.',
   contribute_title: 'Contribute to the Indoor Air Quality Research Database',
+  from_to: 'From {from} to {to}',
   study: {
     name: 'Name',
     name_hint: 'Name of the project',

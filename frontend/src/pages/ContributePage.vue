@@ -4,7 +4,7 @@
       <div class="row">
         <div class="col"></div>
         <div class="col-8">
-          <span class="text-h4">{{ $t('contribute_title') }}</span>
+          <span class="text-h4 text-weight-light">{{ $t('contribute_title') }}</span>
         </div>
         <div class="col"></div>
       </div>
