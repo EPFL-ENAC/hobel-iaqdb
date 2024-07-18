@@ -7,66 +7,42 @@ import { Study, Building, Room, Period, Person } from 'src/models';
 export const useContributeStore = defineStore('contribute', () => {
 
   const study = ref<Study>({
+    identifier: '',
+    name: '',
+    description: '',
     contact: {} as Person,
-    buildings: [{
-      _id: `__${uuidv4()}`,
-      identifier: '1',
-      name: '',
-      description: '',
-      certification: {
-        name: '',
-        level: '',
-      },
-      rooms: [{
-        _id: `__${uuidv4()}`,
-        identifier: '1',
-        ...getRoomDefaults(),
-      }]
-    }]
+    buildings: []
   } as Study);
 
   function reset() {
     study.value = {
-      identifier: '1',
+      identifier: '',
+      name: '',
+      description: '',
       contact: {} as Person,
-      buildings: [{
-        _id: `__${uuidv4()}`,
-        identifier: '1',
-        certification: {
-          name: '',
-          level: '',
-        },
-        rooms: [{
-          _id: `__${uuidv4()}`,
-          identifier: '1',
-        ...getRoomDefaults(),
-        }]
-      }]
+      buildings: []
     } as Study;
   }
 
   function addBuilding() {
     let id = 1;
-    while (study.value.buildings.find((bld: Building) => bld.identifier === `${id}`)) {
+    while (study.value.buildings?.find((bld: Building) => bld.identifier === `${id}`)) {
       id++
     }
     let country = '';
-    if (study.value.buildings.length > 0) {
+    if (study.value.buildings && study.value.buildings.length > 0) {
       country = study.value.buildings[study.value.buildings.length - 1].country;
     }
-    study.value.buildings.push({
+    study.value.buildings?.push({
       _id: `__${uuidv4()}`,
       identifier: `${id}`,
+      city: '',
+      country,
       certification: {
         name: '',
         level: '',
       },
-      rooms: [{
-        _id: `__${uuidv4()}`,
-        identifier: '1',
-        ...getRoomDefaults(),
-      }],
-      country
+      rooms: []
     } as Building)
   }
 
