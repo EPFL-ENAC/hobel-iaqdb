@@ -49,7 +49,7 @@ function onRequest (props) {
   const limit = rowsPerPage;
   loading.value = true
 
-  catalogStore.loadRooms(skip, limit)
+  catalogStore.loadSpaces(skip, limit)
     .then((result: RoomsResult) => {
       rows.value = result.data;
       pagination.value.rowsNumber = result.total;

@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia';
 import { api } from 'src/boot/api';
 import { Study, Building, Room, StudiesResult, BuildingsResult, RoomsResult } from 'src/models';
-import { DEFAULT_ALTITUDES } from 'src/stores/filters';
-
 
 export const useCatalogStore = defineStore('catalog', () => {
 
@@ -13,12 +11,10 @@ export const useCatalogStore = defineStore('catalog', () => {
   const filterStore = useFiltersStore();
 
   async function loadStudies(skip: number, limit: number): Promise<StudiesResult> {
-    const filters = getFilterParams();
     return api.get('/catalog/studies',{
       params: {
-        skip,
-        limit,
-        ...filters
+        range: JSON.stringify([skip, limit + skip - 1]),
+        filter: JSON.stringify(getFilterParams())
       },
       paramsSerializer: {
         indexes: null, // no brackets at all
@@ -27,12 +23,10 @@ export const useCatalogStore = defineStore('catalog', () => {
   }
 
   async function loadBuildings(skip: number, limit: number): Promise<BuildingsResult> {
-    const filters = getFilterParams();
     return api.get('/catalog/buildings', { 
       params: {
-        skip,
-        limit,
-        ...filters
+        range: JSON.stringify([skip, limit + skip - 1]),
+        filter: JSON.stringify(getFilterParams())
       },
       paramsSerializer: {
         indexes: null, // no brackets at all
@@ -40,13 +34,11 @@ export const useCatalogStore = defineStore('catalog', () => {
     }).then((response) => response.data)
   }
 
-  async function loadRooms(skip: number, limit: number): Promise<RoomsResult> {
-    const filters = getFilterParams();
-    return api.get('/catalog/rooms', { 
+  async function loadSpaces(skip: number, limit: number): Promise<RoomsResult> {
+    return api.get('/catalog/spaces', { 
       params: {
-        skip,
-        limit,
-        ...filters
+        range: JSON.stringify([skip, limit + skip - 1]),
+        filter: JSON.stringify(getFilterParams())
       },
       paramsSerializer: {
         indexes: null, // no brackets at all
@@ -57,10 +49,13 @@ export const useCatalogStore = defineStore('catalog', () => {
   function getFilterParams() {
     const altitudes = filterStore.altitudes;
     return {
-      altmin: altitudes.min === DEFAULT_ALTITUDES.min ? undefined : altitudes.min,
-      altmax: altitudes.max === DEFAULT_ALTITUDES.max ? undefined : altitudes.max,
-      climates: filterStore.climateZones,
-      ventilations: filterStore.ventilations,
+      $building: {
+        altitude: [altitudes.min, altitudes.max],
+        climate_zone: filterStore.climateZones,
+      },
+      $space: {
+        ventilations: filterStore.ventilations,
+      }
     }
   }
 
@@ -92,7 +87,7 @@ export const useCatalogStore = defineStore('catalog', () => {
   return {
     loadStudies,
     loadBuildings,
-    loadRooms,
+    loadSpaces,
     loadStudy,
     study,
     buildings,

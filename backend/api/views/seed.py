@@ -1,8 +1,9 @@
 import uuid
 import random
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
-from api.models.catalog import Person, Study, Building, Room
+from api.db import get_session, AsyncSession
+from api.models.catalog import Person, Study, Building, Space
 from faker import Faker
 from api.services.geo import GeoService
 
@@ -15,7 +16,7 @@ class SeedStatus(BaseModel):
 
 
 @router.put("")
-async def seed() -> SeedStatus:
+async def seed(session: AsyncSession = Depends(get_session)) -> SeedStatus:
     fake = Faker()
     outdoor_envs = ["rural", "urban", "suburban", "other"]
     spaces = ["outdoor", "classroom", "NA"]
@@ -24,45 +25,53 @@ async def seed() -> SeedStatus:
 
     geoService = GeoService()
 
-    for i in range(0, 10):
-        contact = Person(name=fake.name(), email=fake.email(),
-                         institution=fake.company())
+    for i in range(0, 3):
+        contacts = []
+        for i in range(0, random.randint(1, 3)):
+            contacts.append(Person(name=fake.name(), email=fake.email(),
+                                   institution=fake.company()))
         study = Study(identifier=f"seed-{uuid.uuid4()}",
                       name=fake.word(),
                       description=fake.paragraph(nb_sentences=2),
-                      contact=contact,
-                      building_count=10,
-                      room_count=100,
+                      contacts=contacts,
+                      building_count=random.randint(1, 10),
+                      space_count=random.randint(1, 100),
                       start_year=random.randint(2000, 2010),
                       end_year=random.randint(2010, 2020))
-        study = await Study.insert_one(study)
 
-        for j in range(0, 10):
+        session.add(study)
+        await session.commit()
+        await session.refresh(study)
+
+        for j in range(0, 3):
             place = fake.location_on_land()
             zone = geoService.readClimateZone(place[1], place[0], False)
             elevation = geoService.queryElevation(place[1], place[0])
 
-            building = Building(identifier=f"seed-{uuid.uuid4()}",
-                                city=place[2],
+            building = Building(city=place[2],
                                 country=place[3],
                                 timezone=place[4],
                                 altitude=elevation.altitude,
                                 climate_zone=zone.name,
-                                location=[place[1], place[0]],
+                                long=float(place[1]),
+                                lat=float(place[0]),
                                 outdoor_env=fake.word(
                                     ext_word_list=outdoor_envs),
                                 construction_year=(study.start_year - 1),
                                 renovation_year=(study.start_year + 9),
                                 study=study)
-            building = await Building.insert_one(building)
+            session.add(building)
+            await session.commit()
+            await session.refresh(building)
 
             for k in range(0, 10):
-                room = Room(identifier=f"seed-{uuid.uuid4()}",
-                            space=fake.word(ext_word_list=spaces),
-                            ventilation=fake.word(ext_word_list=ventilation),
-                            smoking=fake.word(ext_word_list=smoking),
-                            study=study,
-                            building=building)
-                room = await Room.insert_one(room)
+                space = Space(space=fake.word(ext_word_list=spaces),
+                              ventilation=fake.word(ext_word_list=ventilation),
+                              smoking=fake.word(ext_word_list=smoking),
+                              study=study,
+                              building=building)
+                session.add(space)
+                await session.commit()
+                await session.refresh(space)
 
     return SeedStatus(status="OK")
