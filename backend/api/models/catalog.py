@@ -34,6 +34,9 @@ class StudyBase(SQLModel):
     space_count: Optional[int] = Field(default=None)
     start_year: Optional[int] = Field(default=None)
     end_year: Optional[int] = Field(default=None)
+    reference: Optional[str] = Field(default=None)
+    doi: Optional[str] = Field(default=None)
+    cite: Optional[str] = Field(default=None)
 
 
 class Study(StudyBase, table=True):
@@ -73,6 +76,7 @@ class Certification(SQLModel, table=True):
 
 
 class BuildingBase(SQLModel):
+    identifier: str
     country: str
     city: str
     timezone: str
@@ -110,6 +114,7 @@ class BuildingRead(BuildingBase):
 
 
 class SpaceBase(SQLModel):
+    identifier: str
     space: str
     ventilation: str
     smoking: str

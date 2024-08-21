@@ -1,5 +1,5 @@
 export interface DBModel {
-  _id?: string;
+  id?: string;
   [Key: string]: unknown;
 }
 
@@ -13,11 +13,13 @@ export interface Building extends DBModel {
   identifier: string;
   country: string;
   city: string;
+  long: number;
+  lat: number;
   altitude?: number;
   climate_zone?: string;
   longitude?: number;
   latitude?: number;
-  rooms?: Room[]
+  spaces?: Space[]
 }
 
 interface ListResult {
@@ -36,15 +38,18 @@ export interface Study extends DBModel {
   description: string;
   start_year?: number;
   end_year?: number;
-  contact?: Person;
-  buildings?: Building[]
+  reference?: string;
+  doi?: string;
+  cite?: string;
+  contacts?: Person[];
+  buildings?: Building[];
 }
 
 export interface StudiesResult extends ListResult {
   data: Study[]
 }
 
-export interface Room extends DBModel {
+export interface Space extends DBModel {
   identifier: string;
   space: string;
   occupancy: string;
@@ -53,8 +58,8 @@ export interface Room extends DBModel {
   periods: Period[];
 }
 
-export interface RoomsResult extends ListResult {
-  data: Room[]
+export interface SpacesResult extends ListResult {
+  data: Space[]
 }
 
 export interface Period extends DBModel {

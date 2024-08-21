@@ -138,7 +138,7 @@ const columns = computed(() => fields.value.map((field) => {return { name: field
 
 const fieldOptions = [
   { value: 'building', label: 'Building ID' },
-  { value: 'room', label: 'Room ID' },
+  { value: 'space', label: 'Space ID' },
   { value: 'period', label: 'Period ID' },
   { value: 'timestamp', label: 'Timestamp' },
   { value: 'humidity', label: 'Humidity' },
@@ -159,8 +159,8 @@ const errors = computed(() => {
   if (!Object.keys(dictionary.value).find((field) => dictionary.value[field].variable === 'building')) {
     rval.push('Building ID is missing');
   }
-  if (!Object.keys(dictionary.value).find((field) => dictionary.value[field].variable === 'room')) {
-    rval.push('Room ID is missing');
+  if (!Object.keys(dictionary.value).find((field) => dictionary.value[field].variable === 'space')) {
+    rval.push('Space ID is missing');
   }
   if (!Object.keys(dictionary.value).find((field) => dictionary.value[field].variable === 'timestamp')) {
     rval.push('Timestamp is missing');

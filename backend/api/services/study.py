@@ -33,15 +33,17 @@ class StudyService:
     async def find(self, filter: dict, sort: list, range: list) -> StudiesResult:
         """Get all studies matching filter and range"""
         builder = QueryBuilder(Study, filter, sort, range, {
-                               '$building': Building, '$space': Space})
+                               "$building": Building, "$space": Space})
 
         # Do a query to satisfy total count
-        count_query = builder.build_count_query()
+        count_query = self.apply_joins(builder.build_count_query(), filter)
+
         total_count_query = await self.session.exec(count_query)
         total_count = total_count_query.one()
 
         # Main query
         start, end, query = builder.build_query(total_count)
+        query = self.apply_joins(query, filter)
         query = query.options(selectinload(Study.contacts),
                               selectinload(Study.buildings))
 
@@ -55,3 +57,11 @@ class StudyService:
             limit=end - start + 1,
             data=studies
         )
+
+    def apply_joins(self, query, filter):
+        if "$building" in filter:
+            query = query.join(Building, Study.id == Building.study_id)
+        if "$space" in filter:
+            query = query.join(Space, Study.id == Space.study_id)
+        query = query.distinct()
+        return query

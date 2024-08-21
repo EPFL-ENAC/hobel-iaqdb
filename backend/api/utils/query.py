@@ -13,38 +13,15 @@ def paramAsArray(param: str):
 
 class QueryBuilder:
 
-    def __init__(self, model: SQLModel, filter: dict, sort: list, range: list, joins: dict = {}):
+    def __init__(self, model: SQLModel, filter: dict, sort: list, range: list, joinModels: dict = {}):
         self.model = model
         self.filter = filter
         self.sort = sort
         self.range = range
-        self.joins = joins
+        self.joinModels = joinModels
 
     def build_count_query(self):
-        return self._apply_filter(select(func.count(self.model.id)))
-
-    def build_frequencies_query(self, field: str):
-        column = getattr(self.model, field)
-        query_ = select(column, func.count().label("count")).order_by(text("count DESC")).group_by(
-            text(field))
-        return self._apply_filter(query_)
-
-    def build_frequencies_exists_query(self, field: str):
-        column = getattr(self.model, field)
-        case_expr = case(
-            (and_(column.isnot(None), cast(column, String) != 'null'), 1),
-            else_=0)
-        query_ = select(case_expr.label(field), func.count().label(
-            'count')).order_by(text("count DESC")).group_by(case_expr)
-        return self._apply_filter(query_)
-
-    def build_parallel_count_query(self, fields: list[str]):
-        columns = [getattr(self.model, field)
-                   for field in fields]
-        selected_columns = columns + [func.count().label("count")]
-        query_ = select(*selected_columns).group_by(*
-                                                    columns).order_by(*columns)
-        return self._apply_filter(query_)
+        return self._apply_filter(select(func.count(func.distinct(self.model.id))))
 
     def build_query(self, total_count):
         query_ = self._apply_filter(select(self.model))
@@ -56,19 +33,26 @@ class QueryBuilder:
         return query_
 
     def _apply_filter(self, query_):
-        if len(self.filter):
-            for field, value in self.filter.items():
+        return self._apply_model_filter(query_, self.model, self.filter)
+
+    def _apply_model_filter(self, query_, model, filter):
+        if len(filter):
+            for field, value in filter.items():
                 if field == "$and":
                     for sub_filter in value:
                         for sub_field, sub_value in sub_filter.items():
                             query_ = self._apply_column_filter(
-                                query_, sub_field, sub_value)
+                                query_, model, sub_field, sub_value)
+                elif field in self.joinModels:
+                    joinModel = self.joinModels[field]
+                    query_ = self._apply_model_filter(query_, joinModel, value)
                 else:
-                    query_ = self._apply_column_filter(query_, field, value)
+                    query_ = self._apply_column_filter(
+                        query_, model, field, value)
         return query_
 
-    def _apply_column_filter(self, query_, field, value):
-        column = getattr(self.model, field)
+    def _apply_column_filter(self, query_, model, field, value):
+        column = getattr(model, field)
         if isinstance(value, list):
             if len(value) == 1 and value[0] is None:
                 query_ = self._apply_filter_value(
@@ -112,11 +96,15 @@ class QueryBuilder:
 
         if '$ge' in value:
             query_ = query_.where(column >= value['$ge'])
+        if '$gte' in value:
+            query_ = query_.where(column >= value['$gte'])
         if '$gt' in value:
             query_ = query_.where(column > value['$gt'])
 
         if '$le' in value:
             query_ = query_.where(column <= value['$le'])
+        if '$lte' in value:
+            query_ = query_.where(column <= value['$lte'])
         if '$lt' in value:
             query_ = query_.where(column < value['$lt'])
 

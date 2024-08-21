@@ -29,11 +29,11 @@ export default {
   search: 'Search',
   studies: 'Studies',
   buildings: 'Buildings',
-  rooms: 'Rooms',
+  spaces: 'Spaces',
   mechanical: 'Mechanical',
   natural: 'Natural',
   ventilations: 'Ventilations',
-  ventilations_hint: 'The room ventilation system.',
+  ventilations_hint: 'The space ventilation system.',
   contribute_title: 'Contribute to the Indoor Air Quality Research Database',
   from_to: 'From {from} to {to}',
   voc: 'VOC',
@@ -97,9 +97,9 @@ export default {
       smoking: 'Smoking permitted',
       smoking_hint: ''
     },
-    room: {
+    space: {
       identifier: 'Identifier',
-      identifier_hint: 'Room unique identifier in the building.',
+      identifier_hint: 'Space unique identifier in the building.',
       space: 'Space',
       space_hint: '',
       occupancy: 'Occupancy',
@@ -107,7 +107,7 @@ export default {
     },
     period: {
       identifier: 'Identifier',
-      identifier_hint: 'Period unique identifier in the room.',
+      identifier_hint: 'Period unique identifier in the space.',
       start_date: 'Start date',
       start_date_hint: 'Date at which the measurements were started.',
       end_date: 'End date',

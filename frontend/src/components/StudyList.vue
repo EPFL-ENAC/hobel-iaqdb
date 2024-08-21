@@ -5,7 +5,7 @@
       flat
       grid
       :rows="rows"
-      row-key="_id"
+      row-key="id"
       v-model:pagination="pagination"
       :loading="loading"
       @request="onRequest"
@@ -19,7 +19,7 @@
               <div class="text-subtitle1 text-grey-8">{{ props.row.description }}</div>
               <div>
                 <q-chip color="secondary" class="text-white" :label="`${props.row.building_count} buildings`" />
-                <q-chip color="accent" class="on-right text-white" :label="`${props.row.room_count} rooms`" />
+                <q-chip color="accent" class="on-right text-white" :label="`${props.row.space_count} spaces`" />
                 <q-chip class="on-right" :label="$t('from_to', { from: props.row.start_year, to: props.row.end_year })" />
               </div>
             </q-card-section>
@@ -46,7 +46,7 @@ const router = useRouter();
 const tableRef = ref();
 const rows = ref<Study[]>([]);
 const pagination = ref({
-  sortBy: '_id',
+  sortBy: 'id',
   descending: false,
   page: 1,
   rowsPerPage: 5,
@@ -86,6 +86,6 @@ function onRequest (props) {
 }
 
 function onRowClick(val: Study) {
-  router.push(`/study/${val._id}`);
+  router.push(`/study/${val.id}`);
 }
 </script>

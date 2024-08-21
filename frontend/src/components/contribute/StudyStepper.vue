@@ -4,7 +4,7 @@
       <q-card-section>
         <div class="row">
           <q-icon name="lightbulb" class="on-left" style="margin-top: 10px;" />
-          <div class="q-mt-sm">Tip: you can prepopulate the study, buildings, rooms etc. forms using an Excel file.</div>
+          <div class="q-mt-sm">Tip: you can prepopulate the study, buildings, spaces etc. forms using an Excel file.</div>
           <div>
             <q-btn label="Import from Excel" color="secondary" icon="upload_file" outline no-caps class="on-right" />
           </div>
@@ -40,7 +40,7 @@
 
       <q-step
         :name="2"
-        title="Buildings and rooms information"
+        title="Buildings and spaces information"
         icon="domain"
         :done="step > 2"
         :header-nav="step > 2"

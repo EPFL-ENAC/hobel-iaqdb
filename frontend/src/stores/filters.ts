@@ -1,9 +1,9 @@
 import { defineStore } from 'pinia';
 
 export type FilterParams = {
-  altitudes: [number, number]
-  climateZones: string[] | null
-  ventilations: string[] | null
+  altitudes?: [number, number]
+  climateZones?: string[] | null
+  ventilations?: string[] | null
   study_ids: string[] | null
 }
 

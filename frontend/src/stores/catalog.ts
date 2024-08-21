@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia';
 import { api } from 'src/boot/api';
-import { Study, Building, Room, StudiesResult, BuildingsResult, RoomsResult } from 'src/models';
+import { Study, Building, Space, StudiesResult, BuildingsResult, SpacesResult } from 'src/models';
 
 export const useCatalogStore = defineStore('catalog', () => {
 
   const study = ref<Study>();
   const buildings = ref<Building[]>([]);
-  const rooms = ref<Room[]>([]);
+  const spaces = ref<Space[]>([]);
 
   const filterStore = useFiltersStore();
 
@@ -34,7 +34,7 @@ export const useCatalogStore = defineStore('catalog', () => {
     }).then((response) => response.data)
   }
 
-  async function loadSpaces(skip: number, limit: number): Promise<RoomsResult> {
+  async function loadSpaces(skip: number, limit: number): Promise<SpacesResult> {
     return api.get('/catalog/spaces', { 
       params: {
         range: JSON.stringify([skip, limit + skip - 1]),
@@ -50,11 +50,14 @@ export const useCatalogStore = defineStore('catalog', () => {
     const altitudes = filterStore.altitudes;
     return {
       $building: {
-        altitude: [altitudes.min, altitudes.max],
-        climate_zone: filterStore.climateZones,
+        $and: [
+          { altitude: { $gte: altitudes.min } },
+          { altitude: { $lte: altitudes.max } }
+        ],
+        climate_zone: filterStore.climateZones || undefined,
       },
       $space: {
-        ventilations: filterStore.ventilations,
+        ventilation: filterStore.ventilations || undefined,
       }
     }
   }
@@ -65,22 +68,22 @@ export const useCatalogStore = defineStore('catalog', () => {
       study.value = response.data;
       return Promise.all([
         loadStudyBuildings(),
-        loadStudyRooms()
+        loadStudySpaces()
       ]);
     });
   }
 
   async function loadStudyBuildings() {
     buildings.value = [];
-    return api.get(`/catalog/study/${study.value?._id}/buildings`).then((response) => {
+    return api.get(`/catalog/study/${study.value?.id}/buildings`).then((response) => {
       buildings.value = response.data;
     })
   }
 
-  async function loadStudyRooms() {
-    rooms.value = [];
-    return api.get(`/catalog/study/${study.value?._id}/rooms`).then((response) => {
-      rooms.value = response.data;
+  async function loadStudySpaces() {
+    spaces.value = [];
+    return api.get(`/catalog/study/${study.value?.id}/spaces`).then((response) => {
+      spaces.value = response.data;
     })
   }
 
@@ -91,7 +94,7 @@ export const useCatalogStore = defineStore('catalog', () => {
     loadStudy,
     study,
     buildings,
-    rooms
+    spaces
   }
 
 });

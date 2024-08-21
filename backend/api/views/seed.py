@@ -27,7 +27,7 @@ async def seed(session: AsyncSession = Depends(get_session)) -> SeedStatus:
 
     for i in range(0, 3):
         contacts = []
-        for i in range(0, random.randint(1, 3)):
+        for i in range(0, random.randint(1, 2)):
             contacts.append(Person(name=fake.name(), email=fake.email(),
                                    institution=fake.company()))
         study = Study(identifier=f"seed-{uuid.uuid4()}",
@@ -48,7 +48,8 @@ async def seed(session: AsyncSession = Depends(get_session)) -> SeedStatus:
             zone = geoService.readClimateZone(place[1], place[0], False)
             elevation = geoService.queryElevation(place[1], place[0])
 
-            building = Building(city=place[2],
+            building = Building(identifier=f"seed-{j}",
+                                city=place[2],
                                 country=place[3],
                                 timezone=place[4],
                                 altitude=elevation.altitude,
@@ -59,17 +60,18 @@ async def seed(session: AsyncSession = Depends(get_session)) -> SeedStatus:
                                     ext_word_list=outdoor_envs),
                                 construction_year=(study.start_year - 1),
                                 renovation_year=(study.start_year + 9),
-                                study=study)
+                                study_id=study.id)
             session.add(building)
             await session.commit()
             await session.refresh(building)
 
             for k in range(0, 10):
-                space = Space(space=fake.word(ext_word_list=spaces),
+                space = Space(identifier=f"seed-{j}-{k}",
+                              space=fake.word(ext_word_list=spaces),
                               ventilation=fake.word(ext_word_list=ventilation),
                               smoking=fake.word(ext_word_list=smoking),
-                              study=study,
-                              building=building)
+                              study_id=study.id,
+                              building_id=building.id)
                 session.add(space)
                 await session.commit()
                 await session.refresh(space)

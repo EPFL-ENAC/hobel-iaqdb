@@ -4,7 +4,7 @@
       ref="tableRef"
       flat
       :rows="rows"
-      row-key="_id"
+      row-key="id"
       v-model:pagination="pagination"
       :loading="loading"
       @request="onRequest"
@@ -26,7 +26,7 @@ const filtersStore = useFiltersStore();
 const tableRef = ref();
 const rows = ref<Building[]>([]);
 const pagination = ref({
-  sortBy: '_id',
+  sortBy: 'id',
   descending: false,
   page: 1,
   rowsPerPage: 10,

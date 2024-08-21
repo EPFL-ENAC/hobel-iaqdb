@@ -168,14 +168,14 @@
     </div>
     </q-expansion-item>
 
-    <div class="text-bold q-mb-md">Rooms</div>
+    <div class="text-bold q-mb-md">Spaces</div>
     <q-card flat bordered class="q-mb-md bg-grey-2">
       <q-card-section>
-        <div v-if="building.rooms?.length === 0" class="text-help">No rooms defined yet.</div>
+        <div v-if="building.spaces?.length === 0" class="text-help">No spaces defined yet.</div>
         <q-list separator>
-          <q-item v-for="(room, i) in building.rooms" :key="room._id" class="q-pl-none q-pr-none">
+          <q-item v-for="(space, i) in building.spaces" :key="space.id" class="q-pl-none q-pr-none">
             <q-item-section>
-              <room-form v-model="building.rooms[i]" :building="building" class="q-mt-md"/>
+              <space-form v-model="building.spaces[i]" :building="building" class="q-mt-md"/>
             </q-item-section>
             <q-item-section side>
               <q-btn
@@ -186,13 +186,13 @@
                 :title="$t('delete')"
                 icon="delete"
                 class="q-ml-xs"
-                @click="onDeleteRoom(i)" />
+                @click="onDeleteSpace(i)" />
             </q-item-section>
           </q-item>
         </q-list>
       </q-card-section>
       <q-card-actions class="bg-grey-3 q-pa-md">
-        <q-btn @click="onAddRoom" color="secondary" label="Add Room" icon="add" size="sm" />
+        <q-btn @click="onAddSpace" color="secondary" label="Add Space" icon="add" size="sm" />
       </q-card-actions>
     </q-card>
     
@@ -209,7 +209,7 @@ export default defineComponent({
 import { climateOptions, buildingTypeOptions, outdoorEnvOptions, populationOptions, countryOptions } from 'src/utils/options';
 import { geocoderApi } from 'src/utils/geocoder';
 import { Building } from 'src/models';
-import RoomForm from 'src/components/contribute/RoomForm.vue'
+import SpaceForm from 'src/components/contribute/SpaceForm.vue'
 
 const contrib = useContributeStore();
 
@@ -227,8 +227,8 @@ const hasLongLat = computed(() => building.value.longitude && building.value.lat
 
 async function onLocationUpdated() {
   if (!hasCityCountry.value) {
-    building.value.longitude = null;
-    building.value.latitude = null;
+    building.value.longitude = undefined;
+    building.value.latitude = undefined;
     onLongLatUpdated();
     return;
   }
@@ -270,11 +270,11 @@ function onLongLatUpdated() {
   ]).finally(() => loadingAlt.value = false);
 }
 
-function onAddRoom() {
-  contrib.addRoom(building.value.identifier);
+function onAddSpace() {
+  contrib.addSpace(building.value.identifier);
 }
 
-function onDeleteRoom(i: number) {
-  contrib.deleteRoom(building.value.identifier, i);
+function onDeleteSpace(i: number) {
+  contrib.deleteSpace(building.value.identifier, i);
 }
 </script>
