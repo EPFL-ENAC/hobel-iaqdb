@@ -1,8 +1,10 @@
 <template>
-  <div v-if="loading" class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90">
-    <q-spinner-dots color="primary" size="100px" />
+  <div>
+    <div v-if="loading" class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90">
+      <q-spinner-dots color="primary" size="100px" />
+    </div>
+    <div id="maplibre-map" :style="`height: ${height}; width: ${width};`"></div>
   </div>
-  <div id="maplibre-map" :style="`height: ${height}; width: ${width};`"></div>
 </template>
 
 <script lang="ts">

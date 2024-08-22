@@ -3,12 +3,12 @@ from sqlalchemy import func, text, or_, and_, cast, String, case
 import json
 
 
-def paramAsObject(param: str):
+def paramAsDict(param: str):
     return json.loads(param) if param else {}
 
 
 def paramAsArray(param: str):
-    return json.loads(param) if param else {}
+    return json.loads(param) if param else []
 
 
 class QueryBuilder:

@@ -1,5 +1,5 @@
 export interface DBModel {
-  id?: string;
+  id?: number;
   [Key: string]: unknown;
 }
 

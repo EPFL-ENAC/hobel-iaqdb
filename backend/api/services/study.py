@@ -37,7 +37,6 @@ class StudyService:
 
         # Do a query to satisfy total count
         count_query = self.apply_joins(builder.build_count_query(), filter)
-
         total_count_query = await self.session.exec(count_query)
         total_count = total_count_query.one()
 

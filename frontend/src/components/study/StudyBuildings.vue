@@ -1,12 +1,14 @@
 <template>
   <div>
-    <maplibre-map
-      position
-      :zoom="2"
-      height="400px"
-      width="100%"
-      @map:loaded="onMapLoaded"
-      @map:click="onMapClick" />
+    <div v-if="catalogStore.study">
+      <maplibre-map
+        position
+        :zoom="2"
+        height="400px"
+        width="100%"
+        @map:loaded="onMapLoaded"
+        @map:click="onMapClick" />
+    </div>
     <q-table
       flat
       :rows="buildings"
@@ -51,7 +53,7 @@ const pagination = ref({
   rowsNumber: 0,
 });
 
-const buildings = computed(() => catalogStore.study?.buildings);
+const buildings = computed(() => catalogStore.study?.buildings || []);
 
 const columms = computed(() => {
   return [
@@ -90,7 +92,7 @@ const columms = computed(() => {
 
 function onMapLoaded(map: Map) {
   mapStore.initLayers(map).then(() => {
-    if (catalogStore.study){
+    if (catalogStore.study?.id){
       mapStore.applyFilters({
         study_ids: [catalogStore.study?.id]
       });
