@@ -70,7 +70,7 @@ class GeoService:
         return ClimateZone(id=value, name=name, lon=lon, lat=lat)
 
     def queryElevation(self, lon: float = 0, lat: float = 0) -> Elevation:
-        resp = requests.get(f"{config.ELEVATION_URL}/api/v1/lookup",
+        resp = requests.get(f"{config.ELEVATION_URL}",
                             params={"locations": f"{lat},{lon}"})
         content = resp.json()
         print(content)

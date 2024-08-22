@@ -19,7 +19,7 @@ class Config(BaseSettings):
     API_KEYS: str
     PATH_PREFIX: str = "/api"
 
-    ELEVATION_URL: str = "https://api.open-elevation.com"
+    ELEVATION_URL: str = "https://api.open-elevation.com/api/v1/lookup"
 
     S3_ENDPOINT_PROTOCOL: str
     S3_ENDPOINT_HOSTNAME: str
