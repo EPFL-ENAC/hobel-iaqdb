@@ -54,10 +54,10 @@ export const useCatalogStore = defineStore('catalog', () => {
           { altitude: { $gte: altitudes.min } },
           { altitude: { $lte: altitudes.max } }
         ],
-        climate_zone: filterStore.climateZones || undefined,
+        climate_zone: filterStore.climateZones && filterStore.climateZones.length ? filterStore.climateZones : undefined,
       },
       $space: {
-        ventilation: filterStore.ventilations || undefined,
+        ventilation: filterStore.ventilations && filterStore.ventilations ? filterStore.ventilations : undefined,
       }
     }
   }
