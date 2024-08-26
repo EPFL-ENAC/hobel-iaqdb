@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Security, Depends, Query
 from api.db import get_session, AsyncSession
 from api.auth import get_api_key
 from api.services.study import StudyService
@@ -12,7 +12,7 @@ router = APIRouter()
 
 
 @router.get("/studies", response_model=StudiesResult)
-async def getStudies(
+async def get_studies(
     filter: str = Query(None),
     sort: str = Query(None),
     range: str = Query(None),
@@ -25,7 +25,7 @@ async def getStudies(
 
 
 @router.get("/study/{id}", response_model=StudyRead)
-async def getStudy(
+async def get_study(
     session: AsyncSession = Depends(get_session),
     *,
     id: int,
@@ -36,8 +36,19 @@ async def getStudy(
     return study
 
 
+@router.delete("/study/{id}")
+async def delete_study(
+    id: int,
+    session: AsyncSession = Depends(get_session),
+    api_key: str = Security(get_api_key),
+) -> None:
+    """Delete study by id"""
+    service = StudyService(session)
+    await service.delete(id)
+
+
 @router.get("/study/{id}/buildings", response_model=BuildingsResult)
-async def getStudyBuildings(
+async def get_study_buildings(
     session: AsyncSession = Depends(get_session),
     *,
     id: int,
@@ -49,7 +60,7 @@ async def getStudyBuildings(
 
 
 @router.get("/study/{id}/spaces", response_model=SpacesResult)
-async def getStudySpaces(
+async def get_study_spaces(
     session: AsyncSession = Depends(get_session),
     *,
     id: int,
@@ -61,7 +72,7 @@ async def getStudySpaces(
 
 
 @router.get("/study/{id}/building/{building_id}/spaces", response_model=SpacesResult)
-async def getStudyBuildingSpaces(
+async def get_study_building_spaces(
     session: AsyncSession = Depends(get_session),
     *,
     id: int,
@@ -74,7 +85,7 @@ async def getStudyBuildingSpaces(
 
 
 @router.get("/buildings", response_model=BuildingsResult)
-async def getBuildings(
+async def get_buildings(
     filter: str = Query(None),
     sort: str = Query(None),
     range: str = Query(None),
@@ -87,7 +98,7 @@ async def getBuildings(
 
 
 @router.get("/building/{id}", response_model=BuildingRead)
-async def getBuilding(
+async def get_building(
     session: AsyncSession = Depends(get_session),
     *,
     id: int,
@@ -98,8 +109,19 @@ async def getBuilding(
     return building
 
 
+@router.delete("/building/{id}")
+async def delete_building(
+    id: int,
+    session: AsyncSession = Depends(get_session),
+    api_key: str = Security(get_api_key),
+) -> None:
+    """Delete building by id"""
+    service = BuildingService(session)
+    await service.delete(id)
+
+
 @router.get("/spaces", response_model=SpacesResult)
-async def getSpaces(
+async def get_spaces(
     filter: str = Query(None),
     sort: str = Query(None),
     range: str = Query(None),
@@ -112,7 +134,7 @@ async def getSpaces(
 
 
 @router.get("/space/{id}", response_model=Space)
-async def getSpace(
+async def get_space(
     session: AsyncSession = Depends(get_session),
     *,
     id: int,
@@ -121,3 +143,14 @@ async def getSpace(
     service = SpaceService(session)
     space = await service.get(id)
     return space
+
+
+@router.delete("/space/{id}")
+async def delete_space(
+    id: int,
+    session: AsyncSession = Depends(get_session),
+    api_key: str = Security(get_api_key),
+) -> None:
+    """Delete space by id"""
+    service = SpaceService(session)
+    await service.delete(id)

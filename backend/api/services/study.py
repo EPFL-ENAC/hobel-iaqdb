@@ -18,7 +18,7 @@ class StudyService:
         return count
 
     async def get(self, study_id: int) -> Study:
-        """Get a numerical model by id"""
+        """Get a study by id"""
         res = await self.session.exec(
             select(Study).where(
                 Study.id == study_id).options(selectinload(Study.contact), selectinload(Study.buildings))
@@ -28,6 +28,19 @@ class StudyService:
             raise HTTPException(
                 status_code=404, detail="Study not found")
 
+        return study
+
+    async def delete(self, study_id: int) -> Study:
+        """Delete a study by id"""
+        res = await self.session.exec(
+            select(Study).where(Study.id == study_id)
+        )
+        study = res.one_or_none()
+        if not study:
+            raise HTTPException(
+                status_code=404, detail="Study not found")
+        await self.session.delete(study)
+        await self.session.commit()
         return study
 
     async def find(self, filter: dict, sort: list, range: list) -> StudiesResult:

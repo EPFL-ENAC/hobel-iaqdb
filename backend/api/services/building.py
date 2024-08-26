@@ -18,7 +18,7 @@ class BuildingService:
         return count
 
     async def get(self, building_id: int) -> Building:
-        """Get a numerical model by id"""
+        """Get a building by id"""
         res = await self.session.exec(
             select(Building).where(
                 Building.id == building_id).options(selectinload(Building.certifications), selectinload(Building.spaces))
@@ -28,6 +28,19 @@ class BuildingService:
             raise HTTPException(
                 status_code=404, detail="Building not found")
 
+        return building
+
+    async def delete(self, building_id: int) -> Study:
+        """Delete a building by id"""
+        res = await self.session.exec(
+            select(Building).where(Building.id == building_id)
+        )
+        building = res.one_or_none()
+        if not building:
+            raise HTTPException(
+                status_code=404, detail="Building not found")
+        await self.session.delete(building)
+        await self.session.commit()
         return building
 
     async def find(self, filter: dict, sort: list, range: list) -> BuildingsResult:

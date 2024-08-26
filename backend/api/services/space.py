@@ -18,7 +18,7 @@ class SpaceService:
         return count
 
     async def get(self, space_id: int) -> Space:
-        """Get a numerical model by id"""
+        """Get a space by id"""
         res = await self.session.exec(
             select(Space).where(
                 Space.id == space_id)
@@ -28,6 +28,19 @@ class SpaceService:
             raise HTTPException(
                 status_code=404, detail="Space not found")
 
+        return space
+
+    async def delete(self, space_id: int) -> Study:
+        """Delete a space by id"""
+        res = await self.session.exec(
+            select(Space).where(Space.id == space_id)
+        )
+        space = res.one_or_none()
+        if not space:
+            raise HTTPException(
+                status_code=404, detail="Space not found")
+        await self.session.delete(space)
+        await self.session.commit()
         return space
 
     async def find(self, filter: dict, sort: list, range: list) -> SpacesResult:
