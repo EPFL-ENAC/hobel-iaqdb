@@ -57,7 +57,7 @@ export default defineComponent({
 </script>
 <script setup lang="ts">
 import { withDefaults } from 'vue';
-import { DBModel, Study } from 'src/models';
+import { DBModel, Person, Study } from 'src/models';
 
 export interface FieldItem<T extends DBModel> {
   field: string;
@@ -71,8 +71,8 @@ export interface FieldItem<T extends DBModel> {
 }
 
 export interface FieldsListProps {
-  dbobject: Study;
-  items: FieldItem<Study>[];
+  dbobject: Study | Person;
+  items: FieldItem<Study | Person>[];
 }
 
 const props = withDefaults(defineProps<FieldsListProps>(), {

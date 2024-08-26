@@ -31,7 +31,12 @@ services:
   backend:
     build: ./backend
     environment:
-      - MONGODB_URI=mongodb://mongo:27017/iaqdb
+      - DB_HOST=postgres
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - DB_PREFIX=${DB_PREFIX}
       - API_KEYS=${API_KEYS}
       - PATH_PREFIX=/api
       - S3_ENDPOINT_HOSTNAME=${S3_ENDPOINT_HOSTNAME}
@@ -52,11 +57,19 @@ services:
       - "traefik.http.middlewares.backend-middleware.stripprefix.prefixes=/api"
     restart: unless-stopped
     links:
-      - mongo
-  mongo:
-    image: mongo
+      - postgres
+  postgres:
+    image: postgres:15.5-alpine
+    expose:
+      - 5432
     ports:
-      - 27017:27017
+      - '5432:5432'
+    restart: always
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_HOST=postgres
 volumes:
-  mongo:
+  postgres:
     driver: local

@@ -11,7 +11,7 @@
     >
       <q-tab name="studies" :label="$t('studies')" />
       <q-tab name="buildings" :label="$t('buildings')" />
-      <q-tab name="rooms" :label="$t('rooms')" />
+      <q-tab name="spaces" :label="$t('spaces')" />
     </q-tabs>
 
     <q-separator />
@@ -23,8 +23,8 @@
       <q-tab-panel name="buildings">
         <building-list />
       </q-tab-panel>
-      <q-tab-panel name="rooms">
-        <room-list />
+      <q-tab-panel name="spaces">
+        <space-list />
       </q-tab-panel>
     </q-tab-panels>
     
@@ -34,7 +34,7 @@
 <script setup lang="ts">
 import StudyList from 'src/components/StudyList.vue';
 import BuildingList from 'src/components/BuildingList.vue';
-import RoomList from 'src/components/RoomList.vue';
+import SpaceList from 'src/components/SpaceList.vue';
 
 const tab = ref('studies');
 

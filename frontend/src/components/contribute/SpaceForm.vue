@@ -1,34 +1,34 @@
 <template>
   <div>
     <q-input
-      v-model="room.identifier"
+      v-model="space.identifier"
       filled
-      :label="$t('study.room.identifier')"
-      :hint="$t('study.room.identifier_hint')"
+      :label="$t('study.space.identifier')"
+      :hint="$t('study.space.identifier_hint')"
       class="q-mb-md"
     />
 
     <div class="row q-col-gutter-md">
       <div class="col">
         <q-select
-          v-model="room.space"
+          v-model="space.space"
           :options="spaceTypeOptions"
           filled
           emit-value
           map-options
-          :label="$t('study.room.space')"
-          :hint="$t('study.room.space_hint')"
+          :label="$t('study.space.space')"
+          :hint="$t('study.space.space_hint')"
         />
       </div>
       <div class="col">
         <q-select
-          v-model="room.occupancy"
+          v-model="space.occupancy"
           :options="occupancyOptions"
           filled
           emit-value
           map-options
-          :label="$t('study.room.occupancy')"
-          :hint="$t('study.room.occupancy_hint')"
+          :label="$t('study.space.occupancy')"
+          :hint="$t('study.space.occupancy_hint')"
         />
       </div>
     </div>
@@ -36,7 +36,7 @@
     <div class="row q-col-gutter-md">
       <div class="col">
         <q-select
-          v-model="room.ventilation"
+          v-model="space.ventilation"
           :options="ventilationOptions"
           filled
           emit-value
@@ -47,7 +47,7 @@
       </div>
       <div class="col">
         <q-select
-          v-model="room.smoking"
+          v-model="space.smoking"
           :options="yesNoOptions"
           filled
           emit-value
@@ -61,11 +61,11 @@
     <div class="text-bold q-mb-md">Periods</div>
     <q-card flat bordered class="q-mb-md bg-white">
       <q-card-section>
-        <div v-if="room.periods?.length === 0" class="text-help">No periods defined yet.</div>
+        <div v-if="space.periods?.length === 0" class="text-help">No periods defined yet.</div>
         <q-list separator>
-          <q-item v-for="(period, i) in room.periods" :key="period._id" class="q-pl-none q-pr-none">
+          <q-item v-for="(period, i) in space.periods" :key="period.id" class="q-pl-none q-pr-none">
             <q-item-section>
-              <period-form v-model="room.periods[i]" class="q-mt-md"/>
+              <period-form v-model="space.periods[i]" class="q-mt-md"/>
             </q-item-section>
             <q-item-section side>
               <q-btn
@@ -92,29 +92,29 @@
 
 <script lang="ts">
 export default defineComponent({
-  name: 'RoomForm',
+  name: 'SpaceForm',
 });
 </script>
 <script setup lang="ts">
 import { spaceTypeOptions, occupancyOptions, ventilationOptions, yesNoOptions } from 'src/utils/options';
-import { Building, Room } from 'src/models';
+import { Building, Space } from 'src/models';
 import PeriodForm from 'src/components/contribute/PeriodForm.vue';
 
 interface Props {
-  modelValue: Room;
+  modelValue: Space;
   building: Building;
 }
 const props = defineProps<Props>();
 
 const contrib = useContributeStore();
 
-const room = ref(props.modelValue);
+const space = ref(props.modelValue);
 
 function onAddPeriod() {
-  contrib.addPeriod(props.building.identifier, room.value.identifier);
+  contrib.addPeriod(props.building.identifier, space.value.identifier);
 }
 
 function onDeletePeriod(i: number) {
-  contrib.deletePeriod(props.building.identifier, room.value.identifier, i);
+  contrib.deletePeriod(props.building.identifier, space.value.identifier, i);
 }
 </script>

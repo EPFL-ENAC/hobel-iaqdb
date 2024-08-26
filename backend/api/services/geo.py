@@ -2,9 +2,8 @@ import pkg_resources
 import requests
 import rasterio
 from pyproj import Transformer
+from api.config import config
 from api.models.geo import ClimateZone, Elevation
-
-ELEVATION_URL = "https://api.open-elevation.com"
 
 CLIMATE_ZONES = [
     "Af",
@@ -71,8 +70,9 @@ class GeoService:
         return ClimateZone(id=value, name=name, lon=lon, lat=lat)
 
     def queryElevation(self, lon: float = 0, lat: float = 0) -> Elevation:
-        resp = requests.get(f"{ELEVATION_URL}/api/v1/lookup",
+        resp = requests.get(f"{config.ELEVATION_URL}",
                             params={"locations": f"{lat},{lon}"})
         content = resp.json()
+        print(content)
         place = content["results"][0]
         return Elevation(altitude=place["elevation"], lon=lon, lat=lat)

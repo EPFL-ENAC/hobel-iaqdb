@@ -13,8 +13,8 @@
     </div>
     <fields-list :dbobject="study" :items="items"/>
     <div class="text-bold q-mt-md">{{ $t('Contact') }}</div>
-    <fields-list :dbobject="study" :items="contactItems"/>
-    <div class="text-bold q-mt-md">{{ $t('Reference') }}</div>
+    <fields-list :dbobject="study?.contact" :items="contactItems"/>
+    <div class="text-bold q-mt-md">{{ $t('Marker paper') }}</div>
     <fields-list :dbobject="study" :items="refItems"/>
     <div class="q-mt-md">
       <div class="text-bold">License</div>
@@ -39,7 +39,7 @@ export default defineComponent({
 <script setup lang="ts">
 import { licenseOptions } from 'src/utils/options';
 import FieldsList, { FieldItem } from 'src/components/FieldsList.vue';
-import { Study } from 'src/models';
+import { Study, Person } from 'src/models';
 
 const catalogStore = useCatalogStore();
 const { t } = useI18n();
@@ -54,17 +54,17 @@ const licenseDescription = computed(() => licenseOptions.find((lic) => lic.value
 
 const items: FieldItem<Study>[] = [
   { field: 'building_count', label: 'Building count' },
-  { field: 'room_count', label: 'Room count' },
+  { field: 'space_count', label: 'Space count' },
   { field: 'countries', label: 'Countries' },
 ]
 
 const refItems: FieldItem<Study>[] = [
   {
-    field: 'author',
-    label: 'Author'
+    field: 'reference',
+    label: 'Reference'
   },
   {
-    field: 'citation',
+    field: 'cite',
     label: 'How to cite'
   },
   {
@@ -73,21 +73,21 @@ const refItems: FieldItem<Study>[] = [
   },
 ]
 
-const contactItems: FieldItem<Study>[] = [
+const contactItems: FieldItem<Study | Person>[] = [
   {
     field: 'contact',
     label: 'Name',
-    html: (val: Study) => val.contact.name
+    html: (val: Study) => val.name
   },
   {
     field: 'contact',
     label: 'Email',
-    html: (val: Study) => `&lt;<a href="mailto:${val.contact.email}">${val.contact.email}</a>&gt;`
+    html: (val: Study) => `&lt;<a href="mailto:${val.email}">${val.email}</a>&gt;`
   },
   {
     field: 'contact',
     label: 'Institution',
-    html: (val: Study) => val.contact.institution
+    html: (val: Study) => val.institution
   },
 ]
 

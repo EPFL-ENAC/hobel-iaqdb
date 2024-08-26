@@ -66,7 +66,7 @@ async function demo() {
   await sleep(1000);
   progress.value = 0.25;
   buffer.value = 0.5;
-  status.value = 'Uploading buildings and rooms...';
+  status.value = 'Uploading buildings and spaces...';
   await sleep(1000);
   progress.value = 0.5;
   buffer.value = 0.75;

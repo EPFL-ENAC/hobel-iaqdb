@@ -1,24 +1,20 @@
 import { defineStore } from 'pinia';
 import { api } from 'src/boot/api';
-import { Study, Building, Room, StudiesResult, BuildingsResult, RoomsResult } from 'src/models';
-import { DEFAULT_ALTITUDES } from 'src/stores/filters';
-
+import { Study, Building, Space, StudiesResult, BuildingsResult, SpacesResult } from 'src/models';
 
 export const useCatalogStore = defineStore('catalog', () => {
 
   const study = ref<Study>();
   const buildings = ref<Building[]>([]);
-  const rooms = ref<Room[]>([]);
+  const spaces = ref<Space[]>([]);
 
   const filterStore = useFiltersStore();
 
   async function loadStudies(skip: number, limit: number): Promise<StudiesResult> {
-    const filters = getFilterParams();
     return api.get('/catalog/studies',{
       params: {
-        skip,
-        limit,
-        ...filters
+        range: JSON.stringify([skip, limit + skip - 1]),
+        filter: JSON.stringify(getFilterParams())
       },
       paramsSerializer: {
         indexes: null, // no brackets at all
@@ -27,12 +23,10 @@ export const useCatalogStore = defineStore('catalog', () => {
   }
 
   async function loadBuildings(skip: number, limit: number): Promise<BuildingsResult> {
-    const filters = getFilterParams();
     return api.get('/catalog/buildings', { 
       params: {
-        skip,
-        limit,
-        ...filters
+        range: JSON.stringify([skip, limit + skip - 1]),
+        filter: JSON.stringify(getFilterParams())
       },
       paramsSerializer: {
         indexes: null, // no brackets at all
@@ -40,13 +34,11 @@ export const useCatalogStore = defineStore('catalog', () => {
     }).then((response) => response.data)
   }
 
-  async function loadRooms(skip: number, limit: number): Promise<RoomsResult> {
-    const filters = getFilterParams();
-    return api.get('/catalog/rooms', { 
+  async function loadSpaces(skip: number, limit: number): Promise<SpacesResult> {
+    return api.get('/catalog/spaces', { 
       params: {
-        skip,
-        limit,
-        ...filters
+        range: JSON.stringify([skip, limit + skip - 1]),
+        filter: JSON.stringify(getFilterParams())
       },
       paramsSerializer: {
         indexes: null, // no brackets at all
@@ -57,10 +49,16 @@ export const useCatalogStore = defineStore('catalog', () => {
   function getFilterParams() {
     const altitudes = filterStore.altitudes;
     return {
-      altmin: altitudes.min === DEFAULT_ALTITUDES.min ? undefined : altitudes.min,
-      altmax: altitudes.max === DEFAULT_ALTITUDES.max ? undefined : altitudes.max,
-      climates: filterStore.climateZones,
-      ventilations: filterStore.ventilations,
+      $building: {
+        $and: [
+          { altitude: { $gte: altitudes.min } },
+          { altitude: { $lte: altitudes.max } }
+        ],
+        climate_zone: filterStore.climateZones && filterStore.climateZones.length ? filterStore.climateZones : undefined,
+      },
+      $space: {
+        ventilation: filterStore.ventilations && filterStore.ventilations.length ? filterStore.ventilations : undefined,
+      }
     }
   }
 
@@ -70,33 +68,33 @@ export const useCatalogStore = defineStore('catalog', () => {
       study.value = response.data;
       return Promise.all([
         loadStudyBuildings(),
-        loadStudyRooms()
+        loadStudySpaces()
       ]);
     });
   }
 
   async function loadStudyBuildings() {
     buildings.value = [];
-    return api.get(`/catalog/study/${study.value?._id}/buildings`).then((response) => {
+    return api.get(`/catalog/study/${study.value?.id}/buildings`).then((response) => {
       buildings.value = response.data;
     })
   }
 
-  async function loadStudyRooms() {
-    rooms.value = [];
-    return api.get(`/catalog/study/${study.value?._id}/rooms`).then((response) => {
-      rooms.value = response.data;
+  async function loadStudySpaces() {
+    spaces.value = [];
+    return api.get(`/catalog/study/${study.value?.id}/spaces`).then((response) => {
+      spaces.value = response.data;
     })
   }
 
   return {
     loadStudies,
     loadBuildings,
-    loadRooms,
+    loadSpaces,
     loadStudy,
     study,
     buildings,
-    rooms
+    spaces
   }
 
 });

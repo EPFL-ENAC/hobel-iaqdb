@@ -1,7 +1,144 @@
 from typing import List, Literal, Optional
-import pymongo
-from pydantic import Field, BaseModel
-from beanie import Document, Indexed, Link, PydanticObjectId
+from sqlmodel import SQLModel, Field, Relationship, UniqueConstraint
+from pydantic import BaseModel
+
+
+class PersonBase(SQLModel):
+    name: str
+    email: str
+    institution: str
+    study_id: Optional[int] = Field(
+        default=None, foreign_key="study.id", ondelete="CASCADE")
+
+
+class Person(PersonBase, table=True):
+    __table_args__ = (UniqueConstraint("id"),)
+    id: Optional[int] = Field(
+        default=None,
+        nullable=False,
+        primary_key=True,
+        index=True,
+    )
+    # relationships
+    study: Optional["Study"] = Relationship(back_populates="contact")
+
+
+class StudyBase(SQLModel):
+    identifier: str
+    name: str
+    description: str
+    building_count: Optional[int] = Field(default=None)
+    space_count: Optional[int] = Field(default=None)
+    start_year: Optional[int] = Field(default=None)
+    end_year: Optional[int] = Field(default=None)
+    reference: Optional[str] = Field(default=None)
+    doi: Optional[str] = Field(default=None)
+    cite: Optional[str] = Field(default=None)
+
+
+class Study(StudyBase, table=True):
+    __table_args__ = (UniqueConstraint("id"),)
+    id: Optional[int] = Field(
+        default=None,
+        nullable=False,
+        primary_key=True,
+        index=True,
+    )
+    # relationships
+    contact: Person = Relationship(
+        back_populates="study", cascade_delete=True)
+    buildings: List["Building"] = Relationship(
+        back_populates="study", cascade_delete=True)
+
+
+class StudyRead(StudyBase):
+    id: int
+    contact: Person
+    buildings: List["Building"] = []
+
+
+class CertificationBase(SQLModel):
+    program: str
+    level: str
+    building_id: Optional[int] = Field(
+        default=None, foreign_key="building.id", ondelete="CASCADE")
+
+
+class Certification(CertificationBase, table=True):
+    __table_args__ = (UniqueConstraint("id"),)
+    id: int = Field(
+        default=None,
+        nullable=False,
+        primary_key=True,
+        index=True,
+    )
+    # relationships
+    building: Optional["Building"] = Relationship(
+        back_populates="certifications")
+
+
+class BuildingBase(SQLModel):
+    identifier: str
+    country: str
+    city: str
+    timezone: str
+    altitude: int
+    climate_zone: str
+    long: float
+    lat: float
+    type: Optional[str] = Field(default=None)                # ex: school
+    special_population: Optional[str] = Field(default=None)  # ex: children
+    outdoor_env: Optional[str] = Field(default=None)
+    construction_year: Optional[int] = Field(default=None)
+    renovation_year: Optional[int] = Field(default=None)
+    study_id: Optional[int] = Field(
+        default=None, foreign_key="study.id", ondelete="CASCADE")
+
+
+class Building(BuildingBase, table=True):
+    __table_args__ = (UniqueConstraint("id"),)
+    id: int = Field(
+        default=None,
+        nullable=False,
+        primary_key=True,
+        index=True,
+    )
+    # relationships
+    certifications: List[Certification] = Relationship(
+        back_populates="building", cascade_delete=True)
+    study: Optional["Study"] = Relationship(
+        back_populates="buildings")
+    spaces: List["Space"] = Relationship(
+        back_populates="building", cascade_delete=True)
+
+
+class BuildingRead(BuildingBase):
+    id: int
+    certifications: List[Certification] = []
+    spaces: List["Space"] = []
+
+
+class SpaceBase(SQLModel):
+    identifier: str
+    space: str
+    ventilation: str
+    smoking: str
+    study_id: Optional[int] = Field(
+        default=None, foreign_key="study.id", ondelete="CASCADE")
+    building_id: Optional[int] = Field(
+        default=None, foreign_key="building.id", ondelete="CASCADE")
+
+
+class Space(SpaceBase, table=True):
+    __table_args__ = (UniqueConstraint("id"),)
+    id: int = Field(
+        default=None,
+        nullable=False,
+        primary_key=True,
+        index=True,
+    )
+    # relationships
+    building: Optional[Building] = Relationship(back_populates="spaces")
 
 
 class ListResult(BaseModel):
@@ -10,102 +147,13 @@ class ListResult(BaseModel):
     limit: int | None
 
 
-class Person(BaseModel):
-    name: str
-    email: str
-    institution: str
-
-
-class GreenCertification(BaseModel):
-    program: str
-    level: str
-
-
-class Study(Document):
-    identifier: str
-    name: str
-    description: str
-    contact: Optional[Person] = None
-    building_count: Optional[int] = None
-    room_count: Optional[int] = None
-    start_year: Optional[int] = None
-    end_year: Optional[int] = None
-
-    class Settings:
-        name = "studies"
-        indexes = [
-            [
-                ("identifier", pymongo.TEXT),
-                ("name", pymongo.TEXT),
-                ("description", pymongo.TEXT),
-            ],
-        ]
-
-
 class StudiesResult(ListResult):
-    data: List[Study]
-
-
-class Building(Document):
-    identifier: str
-    country: str
-    city: str
-    timezone: str
-    altitude: int
-    climate_zone: str
-    location: List[float]  # [long, lat]
-    type: Optional[str] = None                # ex: school
-    special_population: Optional[str] = None  # ex: children
-    outdoor_env: Optional[Literal["rural",
-                                  "urban", "suburban", "other"]] = None
-    construction_year: Optional[int] = None
-    renovation_year: Optional[int] = None
-    certifications: Optional[List[GreenCertification]] = None
-    study: Link[Study]
-
-    class Settings:
-        name = "buildings"
-        indexes = [
-            [
-                ("identifier", pymongo.TEXT),
-            ],
-        ]
-
-
-class BuildingStudy(BaseModel):
-    identifier: str
-    study: Link[Study]
-
-
-class RoomDigest(BaseModel):
-    identifier: str
-    building: Link[Building]
-
-
-class DocumentId(BaseModel):
-    id: PydanticObjectId = Field(None, alias="_id")
+    data: List[StudyRead]
 
 
 class BuildingsResult(ListResult):
-    data: List[Building]
+    data: List[BuildingRead]
 
 
-class Room(Document):
-    identifier: str
-    space: str
-    ventilation: Literal["natural", "mechanical", "NA"]
-    smoking: Literal["yes", "no", "NA"]
-    study: Link[Study]
-    building: Link[Building]
-
-    class Settings:
-        name = "rooms"
-        indexes = [
-            [
-                ("identifier", pymongo.TEXT),
-            ],
-        ]
-
-
-class RoomsResult(ListResult):
-    data: List[Room]
+class SpacesResult(ListResult):
+    data: List[Space]

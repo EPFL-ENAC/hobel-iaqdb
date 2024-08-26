@@ -169,8 +169,8 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
         if (filtered && filter.ventilations && filter.ventilations.length) {
           filtered = filter.ventilations.filter((vent) => feature.properties?.ventilations.includes(vent)).length>0;
         }
-        if (filtered && filter.study_ids && filter.study_ids.length) {
-          filtered = filter.study_ids.includes(feature.properties?.study_id);
+        if (filtered && filter.study_ids && filter.study_ids.length && feature.properties?.study_id !== undefined) {
+          filtered = filter.study_ids.includes(parseInt(feature.properties.study_id));
         }
         return filtered;
       });

@@ -4,7 +4,7 @@
       ref="tableRef"
       flat
       :rows="rows"
-      row-key="_id"
+      row-key="id"
       v-model:pagination="pagination"
       :loading="loading"
       @request="onRequest"
@@ -14,19 +14,19 @@
 
 <script lang="ts">
 export default defineComponent({
-  name: 'RoomList',
+  name: 'SpaceList',
 });
 </script>
 <script setup lang="ts">
-import { Room, RoomsResult } from 'src/models'
+import { Space, SpacesResult } from 'src/models'
 
 const catalogStore = useCatalogStore();
 const filtersStore = useFiltersStore();
 
 const tableRef = ref();
-const rows = ref<Room[]>([]);
+const rows = ref<Space[]>([]);
 const pagination = ref({
-  sortBy: '_id',
+  sortBy: 'id',
   descending: false,
   page: 1,
   rowsPerPage: 10,
@@ -49,8 +49,8 @@ function onRequest (props) {
   const limit = rowsPerPage;
   loading.value = true
 
-  catalogStore.loadRooms(skip, limit)
-    .then((result: RoomsResult) => {
+  catalogStore.loadSpaces(skip, limit)
+    .then((result: SpacesResult) => {
       rows.value = result.data;
       pagination.value.rowsNumber = result.total;
 

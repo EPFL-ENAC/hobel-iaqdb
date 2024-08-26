@@ -1,8 +1,13 @@
 <template>
-  <div v-if="loading" class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90">
-    <q-spinner-dots color="primary" size="100px" />
+  <div>
+    <div v-if="loading" class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90">
+      <q-spinner-dots color="primary" size="100px" />
+    </div>
+    <div 
+      id="maplibre-map"
+      :style="`height: ${height}; width: ${width};`"
+    />
   </div>
-  <div id="maplibre-map" :style="`height: ${height}; width: ${width};`"></div>
 </template>
 
 <script lang="ts">
@@ -55,8 +60,8 @@ const props = withDefaults(defineProps<Props>(), {
   maxZoom: undefined,
   position: false,
   geocoder: false,
-  height: '95vh',
-  width: '100vw',
+  height: '100%',
+  width: '100%',
 });
 
 const emit = defineEmits(['map:loaded', 'map:click'])

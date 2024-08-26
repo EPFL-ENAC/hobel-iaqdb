@@ -18,13 +18,13 @@ lint-staged:
 	$(MAKE) -C frontend lint-staged
 
 run-db:
-	docker compose up -d --pull=always mongo
+	docker compose up -d --pull=always postgres
 
 stop-db:
-	docker compose stop mongo
+	docker compose stop postgres
 
 down-db:
-	docker compose down mongo
+	docker compose down postgres
 
 # setup and run when deploying on server
 setup:

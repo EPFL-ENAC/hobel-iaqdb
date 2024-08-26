@@ -40,7 +40,7 @@ export const buildingTypeOptions = [
   { value: 'multifamily_residential', label: 'Multifamily residential' },
   { value: 'dwelling', label: ' Dwelling' },
   { value: 'office', label: ' Office' },
-  { value: 'classroom,', label: ' Classroom' },
+  { value: 'classspace,', label: ' Classspace' },
   { value: 'senior_center', label: 'Senior Center' },
   { value: 'hospital', label: ' Hospital' },
   { value: 'retail', label: ' Retail' },
@@ -71,20 +71,20 @@ export const yesNoOptions = [
 ]
 
 export const spaceTypeOptions = [
-  { value: 'living_room', label: 'Living room' },
+  { value: 'living_space', label: 'Living space' },
   { value: 'kitchen', label: 'Kitchen' },
-  { value: 'bedroom', label: 'Bedroom' },
+  { value: 'bedspace', label: 'Bedspace' },
   { value: 'basement', label: 'Basement' },
   { value: 'garage', label: 'Garage' },
   { value: 'enclosed_shared_office', label: 'Enclosed shared office' },
   { value: 'enclosed_private_office', label: 'Enclosed private office' },
   { value: 'open_office', label: 'Open office' },
-  { value: 'focus_room', label: 'Focus room' },
+  { value: 'focus_space', label: 'Focus space' },
   { value: 'hallway', label: 'Hallway' },
   { value: 'restaurant', label: 'Restaurant' },
   { value: 'supermarket', label: 'Supermarket' },
-  { value: 'waiting_room', label: 'Waiting room' },
-  { value: 'patient_room', label: 'Patient room' },
+  { value: 'waiting_space', label: 'Waiting space' },
+  { value: 'patient_space', label: 'Patient space' },
   { value: 'other', label: 'Other' }
 ]
 

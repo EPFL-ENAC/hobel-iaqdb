@@ -1,22 +1,24 @@
 <template>
   <div>
-    <maplibre-map
-      position
-      :zoom="2"
-      height="400px"
-      width="100%"
-      @map:loaded="onMapLoaded"
-      @map:click="onMapClick" />
+    <div v-if="catalogStore.study">
+      <maplibre-map
+        position
+        :zoom="2"
+        height="400px"
+        width="100%"
+        @map:loaded="onMapLoaded"
+        @map:click="onMapClick" />
+    </div>
     <q-table
       flat
       :rows="buildings"
       :columns="columms"
       v-model:pagination="pagination"
-      row-key="_id"
+      row-key="id"
       >
       <template v-slot:body-cell-city="props">
         <q-td :props="props">
-          <span :title="`${props.row.location[0]}, ${props.row.location[1]}`">
+          <span :title="`${props.row.long}, ${props.row.lat}`">
             {{ props.row.city }}, {{ props.row.country }}
           </span>
         </q-td>
@@ -44,23 +46,23 @@ const catalogStore = useCatalogStore();
 const mapStore = useMapStore();
 
 const pagination = ref({
-  sortBy: '_id',
+  sortBy: 'identifier',
   descending: false,
   page: 1,
   rowsPerPage: 10,
   rowsNumber: 0,
 });
 
-const buildings = computed(() => catalogStore.buildings);
+const buildings = computed(() => catalogStore.study?.buildings || []);
 
 const columms = computed(() => {
   return [
-    // {
-    //   name: 'identifier',
-    //   label: 'ID',
-    //   align: 'left',
-    //   field: 'identifier'
-    // },
+    {
+      name: 'identifier',
+      label: 'ID',
+      align: 'left',
+      field: 'identifier'
+    },
     {
       name: 'city',
       label: 'City',
@@ -90,9 +92,11 @@ const columms = computed(() => {
 
 function onMapLoaded(map: Map) {
   mapStore.initLayers(map).then(() => {
-    mapStore.applyFilters({
-      study_ids: [catalogStore.study?._id]
-    });
+    if (catalogStore.study?.id){
+      mapStore.applyFilters({
+        study_ids: [catalogStore.study?.id]
+      });
+    }
   });
 }
 </script>
