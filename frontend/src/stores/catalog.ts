@@ -57,7 +57,7 @@ export const useCatalogStore = defineStore('catalog', () => {
         climate_zone: filterStore.climateZones && filterStore.climateZones.length ? filterStore.climateZones : undefined,
       },
       $space: {
-        ventilation: filterStore.ventilations && filterStore.ventilations ? filterStore.ventilations : undefined,
+        ventilation: filterStore.ventilations && filterStore.ventilations.length ? filterStore.ventilations : undefined,
       }
     }
   }
