@@ -4,7 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["ymarcon <yannick.marcon@epfl.ch>"]
 readme = "README.md"
-packages = [{include = "iaqdb_api"}]
+packages = [{include = "api"}]
 
 [tool.poetry.dependencies]
 python = "^3.10"
@@ -19,6 +19,8 @@ asyncpg = "^0.29.0"
 psycopg2 = "^2.9.9"
 pydantic-settings = "^2.4.0"
 dynaconf = "^3.2.6"
+pillow = "^10.4.0"
+aiobotocore = "^2.13.3"
 
 
 [build-system]
