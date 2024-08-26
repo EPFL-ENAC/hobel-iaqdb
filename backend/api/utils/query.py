@@ -138,7 +138,7 @@ class QueryBuilder:
         return query_
 
     def _apply_range(self, query_, total_count):
-        if len(self.range) == 2:
+        if len(self.range) == 2 and self.range[1] >= 0:
             start, end = self.range
             query_ = query_.offset(start).limit(end - start + 1)
             return start, end, query_
