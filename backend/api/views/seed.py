@@ -26,14 +26,9 @@ async def seed(session: AsyncSession = Depends(get_session)) -> SeedStatus:
     geoService = GeoService()
 
     for i in range(0, 3):
-        contacts = []
-        for i in range(0, random.randint(1, 2)):
-            contacts.append(Person(name=fake.name(), email=fake.email(),
-                                   institution=fake.company()))
         study = Study(identifier=f"seed-{uuid.uuid4()}",
                       name=fake.word(),
                       description=fake.paragraph(nb_sentences=2),
-                      contacts=contacts,
                       building_count=random.randint(1, 10),
                       space_count=random.randint(1, 100),
                       start_year=random.randint(2000, 2010),
@@ -43,6 +38,15 @@ async def seed(session: AsyncSession = Depends(get_session)) -> SeedStatus:
         await session.commit()
         await session.refresh(study)
 
+        # study contact
+        contact = Person(name=fake.name(), email=fake.email(),
+                         institution=fake.company(), study_id=study.id)
+
+        session.add(contact)
+        await session.commit()
+        await session.refresh(contact)
+
+        # study buildings
         for j in range(0, 3):
             place = fake.location_on_land()
             zone = geoService.readClimateZone(place[1], place[0], False)
@@ -65,6 +69,7 @@ async def seed(session: AsyncSession = Depends(get_session)) -> SeedStatus:
             await session.commit()
             await session.refresh(building)
 
+            # study building spaces
             for k in range(0, 10):
                 space = Space(identifier=f"seed-{j}-{k}",
                               space=fake.word(ext_word_list=spaces),

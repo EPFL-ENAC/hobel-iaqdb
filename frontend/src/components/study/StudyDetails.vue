@@ -12,15 +12,8 @@
       </q-linear-progress>
     </div>
     <fields-list :dbobject="study" :items="items"/>
-    <div class="text-bold q-mt-md">{{ $t('Contacts') }}</div>
-    <div v-for="contact in study?.contacts" :key="contact.email">
-      <q-card flat bordered class="q-mt-md">
-        <q-card-section class="q-pa-none">
-          <fields-list :dbobject="contact" :items="contactItems"/>
-        </q-card-section>
-        
-      </q-card>
-    </div>
+    <div class="text-bold q-mt-md">{{ $t('Contact') }}</div>
+    <fields-list :dbobject="study?.contact" :items="contactItems"/>
     <div class="text-bold q-mt-md">{{ $t('Marker paper') }}</div>
     <fields-list :dbobject="study" :items="refItems"/>
     <div class="q-mt-md">
@@ -80,7 +73,7 @@ const refItems: FieldItem<Study>[] = [
   },
 ]
 
-const contactItems: FieldItem<Person>[] = [
+const contactItems: FieldItem<Study | Person>[] = [
   {
     field: 'contact',
     label: 'Name',

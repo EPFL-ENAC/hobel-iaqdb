@@ -3,14 +3,15 @@ from sqlmodel import SQLModel, Field, Relationship, UniqueConstraint
 from pydantic import BaseModel
 
 
-class StudyPerson(SQLModel, table=True):
-    person_id: Optional[int] = Field(
-        default=None, foreign_key="person.id", primary_key=True)
+class PersonBase(SQLModel):
+    name: str
+    email: str
+    institution: str
     study_id: Optional[int] = Field(
-        default=None, foreign_key="study.id", primary_key=True)
+        default=None, foreign_key="study.id", ondelete="CASCADE")
 
 
-class Person(SQLModel, table=True):
+class Person(PersonBase, table=True):
     __table_args__ = (UniqueConstraint("id"),)
     id: Optional[int] = Field(
         default=None,
@@ -18,12 +19,8 @@ class Person(SQLModel, table=True):
         primary_key=True,
         index=True,
     )
-    name: str
-    email: str
-    institution: str
     # relationships
-    studies: List["Study"] = Relationship(
-        back_populates="contacts", link_model=StudyPerson)
+    study: Optional["Study"] = Relationship(back_populates="contact")
 
 
 class StudyBase(SQLModel):
@@ -48,18 +45,26 @@ class Study(StudyBase, table=True):
         index=True,
     )
     # relationships
-    contacts: List[Person] = Relationship(
-        back_populates="studies", link_model=StudyPerson)
-    buildings: List["Building"] = Relationship(back_populates="study")
+    contact: Person = Relationship(
+        back_populates="study", cascade_delete=True)
+    buildings: List["Building"] = Relationship(
+        back_populates="study", cascade_delete=True)
 
 
 class StudyRead(StudyBase):
     id: int
-    contacts: List[Person] = []
+    contact: Person
     buildings: List["Building"] = []
 
 
-class Certification(SQLModel, table=True):
+class CertificationBase(SQLModel):
+    program: str
+    level: str
+    building_id: Optional[int] = Field(
+        default=None, foreign_key="building.id", ondelete="CASCADE")
+
+
+class Certification(CertificationBase, table=True):
     __table_args__ = (UniqueConstraint("id"),)
     id: int = Field(
         default=None,
@@ -67,9 +72,6 @@ class Certification(SQLModel, table=True):
         primary_key=True,
         index=True,
     )
-    program: str
-    level: str
-    building_id: Optional[int] = Field(default=None, foreign_key="building.id")
     # relationships
     building: Optional["Building"] = Relationship(
         back_populates="certifications")
@@ -89,7 +91,8 @@ class BuildingBase(SQLModel):
     outdoor_env: Optional[str] = Field(default=None)
     construction_year: Optional[int] = Field(default=None)
     renovation_year: Optional[int] = Field(default=None)
-    study_id: Optional[int] = Field(default=None, foreign_key="study.id")
+    study_id: Optional[int] = Field(
+        default=None, foreign_key="study.id", ondelete="CASCADE")
 
 
 class Building(BuildingBase, table=True):
@@ -102,9 +105,11 @@ class Building(BuildingBase, table=True):
     )
     # relationships
     certifications: List[Certification] = Relationship(
-        back_populates="building")
-    study: Optional["Study"] = Relationship(back_populates="buildings")
-    spaces: List["Space"] = Relationship(back_populates="building")
+        back_populates="building", cascade_delete=True)
+    study: Optional["Study"] = Relationship(
+        back_populates="buildings")
+    spaces: List["Space"] = Relationship(
+        back_populates="building", cascade_delete=True)
 
 
 class BuildingRead(BuildingBase):
@@ -118,8 +123,10 @@ class SpaceBase(SQLModel):
     space: str
     ventilation: str
     smoking: str
-    study_id: Optional[int] = Field(default=None, foreign_key="study.id")
-    building_id: Optional[int] = Field(default=None, foreign_key="building.id")
+    study_id: Optional[int] = Field(
+        default=None, foreign_key="study.id", ondelete="CASCADE")
+    building_id: Optional[int] = Field(
+        default=None, foreign_key="building.id", ondelete="CASCADE")
 
 
 class Space(SpaceBase, table=True):

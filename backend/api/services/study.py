@@ -21,7 +21,7 @@ class StudyService:
         """Get a numerical model by id"""
         res = await self.session.exec(
             select(Study).where(
-                Study.id == study_id).options(selectinload(Study.contacts), selectinload(Study.buildings))
+                Study.id == study_id).options(selectinload(Study.contact), selectinload(Study.buildings))
         )
         study = res.one_or_none()
         if not study:
@@ -43,7 +43,7 @@ class StudyService:
         # Main query
         start, end, query = builder.build_query(total_count)
         query = self.apply_joins(query, filter)
-        query = query.options(selectinload(Study.contacts),
+        query = query.options(selectinload(Study.contact),
                               selectinload(Study.buildings))
 
         # Execute query

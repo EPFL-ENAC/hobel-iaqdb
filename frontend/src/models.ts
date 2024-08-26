@@ -3,7 +3,7 @@ export interface DBModel {
   [Key: string]: unknown;
 }
 
-export interface Person {
+export interface Person extends DBModel {
   name: string;
   email: string;
   institution: string;
@@ -41,7 +41,7 @@ export interface Study extends DBModel {
   reference?: string;
   doi?: string;
   cite?: string;
-  contacts?: Person[];
+  contact?: Person;
   buildings?: Building[];
 }
 
