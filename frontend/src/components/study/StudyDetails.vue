@@ -53,19 +53,15 @@ const licenseLabel = computed(() => licenseOptions.find((lic) => lic.value === '
 const licenseDescription = computed(() => licenseOptions.find((lic) => lic.value === 'CC BY-SA')?.description)
 
 const items: FieldItem<Study>[] = [
+  { field: 'website', label: 'Website' },
   { field: 'building_count', label: 'Building count' },
   { field: 'space_count', label: 'Space count' },
-  { field: 'countries', label: 'Countries' },
 ]
 
 const refItems: FieldItem<Study>[] = [
   {
-    field: 'reference',
-    label: 'Reference'
-  },
-  {
     field: 'cite',
-    label: 'How to cite'
+    label: 'Citation'
   },
   {
     field: 'doi',
