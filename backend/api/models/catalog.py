@@ -27,13 +27,19 @@ class StudyBase(SQLModel):
     identifier: str
     name: str
     description: str
+    website: Optional[str] = Field(default=None)
     building_count: Optional[int] = Field(default=None)
     space_count: Optional[int] = Field(default=None)
     start_year: Optional[int] = Field(default=None)
     end_year: Optional[int] = Field(default=None)
-    reference: Optional[str] = Field(default=None)
-    doi: Optional[str] = Field(default=None)
+    duration: Optional[int] = Field(default=None)
+    occupant_impact: Optional[str] = Field(default=None)
+    other_indoor_param: Optional[str] = Field(default=None)
     cite: Optional[str] = Field(default=None)
+    doi: Optional[str] = Field(default=None)
+    funding: Optional[str] = Field(default=None)
+    ethics: Optional[str] = Field(default=None)
+    license: Optional[str] = Field(default=None)
 
 
 class Study(StudyBase, table=True):
@@ -81,16 +87,22 @@ class BuildingBase(SQLModel):
     identifier: str
     country: str
     city: str
+    postcode: Optional[str] = Field(default=None)
+    address: Optional[str] = Field(default=None)
     timezone: str
     altitude: int
     climate_zone: str
     long: float
     lat: float
-    type: Optional[str] = Field(default=None)                # ex: school
-    special_population: Optional[str] = Field(default=None)  # ex: children
+    type: Optional[str] = Field(default=None)
+    special_population: Optional[str] = Field(default=None)
     outdoor_env: Optional[str] = Field(default=None)
     construction_year: Optional[int] = Field(default=None)
+    renovation: str
     renovation_year: Optional[int] = Field(default=None)
+    special_population_designation: str
+    special_population: Optional[str] = Field(default=None)
+    smoking: str
     study_id: Optional[int] = Field(
         default=None, foreign_key="study.id", ondelete="CASCADE")
 
@@ -120,9 +132,24 @@ class BuildingRead(BuildingBase):
 
 class SpaceBase(SQLModel):
     identifier: str
-    space: str
-    ventilation: str
-    smoking: str
+    type: str
+    occupancy: Optional[str] = Field(default=None)
+    ventilation: Optional[str] = Field(default=None)
+    ventilation_rate: Optional[float] = Field(default=None)
+    air_change_rate: Optional[float] = Field(default=None)
+    particle_filtration_rating: Optional[int] = Field(default=None)
+    heating: Optional[str] = Field(default=None)
+    air_filtration: Optional[str] = Field(default=None)
+    printers: Optional[str] = Field(default=None)
+    carpets: Optional[str] = Field(default=None)
+    combustion_sources: Optional[str] = Field(default=None)
+    major_combustion_sources: Optional[str] = Field(default=None)
+    minor_combustion_sources: Optional[str] = Field(default=None)
+    pets: Optional[str] = Field(default=None)
+    dampness: Optional[str] = Field(default=None)
+    mold: Optional[str] = Field(default=None)
+    detergents: Optional[str] = Field(default=None)
+
     study_id: Optional[int] = Field(
         default=None, foreign_key="study.id", ondelete="CASCADE")
     building_id: Optional[int] = Field(

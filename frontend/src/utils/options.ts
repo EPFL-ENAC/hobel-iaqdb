@@ -32,8 +32,12 @@ export const climateOptions = [
 ];
 
 export const ventilationOptions = [
-  { value: 'mechanical', label: 'Mechanical',},
-  { value: 'natural', label: 'Natural',},
+  { value: 'air conditioned', label: 'Air conditioned' },
+  { value: 'naturally ventilated', label: 'Naturally ventilated' },
+  { value: 'mixed mode', label: 'Mixed mode' },
+  { value: 'mechanically ventilated', label: 'Mechanically ventilated' },
+  { value: 'NA' , label: 'NA'},
+  { value: 'unknown' , label: 'Unknown'}
 ]
 
 export const buildingTypeOptions = [
