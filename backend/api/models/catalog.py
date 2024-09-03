@@ -138,6 +138,7 @@ class SpaceBase(SQLModel):
     ventilation_rate: Optional[float] = Field(default=None)
     air_change_rate: Optional[float] = Field(default=None)
     particle_filtration_rating: Optional[int] = Field(default=None)
+    cooling: Optional[str] = Field(default=None)
     heating: Optional[str] = Field(default=None)
     air_filtration: Optional[str] = Field(default=None)
     printers: Optional[str] = Field(default=None)

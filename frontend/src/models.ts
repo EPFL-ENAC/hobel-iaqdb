@@ -70,6 +70,7 @@ export interface Space extends DBModel {
   ventilation_rate?: number;
   air_change_rate?: number;
   particle_filtration_rating: number;
+  cooling?: string;
   heating?: string;
   air_filtration?: string;
   printers?: string;

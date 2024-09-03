@@ -110,6 +110,7 @@ def upgrade() -> None:
         sa.Column("ventilation_rate", sa.Float(), nullable=True),
         sa.Column("air_change_rate", sa.Float(), nullable=True),
         sa.Column("particle_filtration_rating", sa.Integer(), nullable=True),
+        sa.Column("cooling", sa.String(), nullable=True),
         sa.Column("heating", sa.String(), nullable=True),
         sa.Column("air_filtration", sa.String(), nullable=True),
         sa.Column("printers", sa.String(), nullable=True),

@@ -30,6 +30,8 @@ async def seed(session: AsyncSession = Depends(get_session)) -> SeedStatus:
     occupancy_status = ["occupied", "unoccupied", "combined", "unknown"]
     ventilation_strategies = ["air conditioned", "naturally ventilated",
                               "mixed mode", "mechanically ventilated", "NA", "unknown"]
+    cooling_strategies = ["air conditioned",
+                          "naturally ventilated", "NA", "unknown"]
     heating_strategies = ["mechanical", "NA", "unknown"]
     major_combustion_sources = ["unvented kerosene and gas space heaters",
                                 "wood stoves", "fireplaces", "gas stoves", "other"]
@@ -142,6 +144,8 @@ async def seed(session: AsyncSession = Depends(get_session)) -> SeedStatus:
                               ventilation_rate=random.uniform(0.1, 1.0),
                               air_change_rate=random.uniform(0.1, 1.0),
                               particle_filtration_rating=random.randint(1, 5),
+                              cooling=fake.word(
+                                  ext_word_list=cooling_strategies),
                               heating=fake.word(
                                   ext_word_list=heating_strategies),
                               air_filtration=fake.word(ext_word_list=yes_no),
