@@ -216,3 +216,7 @@ class BuildingsResult(ListResult):
 
 class SpacesResult(ListResult):
     data: List[Space]
+
+
+class InstrumentsResult(ListResult):
+    data: List[Instrument]

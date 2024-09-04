@@ -7,7 +7,8 @@ from api.auth import get_api_key
 from api.services.study import StudyService
 from api.services.building import BuildingService
 from api.services.space import SpaceService
-from api.models.catalog import Study, StudyRead, StudiesResult, Building, BuildingRead, BuildingsResult, Space, SpacesResult
+from api.services.instrument import InstrumentService
+from api.models.catalog import Study, StudyRead, StudiesResult, Building, BuildingRead, BuildingsResult, Space, SpacesResult, Instrument, InstrumentsResult
 from api.utils.query import paramAsArray, paramAsDict
 from api.utils.file_size import size_checker
 
@@ -73,6 +74,18 @@ async def get_study_buildings(
     return buildings
 
 
+@router.get("/study/{id}/instruments", response_model=InstrumentsResult)
+async def get_study_instruments(
+    session: AsyncSession = Depends(get_session),
+    *,
+    id: int,
+) -> InstrumentsResult:
+    """Get a study instruments by id"""
+    service = InstrumentService(session)
+    instruments = await service.find({"study_id": id}, [], [])
+    return instruments
+
+
 @router.get("/study/{id}/spaces", response_model=SpacesResult)
 async def get_study_spaces(
     session: AsyncSession = Depends(get_session),
@@ -109,6 +122,19 @@ async def get_buildings(
     service = BuildingService(session)
     buildings = await service.find(paramAsDict(filter), paramAsArray(sort), paramAsArray(range))
     return buildings
+
+
+@router.get("/instruments", response_model=InstrumentsResult)
+async def get_instruments(
+    filter: str = Query(None),
+    sort: str = Query(None),
+    range: str = Query(None),
+    session: AsyncSession = Depends(get_session),
+) -> InstrumentsResult:
+    """Get all instruments"""
+    service = InstrumentService(session)
+    instruments = await service.find(paramAsDict(filter), paramAsArray(sort), paramAsArray(range))
+    return instruments
 
 
 @router.get("/building/{id}", response_model=BuildingRead)
