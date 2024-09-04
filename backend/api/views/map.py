@@ -1,11 +1,14 @@
 from fastapi import APIRouter, Depends, Query
 from api.db import get_session, AsyncSession
 from api.models.catalog import Building
-from api.models.geo import Geometry, BuildingFeature, BuildingFeatures, BuildingProperties, ClimateZone, Elevation
+from api.models.geo import Geometry, BuildingFeature, BuildingFeatures, BuildingProperties, ClimateZone, Elevation, TimeZone
 from api.services.geo import GeoService
 from api.services.building import BuildingService
+from timezonefinder import TimezoneFinder
+
 
 router = APIRouter()
+tf = TimezoneFinder()
 
 
 @router.get("/buildings")
@@ -46,3 +49,8 @@ async def getClimateZone(lon: float = Query(0), lat: float = Query(0), precise: 
 async def getElevation(lon: float = Query(0), lat: float = Query(0)) -> Elevation:
     service = GeoService()
     return service.queryElevation(lon, lat)
+
+
+@router.get("/timezone")
+async def getTimezone(lon: float = Query(0), lat: float = Query(0)) -> TimeZone:
+    return TimeZone(name=tf.timezone_at(lng=lon, lat=lat), lon=lon, lat=lat)

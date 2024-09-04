@@ -40,3 +40,9 @@ class Elevation(BaseModel):
     altitude: float
     lon: float
     lat: float
+
+
+class TimeZone(BaseModel):
+    name: str
+    lon: float
+    lat: float
