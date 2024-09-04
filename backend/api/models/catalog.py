@@ -55,6 +55,8 @@ class Study(StudyBase, table=True):
         back_populates="study", cascade_delete=True)
     buildings: List["Building"] = Relationship(
         back_populates="study", cascade_delete=True)
+    instruments: List["Instrument"] = Relationship(
+        back_populates="study", cascade_delete=True)
 
 
 class StudyRead(StudyBase):
@@ -172,6 +174,29 @@ class Space(SpaceBase, table=True):
     )
     # relationships
     building: Optional[Building] = Relationship(back_populates="spaces")
+
+
+class InstrumentBase(SQLModel):
+    identifier: str
+    manufacturer: Optional[str] = Field(default=None)
+    model: Optional[str] = Field(default=None)
+    equipment_grade_rating: Optional[str] = Field(default=None)
+    placement: Optional[str] = Field(default=None)
+    study_id: Optional[int] = Field(
+        default=None, foreign_key="study.id", ondelete="CASCADE")
+
+
+class Instrument(InstrumentBase, table=True):
+    __table_args__ = (UniqueConstraint("id"),)
+    id: int = Field(
+        default=None,
+        nullable=False,
+        primary_key=True,
+        index=True,
+    )
+    # relationships
+    study: Optional["Study"] = Relationship(
+        back_populates="instruments")
 
 
 class ListResult(BaseModel):
