@@ -18,9 +18,11 @@ router = APIRouter()
              status_code=200,
              dependencies=[Depends(size_checker)])
 async def read_study_from_excel(
-        files: UploadFile = File(
-            description="Excel file containing study, building, space descriptions")):
-    pass
+    files: UploadFile = File(
+        description="Excel file containing study, building, space descriptions"),
+        session: AsyncSession = Depends(get_session)):
+    service = StudyService(session)
+    return service.read_excel(files.file._file)
 
 
 @router.get("/studies", response_model=StudiesResult)

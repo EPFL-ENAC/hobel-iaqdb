@@ -14,7 +14,6 @@ export interface Building extends DBModel {
   country: string;
   city: string;
   postcode?: string;
-  address?: string;
   timezone?: string;
   long: number;
   lat: number;
@@ -25,6 +24,8 @@ export interface Building extends DBModel {
   construction_year?: number;
   renovation?: string;
   renovation_year?: number;
+  mechanical_ventilation?: string;
+  operable_windows: string;
   special_population_designation?: string;
   special_population?: string;
   smoking?: string;
@@ -66,12 +67,16 @@ export interface Space extends DBModel {
   identifier: string;
   type: string;
   occupancy?: string;
-  ventilation?: string;
+  mechanical_ventilation_status?: string;
+  mechanical_ventilation_type?: string;
+  windows_status?: string;
   ventilation_rate?: number;
   air_change_rate?: number;
   particle_filtration_rating: number;
-  cooling?: string;
-  heating?: string;
+  cooling_status?: string;
+  cooling_type?: string;
+  heating_status?: string;
+  heating_type?: string;
   air_filtration?: string;
   printers?: string;
   carpets?: string;

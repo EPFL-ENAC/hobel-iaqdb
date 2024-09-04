@@ -28,11 +28,13 @@ async def seed(session: AsyncSession = Depends(get_session)) -> SeedStatus:
     building_types = ["multifamily residential", "dwelling", "office",
                       "school", "senior center", "hospital", "retail", "sport center", "other"]
     occupancy_status = ["occupied", "unoccupied", "combined", "unknown"]
-    ventilation_strategies = ["air conditioned", "naturally ventilated",
-                              "mixed mode", "mechanically ventilated", "NA", "unknown"]
-    cooling_strategies = ["air conditioned",
-                          "naturally ventilated", "NA", "unknown"]
-    heating_strategies = ["mechanical", "NA", "unknown"]
+    ventilation_types = ["dilution", "displacement",
+                         "exhaust only", "other", "unknown"]
+    windows = ["open", "closed", "unknown", "NA"]
+    cooling_types = ["forced air", "fan coil units",
+                     "ceiling radiant", "floor radiant", "other", "unknown"]
+    heating_types = ["forced air", "fan coil units", "ceiling radiant",
+                     "floor radiant", "radiator", "other", "unknown"]
     major_combustion_sources = ["unvented kerosene and gas space heaters",
                                 "wood stoves", "fireplaces", "gas stoves", "other"]
     minor_combustion_sources = ["candles", "incense", "other"]
@@ -53,6 +55,7 @@ async def seed(session: AsyncSession = Depends(get_session)) -> SeedStatus:
                 "Australia OGL",
                 "EUPL"]
     yes_no = ["yes", "no", "unknown"]
+    on_off = ["on", "off", "unknown", "NA"]
     space_types = ["living room", "kitchen", "bedroom", "basement", "garage", "enclosed shared office", "enclosed private office",
                    "open office", "focus room", "hallway", "restaurant", "supermarket", "waiting room", "patient room", "other"]
 
@@ -121,6 +124,10 @@ async def seed(session: AsyncSession = Depends(get_session)) -> SeedStatus:
                                 construction_year=(study.start_year - 1),
                                 renovation=renovation,
                                 renovation_year=renovation_year,
+                                mechanical_ventilation=fake.word(
+                                    ext_word_list=yes_no),
+                                operable_windows=fake.word(
+                                    ext_word_list=yes_no),
                                 smoking=fake.word(ext_word_list=yes_no),
                                 study_id=study.id)
             session.add(building)
@@ -139,15 +146,20 @@ async def seed(session: AsyncSession = Depends(get_session)) -> SeedStatus:
                               type=fake.word(ext_word_list=space_types),
                               occupancy=fake.word(
                                   ext_word_list=occupancy_status),
-                              ventilation=fake.word(
-                                  ext_word_list=ventilation_strategies),
+                              mechanical_ventilation_type=fake.word(
+                                  ext_word_list=ventilation_types),
+                              mechanical_ventilation_status=fake.word(
+                                  ext_word_list=on_off),
+                              windows_status=fake.word(ext_word_list=windows),
                               ventilation_rate=random.uniform(0.1, 1.0),
                               air_change_rate=random.uniform(0.1, 1.0),
                               particle_filtration_rating=random.randint(1, 5),
-                              cooling=fake.word(
-                                  ext_word_list=cooling_strategies),
-                              heating=fake.word(
-                                  ext_word_list=heating_strategies),
+                              cooling_type=fake.word(
+                                  ext_word_list=cooling_types),
+                              cooling_status=fake.word(ext_word_list=on_off),
+                              heating_type=fake.word(
+                                  ext_word_list=heating_types),
+                              heating_status=fake.word(ext_word_list=on_off),
                               air_filtration=fake.word(ext_word_list=yes_no),
                               printers=fake.word(ext_word_list=yes_no),
                               carpets=fake.word(ext_word_list=yes_no),

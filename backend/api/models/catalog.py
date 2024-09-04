@@ -88,7 +88,6 @@ class BuildingBase(SQLModel):
     country: str
     city: str
     postcode: Optional[str] = Field(default=None)
-    address: Optional[str] = Field(default=None)
     timezone: str
     altitude: int
     climate_zone: str
@@ -100,6 +99,8 @@ class BuildingBase(SQLModel):
     construction_year: Optional[int] = Field(default=None)
     renovation: str
     renovation_year: Optional[int] = Field(default=None)
+    mechanical_ventilation: str
+    operable_windows: str
     special_population_designation: str
     special_population: Optional[str] = Field(default=None)
     smoking: str
@@ -134,12 +135,16 @@ class SpaceBase(SQLModel):
     identifier: str
     type: str
     occupancy: Optional[str] = Field(default=None)
-    ventilation: Optional[str] = Field(default=None)
+    mechanical_ventilation_status: str
+    mechanical_ventilation_type: Optional[str] = Field(default=None)
+    windows_status: str
     ventilation_rate: Optional[float] = Field(default=None)
     air_change_rate: Optional[float] = Field(default=None)
     particle_filtration_rating: Optional[int] = Field(default=None)
-    cooling: Optional[str] = Field(default=None)
-    heating: Optional[str] = Field(default=None)
+    cooling_status: str
+    cooling_type: Optional[str] = Field(default=None)
+    heating_status: str
+    heating_type: Optional[str] = Field(default=None)
     air_filtration: Optional[str] = Field(default=None)
     printers: Optional[str] = Field(default=None)
     carpets: Optional[str] = Field(default=None)
