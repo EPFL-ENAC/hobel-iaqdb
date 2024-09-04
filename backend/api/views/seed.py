@@ -3,7 +3,7 @@ import random
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from api.db import get_session, AsyncSession
-from api.models.catalog import Person, Study, Building, Space
+from api.models.catalog import Person, Study, Building, Space, Instrument
 from faker import Faker
 from api.services.geo import GeoService
 
@@ -93,6 +93,20 @@ async def seed(session: AsyncSession = Depends(get_session)) -> SeedStatus:
         session.add(contact)
         await session.commit()
         await session.refresh(contact)
+
+        # study instruments
+        for j in range(0, 3):
+            instrument = Instrument(identifier=f"seed-{j}",
+                                    manufacturer=fake.company(),
+                                    model=fake.word(),
+                                    equipment_grade_rating=fake.word(
+                                        ext_word_list=["reference instrument", "low-cost sensor", "other", "unknown"]),
+                                    placement=fake.word(ext_word_list=[
+                                                        "ceiling", "lateral wall", "air return", "desk", "other", "mixed", "unknown"]),
+                                    study_id=study.id)
+            session.add(instrument)
+            await session.commit()
+            await session.refresh(instrument)
 
         # study buildings
         for j in range(0, 3):

@@ -55,7 +55,7 @@ export interface Study extends DBModel {
   funding?: string;
   ethics?: string;
   license?: string;
-  contact?: Person;
+  contributors?: Person[];
   buildings?: Building[];
 }
 

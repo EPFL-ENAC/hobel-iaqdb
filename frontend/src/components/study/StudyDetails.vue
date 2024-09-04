@@ -12,8 +12,10 @@
       </q-linear-progress>
     </div>
     <fields-list :dbobject="study" :items="items"/>
-    <div class="text-bold q-mt-md">{{ $t('Contact') }}</div>
-    <fields-list :dbobject="study?.contact" :items="contactItems"/>
+    <div class="text-bold q-mt-md">{{ $t('Contributors') }}</div>
+    <template v-for="contributor in study?.contributors" :key="contributor.email">
+      <fields-list :dbobject="contributor" :items="contactItems"/>
+    </template>
     <div class="text-bold q-mt-md">{{ $t('Marker paper') }}</div>
     <fields-list :dbobject="study" :items="refItems"/>
     <div class="q-mt-md">

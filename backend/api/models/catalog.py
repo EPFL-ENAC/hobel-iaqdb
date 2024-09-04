@@ -20,7 +20,7 @@ class Person(PersonBase, table=True):
         index=True,
     )
     # relationships
-    study: Optional["Study"] = Relationship(back_populates="contact")
+    study: Optional["Study"] = Relationship(back_populates="contributors")
 
 
 class StudyBase(SQLModel):
@@ -51,18 +51,19 @@ class Study(StudyBase, table=True):
         index=True,
     )
     # relationships
-    contact: Person = Relationship(
-        back_populates="study", cascade_delete=True)
     buildings: List["Building"] = Relationship(
         back_populates="study", cascade_delete=True)
     instruments: List["Instrument"] = Relationship(
+        back_populates="study", cascade_delete=True)
+    contributors: List["Person"] = Relationship(
         back_populates="study", cascade_delete=True)
 
 
 class StudyRead(StudyBase):
     id: int
-    contact: Person
+    contributors: List["Person"] = []
     buildings: List["Building"] = []
+    instruments: List["Instrument"] = []
 
 
 class CertificationBase(SQLModel):
