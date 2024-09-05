@@ -57,9 +57,25 @@
 
       <q-step
         :name="3"
+        title="Instruments"
+        icon="domain"
+        :done="step > 3"
+        :header-nav="step > 3"
+      >
+        <q-markdown no-heading-anchor-links :src="StepInstrumentsMd" />
+
+        <q-stepper-navigation>
+          <q-btn @click="() => { done3 = true; step = 4 }" color="primary" label="Continue" />
+          <q-btn flat @click="step = 2" color="primary" label="Back" class="on-right" />
+          <q-btn @click="onPause" flat color="secondary" label="Pause" class="on-right" />
+        </q-stepper-navigation>
+      </q-step>
+
+      <q-step
+        :name="4"
         title="Upload datasets"
         icon="upload"
-        :header-nav="step > 3"
+        :header-nav="step > 4"
       >
         <q-markdown no-heading-anchor-links :src="StepDatasetsMd" />
         <datasets-form class="q-mt-lg"/>
@@ -83,6 +99,7 @@ export default defineComponent({
 <script setup lang="ts">
 import StepStudyMd from 'src/assets/step-study.md';
 import StepBuildingsMd from 'src/assets/step-buildings.md';
+import StepInstrumentsMd from 'src/assets/step-instruments.md';
 import StepDatasetsMd from 'src/assets/step-datasets.md';
 import StudyForm from 'src/components/contribute/StudyForm.vue';
 import BuildingsForm from 'src/components/contribute/BuildingsForm.vue'; 
