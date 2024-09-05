@@ -156,6 +156,40 @@ def upgrade() -> None:
                     ["building_id"], unique=False)
     op.create_index(op.f("ix_space_study_id"), "space",
                     ["study_id"], unique=False)
+
+    op.create_table(
+        "dataset",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("name", sa.String(), nullable=False),
+        sa.Column("description", sa.String(), nullable=False),
+        sa.Column("folder", sa.JSON(), nullable=True),
+        sa.Column("study_id", sa.Integer(), nullable=True),
+        sa.ForeignKeyConstraint(["study_id"], ["study.id"],),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(op.f("ix_dataset_study_id"), "dataset",
+                    ["study_id"], unique=False)
+
+    op.create_table(
+        "variable",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("name", sa.String(), nullable=False),
+        sa.Column("type", sa.String(), nullable=False),
+        sa.Column("unit", sa.String(), nullable=True),
+        sa.Column("format", sa.String(), nullable=True),
+        sa.Column("reference", sa.String(), nullable=True),
+        sa.Column("study_id", sa.Integer(), nullable=True),
+        sa.Column("dataset_id", sa.Integer(), nullable=True),
+        sa.ForeignKeyConstraint(["dataset_id"], ["dataset.id"],),
+        sa.ForeignKeyConstraint(["study_id"], ["study.id"],),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(op.f("ix_variable_name"), "variable",
+                    ["name"], unique=False),
+    op.create_index(op.f("ix_variable_dataset_id"), "variable",
+                    ["dataset_id"], unique=False)
+    op.create_index(op.f("ix_variable_study_id"), "variable",
+                    ["study_id"], unique=False)
     # ### end Alembic commands ###
 
 
@@ -177,6 +211,14 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_instrument_study_id"), table_name="instrument")
     op.drop_index(op.f("ix_instrument_identifier"), table_name="instrument")
     op.drop_table("instrument")
+
+    op.drop_index(op.f("ix_variable_study_id"), table_name="variable")
+    op.drop_index(op.f("ix_variable_dataset_id"), table_name="variable")
+    op.drop_index(op.f("ix_variable_name"), table_name="variable")
+    op.drop_table("variable")
+
+    op.drop_index(op.f("ix_dataset_study_id"), table_name="dataset")
+    op.drop_table("dataset")
 
     op.drop_index(op.f("ix_person_study_id"),
                   table_name="person")

@@ -44,7 +44,7 @@ class BuildingService:
         return building
 
     async def find(self, filter: dict, sort: list, range: list) -> BuildingsResult:
-        """Get all studies matching filter and range"""
+        """Get all buildings matching filter and range"""
         builder = QueryBuilder(Building, filter, sort, range, {
                                "$study": Study, "$space": Space})
 

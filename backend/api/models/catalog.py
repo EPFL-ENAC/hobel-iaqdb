@@ -1,7 +1,9 @@
-from typing import List, Literal, Optional
-from sqlmodel import SQLModel, Field, Relationship, UniqueConstraint
+from typing import List, Dict, Optional
+from sqlmodel import SQLModel, Field, Relationship, UniqueConstraint, Column, JSON
 from pydantic import BaseModel
 
+
+# Studies
 
 class PersonBase(SQLModel):
     name: str
@@ -55,6 +57,8 @@ class Study(StudyBase, table=True):
         back_populates="study", cascade_delete=True)
     instruments: List["Instrument"] = Relationship(
         back_populates="study", cascade_delete=True)
+    datasets: List["Dataset"] = Relationship(
+        back_populates="study", cascade_delete=True)
     contributors: List["Person"] = Relationship(
         back_populates="study", cascade_delete=True)
 
@@ -65,6 +69,8 @@ class StudyRead(StudyBase):
     buildings: List["Building"] = []
     instruments: List["Instrument"] = []
 
+
+# Buildings
 
 class CertificationBase(SQLModel):
     program: str
@@ -133,6 +139,8 @@ class BuildingRead(BuildingBase):
     certifications: List[Certification] = []
     spaces: List["Space"] = []
 
+# Spaces
+
 
 class SpaceBase(SQLModel):
     identifier: str
@@ -176,6 +184,8 @@ class Space(SpaceBase, table=True):
     # relationships
     building: Optional[Building] = Relationship(back_populates="spaces")
 
+# Instruments
+
 
 class InstrumentBase(SQLModel):
     identifier: str
@@ -183,6 +193,7 @@ class InstrumentBase(SQLModel):
     model: Optional[str] = Field(default=None)
     equipment_grade_rating: Optional[str] = Field(default=None)
     placement: Optional[str] = Field(default=None)
+
     study_id: Optional[int] = Field(
         default=None, foreign_key="study.id", ondelete="CASCADE")
 
@@ -198,6 +209,63 @@ class Instrument(InstrumentBase, table=True):
     # relationships
     study: Optional["Study"] = Relationship(
         back_populates="instruments")
+
+# Datasets
+
+
+class DatasetBase(SQLModel):
+    name: str
+    description: str
+    folder: Dict | None = Field(sa_column=Column(
+        JSON), default=None)  # file store node object
+    study_id: Optional[int] = Field(
+        default=None, foreign_key="study.id", ondelete="CASCADE")
+
+
+class Dataset(DatasetBase, table=True):
+    __table_args__ = (UniqueConstraint("id"),)
+    id: int = Field(
+        default=None,
+        nullable=False,
+        primary_key=True,
+        index=True,
+    )
+    # relationships
+    study: Optional[Study] = Relationship(
+        back_populates="datasets", cascade_delete=True)
+    variables: List["Variable"] = Relationship(
+        back_populates="dataset", cascade_delete=True)
+
+
+class VariableBase(SQLModel):
+    name: str
+    type: str
+    unit: Optional[str] = Field(default=None)
+    format: Optional[str] = Field(default=None)
+    # ref in the taxonomy of variables
+    reference: Optional[str] = Field(default=None)
+
+    study_id: Optional[int] = Field(
+        default=None, foreign_key="study.id", ondelete="CASCADE")
+    dataset_id: Optional[int] = Field(
+        default=None, foreign_key="dataset.id", ondelete="CASCADE")
+
+
+class Variable(VariableBase, table=True):
+    __table_args__ = (UniqueConstraint("id"),)
+    id: int = Field(
+        default=None,
+        nullable=False,
+        primary_key=True,
+        index=True,
+    )
+    # relationships
+    dataset: Optional[Dataset] = Relationship(back_populates="variables")
+
+
+#
+# Results
+#
 
 
 class ListResult(BaseModel):
@@ -220,3 +288,7 @@ class SpacesResult(ListResult):
 
 class InstrumentsResult(ListResult):
     data: List[Instrument]
+
+
+class DatasetsResult(ListResult):
+    data: List[Dataset]
