@@ -98,6 +98,23 @@ export const occupancyOptions = [
   { value: 'unknown', label : 'Unknown' },
 ]
 
+export const equipmentGradeOptions = [
+  { value: 'reference instrument', label: 'Reference instrument', },
+  { value: 'low-cost sensor', label: 'Low-cost sensor', },
+  { value: 'other', label: 'Other', },
+  { value: 'unknown', label: 'Unknown', },
+]
+
+export const placementOptions = [
+  { value: 'ceiling', label: 'Ceiling', },
+  { value: 'lateral wall', label: 'Lateral wall', },
+  { value: 'air return', label: 'Air return', },
+  { value: 'desk', label: 'Desk', },
+  { value: 'other', label: 'Other', },
+  { value: 'mixed', label: 'Mixed', },
+  { value: 'unknown', label: 'Unknown', },
+]
+
 export const countryOptions = [
   { value: 'AF', label: 'Afghanistan', },
   { value: 'AX', label: 'Åland Islands', },

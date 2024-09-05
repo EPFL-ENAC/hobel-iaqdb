@@ -63,6 +63,7 @@
         :header-nav="step > 3"
       >
         <q-markdown no-heading-anchor-links :src="StepInstrumentsMd" />
+        <instruments-form class="q-mt-lg"/>
 
         <q-stepper-navigation>
           <q-btn @click="() => { done3 = true; step = 4 }" color="primary" label="Continue" />
@@ -81,7 +82,7 @@
         <datasets-form class="q-mt-lg"/>
         <q-stepper-navigation>
           <q-btn color="primary" @click="onFinish" label="Finish" />
-          <q-btn flat @click="step = 2" color="primary" label="Back" class="on-right" />
+          <q-btn flat @click="step = 3" color="primary" label="Back" class="on-right" />
           <q-btn @click="onPause" flat color="secondary" label="Pause" class="on-right" />
         </q-stepper-navigation>
       </q-step>
@@ -102,7 +103,8 @@ import StepBuildingsMd from 'src/assets/step-buildings.md';
 import StepInstrumentsMd from 'src/assets/step-instruments.md';
 import StepDatasetsMd from 'src/assets/step-datasets.md';
 import StudyForm from 'src/components/contribute/StudyForm.vue';
-import BuildingsForm from 'src/components/contribute/BuildingsForm.vue'; 
+import BuildingsForm from 'src/components/contribute/BuildingsForm.vue';
+import InstrumentsForm from 'src/components/contribute/InstrumentsForm.vue';
 import DatasetsForm from './DatasetsForm.vue';
 
 const emit = defineEmits(['pause', 'finish']);

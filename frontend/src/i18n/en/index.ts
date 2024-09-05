@@ -105,6 +105,18 @@ export default {
       occupancy: 'Occupancy',
       occupancy_hint: '',
     },
+    instrument: {
+      identifier: 'Identifier',
+      identifier_hint: 'Instrument unique identifier in the study.',
+      manufacturer: 'Manufacturer',
+      manufacturer_hint: 'Instrument manufacturer.',
+      model: 'Model',
+      model_hint: 'Instrument model.',
+      equipment_grade: 'Equipment grade rating',
+      equipment_grade_hint: 'Instrument grade rating.',
+      placement: 'Placement',
+      placement_hint: 'Instrument placement.',
+    },
     period: {
       identifier: 'Identifier',
       identifier_hint: 'Period unique identifier in the space.',

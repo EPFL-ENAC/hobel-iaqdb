@@ -1,5 +1,5 @@
 export interface DBModel {
-  id?: number;
+  id?: number | string;
   [Key: string]: unknown;
 }
 
@@ -57,6 +57,7 @@ export interface Study extends DBModel {
   license?: string;
   contributors?: Person[];
   buildings?: Building[];
+  instruments?: Instrument[];
 }
 
 export interface StudiesResult extends ListResult {
@@ -87,31 +88,16 @@ export interface Space extends DBModel {
   dampness?: string;
   mold?: string;
   detergents?: string;
-  periods: Period[];
 }
 
 export interface SpacesResult extends ListResult {
   data: Space[]
 }
 
-export interface Period extends DBModel {
+export interface Instrument extends DBModel {
   identifier: string;
-  start_date: string;
-  end_data: string;
-  ventilation: string;
-  ventilation_rate: number;
-  air_change_rate: number;
-  particle_filtration_rating: number;
-  cooling_strategy: string;
-  heating_strategy: string;
-  standalone_air_filtration: string;
-  combustion_sources: string;
-  major_combustion_sources: string;
-  small_combustion_sources: string;
-  printers: string;
-  carpets: string;
-  pets: string;
-  visible_dampness: string;
-  visible_mold: string;
-  cleaning_with_detergents: string;
+  manufacturer: string;
+  model: string;
+  equipment_grade_rating: string;
+  placement: string;
 }

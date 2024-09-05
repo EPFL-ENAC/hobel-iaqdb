@@ -2,7 +2,7 @@ import { spaceTypeOptions, occupancyOptions, ventilationOptions, yesNoOptions } 
 import { v4 as uuidv4 } from 'uuid';
 import { defineStore } from 'pinia';
 import { api } from 'src/boot/api';
-import { Study, Building, Space, Period, Person } from 'src/models'; 
+import { Study, Building, Space, Person, Instrument } from 'src/models'; 
 
 export const useContributeStore = defineStore('contribute', () => {
 
@@ -11,7 +11,8 @@ export const useContributeStore = defineStore('contribute', () => {
     name: '',
     description: '',
     contact: {} as Person,
-    buildings: []
+    buildings: [],
+    instruments: []
   } as Study);
 
   function reset() {
@@ -20,7 +21,8 @@ export const useContributeStore = defineStore('contribute', () => {
       name: '',
       description: '',
       contact: {} as Person,
-      buildings: []
+      buildings: [],
+      instruments: []
     } as Study;
   }
 
@@ -82,29 +84,23 @@ export const useContributeStore = defineStore('contribute', () => {
     building.spaces?.splice(i, 1);
   }
 
-  function addPeriod(bId: string, rId: string) {
-    const building = study.value.buildings?.find((bld) => bld.identifier === bId);
-    if (!building) return;
-    const space = building.spaces?.find((rm) => rm.identifier === rId);
-    if (!space) return;
-
+  function addInstrument() {
     let id = 1;
-    while (space.periods.find((prd) => prd.identifier === `${id}`)) {
-      id++;
+    while (study.value.instruments?.find((inst: Instrument) => inst.identifier === `${id}`)) {
+      id++
     }
-    space.periods.push({
+    study.value.instruments?.push({
       id: `__${uuidv4()}`,
       identifier: `${id}`,
-    } as Period);
+      manufacturer: '',
+      model: '',
+      equipment_grade_rating: 'unknown',
+      placement: 'unknown',
+    } as Instrument)
   }
 
-  function deletePeriod(bId: string, rId: string, i: number) {
-    const building = study.value.buildings?.find((bld) => bld.identifier === bId);
-    if (!building) return;
-    const space = building.spaces?.find((rm) => rm.identifier === rId);
-    if (!space) return;
-
-    space.periods.splice(i, 1);
+  function deleteInstrument(i: number) {
+    study.value.instruments?.splice(i, 1);
   }
 
   async function fetchAltitude(lon: number, lat: number) {
@@ -122,8 +118,8 @@ export const useContributeStore = defineStore('contribute', () => {
     deleteBuilding,
     addSpace,
     deleteSpace,
-    addPeriod,
-    deletePeriod,
+    addInstrument,
+    deleteInstrument,
     fetchAltitude,
     fetchClimateZone
   }
