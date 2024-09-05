@@ -232,7 +232,7 @@ class Dataset(DatasetBase, table=True):
     )
     # relationships
     study: Optional[Study] = Relationship(
-        back_populates="datasets", cascade_delete=True)
+        back_populates="datasets")
     variables: List["Variable"] = Relationship(
         back_populates="dataset", cascade_delete=True)
 
