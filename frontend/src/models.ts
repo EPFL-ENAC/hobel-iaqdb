@@ -16,8 +16,8 @@ export interface Building extends DBModel {
   city: string;
   postcode?: string;
   timezone?: string;
-  long: number;
-  lat: number;
+  long?: number;
+  lat?: number;
   altitude?: number;
   climate_zone?: string;
   type?: string;
@@ -29,7 +29,7 @@ export interface Building extends DBModel {
   renovation?: string;
   renovation_year?: number;
   mechanical_ventilation?: string;
-  operable_windows: string;
+  operable_windows?: string;
   special_population?: string;
   other_special_population?: string;
   smoking?: string;
@@ -106,4 +106,15 @@ export interface Instrument extends DBModel {
   model: string;
   equipment_grade_rating: string;
   placement: string;
+  parameters?: InstrumentParameter[];
+}
+
+export interface InstrumentParameter extends DBModel {
+  physical_parameter: string;
+  analysis_method?: string;
+  measurement_uncertainty?: string;
+}
+
+export interface InstrumentsResult extends ListResult {
+  data: Instrument[]
 }

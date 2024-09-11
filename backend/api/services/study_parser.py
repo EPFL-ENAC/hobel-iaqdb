@@ -59,6 +59,7 @@ class StudyParser:
 
         if study.identifier is None:
             study.identifier = '_draft'
+        study.id = 0
 
         return study
 
@@ -85,6 +86,8 @@ class StudyParser:
         for index, row in df.iterrows():
             prsn = row.to_dict()
             person = Person(**prsn)
+            person.id = index
+            person.study_id = 0
             persons.append(person)
         return persons
 
@@ -116,6 +119,8 @@ class StudyParser:
         for index, row in df.iterrows():
             inst = row.to_dict()
             instrument = Instrument(**inst)
+            instrument.id = index
+            instrument.study_id = 0
             # ensure it is a string
             instrument.identifier = f"{instrument.identifier}"
             for i in range(1, 10):
@@ -124,9 +129,12 @@ class StudyParser:
                     amCol = f"analysis method {i}"
                     muCol = f"measurement uncertainty {i}"
                     param = {
+                        "id": i,
                         "physical_parameter": inst[ppCol],
                         "analysis_method": inst[amCol] if amCol in inst else None,
-                        "measurement_uncertainty": inst[muCol] if muCol in inst else None
+                        "measurement_uncertainty": inst[muCol] if muCol in inst else None,
+                        "study_id": 0,
+                        "instrument_id": index,
                     }
                     instrument.parameters.append(InstrumentParameter(**param))
 
@@ -183,8 +191,13 @@ class StudyParser:
                 building.certifications = [crtf]
             # ensure it is a string
             building.identifier = f"{building.identifier}"
+            building.id = index
+            building.study_id = 0
             # look up spaces
             building.spaces = spaces[building.identifier]
+            for space in building.spaces:
+                space.building_id = index
+                space.study_id = 0
             # building.id = index
             buildings.append(building)
         return buildings
@@ -247,6 +260,8 @@ class StudyParser:
             space = Space(**spc)
             # ensure it is a string
             space.identifier = f"{space.identifier}"
+            space.id = index
+            space.study_id = 0
             if spc['building_identifier'] is not None:
                 # ensure building identifier is a string
                 bldg_id = f"{spc['building_identifier']}"

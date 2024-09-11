@@ -5,12 +5,21 @@
         <div class="row">
           <q-icon name="lightbulb" class="on-left" style="margin-top: 10px;" />
           <div class="q-mt-sm">Tip: you can prepopulate the study, buildings, spaces etc. forms using an Excel file.</div>
-          <div>
-            <q-btn label="Import from Excel" color="secondary" icon="upload_file" outline no-caps class="on-right" />
-          </div>
-          <div>
-            <q-btn label="Download Excel template" color="grey-8" icon="download" size="sm" flat no-caps class="on-right" style="margin-top: 7px" />
-          </div>
+          <q-btn label="Download Excel template" color="grey-8" icon="download" size="sm" outline no-caps class="on-right" style="margin-top: 7px" />
+        </div>
+        <div class="row q-mt-md q-ml-md">
+          <q-file
+            outlined
+            dense
+            v-model="excelFile"
+            label="Import from Excel"
+            :disable="loading"
+            :loading="loading"
+            accept=".xlsx"
+            clearable
+            color="secondary"
+            @update:model-value="onExcelFileUpdated"
+          />
         </div>
       </q-card-section>
     </q-card>
@@ -105,10 +114,14 @@ import StepDatasetsMd from 'src/assets/step-datasets.md';
 import StudyForm from 'src/components/contribute/StudyForm.vue';
 import BuildingsForm from 'src/components/contribute/BuildingsForm.vue';
 import InstrumentsForm from 'src/components/contribute/InstrumentsForm.vue';
-import DatasetsForm from './DatasetsForm.vue';
+import DatasetsForm from 'src/components/contribute/DatasetsForm.vue';
 
 const emit = defineEmits(['pause', 'finish']);
 
+const contrib = useContributeStore();
+
+const excelFile = ref<File | null>(null);
+const loading = ref(false);
 const step = ref(1);
 
 function onPause() {
@@ -117,5 +130,15 @@ function onPause() {
 
 function onFinish() {
   emit('finish');
+}
+
+function onExcelFileUpdated() {
+  if (excelFile.value) {
+    loading.value = true;
+    contrib.readExcel(excelFile.value)
+      .then(() => step.value = 1)
+      .catch((err) => console.error(err))
+      .finally(() => loading.value = false);
+  }
 }
 </script>

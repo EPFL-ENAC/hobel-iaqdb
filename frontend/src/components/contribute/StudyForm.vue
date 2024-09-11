@@ -18,7 +18,7 @@
     <div class="row q-col-gutter-md q-mb-md">
       <div class="col">
         <q-input
-          v-model="contrib.study.url"
+          v-model="contrib.study.website"
           filled
           :label="$t('study.url')"
           :hint="$t('study.url_hint')"
@@ -77,35 +77,34 @@
       </div>
     </div>
 
-    <div class="text-bold q-mb-sm q-mt-lg">Data contributor</div>
-    <div class="text-help q-mb-md">Information about the principal contact person regarding the data.</div>
-    <div class="row q-col-gutter-md q-mb-md">
-      <div class="col">
-        <q-input
-          v-model="contrib.study.contact.name"
-          filled
-          :label="$t('study.contact_name')"
-          :hint="$t('study.contact_name_hint')"
-        />
-      </div>
-      <div class="col">
-        <q-input
-          v-model="contrib.study.contact.email"
-          filled
-          :label="$t('study.contact_email')"
-          :hint="$t('study.contact_email_hint')"
-        />
-      </div>
-      <div class="col">
-        <q-input
-          v-model="contrib.study.contact.institution"
-          filled
-          :label="$t('study.contact_institution')"
-          :hint="$t('study.contact_institution_hint')"
-        />
-      </div>
-    </div>
-
+    <div class="text-bold q-mb-sm q-mt-lg">Data contributors</div>
+    <div class="text-help q-mb-sm">Information about the data contributors who may be contacted for further details.</div>
+    <q-card flat bordered class="q-mb-md bg-grey-2">
+      <q-card-section>
+        <div v-if="contrib.study.contributors?.length === 0" class="text-help">No contributors defined yet.</div>
+        <q-list v-if="contrib.study.contributors?.length" separator>
+          <q-item v-for="(person, i) in contrib.study.contributors" :key="person.id" class="q-pl-none q-pr-none">
+            <q-item-section>
+              <person-form v-model="contrib.study.contributors[i]"/>
+            </q-item-section>
+            <q-item-section side>
+              <q-btn
+                rounded
+                dense
+                flat
+                color="grey-6"
+                :title="$t('delete')"
+                icon="delete"
+                class="q-ml-xs"
+                @click="onDeleteContributor(i)" />
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </q-card-section>
+      <q-card-actions class="bg-grey-3 q-pa-md">
+        <q-btn @click="onAddContributor" color="secondary" label="Add contributor" icon="add" />
+      </q-card-actions>
+    </q-card>
     <div class="text-bold q-mb-md">Publication reference</div>
     <div class="row q-col-gutter-md q-mb-md">
       <div class="col">
@@ -136,6 +135,16 @@ export default defineComponent({
 });
 </script>
 <script setup lang="ts">
+import PersonForm from './PersonFom.vue';
 import { licenseOptions } from 'src/utils/options';
+
 const contrib = useContributeStore();
+
+function onAddContributor() {
+  contrib.addContributor();
+}
+
+function onDeleteContributor(i: number) {
+  contrib.deleteContributor(i);
+}
 </script>

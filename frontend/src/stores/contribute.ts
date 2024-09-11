@@ -26,6 +26,24 @@ export const useContributeStore = defineStore('contribute', () => {
     } as Study;
   }
 
+  function addContributor() {
+    let id = 1;
+    while (study.value.contributors?.find((p: Person) => p.id === id)) {
+      id++
+    }
+    study.value.contributors?.push({
+      id: id,
+      name: '',
+      email: '',
+      email_public: true,
+      institution: '',
+    } as Person)
+  }
+
+  function deleteContributor(i: number) {
+    study.value.contributors?.splice(i, 1);
+  }
+
   function addBuilding() {
     let id = 1;
     while (study.value.buildings?.find((bld: Building) => bld.identifier === `${id}`)) {
@@ -111,9 +129,20 @@ export const useContributeStore = defineStore('contribute', () => {
     return api.get('/map/climate-zone', { params: { lon, lat } }).then((res) => res.data)
   }
 
+  async function readExcel(file: File) {
+    const formData = new FormData();
+    formData.append('files', file);
+    return api.post('/catalog/study-excel', formData).then((res) => {
+      console.log(res.data);
+      study.value = res.data;
+    });
+  }
+
   return {
     study,
     reset,
+    addContributor,
+    deleteContributor,
     addBuilding,
     deleteBuilding,
     addSpace,
@@ -121,6 +150,7 @@ export const useContributeStore = defineStore('contribute', () => {
     addInstrument,
     deleteInstrument,
     fetchAltitude,
-    fetchClimateZone
+    fetchClimateZone,
+    readExcel,
   }
 })

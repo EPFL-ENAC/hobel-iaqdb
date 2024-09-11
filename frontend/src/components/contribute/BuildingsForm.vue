@@ -1,7 +1,7 @@
 <template>
   <div>
     <div v-if="contrib.study.buildings?.length === 0" class="q-mb-md text-help">No buildings defined yet.</div>
-    <q-list separator class="q-mb-md">
+    <q-list v-else separator class="q-mb-md">
       <q-item v-for="(building, i) in contrib.study.buildings" :key="building.id" class="q-pl-none q-pr-none">
         <q-item-section>
           <building-form v-model="contrib.study.buildings[i]" class="q-mt-md"/>
