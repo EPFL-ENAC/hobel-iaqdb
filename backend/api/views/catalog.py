@@ -5,11 +5,12 @@ from fastapi.param_functions import File
 from api.db import get_session, AsyncSession
 from api.auth import get_api_key
 from api.services.study import StudyService
+from api.services.study_parser import StudyParser
 from api.services.building import BuildingService
 from api.services.space import SpaceService
 from api.services.instrument import InstrumentService
 from api.services.dataset import DatasetService
-from api.models.catalog import Study, StudyRead, StudiesResult, Building, BuildingRead, BuildingsResult, Space, SpacesResult, Instrument, InstrumentsResult, Dataset, DatasetsResult
+from api.models.catalog import Study, StudyRead, StudyDraft, StudiesResult, Building, BuildingRead, BuildingsResult, Space, SpacesResult, Instrument, InstrumentsResult, Dataset, DatasetsResult
 from api.utils.query import paramAsArray, paramAsDict
 from api.utils.file_size import size_checker
 
@@ -18,13 +19,13 @@ router = APIRouter()
 
 @router.post("/study-excel",
              status_code=200,
-             dependencies=[Depends(size_checker)])
+             dependencies=[Depends(size_checker)],
+             response_model=StudyDraft)
 async def read_study_from_excel(
     files: UploadFile = File(
-        description="Excel file containing study, building, space descriptions"),
-        session: AsyncSession = Depends(get_session)):
-    service = StudyService(session)
-    return service.read_excel(files.file._file)
+        description="Excel file containing study, building, space descriptions")):
+    study = StudyParser().parse(files.file._file)
+    return study
 
 
 @router.get("/studies", response_model=StudiesResult)

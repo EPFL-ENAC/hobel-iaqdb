@@ -8,6 +8,7 @@ from pydantic import BaseModel
 class PersonBase(SQLModel):
     name: str
     email: str
+    email_public: bool = Field(default=False)
     institution: str
     study_id: Optional[int] = Field(
         default=None, foreign_key="study.id", ondelete="CASCADE")
@@ -37,7 +38,7 @@ class StudyBase(SQLModel):
     duration: Optional[int] = Field(default=None)
     occupant_impact: Optional[str] = Field(default=None)
     other_indoor_param: Optional[str] = Field(default=None)
-    cite: Optional[str] = Field(default=None)
+    citation: Optional[str] = Field(default=None)
     doi: Optional[str] = Field(default=None)
     funding: Optional[str] = Field(default=None)
     ethics: Optional[str] = Field(default=None)
@@ -68,6 +69,11 @@ class StudyRead(StudyBase):
     contributors: List["Person"] = []
     buildings: List["Building"] = []
     instruments: List["Instrument"] = []
+
+
+class StudyDraft(StudyRead):
+    id: Optional[int] = Field(default=None)
+    buildings: List["BuildingDraft"] = []
 
 
 # Buildings
@@ -103,15 +109,18 @@ class BuildingBase(SQLModel):
     long: float
     lat: float
     type: Optional[str] = Field(default=None)
+    other_type: Optional[str] = Field(default=None)
     special_population: Optional[str] = Field(default=None)
     outdoor_env: Optional[str] = Field(default=None)
+    other_outdoor_env: Optional[str] = Field(default=None)
+    green_certified: Optional[str] = Field(default=None)
     construction_year: Optional[int] = Field(default=None)
     renovation: str
     renovation_year: Optional[int] = Field(default=None)
     mechanical_ventilation: str
     operable_windows: str
-    special_population_designation: str
     special_population: Optional[str] = Field(default=None)
+    other_special_population: Optional[str] = Field(default=None)
     smoking: str
     study_id: Optional[int] = Field(
         default=None, foreign_key="study.id", ondelete="CASCADE")
@@ -139,6 +148,24 @@ class BuildingRead(BuildingBase):
     certifications: List[Certification] = []
     spaces: List["Space"] = []
 
+
+class BuildingDraft(BuildingRead):
+    id: Optional[int] = Field(default=None)
+    country: Optional[str] = Field(default=None)
+    city: Optional[str] = Field(default=None)
+    timezone: Optional[str] = Field(default=None)
+    altitude: Optional[int] = Field(default=None)
+    climate_zone: Optional[str] = Field(default=None)
+    long: Optional[float] = Field(default=None)
+    lat: Optional[float] = Field(default=None)
+    type: Optional[str] = Field(default=None)
+    other_type: Optional[str] = Field(default=None)
+    renovation: Optional[str] = Field(default=None)
+    mechanical_ventilation: Optional[str] = Field(default=None)
+    operable_windows: Optional[str] = Field(default=None)
+    smoking: Optional[str] = Field(default=None)
+
+
 # Spaces
 
 
@@ -154,8 +181,10 @@ class SpaceBase(SQLModel):
     particle_filtration_rating: Optional[int] = Field(default=None)
     cooling_status: str
     cooling_type: Optional[str] = Field(default=None)
+    other_cooling_type: Optional[str] = Field(default=None)
     heating_status: str
     heating_type: Optional[str] = Field(default=None)
+    other_heating_type: Optional[str] = Field(default=None)
     air_filtration: Optional[str] = Field(default=None)
     printers: Optional[str] = Field(default=None)
     carpets: Optional[str] = Field(default=None)

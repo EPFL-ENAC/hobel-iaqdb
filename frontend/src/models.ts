@@ -6,6 +6,7 @@ export interface DBModel {
 export interface Person extends DBModel {
   name: string;
   email: string;
+  email_public: boolean;
   institution: string;
 }
 
@@ -20,14 +21,17 @@ export interface Building extends DBModel {
   altitude?: number;
   climate_zone?: string;
   type?: string;
+  other_type?: string;
   outdoor_env?: string;
+  other_outdoor_env?: string;
+  green_certified?: string;
   construction_year?: number;
   renovation?: string;
   renovation_year?: number;
   mechanical_ventilation?: string;
   operable_windows: string;
-  special_population_designation?: string;
   special_population?: string;
+  other_special_population?: string;
   smoking?: string;
   spaces?: Space[]
 }
@@ -50,7 +54,7 @@ export interface Study extends DBModel {
   start_year?: number;
   end_year?: number;
   duration?: number;
-  cite?: string;
+  citation?: string;
   doi?: string;
   funding?: string;
   ethics?: string;
@@ -76,8 +80,10 @@ export interface Space extends DBModel {
   particle_filtration_rating: number;
   cooling_status?: string;
   cooling_type?: string;
+  other_cooling_type?: string;
   heating_status?: string;
   heating_type?: string;
+  other_heating_type?: string;
   air_filtration?: string;
   printers?: string;
   carpets?: string;
