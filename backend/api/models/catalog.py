@@ -74,6 +74,7 @@ class StudyRead(StudyBase):
 class StudyDraft(StudyRead):
     id: Optional[int] = Field(default=None)
     buildings: List["BuildingDraft"] = []
+    instruments: List["InstrumentDraft"] = []
 
 
 # Buildings
@@ -216,6 +217,28 @@ class Space(SpaceBase, table=True):
 # Instruments
 
 
+class InstrumentParameterBase(SQLModel):
+    physical_parameter: str
+    analysis_method: Optional[str] = Field(default=None)
+    measurement_uncertainty: Optional[str] = Field(default=None)
+
+    instrument_id: Optional[int] = Field(
+        default=None, foreign_key="instrument.id", ondelete="CASCADE")
+
+
+class InstrumentParameter(InstrumentParameterBase, table=True):
+    __table_args__ = (UniqueConstraint("id"),)
+    id: int = Field(
+        default=None,
+        nullable=False,
+        primary_key=True,
+        index=True,
+    )
+    # relationships
+    instrument: Optional["Instrument"] = Relationship(
+        back_populates="parameters")
+
+
 class InstrumentBase(SQLModel):
     identifier: str
     manufacturer: Optional[str] = Field(default=None)
@@ -238,6 +261,17 @@ class Instrument(InstrumentBase, table=True):
     # relationships
     study: Optional["Study"] = Relationship(
         back_populates="instruments")
+    parameters: List[InstrumentParameter] = Relationship(
+        back_populates="instrument", cascade_delete=True)
+
+
+class InstrumentRead(InstrumentBase):
+    id: int
+    parameters: List[InstrumentParameter] = []
+
+
+class InstrumentDraft(InstrumentRead):
+    id: Optional[int] = Field(default=None)
 
 # Datasets
 
@@ -316,7 +350,7 @@ class SpacesResult(ListResult):
 
 
 class InstrumentsResult(ListResult):
-    data: List[Instrument]
+    data: List[InstrumentRead]
 
 
 class DatasetsResult(ListResult):

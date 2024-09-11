@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from typing import List, Dict
-from api.models.catalog import Study, Building, Space, Certification, Person
+from api.models.catalog import Study, Building, Space, Certification, Person, Instrument, InstrumentParameter
 
 
 class StudyParser:
@@ -13,19 +13,19 @@ class StudyParser:
         df = self.clean_header(df)
         df.rename(
             columns={
-                'Name': 'name',
-                'Description': 'description',
-                'Website': 'website',
-                'Start year': 'start_year',
-                'End year': 'end_year',
-                'Duration': 'duration',
-                'Occupant impact': 'occupant_impact',
-                'Other indoor parameter': 'other_indoor_param',
-                'Citation': 'citation',
-                'DOI': 'doi',
-                'Funding information': 'funding',
-                'Ethics approval(s)': 'ethics',
-                'License': 'license'
+                'name': 'name',
+                'description': 'description',
+                'website': 'website',
+                'start year': 'start_year',
+                'end year': 'end_year',
+                'duration': 'duration',
+                'occupant impact': 'occupant_impact',
+                'other indoor parameter': 'other_indoor_param',
+                'citation': 'citation',
+                'doi': 'doi',
+                'funding information': 'funding',
+                'ethics approval(s)': 'ethics',
+                'license': 'license'
             },
             inplace=True)
 
@@ -37,7 +37,7 @@ class StudyParser:
         # Lower case of categorical columns
         for col in ['occupant_impact', 'other_indoor_param']:
             if col in df.columns:
-                df[col] = df[col].str.lower().str.replace(' ', '_')
+                df[col] = self.mormalize_column(df, col)
         # To explicitly convert NaN to None
         df = df.replace({np.nan: None})
         # print(df)
@@ -47,6 +47,9 @@ class StudyParser:
 
         contributors = self.read_contributors(io)
         study.contributors = contributors
+
+        instruments = self.read_instruments(io)
+        study.instruments = instruments
 
         spaces = self.read_spaces(io)
 
@@ -64,18 +67,18 @@ class StudyParser:
         df = self.clean_header(df)
         df.rename(
             columns={
-                'Full name': 'name',
-                'Email': 'email',
-                'Email public': 'email_public',
-                'Institution': 'institution',
+                'full name': 'name',
+                'email': 'email',
+                'email public': 'email_public',
+                'institution': 'institution',
             },
             inplace=True)
 
-        # To explicitly convert NaN to None
         # Convert 'yes' to True, 'no' to False, and handle unexpected strings by converting them to None
         if 'email_public' in df.columns:
             df['email_public'] = df['email_public'].str.lower().map(
                 {'yes': True, 'true': True, '1': True}).fillna(False)
+        # To explicitly convert NaN to None
         df = df.replace({np.nan: None})
 
         persons = []
@@ -85,30 +88,75 @@ class StudyParser:
             persons.append(person)
         return persons
 
+    def read_instruments(self, io) -> List[Instrument]:
+        df = pd.read_excel(io, sheet_name="Instrument")
+        df = self.clean_header(df)
+        df.rename(
+            columns={
+                'instrument identifier': 'identifier',
+                'manufacturer': 'manufacturer',
+                'model': 'model',
+                'equipment rating': 'equipment_grade_rating',
+                'placement': 'placement',
+            },
+            inplace=True)
+
+        # Lower case of categorical columns
+        for col in ['equipment_grade_rating', 'placement']:
+            if col in df.columns:
+                df[col] = self.mormalize_column(df, col)
+        for i in range(1, 10):
+            ppCol = f"physical parameter {i}"
+            if ppCol in df.columns:
+                df[ppCol] = self.mormalize_column(df, ppCol)
+        # To explicitly convert NaN to None
+        df = df.replace({np.nan: None})
+
+        instruments = []
+        for index, row in df.iterrows():
+            inst = row.to_dict()
+            instrument = Instrument(**inst)
+            # ensure it is a string
+            instrument.identifier = f"{instrument.identifier}"
+            for i in range(1, 10):
+                ppCol = f"physical parameter {i}"
+                if ppCol in inst and inst[ppCol] is not None:
+                    amCol = f"analysis method {i}"
+                    muCol = f"measurement uncertainty {i}"
+                    param = {
+                        "physical_parameter": inst[ppCol],
+                        "analysis_method": inst[amCol] if amCol in inst else None,
+                        "measurement_uncertainty": inst[muCol] if muCol in inst else None
+                    }
+                    instrument.parameters.append(InstrumentParameter(**param))
+
+            instruments.append(instrument)
+        return instruments
+
     def read_buildings(self, io, spaces: List[Space]) -> List[Building]:
         df = pd.read_excel(io, sheet_name="Building")
         df = self.clean_header(df)
         df.rename(
             columns={
-                'Building identifier': 'identifier',
-                'Country': 'country',
-                'City': 'city',
-                'Postcode': 'postcode',
-                'Building type': 'type',
-                'If other, specify building type': 'other_type',
-                'Outdoor environment': 'outdoor_env',
-                'If other, specify outdoor environment': 'other_outdoor_env',
-                'Green certified': 'green_certified',
-                'Green certification program name': 'green_certification_name',
-                'Green certification level': 'green_certification_level',
-                'Year of construction': 'construction_year',
-                'Renovation': 'renovation',
-                'Year of renovation': 'renovation_year',
-                'Mechanical ventilation': 'mechanical_ventilation',
-                'Operable windows': 'operable_windows',
-                'Special population designation': 'special_population',
-                'If other, specify special population': 'other_special_population',
-                'Smoking permitted': 'smoking',
+                'building identifier': 'identifier',
+                'country': 'country',
+                'city': 'city',
+                'postcode': 'postcode',
+                'building type': 'type',
+                'if other, specify building type': 'other_type',
+                'outdoor environment': 'outdoor_env',
+                'if other, specify outdoor environment': 'other_outdoor_env',
+                'green certified': 'green_certified',
+                'green certification program name': 'green_certification_name',
+                'green certification level': 'green_certification_level',
+                'year of construction': 'construction_year',
+                'renovation': 'renovation',
+                'year of renovation': 'renovation_year',
+                'mechanical ventilation': 'mechanical_ventilation',
+                'operable windows': 'operable_windows',
+                'special population designation': 'special_population',
+                'if other, specify special population': 'other_special_population',
+                'smoking permitted': 'smoking',
             },
             inplace=True)
 
@@ -120,7 +168,7 @@ class StudyParser:
         # Lower case of categorical columns
         for col in ['type', 'outdoor_env', 'green_certified', 'renovation', 'mechanical_ventilation', 'operable_windows', 'special_population', 'smoking']:
             if col in df.columns:
-                df[col] = df[col].str.lower().str.replace(' ', '_')
+                df[col] = self.mormalize_column(df, col)
         # To explicitly convert NaN to None
         df = df.replace({np.nan: None})
         # print(df)
@@ -146,32 +194,32 @@ class StudyParser:
         df = self.clean_header(df)
         df.rename(
             columns={
-                'Building identifier': 'building_identifier',
-                'Space identifier': 'identifier',
-                'Space types': 'type',
-                'Occupancy status': 'occupancy',
-                'Mechanical ventilation system type': 'mechanical_ventilation_type',
-                'Mechanical ventilation system status': 'mechanical_ventilation_status',
-                'Windows status': 'windows_status',
-                'Ventilation rate': 'ventilation_rate',
-                'Air change rate': 'air_change_rate',
-                'Particle filtration rating': 'particle_filtration_rating',
-                'Cooling system type': 'cooling_type',
-                'If other, specify cooling system type': 'other_cooling_type',
-                'Cooling system status': 'cooling_status',
-                'Heating system type': 'heating_type',
-                'If other, specify heating system type': 'other_heating_type',
-                'Heating system status': 'heating_status',
-                'Presence of standalone air filtration/purification': 'air_filtration',
-                'Presence of printers or photocopiers': 'printers',
-                'Presence of carpets': 'carpets',
-                'Presence of any combustion sources': 'combustion_sources',
-                'Marjor combustion sources': 'major_combustion_sources',
-                'Minor combustion sources': 'minor_combustion_sources',
-                'Presence of pets': 'pets',
-                'Presence of visible dampness': 'dampness',
-                'Presence of visible mold': 'mold',
-                'Cleaning with detergents': 'detergents',
+                'building identifier': 'building_identifier',
+                'space identifier': 'identifier',
+                'space types': 'type',
+                'occupancy status': 'occupancy',
+                'mechanical ventilation system type': 'mechanical_ventilation_type',
+                'mechanical ventilation system status': 'mechanical_ventilation_status',
+                'windows status': 'windows_status',
+                'ventilation rate': 'ventilation_rate',
+                'air change rate': 'air_change_rate',
+                'particle filtration rating': 'particle_filtration_rating',
+                'cooling system type': 'cooling_type',
+                'if other, specify cooling system type': 'other_cooling_type',
+                'cooling system status': 'cooling_status',
+                'heating system type': 'heating_type',
+                'if other, specify heating system type': 'other_heating_type',
+                'heating system status': 'heating_status',
+                'presence of standalone air filtration/purification': 'air_filtration',
+                'presence of printers or photocopiers': 'printers',
+                'presence of carpets': 'carpets',
+                'presence of any combustion sources': 'combustion_sources',
+                'marjor combustion sources': 'major_combustion_sources',
+                'minor combustion sources': 'minor_combustion_sources',
+                'presence of pets': 'pets',
+                'presence of visible dampness': 'dampness',
+                'presence of visible mold': 'mold',
+                'cleaning with detergents': 'detergents',
             },
             inplace=True)
 
@@ -188,7 +236,7 @@ class StudyParser:
                     'cooling_type', 'cooling_status', 'heating_type', 'heating_status', 'air_filtration',
                     'printers', 'carpets', 'combustion_sources', 'major_combustion_sources', 'minor_combustion_sources',
                     'pets', 'dampness', 'mold', 'detergents']:
-            df[col] = df[col].str.lower().str.replace(' ', '_')
+            df[col] = self.mormalize_column(df, col)
         # To explicitly convert NaN to None
         df = df.replace({np.nan: None})
         # print(df)
@@ -207,11 +255,16 @@ class StudyParser:
                 spaces[bldg_id].append(space)
         return spaces
 
-    def clean_header(self, df):
+    def clean_header(self, df: pd.DataFrame) -> pd.DataFrame:
         # Remove 2 first rows
         df = df.iloc[2:]
         # Remove non-printable/invisible characters from column names
         df.columns = df.columns.str.replace(
             r'[^\x20-\x7E]', ' ', regex=True)
-        df.columns = df.columns.str.strip()
+        df.columns = df.columns.str.strip().str.lower()
         return df
+
+    def mormalize_column(self, df: pd.DataFrame, column: str) -> pd.DataFrame:
+      # Lower case and replace non-printable/invisible characters with space and do stripping
+        return df[column].str.lower().str.replace(
+            r'[^\x20-\x7E]', ' ', regex=True).str.strip()

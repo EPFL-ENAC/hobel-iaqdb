@@ -76,6 +76,23 @@ def upgrade() -> None:
                     ["study_id"], unique=False)
 
     op.create_table(
+        "instrumentparameter",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("physical_parameter", sa.String(), nullable=False),
+        sa.Column("analysis_method", sa.String(), nullable=True),
+        sa.Column("measurement_uncertainty", sa.String(), nullable=True),
+        sa.Column("instrument_id", sa.Integer(), nullable=True),
+        sa.Column("study_id", sa.Integer(), nullable=True),
+        sa.ForeignKeyConstraint(["instrument_id"], ["instrument.id"],),
+        sa.ForeignKeyConstraint(["study_id"], ["study.id"],),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(op.f("ix_instrumentparameter_instrument_id"), "instrumentparameter",
+                    ["instrument_id"], unique=False)
+    op.create_index(op.f("ix_instrumentparameter_study_id"), "instrumentparameter",
+                    ["study_id"], unique=False)
+
+    op.create_table(
         "building",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("identifier", sa.String(), nullable=False),
@@ -212,6 +229,12 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_building_study_id"), table_name="building")
     op.drop_index(op.f("ix_building_identifier"), table_name="building")
     op.drop_table("building")
+
+    op.drop_index(op.f("ix_instrumentparameter_study_id"),
+                  table_name="instrumentparameter")
+    op.drop_index(op.f("ix_instrumentparameter_instrument_id"),
+                  table_name="instrumentparameter")
+    op.drop_table("instrumentparameter")
 
     op.drop_index(op.f("ix_instrument_study_id"), table_name="instrument")
     op.drop_index(op.f("ix_instrument_identifier"), table_name="instrument")

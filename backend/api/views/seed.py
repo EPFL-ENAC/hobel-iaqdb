@@ -3,7 +3,7 @@ import random
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from api.db import get_session, AsyncSession
-from api.models.catalog import Person, Study, Building, Space, Instrument
+from api.models.catalog import Person, Study, Building, Space, Instrument, InstrumentParameter
 from faker import Faker
 from api.services.geo import GeoService
 
@@ -58,6 +58,29 @@ async def seed(session: AsyncSession = Depends(get_session)) -> SeedStatus:
     on_off = ["on", "off", "unknown", "NA"]
     space_types = ["living room", "kitchen", "bedroom", "basement", "garage", "enclosed shared office", "enclosed private office",
                    "open office", "focus room", "hallway", "restaurant", "supermarket", "waiting room", "patient room", "other"]
+    physical_params = [
+        "individual voc",
+        "tvoc",
+        "pm10",
+        "pm2.5",
+        "pm1",
+        "particle number ≤10μm",
+        "particle number ≤2.5μm",
+        "particle number ≤1μm",
+        "nanoparticles",
+        "carbon dioxide",
+        "carbon monoxide",
+        "ozone",
+        "radon",
+        "sulphur dioxide",
+        "nitrogen dioxide",
+        "lead",
+        "air temperature",
+        "relative humidity",
+        "occupancy",
+        "mechanical ventilation rate",
+        "biocontaminants"
+    ]
 
     geoService = GeoService()
 
@@ -108,6 +131,18 @@ async def seed(session: AsyncSession = Depends(get_session)) -> SeedStatus:
             session.add(instrument)
             await session.commit()
             await session.refresh(instrument)
+
+            for k in range(0, random.randint(1, 5)):
+                parameter = InstrumentParameter(
+                    physical_parameter=fake.word(
+                        ext_word_list=physical_params),
+                    analysis_method="unknown",
+                    measurement_uncertainty=None,
+                    study_id=study.id,
+                    instrument_id=instrument.id)
+                session.add(parameter)
+                await session.commit()
+                await session.refresh(parameter)
 
         # study buildings
         for j in range(0, 3):
