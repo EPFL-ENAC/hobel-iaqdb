@@ -31,6 +31,9 @@ export const useContributeStore = defineStore('contribute', () => {
     while (study.value.contributors?.find((p: Person) => p.id === id)) {
       id++
     }
+    if (!study.value.contributors) {
+      study.value.contributors = [];
+    }
     study.value.contributors?.push({
       id: id,
       name: '',
@@ -153,4 +156,4 @@ export const useContributeStore = defineStore('contribute', () => {
     fetchClimateZone,
     readExcel,
   }
-})
+}, { persist: true })

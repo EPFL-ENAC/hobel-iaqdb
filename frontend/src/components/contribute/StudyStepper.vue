@@ -30,6 +30,7 @@
       ref="stepper"
       color="primary"
       animated
+      style="margin-bottom: 80px;"
     >
       <q-step
         :name="1"
@@ -41,9 +42,13 @@
         <q-markdown no-heading-anchor-links :src="StepStudyMd" />
         <study-form class="q-mt-lg"/>
 
-        <q-stepper-navigation>
-          <q-btn @click="() => { done1 = true; step = 2 }" color="primary" label="Continue" />
-          <q-btn @click="onPause" flat color="secondary" label="Pause" class="on-right" />
+        <q-stepper-navigation class="stepper-nav" >
+          <q-card bordered class="bg-grey-4">
+            <q-card-section>
+              <q-btn @click="() => { done1 = true; step = 2 }" color="primary" label="Continue" />
+              <q-btn @click="onPause" flat color="secondary" label="Pause" class="on-right" />
+            </q-card-section>
+          </q-card>
         </q-stepper-navigation>
       </q-step>
 
@@ -57,10 +62,14 @@
         <q-markdown no-heading-anchor-links :src="StepBuildingsMd" />
         <buildings-form class="q-mt-lg"/>
 
-        <q-stepper-navigation>
-          <q-btn @click="() => { done2 = true; step = 3 }" color="primary" label="Continue" />
-          <q-btn flat @click="step = 1" color="primary" label="Back" class="on-right" />
-          <q-btn @click="onPause" flat color="secondary" label="Pause" class="on-right" />
+        <q-stepper-navigation  class="stepper-nav" >
+          <q-card bordered class="bg-grey-4">
+            <q-card-section>
+              <q-btn flat @click="step = 1" color="primary" label="Back" class="on-left" />
+              <q-btn @click="() => { done2 = true; step = 3 }" color="primary" label="Continue" />
+              <q-btn @click="onPause" flat color="secondary" label="Pause" class="on-right" />
+            </q-card-section>
+          </q-card>
         </q-stepper-navigation>
       </q-step>
 
@@ -74,10 +83,14 @@
         <q-markdown no-heading-anchor-links :src="StepInstrumentsMd" />
         <instruments-form class="q-mt-lg"/>
 
-        <q-stepper-navigation>
-          <q-btn @click="() => { done3 = true; step = 4 }" color="primary" label="Continue" />
-          <q-btn flat @click="step = 2" color="primary" label="Back" class="on-right" />
-          <q-btn @click="onPause" flat color="secondary" label="Pause" class="on-right" />
+        <q-stepper-navigation class="stepper-nav">
+          <q-card bordered class="bg-grey-4">
+            <q-card-section>
+              <q-btn flat @click="step = 2" color="primary" label="Back" class="on-left" />
+              <q-btn @click="() => { done3 = true; step = 4 }" color="primary" label="Continue" />
+              <q-btn @click="onPause" flat color="secondary" label="Pause" class="on-right" />
+            </q-card-section>
+          </q-card>
         </q-stepper-navigation>
       </q-step>
 
@@ -89,10 +102,14 @@
       >
         <q-markdown no-heading-anchor-links :src="StepDatasetsMd" />
         <datasets-form class="q-mt-lg"/>
-        <q-stepper-navigation>
-          <q-btn color="primary" @click="onFinish" label="Finish" />
-          <q-btn flat @click="step = 3" color="primary" label="Back" class="on-right" />
-          <q-btn @click="onPause" flat color="secondary" label="Pause" class="on-right" />
+        <q-stepper-navigation class="stepper-nav">
+          <q-card bordered class="bg-grey-4">
+            <q-card-section>
+              <q-btn flat @click="step = 3" color="primary" label="Back" class="on-left" />
+              <q-btn color="primary" @click="onFinish" label="Finish" />
+              <q-btn @click="onPause" flat color="secondary" label="Pause" class="on-right" />
+            </q-card-section>
+          </q-card>
         </q-stepper-navigation>
       </q-step>
     </q-stepper>

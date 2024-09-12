@@ -52,6 +52,7 @@ class StudyParser:
         study.instruments = instruments
 
         spaces = self.read_spaces(io)
+        study.space_count = sum(len(sp) for sp in spaces.values())
 
         buildings = self.read_buildings(io, spaces)
         study.buildings = buildings

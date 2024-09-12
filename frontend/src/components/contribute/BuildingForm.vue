@@ -8,6 +8,99 @@
       class="q-mb-md"
     />
 
+    <div class="row q-col-gutter-md q-mb-md q-mt-md">
+      <div class="col">
+        <q-select
+          v-model="building.type"
+          :options="buildingTypeOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.building.type')"
+          :hint="$t('study.building.type_hint')"
+        />
+      </div>
+      <div class="col">
+        <q-select
+          v-model="building.special_population"
+          :options="populationOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.building.special_population')"
+          :hint="$t('study.building.special_population_hint')"
+        />
+      </div>
+      <div class="col">
+        <q-select
+          v-model="building.outdoor_env"
+          :options="outdoorEnvOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.building.outdoor_env')"
+          :hint="$t('study.building.outdoor_env_hint')"
+        />
+      </div>
+    </div>
+
+    <div class="row q-col-gutter-md q-mb-md">
+      <div class="col">
+        <q-input
+          v-model.number="building.construction_year"
+          filled
+          type="number"
+          :label="$t('study.building.construction_year')"
+          :hint="$t('study.building.construction_year_hint')"
+        />
+      </div>
+      <div class="col">
+        <q-input
+          v-model.number="building.renovation_year"
+          filled
+          type="number"
+          :label="$t('study.building.renovation_year')"
+          :hint="$t('study.building.renovation_year_hint')"
+        />
+      </div>
+    </div>
+
+    <div class="row q-col-gutter-md q-mb-md">
+      <div class="col">
+        <q-select
+          v-model="building.mechanical_ventilation"
+          :options="yesNoOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.building.mechanical_ventilation')"
+          :hint="$t('study.building.mechanical_ventilation_hint')"
+        />
+      </div>
+      <div class="col">
+        <q-select
+          v-model="building.operable_windows"
+          :options="yesNoOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.building.operable_windows')"
+          :hint="$t('study.building.operable_windows_hint')"
+        />
+      </div>
+      <div class="col">
+        <q-select
+          v-model="building.smoking"
+          :options="yesNoOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.building.smoking')"
+          :hint="$t('study.building.smoking_hint')"
+        />
+      </div>
+    </div>
+
     <div class="text-bold q-mb-md">Location</div>
     <div class="row q-col-gutter-md q-mb-md">
       <div class="col">
@@ -29,6 +122,16 @@
           map-options
           :label="$t('study.building.country')"
           :hint="$t('study.building.country_hint')"
+          @update:model-value="onLocationUpdated"
+        />
+      </div>
+      <div class="col">
+        <q-input
+          v-model="building.postcode"
+          filled
+          :label="$t('study.building.postcode')"
+          :hint="$t('study.building.postcode_hint')"
+          :debounce="500"
           @update:model-value="onLocationUpdated"
         />
       </div>
@@ -85,110 +188,73 @@
       <q-spinner-dots />
     </div>
 
-    <q-expansion-item
-      dense
-      label="Additional information"
-      header-class="text-bold text-secondary"
-      class="q-mb-md"
-      >
-      <div class="row q-col-gutter-md q-mb-md q-mt-md">
-        <div class="col">
-          <q-select
-            v-model="building.type"
-            :options="buildingTypeOptions"
-            filled
-            emit-value
-            map-options
-            :label="$t('study.building.type')"
-            :hint="$t('study.building.type_hint')"
-          />
-        </div>
-        <div class="col">
-          <q-select
-            v-model="building.population"
-            :options="populationOptions"
-            filled
-            emit-value
-            map-options
-            :label="$t('study.building.population')"
-            :hint="$t('study.building.population_hint')"
-          />
-        </div>
-        <div class="col">
-          <q-select
-            v-model="building.outdoor_env"
-            :options="outdoorEnvOptions"
-            filled
-            emit-value
-            map-options
-            :label="$t('study.building.outdoor_env')"
-            :hint="$t('study.building.outdoor_env_hint')"
-          />
-        </div>
-      </div>
-
-      <div class="row q-col-gutter-md q-mb-md">
-        <div class="col">
-          <q-input
-            v-model="building.certification.name"
-            filled
-            :label="$t('study.building.certification_name')"
-            :hint="$t('study.building.certification_name_hint')"
-          />
-        </div>
-        <div class="col">
-          <q-input
-            v-model="building.certification.level"
-            filled
-            :label="$t('study.building.certification_level')"
-            :hint="$t('study.building.certification_level_hint')"
-          />
-        </div>
-      </div>
-
-      <div class="row q-col-gutter-md q-mb-md">
+    <div class="text-bold q-mb-md">Certification</div>
+    <div class="q-mb-md">
+      <q-select
+        v-model="building.green_certified"
+        :options="yesNoOptions"
+        filled
+        emit-value
+        map-options
+        :label="$t('study.building.green_certified')"
+        :hint="$t('study.building.green_certified_hint')"
+        @update:model-value="onGreenCertifiedUpdated"
+      />
+    </div>
+    
+    <div v-if="building.certifications?.length" class="row q-col-gutter-md q-mb-md">
       <div class="col">
         <q-input
-          v-model.number="building.construction_year"
+          v-model.number="building.certifications[0].program"
           filled
-          type="number"
-          :label="$t('study.building.construction_year')"
-          :hint="$t('study.building.construction_year_hint')"
+          :label="$t('study.building.certification_program')"
+          :hint="$t('study.building.certification_program_hint')"
         />
       </div>
       <div class="col">
         <q-input
-          v-model.number="building.renovation_year"
+          v-model.number="building.certifications[0].level"
           filled
-          type="number"
-          :label="$t('study.building.renovation_year')"
-          :hint="$t('study.building.renovation_year_hint')"
+          :label="$t('study.building.certification_level')"
+          :hint="$t('study.building.certification_level_hint')"
         />
       </div>
     </div>
-    </q-expansion-item>
 
     <div class="text-bold q-mb-md">Spaces</div>
     <q-card flat bordered class="q-mb-md bg-grey-2">
       <q-card-section>
         <div v-if="building.spaces?.length === 0" class="text-help">No spaces defined yet.</div>
         <q-list separator>
-          <q-item v-for="(space, i) in building.spaces" :key="space.id" class="q-pl-none q-pr-none">
-            <q-item-section>
-              <space-form v-model="building.spaces[i]" :building="building" class="q-mt-md"/>
-            </q-item-section>
-            <q-item-section side>
-              <q-btn
-                rounded
-                dense
-                flat
-                color="grey-6"
-                :title="$t('delete')"
-                icon="delete"
-                class="q-ml-xs"
-                @click="onDeleteSpace(i)" />
-            </q-item-section>
-          </q-item>
+          <template v-for="(space, i) in building.spaces" :key="space.id">
+              <q-item  class="q-pl-none q-pr-none">
+                <q-item-section>
+                  <q-expansion-item
+                    dense
+                    label="..."
+                    header-class="text-bold text-secondary"
+                  >
+                    <template v-slot:header>
+                      {{ `${building.spaces ? building.spaces[i].identifier : i}` }}
+                    </template>
+                    <space-form v-model="building.spaces[i]" :building="building" class="q-mt-md"/>
+                  </q-expansion-item>
+                </q-item-section>
+                <q-item-section side>
+                  <q-btn
+                    rounded
+                    dense
+                    flat
+                    color="grey-6"
+                    :title="$t('delete')"
+                    icon="delete"
+                    class="q-ml-xs"
+                    @click="onDeleteSpace(i)" />
+                </q-item-section>
+              </q-item>
+            
+          </template>
+          
         </q-list>
       </q-card-section>
       <q-card-actions class="bg-grey-3 q-pa-md">
@@ -206,9 +272,9 @@ export default defineComponent({
 });
 </script>
 <script setup lang="ts">
-import { climateOptions, buildingTypeOptions, outdoorEnvOptions, populationOptions, countryOptions } from 'src/utils/options';
+import { climateOptions, buildingTypeOptions, outdoorEnvOptions, populationOptions, countryOptions, yesNoOptions } from 'src/utils/options';
 import { geocoderApi } from 'src/utils/geocoder';
-import { Building } from 'src/models';
+import { Building, Certification } from 'src/models';
 import SpaceForm from 'src/components/contribute/SpaceForm.vue'
 
 const contrib = useContributeStore();
@@ -276,5 +342,13 @@ function onAddSpace() {
 
 function onDeleteSpace(i: number) {
   contrib.deleteSpace(building.value.identifier, i);
+}
+
+function onGreenCertifiedUpdated() {
+  if (building.value.green_certified === 'yes') {
+    building.value.certifications = [{} as Certification];
+  } else {
+    building.value.certifications = [];
+  }
 }
 </script>

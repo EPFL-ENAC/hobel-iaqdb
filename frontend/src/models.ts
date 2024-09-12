@@ -10,6 +10,11 @@ export interface Person extends DBModel {
   institution: string;
 }
 
+export interface Certification extends DBModel {
+  program: string;
+  level: string;
+}
+
 export interface Building extends DBModel {
   identifier: string;
   country: string;
@@ -34,6 +39,7 @@ export interface Building extends DBModel {
   other_special_population?: string;
   smoking?: string;
   spaces?: Space[]
+  certifications?: Certification[]
 }
 
 interface ListResult {
@@ -54,6 +60,10 @@ export interface Study extends DBModel {
   start_year?: number;
   end_year?: number;
   duration?: number;
+  building_count?: number;
+  space_count?: number;
+  occupant_impact?: string;
+  other_indoor_param?: string;
   citation?: string;
   doi?: string;
   funding?: string;

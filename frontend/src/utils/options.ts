@@ -31,6 +31,21 @@ export const climateOptions = [
   { value: 'EF', label: '[EF]  Polar, frost',},
 ];
 
+export const occupantImpactOptions = [
+  { value: 'health', label: 'Health' },
+  { value: 'comfort', label: 'Comfort' },
+  { value: 'satisfaction', label: 'Satisfaction' },
+  { value: 'performance', label: 'Performance' },
+  { value: 'well-being', label: 'Well-being' },
+  { value: 'na', label: 'Not applicable' },
+]
+
+export const otherIndoorParamOptions = [
+  { value: 'thermal', label: 'Thermal' },
+  { value: 'acoustic', label: 'Acoustic' },
+  { value: 'visual', label: 'Visual' },
+  { value: 'na', label: 'Not applicable' },
+]
 export const ventilationOptions = [
   { value: 'dilution', label: 'Dilution' },
   { value: 'displacement', label: 'Displacement' },
@@ -41,13 +56,14 @@ export const ventilationOptions = [
 
 export const buildingTypeOptions = [
   { value: 'multifamily_residential', label: 'Multifamily residential' },
-  { value: 'dwelling', label: ' Dwelling' },
-  { value: 'office', label: ' Office' },
-  { value: 'classspace,', label: ' Classspace' },
+  { value: 'dwelling', label: 'Dwelling' },
+  { value: 'office', label: 'Office' },
+  { value: 'school', label: 'School' },
   { value: 'senior_center', label: 'Senior Center' },
-  { value: 'hospital', label: ' Hospital' },
-  { value: 'retail', label: ' Retail' },
-  { value: 'other', label: ' Other' }
+  { value: 'hospital', label: 'Hospital' },
+  { value: 'retail', label: 'Retail' },
+  { value: 'sport_center,', label: 'Sport center' },
+  { value: 'other', label: 'Other' }
 ]
 
 export const outdoorEnvOptions = [
@@ -59,12 +75,13 @@ export const outdoorEnvOptions = [
 ]
 
 export const populationOptions = [
-  { value: 'Low-income', label: 'Low-income' },
-  { value: 'Middle-income', label: 'Middle-income' },
+  { value: 'low-income', label: 'Low-income' },
+  { value: 'middle-income', label: 'Middle-income' },
+  { value: 'high-income', label: 'High-income' },
   { value: 'Elderly', label: 'Elderly' },
-  { value: 'Asthmatics', label: 'Asthmatics' },
-  { value: 'COPD patients', label: 'COPD patients' },
-  { value: 'NA', label: 'Not applicable' }
+  { value: 'children', label: 'Children' },
+  { value: 'other', label: 'Other' },
+  { value: 'na', label: 'Not applicable' }
 ]
 
 export const yesNoOptions = [
@@ -74,20 +91,22 @@ export const yesNoOptions = [
 ]
 
 export const spaceTypeOptions = [
-  { value: 'living_space', label: 'Living space' },
+  { value: 'living_room', label: 'Living room' },
   { value: 'kitchen', label: 'Kitchen' },
-  { value: 'bedspace', label: 'Bedspace' },
+  { value: 'bedroom', label: 'Bedroom' },
   { value: 'basement', label: 'Basement' },
   { value: 'garage', label: 'Garage' },
   { value: 'enclosed_shared_office', label: 'Enclosed shared office' },
   { value: 'enclosed_private_office', label: 'Enclosed private office' },
   { value: 'open_office', label: 'Open office' },
-  { value: 'focus_space', label: 'Focus space' },
+  { value: 'focus_room', label: 'Focus room' },
   { value: 'hallway', label: 'Hallway' },
   { value: 'restaurant', label: 'Restaurant' },
   { value: 'supermarket', label: 'Supermarket' },
-  { value: 'waiting_space', label: 'Waiting space' },
-  { value: 'patient_space', label: 'Patient space' },
+  { value: 'waiting_room', label: 'Waiting room' },
+  { value: 'patient_room', label: 'Patient room' },
+  { value: 'classroom', label: 'Classroom' },
+  { value: 'outdoor', label: 'Outdoor' },
   { value: 'other', label: 'Other' }
 ]
 
@@ -99,9 +118,9 @@ export const occupancyOptions = [
 ]
 
 export const equipmentGradeOptions = [
-  { value: 'reference instrument', label: 'Reference instrument', },
-  { value: 'low-cost sensor', label: 'Low-cost sensor', },
-  { value: 'other', label: 'Other', },
+  { value: 'research-grade', label: 'Research-grade', },
+  { value: 'mid-level', label: 'Mid-level', },
+  { value: 'low-cost', label: 'Low-cost', },
   { value: 'unknown', label: 'Unknown', },
 ]
 
