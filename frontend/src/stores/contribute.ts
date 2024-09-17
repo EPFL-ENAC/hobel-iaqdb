@@ -1,4 +1,4 @@
-import { spaceTypeOptions, occupancyOptions, ventilationOptions, yesNoOptions } from 'src/utils/options';
+import { spaceTypeOptions, occupancyOptions, ventilationTypeOptions, yesNoOptions } from 'src/utils/options';
 import { v4 as uuidv4 } from 'uuid';
 import { defineStore } from 'pinia';
 import { api } from 'src/boot/api';
@@ -73,7 +73,7 @@ export const useContributeStore = defineStore('contribute', () => {
     return {
       space: spaceTypeOptions[0].value,
       occupancy: occupancyOptions[0].value,
-      ventilation: ventilationOptions[0].value,
+      ventilation: ventilationTypeOptions[0].value,
       smoking: yesNoOptions[2].value,
       periods: []
     };

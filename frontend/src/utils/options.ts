@@ -46,12 +46,80 @@ export const otherIndoorParamOptions = [
   { value: 'visual', label: 'Visual' },
   { value: 'na', label: 'Not applicable' },
 ]
-export const ventilationOptions = [
-  { value: 'dilution', label: 'Dilution' },
+
+export const ventilationStatusOptions = [
+  { value: 'on', label: 'On' },
+  { value: 'off', label: 'Off' },
+  { value: 'mixed', label: 'Mixed' },
+  { value: 'unknown', label: 'Unknown' },
+  { value: 'na', label: 'Not applicable' },
+]
+
+export const ventilationTypeOptions = [
+  { value: 'mixing', label: 'Mixing' },
   { value: 'displacement', label: 'Displacement' },
   { value: 'exhaust only', label: 'Exhaust only' },
   { value: 'other', label: 'Other' },
   { value: 'unknown', label: 'Unknown' },
+  { value: 'na', label: 'Not applicable' },
+]
+
+export const windowsStatusOptions = [
+  { value: 'open', label: 'Open' },
+  { value: 'closed', label: 'Closed' },
+  { value: 'unknown', label: 'Unknown' },
+  { value: 'na', label: 'Not applicable' },
+]
+
+export const coolingStatusOptions = [
+  { value: 'on', label: 'On' },
+  { value: 'off', label: 'Off' },
+  { value: 'mixed', label: 'Mixed' },
+  { value: 'unknown', label: 'Unknown' },
+  { value: 'na', label: 'Not applicable' },
+]
+
+export const coolingTypeOptions = [
+  { value: 'forced_air', label: 'Forced air' },
+  { value: 'fan_coil_units', label: 'Fan coil units' },
+  { value: 'ceiling_radiant', label: 'Ceiling radiant' },
+  { value: 'floor_radiant', label: 'Floor radiant' },
+  { value: 'other', label: 'Other' },
+  { value: 'unknown', label: 'Unknown' },
+  { value: 'na', label: 'Not applicable' },
+]
+
+export const heatingStatusOptions = [
+  { value: 'on', label: 'On' },
+  { value: 'off', label: 'Off' },
+  { value: 'mixed', label: 'Mixed' },
+  { value: 'unknown', label: 'Unknown' },
+  { value: 'na', label: 'Not applicable' },
+]
+
+export const heatingTypeOptions = [
+  { value: 'forced_air', label: 'Forced air' },
+  { value: 'fan_coil_units', label: 'Fan coil units' },
+  { value: 'ceiling_radiant', label: 'Ceiling radiant' },
+  { value: 'floor_radiant', label: 'Floor radiant' },
+  { value: 'radiator', label: 'Radiator' },
+  { value: 'other', label: 'Other' },
+  { value: 'unknown', label: 'Unknown' },
+  { value: 'na', label: 'Not applicable' },
+]
+
+export const majorCombustionSourcesOptions = [
+  { value: 'unvented_space_heaters', label: 'Unvented kerosene and gas space heaters' },
+  { value: 'wood_stoves', label: 'Wood stoves' },
+  { value: 'fireplaces', label: 'Fireplaces' },
+  { value: 'gas_stoves', label: 'Gas stoves' },
+  { value: 'other', label: 'Other' },
+]
+
+export const minorCombustionSourcesOptions = [
+  { value: 'candles', label: 'Candles' },
+  { value: 'incense', label: 'Incense' },
+  { value: 'other', label: 'Other' },
 ]
 
 export const buildingTypeOptions = [

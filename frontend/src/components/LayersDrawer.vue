@@ -95,7 +95,7 @@
         <div class="text-hint">{{ $t('altitudes_help') }}</div>
         <q-select
           v-model="filtersStore.ventilations"
-          :options="ventilationOptions"
+          :options="ventilationTypeOptions"
           :label="$t('ventilations')"
           :hint="$t('ventilations_hint')"
           multiple
