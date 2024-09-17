@@ -279,15 +279,6 @@ interface Props {
 }
 const props = defineProps<Props>();
 
-const contrib = useContributeStore();
-
 const space = ref(props.modelValue);
 
-function onAddPeriod() {
-  contrib.addPeriod(props.building.identifier, space.value.identifier);
-}
-
-function onDeletePeriod(i: number) {
-  contrib.deletePeriod(props.building.identifier, space.value.identifier, i);
-}
 </script>

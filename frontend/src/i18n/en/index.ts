@@ -176,5 +176,13 @@ export default {
       placement: 'Placement',
       placement_hint: 'Instrument placement.',
     },
+    parameter: {
+      physical_parameter: 'Physical parameter',
+      physical_parameter_hint: 'Physical parameter measured by the instrument.',
+      analysis_method: 'Analysis method',
+      analysis_method_hint: 'Method used to analyze the physical parameter.',
+      measurement_uncertainty: 'Measurement uncertainty',
+      measurement_uncertainty_hint: 'Measurement uncertainty of the physical parameter.',
+    }
   }
 };

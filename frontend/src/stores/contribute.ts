@@ -1,8 +1,8 @@
-import { spaceTypeOptions, occupancyOptions, ventilationTypeOptions, yesNoOptions } from 'src/utils/options';
+import { spaceTypeOptions, occupancyOptions, ventilationTypeOptions, physicalParameterOptions, yesNoOptions } from 'src/utils/options';
 import { v4 as uuidv4 } from 'uuid';
 import { defineStore } from 'pinia';
 import { api } from 'src/boot/api';
-import { Study, Building, Space, Person, Instrument } from 'src/models'; 
+import { Study, Building, Space, Person, Instrument, InstrumentParameter } from 'src/models'; 
 
 export const useContributeStore = defineStore('contribute', () => {
 
@@ -124,6 +124,28 @@ export const useContributeStore = defineStore('contribute', () => {
     study.value.instruments?.splice(i, 1);
   }
 
+  function addInstrumentParameter(instId: string) {
+    const instrument = study.value.instruments?.find((inst) => inst.identifier === instId);
+    if (!instrument) return;
+
+    if (!instrument.parameters) {
+      instrument.parameters = [];
+    }
+    instrument.parameters.push({
+      id: `__${uuidv4()}`,
+      physical_parameter: physicalParameterOptions[0].value,
+      analysis_method: '',
+      measurement_uncertainty: '',
+    } as InstrumentParameter);
+  }
+
+  function deleteInstrumentParameter(instId: string, i: number) {
+    const instrument = study.value.instruments?.find((inst) => inst.identifier === instId);
+    if (!instrument) return;
+
+    instrument.parameters?.splice(i, 1);
+  }
+
   async function fetchAltitude(lon: number, lat: number) {
     return api.get('/map/elevation', { params: { lon, lat } }).then((res) => res.data)
   }
@@ -152,6 +174,8 @@ export const useContributeStore = defineStore('contribute', () => {
     deleteSpace,
     addInstrument,
     deleteInstrument,
+    addInstrumentParameter,
+    deleteInstrumentParameter,
     fetchAltitude,
     fetchClimateZone,
     readExcel,

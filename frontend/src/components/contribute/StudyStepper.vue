@@ -1,28 +1,5 @@
 <template>
   <div>
-    <q-card class="q-mb-lg bg-grey-3">
-      <q-card-section>
-        <div class="row">
-          <q-icon name="lightbulb" class="on-left" style="margin-top: 10px;" />
-          <div class="q-mt-sm">Tip: you can prepopulate the study, buildings, spaces etc. forms using an Excel file.</div>
-          <q-btn label="Download Excel template" color="grey-8" icon="download" size="sm" outline no-caps class="on-right" style="margin-top: 7px" />
-        </div>
-        <div class="row q-mt-md q-ml-md">
-          <q-file
-            outlined
-            dense
-            v-model="excelFile"
-            label="Import from Excel"
-            :disable="loading"
-            :loading="loading"
-            accept=".xlsx"
-            clearable
-            color="secondary"
-            @update:model-value="onExcelFileUpdated"
-          />
-        </div>
-      </q-card-section>
-    </q-card>
 
     <q-stepper
       v-model="step"
@@ -39,6 +16,39 @@
         :done="step > 1"
         :header-nav="step > 1"
       >
+        <q-card class="q-mb-lg bg-warning">
+          <q-card-section>
+            <div class="row">
+              <q-icon name="lightbulb" class="on-left" style="margin-top: 10px;" />
+              <div class="q-mt-sm">Tip: you can prepopulate the study, buildings, spaces etc. forms using an Excel file.</div>
+              <q-btn
+                label="Download Excel template"
+                color="black"
+                icon="download"
+                size="sm"
+                outline 
+                no-caps 
+                class="on-right" 
+                style="margin-top: 7px"
+                @click="onDownloadExcelTemplate"
+               />
+            </div>
+            <div class="row q-mt-md q-ml-md">
+              <q-file
+                outlined
+                dense
+                v-model="excelFile"
+                label="Import from Excel"
+                :disable="loading"
+                :loading="loading"
+                accept=".xlsx"
+                clearable
+                color="black"
+                @update:model-value="onExcelFileUpdated"
+              />
+            </div>
+          </q-card-section>
+        </q-card>
         <q-markdown no-heading-anchor-links :src="StepStudyMd" />
         <study-form class="q-mt-lg"/>
 
@@ -147,6 +157,10 @@ function onPause() {
 
 function onFinish() {
   emit('finish');
+}
+
+function onDownloadExcelTemplate() {
+  window.open('https://epflch.sharepoint.com/:x:/r/sites/ENAC-IT/Documents%20partages/Research%20IT/Advanced%20Services/0002%20%E2%80%93%20PILOT%20iAQ/Pilot_iAQ_Shared/Data/Metadata/Metadata_entry_form.xlsx?d=w057cb00af74445bdb7a4dca02ae52df1&csf=1&web=1&e=vgUhs1');
 }
 
 function onExcelFileUpdated() {

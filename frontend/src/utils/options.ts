@@ -80,10 +80,10 @@ export const coolingStatusOptions = [
 ]
 
 export const coolingTypeOptions = [
-  { value: 'forced_air', label: 'Forced air' },
-  { value: 'fan_coil_units', label: 'Fan coil units' },
-  { value: 'ceiling_radiant', label: 'Ceiling radiant' },
-  { value: 'floor_radiant', label: 'Floor radiant' },
+  { value: 'forced air', label: 'Forced air' },
+  { value: 'fan coil units', label: 'Fan coil units' },
+  { value: 'ceiling radiant', label: 'Ceiling radiant' },
+  { value: 'floor radiant', label: 'Floor radiant' },
   { value: 'other', label: 'Other' },
   { value: 'unknown', label: 'Unknown' },
   { value: 'na', label: 'Not applicable' },
@@ -98,10 +98,10 @@ export const heatingStatusOptions = [
 ]
 
 export const heatingTypeOptions = [
-  { value: 'forced_air', label: 'Forced air' },
-  { value: 'fan_coil_units', label: 'Fan coil units' },
-  { value: 'ceiling_radiant', label: 'Ceiling radiant' },
-  { value: 'floor_radiant', label: 'Floor radiant' },
+  { value: 'forced air', label: 'Forced air' },
+  { value: 'fan coil units', label: 'Fan coil units' },
+  { value: 'ceiling radiant', label: 'Ceiling radiant' },
+  { value: 'floor radiant', label: 'Floor radiant' },
   { value: 'radiator', label: 'Radiator' },
   { value: 'other', label: 'Other' },
   { value: 'unknown', label: 'Unknown' },
@@ -109,10 +109,10 @@ export const heatingTypeOptions = [
 ]
 
 export const majorCombustionSourcesOptions = [
-  { value: 'unvented_space_heaters', label: 'Unvented kerosene and gas space heaters' },
-  { value: 'wood_stoves', label: 'Wood stoves' },
+  { value: 'unvented kerosene and gas space heaters', label: 'Unvented kerosene and gas space heaters' },
+  { value: 'wood stoves', label: 'Wood stoves' },
   { value: 'fireplaces', label: 'Fireplaces' },
-  { value: 'gas_stoves', label: 'Gas stoves' },
+  { value: 'gas stoves', label: 'Gas stoves' },
   { value: 'other', label: 'Other' },
 ]
 
@@ -123,14 +123,14 @@ export const minorCombustionSourcesOptions = [
 ]
 
 export const buildingTypeOptions = [
-  { value: 'multifamily_residential', label: 'Multifamily residential' },
+  { value: 'multifamily residential', label: 'Multifamily residential' },
   { value: 'dwelling', label: 'Dwelling' },
   { value: 'office', label: 'Office' },
   { value: 'school', label: 'School' },
-  { value: 'senior_center', label: 'Senior Center' },
+  { value: 'senior center', label: 'Senior Center' },
   { value: 'hospital', label: 'Hospital' },
   { value: 'retail', label: 'Retail' },
-  { value: 'sport_center,', label: 'Sport center' },
+  { value: 'sport center,', label: 'Sport center' },
   { value: 'other', label: 'Other' }
 ]
 
@@ -159,20 +159,20 @@ export const yesNoOptions = [
 ]
 
 export const spaceTypeOptions = [
-  { value: 'living_room', label: 'Living room' },
+  { value: 'living room', label: 'Living room' },
   { value: 'kitchen', label: 'Kitchen' },
   { value: 'bedroom', label: 'Bedroom' },
   { value: 'basement', label: 'Basement' },
   { value: 'garage', label: 'Garage' },
-  { value: 'enclosed_shared_office', label: 'Enclosed shared office' },
-  { value: 'enclosed_private_office', label: 'Enclosed private office' },
-  { value: 'open_office', label: 'Open office' },
-  { value: 'focus_room', label: 'Focus room' },
+  { value: 'enclosed shared office', label: 'Enclosed shared office' },
+  { value: 'enclosed private office', label: 'Enclosed private office' },
+  { value: 'open office', label: 'Open office' },
+  { value: 'focus room', label: 'Focus room' },
   { value: 'hallway', label: 'Hallway' },
   { value: 'restaurant', label: 'Restaurant' },
   { value: 'supermarket', label: 'Supermarket' },
-  { value: 'waiting_room', label: 'Waiting room' },
-  { value: 'patient_room', label: 'Patient room' },
+  { value: 'waiting room', label: 'Waiting room' },
+  { value: 'patient room', label: 'Patient room' },
   { value: 'classroom', label: 'Classroom' },
   { value: 'outdoor', label: 'Outdoor' },
   { value: 'other', label: 'Other' }
@@ -200,6 +200,30 @@ export const placementOptions = [
   { value: 'other', label: 'Other', },
   { value: 'mixed', label: 'Mixed', },
   { value: 'unknown', label: 'Unknown', },
+]
+
+export const physicalParameterOptions = [
+  { value: 'individual voc', label: 'Individual VOC', },
+  { value: 'tvoc', label: 'TVOC', },
+  { value: 'pm10', label: 'PM10', },
+  { value: 'pm2.5', label: 'PM2.5', },
+  { value: 'pm1', label: 'PM1', },
+  { value: 'particle number ≤10μm', label: 'Particle number ≤10μm', },
+  { value: 'particle number ≤2.5μm', label: 'Particle number ≤2.5μm', },
+  { value: 'particle number ≤1μm', label: 'Particle number ≤1μm', },
+  { value: 'nanoparticles', label: 'Nanoparticles', },
+  { value: 'carbon dioxide', label: 'Carbon dioxide', },
+  { value: 'carbon monoxide', label: 'Carbon monoxide', },
+  { value: 'ozone', label: 'Ozone', },
+  { value: 'radon', label: 'Radon', },
+  { value: 'sulphur dioxide', label: 'Sulphur dioxide', },
+  { value: 'nitrogen dioxide', label: 'Nitrogen dioxide', },
+  { value: 'lead', label: 'Lead', },
+  { value: 'air temperature', label: 'Air temperature', },
+  { value: 'relative humidity', label: 'Relative humidity', },
+  { value: 'occupancy', label: 'Occupancy', },
+  { value: 'mechanical ventilation rate', label: 'Mechanical ventilation rate', },
+  { value: 'biocontaminants', label: 'Biocontaminants', },
 ]
 
 export const countryOptions = [

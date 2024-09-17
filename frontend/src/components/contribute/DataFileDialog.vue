@@ -119,7 +119,13 @@ export default defineComponent({
 });
 </script>
 <script setup lang="ts">
+import { physicalParameterOptions } from 'src/utils/options';
 import Papa from 'papaparse';
+
+interface FieldSpec {
+  field: string;
+  variable: string;
+}
 
 interface Props {
   modelValue: boolean;
@@ -132,37 +138,33 @@ const showDialog = ref(props.modelValue);
 const localFile = ref();
 const fields = ref([]);
 const rows = ref([]);
-const dictionary = ref({});
+const dictionary = ref<{ [Key: string]: FieldSpec }>({});
 
 const columns = computed(() => fields.value.map((field) => {return { name: field, label: field, field }; }))
 
 const fieldOptions = [
   { value: 'building', label: 'Building ID' },
   { value: 'space', label: 'Space ID' },
-  { value: 'period', label: 'Period ID' },
+  { value: 'instrument', label: 'Instrument ID' },
   { value: 'timestamp', label: 'Timestamp' },
-  { value: 'humidity', label: 'Humidity' },
-  { value: 'temperature', label: 'Temperature' },
-  { value: 'pressure', label: 'Pressure' },
-  { value: 'pm1', label: 'PM1' },
-  { value: 'pm2.5', label: 'PM2.5' },
-  { value: 'pm10', label: 'PM10' },
-  { value: 'co2', label: 'CO2' },
-  { value: 'nox', label: 'NOx' },
-  { value: 'voc', label: 'VOC' },
-  { value: 'equipment', label: 'Equipment ID' },
+  ...physicalParameterOptions,
   { value: 'other', label: 'Other' },
 ]
 
+
 const errors = computed(() => {
+  const keys = Object.keys(dictionary.value);
   const rval = [];
-  if (!Object.keys(dictionary.value).find((field) => dictionary.value[field].variable === 'building')) {
+  if (!keys.find((field) => dictionary.value[field].variable === 'building')) {
     rval.push('Building ID is missing');
   }
-  if (!Object.keys(dictionary.value).find((field) => dictionary.value[field].variable === 'space')) {
+  if (!keys.find((field) => dictionary.value[field].variable === 'space')) {
     rval.push('Space ID is missing');
   }
-  if (!Object.keys(dictionary.value).find((field) => dictionary.value[field].variable === 'timestamp')) {
+  if (!keys.find((field) => dictionary.value[field].variable === 'instrument')) {
+    rval.push('Instrument ID is missing');
+  }
+  if (!keys.find((field) => dictionary.value[field].variable === 'timestamp')) {
     rval.push('Timestamp is missing');
   }
   return rval;

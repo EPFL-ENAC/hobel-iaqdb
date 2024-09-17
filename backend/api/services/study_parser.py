@@ -109,7 +109,7 @@ class StudyParser:
         for col in ['equipment_grade_rating', 'placement']:
             if col in df.columns:
                 df[col] = self.mormalize_column(df, col)
-        for i in range(1, 10):
+        for i in range(1, 50):
             ppCol = f"physical parameter {i}"
             if ppCol in df.columns:
                 df[ppCol] = self.mormalize_column(df, ppCol)
@@ -124,7 +124,7 @@ class StudyParser:
             instrument.study_id = 0
             # ensure it is a string
             instrument.identifier = f"{instrument.identifier}"
-            for i in range(1, 10):
+            for i in range(1, 50):
                 ppCol = f"physical parameter {i}"
                 if ppCol in inst and inst[ppCol] is not None:
                     amCol = f"analysis method {i}"

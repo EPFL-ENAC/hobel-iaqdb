@@ -51,6 +51,46 @@
         />
       </div>
     </div>
+    <div class="text-bold q-mb-md">Parameters</div>
+    <q-card flat bordered class="q-mb-md bg-grey-2">
+      <q-card-section>
+        <div v-if="instrument.parameters?.length === 0" class="text-help">No parameters defined yet.</div>
+        <q-list separator>
+          <template v-for="(param, i) in instrument.parameters" :key="param.id">
+              <q-item  class="q-pl-none q-pr-none">
+                <q-item-section>
+                  <q-expansion-item
+                    dense
+                    label="..."
+                    header-class="text-bold text-secondary"
+                  >
+                    <template v-slot:header>
+                      {{ `${getInstrumentParameterLabel(i)}` }}
+                    </template>
+                    <instrument-parameter-form v-model="instrument.parameters[i]" :instrument="instrument" class="q-mt-md"/>
+                  </q-expansion-item>
+                </q-item-section>
+                <q-item-section side>
+                  <q-btn
+                    rounded
+                    dense
+                    flat
+                    color="grey-6"
+                    :title="$t('delete')"
+                    icon="delete"
+                    class="q-ml-xs"
+                    @click="onDeleteParameter(i)" />
+                </q-item-section>
+              </q-item>
+            
+          </template>
+          
+        </q-list>
+      </q-card-section>
+      <q-card-actions class="bg-grey-3 q-pa-md">
+        <q-btn @click="onAddParameter" color="secondary" label="Add Parameter" icon="add" size="sm" />
+      </q-card-actions>
+    </q-card>
   </div>
 </template>
 
@@ -61,8 +101,11 @@ export default defineComponent({
 });
 </script>
 <script setup lang="ts">
-import { equipmentGradeOptions, placementOptions } from 'src/utils/options';
+import InstrumentParameterForm from './InstrumentParameterForm.vue';
+import { equipmentGradeOptions, placementOptions, physicalParameterOptions } from 'src/utils/options';
 import { Instrument } from 'src/models';
+
+const contrib = useContributeStore();
 
 interface Props {
   modelValue: Instrument;
@@ -70,5 +113,19 @@ interface Props {
 const props = defineProps<Props>();
 
 const instrument = ref(props.modelValue);
+
+function getInstrumentParameterLabel(i: number) {
+  if (!instrument.value.parameters) return i;
+  const val = instrument.value.parameters[i].physical_parameter;
+  return physicalParameterOptions.find((o) => o.value === val)?.label || val;
+}
+
+function onAddParameter() {
+  contrib.addInstrumentParameter(instrument.value.identifier);
+}
+
+function onDeleteParameter(i: number) {
+  contrib.deleteInstrumentParameter(instrument.value.identifier, i);
+}
 
 </script>
