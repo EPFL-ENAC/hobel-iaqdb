@@ -22,6 +22,8 @@ dynaconf = "^3.2.6"
 pillow = "^10.4.0"
 aiobotocore = "^2.13.3"
 timezonefinder = "^6.5.2"
+pandas = "^2.2.2"
+openpyxl = "^3.1.5"
 
 
 [build-system]

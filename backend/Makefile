@@ -17,3 +17,6 @@ db-downgrade:
 
 db-revision:
 	poetry run dotenv -f "$(env_path)" run alembic revision --autogenerate -m "$(name)"
+
+seed:
+	curl -X PUT 'http://localhost:8000/seed' -H 'accept: application/json'

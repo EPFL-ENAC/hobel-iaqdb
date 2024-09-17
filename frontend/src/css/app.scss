@@ -57,3 +57,13 @@ p:last-child {
     padding-left: 20px;
   }
 }
+
+.stepper-nav {
+  position: fixed; 
+  bottom: 0;
+  left: 0;
+  right: 0;
+  margin: auto;
+  width: 320px;
+  text-align: center;
+}

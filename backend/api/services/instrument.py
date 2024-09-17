@@ -3,7 +3,7 @@ from sqlalchemy.sql import text
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
 from fastapi import HTTPException
-from api.models.catalog import Study, Instrument, InstrumentsResult
+from api.models.catalog import Study, Instrument, InstrumentsResult, InstrumentParameter
 from api.utils.query import QueryBuilder
 
 
@@ -21,7 +21,7 @@ class InstrumentService:
         """Get a instrument by id"""
         res = await self.session.exec(
             select(Instrument).where(
-                Instrument.id == instrument_id)
+                Instrument.id == instrument_id).options(selectinload(Instrument.parameters))
         )
         instrument = res.one_or_none()
         if not instrument:
@@ -46,7 +46,7 @@ class InstrumentService:
     async def find(self, filter: dict, sort: list, range: list) -> InstrumentsResult:
         """Get all instruments matching filter and range"""
         builder = QueryBuilder(Instrument, filter, sort,
-                               range, {"$study": Study})
+                               range, {"$study": Study, "$instrumentparameter": InstrumentParameter})
 
         # Do a query to satisfy total count
         count_query = self.apply_joins(builder.build_count_query(), filter)
@@ -56,6 +56,8 @@ class InstrumentService:
         # Main query
         start, end, query = builder.build_query(total_count)
         query = self.apply_joins(query, filter)
+        query = query.options(
+            selectinload(Instrument.parameters))
 
         # Execute query
         results = await self.session.exec(query)
@@ -71,5 +73,8 @@ class InstrumentService:
     def apply_joins(self, query, filter):
         if "$study" in filter:
             query = query.join(Study, Study.id == Instrument.study_id)
+        if "$instrumentparameter" in filter:
+            query = query.join(InstrumentParameter, Instrument.id ==
+                               InstrumentParameter.instrument_id)
         query = query.distinct()
         return query

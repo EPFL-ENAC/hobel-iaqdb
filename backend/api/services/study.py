@@ -12,9 +12,6 @@ class StudyService:
     def __init__(self, session: AsyncSession):
         self.session = session
 
-    def read_excel(io) -> Study:
-        return None
-
     async def count(self) -> int:
         """Count all studies"""
         count = (await self.session.exec(text("select count(id) from study"))).scalar()

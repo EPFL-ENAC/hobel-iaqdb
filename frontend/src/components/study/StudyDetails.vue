@@ -62,7 +62,7 @@ const items: FieldItem<Study>[] = [
 
 const refItems: FieldItem<Study>[] = [
   {
-    field: 'cite',
+    field: 'citation',
     label: 'Citation'
   },
   {

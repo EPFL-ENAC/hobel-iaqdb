@@ -34,7 +34,7 @@ def upgrade() -> None:
         sa.Column("duration", sa.Integer(), nullable=True),
         sa.Column("occupant_impact", sa.String(), nullable=True),
         sa.Column("other_indoor_param", sa.String(), nullable=True),
-        sa.Column("cite", sa.String(), nullable=True),
+        sa.Column("citation", sa.String(), nullable=True),
         sa.Column("doi", sa.String(), nullable=True),
         sa.Column("funding", sa.String(), nullable=True),
         sa.Column("ethics", sa.String(), nullable=True),
@@ -49,6 +49,7 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
         sa.Column("email", sa.String(), unique=True, index=True),
+        sa.Column("email_public", sa.Boolean(), nullable=False),
         sa.Column("institution", sa.String(), nullable=False),
         sa.Column("study_id", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(["study_id"], ["study.id"],),
@@ -75,6 +76,23 @@ def upgrade() -> None:
                     ["study_id"], unique=False)
 
     op.create_table(
+        "instrumentparameter",
+        sa.Column("id", sa.Integer(), nullable=False),
+        sa.Column("physical_parameter", sa.String(), nullable=False),
+        sa.Column("analysis_method", sa.String(), nullable=True),
+        sa.Column("measurement_uncertainty", sa.String(), nullable=True),
+        sa.Column("instrument_id", sa.Integer(), nullable=True),
+        sa.Column("study_id", sa.Integer(), nullable=True),
+        sa.ForeignKeyConstraint(["instrument_id"], ["instrument.id"],),
+        sa.ForeignKeyConstraint(["study_id"], ["study.id"],),
+        sa.PrimaryKeyConstraint("id"),
+    )
+    op.create_index(op.f("ix_instrumentparameter_instrument_id"), "instrumentparameter",
+                    ["instrument_id"], unique=False)
+    op.create_index(op.f("ix_instrumentparameter_study_id"), "instrumentparameter",
+                    ["study_id"], unique=False)
+
+    op.create_table(
         "building",
         sa.Column("id", sa.Integer(), nullable=False),
         sa.Column("identifier", sa.String(), nullable=False),
@@ -87,15 +105,17 @@ def upgrade() -> None:
         sa.Column("long", sa.Float(), nullable=True),
         sa.Column("lat", sa.Float(), nullable=True),
         sa.Column("type", sa.String(), nullable=True),
+        sa.Column("other_type", sa.String(), nullable=True),
         sa.Column("outdoor_env", sa.String(), nullable=True),
+        sa.Column("other_outdoor_env", sa.String(), nullable=True),
+        sa.Column("green_certified", sa.String(), nullable=True),
         sa.Column("construction_year", sa.Integer(), nullable=True),
         sa.Column("renovation", sa.String(), nullable=False),
         sa.Column("renovation_year", sa.Integer(), nullable=True),
         sa.Column("mechanical_ventilation", sa.String(), nullable=False),
         sa.Column("operable_windows", sa.String(), nullable=False),
-        sa.Column("special_population_designation",
-                  sa.String(), nullable=False),
-        sa.Column("special_population", sa.String(), nullable=True),
+        sa.Column("special_population", sa.String(), nullable=False),
+        sa.Column("other_special_population", sa.String(), nullable=True),
         sa.Column("smoking", sa.String(), nullable=False),
         sa.Column("study_id", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(["study_id"], ["study.id"],),
@@ -132,8 +152,10 @@ def upgrade() -> None:
         sa.Column("particle_filtration_rating", sa.Integer(), nullable=True),
         sa.Column("cooling_status", sa.String(), nullable=True),
         sa.Column("cooling_type", sa.String(), nullable=True),
+        sa.Column("other_cooling_type", sa.String(), nullable=True),
         sa.Column("heating_status", sa.String(), nullable=True),
         sa.Column("heating_type", sa.String(), nullable=True),
+        sa.Column("other_heating_type", sa.String(), nullable=True),
         sa.Column("air_filtration", sa.String(), nullable=True),
         sa.Column("printers", sa.String(), nullable=True),
         sa.Column("carpets", sa.String(), nullable=True),
@@ -207,6 +229,12 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_building_study_id"), table_name="building")
     op.drop_index(op.f("ix_building_identifier"), table_name="building")
     op.drop_table("building")
+
+    op.drop_index(op.f("ix_instrumentparameter_study_id"),
+                  table_name="instrumentparameter")
+    op.drop_index(op.f("ix_instrumentparameter_instrument_id"),
+                  table_name="instrumentparameter")
+    op.drop_table("instrumentparameter")
 
     op.drop_index(op.f("ix_instrument_study_id"), table_name="instrument")
     op.drop_index(op.f("ix_instrument_identifier"), table_name="instrument")

@@ -6,7 +6,13 @@ export interface DBModel {
 export interface Person extends DBModel {
   name: string;
   email: string;
+  email_public: boolean;
   institution: string;
+}
+
+export interface Certification extends DBModel {
+  program: string;
+  level: string;
 }
 
 export interface Building extends DBModel {
@@ -15,21 +21,25 @@ export interface Building extends DBModel {
   city: string;
   postcode?: string;
   timezone?: string;
-  long: number;
-  lat: number;
+  long?: number;
+  lat?: number;
   altitude?: number;
   climate_zone?: string;
   type?: string;
+  other_type?: string;
   outdoor_env?: string;
+  other_outdoor_env?: string;
+  green_certified?: string;
   construction_year?: number;
   renovation?: string;
   renovation_year?: number;
   mechanical_ventilation?: string;
-  operable_windows: string;
-  special_population_designation?: string;
+  operable_windows?: string;
   special_population?: string;
+  other_special_population?: string;
   smoking?: string;
   spaces?: Space[]
+  certifications?: Certification[]
 }
 
 interface ListResult {
@@ -50,7 +60,11 @@ export interface Study extends DBModel {
   start_year?: number;
   end_year?: number;
   duration?: number;
-  cite?: string;
+  building_count?: number;
+  space_count?: number;
+  occupant_impact?: string;
+  other_indoor_param?: string;
+  citation?: string;
   doi?: string;
   funding?: string;
   ethics?: string;
@@ -76,8 +90,10 @@ export interface Space extends DBModel {
   particle_filtration_rating: number;
   cooling_status?: string;
   cooling_type?: string;
+  other_cooling_type?: string;
   heating_status?: string;
   heating_type?: string;
+  other_heating_type?: string;
   air_filtration?: string;
   printers?: string;
   carpets?: string;
@@ -100,4 +116,15 @@ export interface Instrument extends DBModel {
   model: string;
   equipment_grade_rating: string;
   placement: string;
+  parameters?: InstrumentParameter[];
+}
+
+export interface InstrumentParameter extends DBModel {
+  physical_parameter: string;
+  analysis_method?: string;
+  measurement_uncertainty?: string;
+}
+
+export interface InstrumentsResult extends ListResult {
+  data: Instrument[]
 }
