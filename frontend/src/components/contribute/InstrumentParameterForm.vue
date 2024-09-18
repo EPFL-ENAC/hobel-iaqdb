@@ -32,7 +32,6 @@
   </div>
 </template>
 
-
 <script lang="ts">
 export default defineComponent({
   name: 'InstrumentParameterForm',
@@ -49,5 +48,4 @@ interface Props {
 const props = defineProps<Props>();
 
 const parameter = ref(props.modelValue);
-
 </script>

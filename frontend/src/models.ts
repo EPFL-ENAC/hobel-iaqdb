@@ -38,8 +38,8 @@ export interface Building extends DBModel {
   special_population?: string;
   other_special_population?: string;
   smoking?: string;
-  spaces?: Space[]
-  certifications?: Certification[]
+  spaces?: Space[];
+  certifications?: Certification[];
 }
 
 interface ListResult {
@@ -49,7 +49,7 @@ interface ListResult {
 }
 
 export interface BuildingsResult extends ListResult {
-  data: Building[]
+  data: Building[];
 }
 
 export interface Study extends DBModel {
@@ -75,7 +75,7 @@ export interface Study extends DBModel {
 }
 
 export interface StudiesResult extends ListResult {
-  data: Study[]
+  data: Study[];
 }
 
 export interface Space extends DBModel {
@@ -107,7 +107,7 @@ export interface Space extends DBModel {
 }
 
 export interface SpacesResult extends ListResult {
-  data: Space[]
+  data: Space[];
 }
 
 export interface Instrument extends DBModel {
@@ -126,5 +126,5 @@ export interface InstrumentParameter extends DBModel {
 }
 
 export interface InstrumentsResult extends ListResult {
-  data: Instrument[]
+  data: Instrument[];
 }

@@ -27,7 +27,7 @@ export function testScaleLabel(scale: string | number | null): string {
 
 export function testScaleValue(label: string): number {
   const scale = Object.keys(scale_labels).find(
-    (key) => scale_labels[key] === label
+    (key) => scale_labels[key] === label,
   );
   return parseFloat(scale || label);
 }

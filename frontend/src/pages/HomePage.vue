@@ -9,25 +9,19 @@
             <q-markdown no-heading-anchor-links :src="content" />
           </q-card-section>
         </q-card>
-        <q-btn
-          flat
-          color="primary"
-          :label="$t('search')"
-          to="/map"
-        />
+        <q-btn flat color="primary" :label="$t('search')" to="/map" />
       </div>
       <div class="col"></div>
     </div>
-    <div class="q-pa-md">
-      
-    </div>
+    <div class="q-pa-md"></div>
   </q-page>
 </template>
 
 <script setup lang="ts">
 import AppHeader from 'src/components/AppHeader.vue';
 
-const ReadmeMd = 'https://raw.githubusercontent.com/EPFL-ENAC/hobel-iaqdb/main/README.md'
+const ReadmeMd =
+  'https://raw.githubusercontent.com/EPFL-ENAC/hobel-iaqdb/main/README.md';
 
 const content = ref();
 

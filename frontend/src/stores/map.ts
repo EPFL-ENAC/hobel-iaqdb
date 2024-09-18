@@ -7,22 +7,25 @@ import { FilterParams } from 'src/stores/filters';
 export type LayerSelection = {
   id: string;
   visible: boolean;
-}
+};
 
 export const useMapStore = defineStore('map', () => {
-
   const map = ref<Map>();
 
-  const layerManagers = [new BuildingsLayerManager(), new ClimateZonesLayerManager()];
+  const layerManagers = [
+    new BuildingsLayerManager(),
+    new ClimateZonesLayerManager(),
+  ];
 
-  const layerSelections: LayerSelection[] = layerManagers.map(
-    (lm) => ({ id: lm.getId(), visible: lm.isDefaultVisible() })
-  );
+  const layerSelections: LayerSelection[] = layerManagers.map((lm) => ({
+    id: lm.getId(),
+    visible: lm.isDefaultVisible(),
+  }));
 
   /**
    * Find a layer selection state by its identifier.
    * @param id the layer selection state
-   * @returns 
+   * @returns
    */
   function findLayer(id: string) {
     return layerSelections.find((l) => l.id === id);
@@ -60,7 +63,7 @@ export const useMapStore = defineStore('map', () => {
   /**
    * Register the current map and initialize the layers for that map.
    * @param mapInstance the map instance
-   * @returns 
+   * @returns
    */
   async function initLayers(mapInstance: Map) {
     map.value = mapInstance;
@@ -68,15 +71,17 @@ export const useMapStore = defineStore('map', () => {
       layerSelections.map((layer) => {
         const manager = getLayerManager(layer.id);
         if (!manager) return Promise.resolve();
-        return manager.append(mapInstance).then(() => applyLayerVisibility(layer.id));
-      })
+        return manager
+          .append(mapInstance)
+          .then(() => applyLayerVisibility(layer.id));
+      }),
     );
   }
 
   /**
    * Get the layer manager by its identifier.
    * @param id the layer identifier
-   * @returns 
+   * @returns
    */
   function getLayerManager(id: string) {
     return layerManagers.find((lm) => lm.getId() === id);
@@ -89,5 +94,4 @@ export const useMapStore = defineStore('map', () => {
     applyLayerVisibility,
     initLayers,
   };
-
 });

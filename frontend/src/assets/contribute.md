@@ -1,4 +1,3 @@
-
 > Indoor air quality is a fundamental aspect of public health, affecting the well-being, productivity, and comfort of individuals across various indoor environments, including homes, schools, offices, and hospitals. Despite its importance, there is still much to learn about the factors influencing IAQ and the best strategies for mitigating indoor pollutants. As a researcher in this critical field, your contributions are invaluable in helping to build a robust repository of data that can drive meaningful insights and innovations.
 
 Our database aims to be a central resource for researchers, policymakers, and industry professionals focused on improving indoor air quality. By contributing your data, you will be part of a collaborative effort to enhance our collective knowledge and develop effective solutions for healthier indoor environments.
@@ -6,7 +5,6 @@ Our database aims to be a central resource for researchers, policymakers, and in
 **Why Contribute?**
 
 1. **Amplify Impact**: Sharing your data ensures that your research has a broader reach and impact. It allows others to build upon your findings, fostering new discoveries and advancements in IAQ research.
-   
 2. **Collaborative Opportunities**: Joining this initiative connects you with a network of fellow researchers and experts in the field, opening doors to potential collaborations and interdisciplinary projects.
 
 3. **Data Diversity**: A diverse and comprehensive dataset enhances the reliability and validity of research outcomes. Your unique data can fill critical gaps and provide a more complete picture of indoor air quality across different settings and regions.

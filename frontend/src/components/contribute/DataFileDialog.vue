@@ -5,14 +5,7 @@
         <q-btn flat icon="close" color="primary" v-close-popup />
       </q-card-actions>
       <q-card-section>
-
-        <q-stepper
-          flat
-          v-model="step"
-          vertical
-          color="secondary"
-          animated
-        >
+        <q-stepper flat v-model="step" vertical color="secondary" animated>
           <q-step
             :name="1"
             title="Select data file"
@@ -20,7 +13,8 @@
             :done="step > 1"
           >
             <div class="text-help q-mb-md">
-              Select a data file from your computer. The file will not be uploaded at this point.
+              Select a data file from your computer. The file will not be
+              uploaded at this point.
             </div>
             <div>
               <q-file
@@ -30,11 +24,17 @@
                 label="Data file"
                 hint="Select a delimiter-separated format (CSV or TSV)."
                 accept=".csv, .tsv"
-                @update:model-value="onFileUpdated" />
+                @update:model-value="onFileUpdated"
+              />
             </div>
 
             <q-stepper-navigation>
-              <q-btn @click="step = 2" color="secondary" label="Next" :disable="!localFile" />
+              <q-btn
+                @click="step = 2"
+                color="secondary"
+                label="Next"
+                :disable="!localFile"
+              />
             </q-stepper-navigation>
           </q-step>
 
@@ -45,21 +45,29 @@
             :done="step > 2"
           >
             <div class="text-help q-mb-md">
-              Verify that the data were correctly read before proceeding to the next step. Note that is only a preview of the 10 first lines.
+              Verify that the data were correctly read before proceeding to the
+              next step. Note that is only a preview of the 10 first lines.
             </div>
 
             <div>
               <q-table
-              :rows="rows"
-              :columns="columns"
-              flat
-              bordered
-              table-header-class="text-bold" />
+                :rows="rows"
+                :columns="columns"
+                flat
+                bordered
+                table-header-class="text-bold"
+              />
             </div>
 
             <q-stepper-navigation>
               <q-btn @click="step = 3" color="secondary" label="Next" />
-              <q-btn flat @click="step = 1" color="secondary" label="Previous" class="q-ml-sm" />
+              <q-btn
+                flat
+                @click="step = 1"
+                color="secondary"
+                label="Previous"
+                class="q-ml-sm"
+              />
             </q-stepper-navigation>
           </q-step>
 
@@ -70,7 +78,8 @@
             icon="add_comment"
           >
             <div class="text-help q-mb-md">
-              Each column needs to be qualified, using the IAQ data schema. Unknown column will be ignored.
+              Each column needs to be qualified, using the IAQ data schema.
+              Unknown column will be ignored.
             </div>
 
             <div v-if="errors.length">
@@ -84,7 +93,11 @@
             </div>
 
             <q-list separator>
-              <q-item v-for="field in fields" :key="field" class="q-pl-none q-pr-none">
+              <q-item
+                v-for="field in fields"
+                :key="field"
+                class="q-pl-none q-pr-none"
+              >
                 <q-item-section>
                   <div class="text-caption">{{ field }}</div>
                 </q-item-section>
@@ -100,14 +113,24 @@
             </q-list>
 
             <q-stepper-navigation>
-              <q-btn flat @click="step = 2" color="secondary" label="Previous" />
+              <q-btn
+                flat
+                @click="step = 2"
+                color="secondary"
+                label="Previous"
+              />
             </q-stepper-navigation>
           </q-step>
         </q-stepper>
       </q-card-section>
       <q-card-actions v-if="$q.screen.gt.xs" align="right">
         <q-btn flat :label="$t('cancel')" color="primary" v-close-popup />
-        <q-btn :label="$t('add')" color="primary" v-close-popup :disable="!isValid"/>
+        <q-btn
+          :label="$t('add')"
+          color="primary"
+          v-close-popup
+          :disable="!isValid"
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -131,7 +154,7 @@ interface Props {
   modelValue: boolean;
 }
 const props = defineProps<Props>();
-const emit = defineEmits(['update:modelValue', 'confirm', 'cancel'])
+const emit = defineEmits(['update:modelValue', 'confirm', 'cancel']);
 
 const step = ref(1);
 const showDialog = ref(props.modelValue);
@@ -140,7 +163,11 @@ const fields = ref([]);
 const rows = ref([]);
 const dictionary = ref<{ [Key: string]: FieldSpec }>({});
 
-const columns = computed(() => fields.value.map((field) => {return { name: field, label: field, field }; }))
+const columns = computed(() =>
+  fields.value.map((field) => {
+    return { name: field, label: field, field };
+  }),
+);
 
 const fieldOptions = [
   { value: 'building', label: 'Building ID' },
@@ -149,8 +176,7 @@ const fieldOptions = [
   { value: 'timestamp', label: 'Timestamp' },
   ...physicalParameterOptions,
   { value: 'other', label: 'Other' },
-]
-
+];
 
 const errors = computed(() => {
   const keys = Object.keys(dictionary.value);
@@ -161,7 +187,9 @@ const errors = computed(() => {
   if (!keys.find((field) => dictionary.value[field].variable === 'space')) {
     rval.push('Space ID is missing');
   }
-  if (!keys.find((field) => dictionary.value[field].variable === 'instrument')) {
+  if (
+    !keys.find((field) => dictionary.value[field].variable === 'instrument')
+  ) {
     rval.push('Instrument ID is missing');
   }
   if (!keys.find((field) => dictionary.value[field].variable === 'timestamp')) {
@@ -172,13 +200,16 @@ const errors = computed(() => {
 
 const isValid = computed(() => localFile.value && errors.value.length === 0);
 
-watch(() => props.modelValue, (value) => {
-  showDialog.value = value;
-  step.value = 1;
-  localFile.value = null;
-  rows.value = [];
-  fields.value = [];
-});
+watch(
+  () => props.modelValue,
+  (value) => {
+    showDialog.value = value;
+    step.value = 1;
+    localFile.value = null;
+    rows.value = [];
+    fields.value = [];
+  },
+);
 
 function onHide() {
   emit('update:modelValue', false);
@@ -194,30 +225,32 @@ function onFileUpdated() {
     skipEmptyLines: true,
     dynamicTyping: true,
     header: true,
-    complete: function(results) {
+    complete: function (results) {
       //console.log(results);
       rows.value = results.data;
       results.meta.fields.forEach((field: string) => {
         dictionary.value[field] = {
           field,
-          variable: guessFieldVariable(field)
-        }
+          variable: guessFieldVariable(field),
+        };
       });
       fields.value = results.meta.fields;
-    }
+    },
   });
 }
 
 function guessFieldVariable(field: string) {
-  const matches = fieldOptions.map((opt) => {
-    return {
-      value: opt.value,
-      re: new RegExp(opt.value, 'gi')
-    }
-  }).map((optRe) => {
-    return field.match(optRe.re) != null ? optRe.value : null;
-  }).filter((opt) => opt != null);
+  const matches = fieldOptions
+    .map((opt) => {
+      return {
+        value: opt.value,
+        re: new RegExp(opt.value, 'gi'),
+      };
+    })
+    .map((optRe) => {
+      return field.match(optRe.re) != null ? optRe.value : null;
+    })
+    .filter((opt) => opt != null);
   return matches.length ? matches[0] : 'other';
 }
-
 </script>

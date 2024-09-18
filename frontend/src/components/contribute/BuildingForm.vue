@@ -201,8 +201,11 @@
         @update:model-value="onGreenCertifiedUpdated"
       />
     </div>
-    
-    <div v-if="building.certifications?.length" class="row q-col-gutter-md q-mb-md">
+
+    <div
+      v-if="building.certifications?.length"
+      class="row q-col-gutter-md q-mb-md"
+    >
       <div class="col">
         <q-input
           v-model.number="building.certifications[0].program"
@@ -224,47 +227,58 @@
     <div class="text-bold q-mb-md">Spaces</div>
     <q-card flat bordered class="q-mb-md bg-grey-2">
       <q-card-section>
-        <div v-if="building.spaces?.length === 0" class="text-help">No spaces defined yet.</div>
+        <div v-if="building.spaces?.length === 0" class="text-help">
+          No spaces defined yet.
+        </div>
         <q-list separator>
           <template v-for="(space, i) in building.spaces" :key="space.id">
-              <q-item  class="q-pl-none q-pr-none">
-                <q-item-section>
-                  <q-expansion-item
-                    dense
-                    label="..."
-                    header-class="text-bold text-secondary"
-                  >
-                    <template v-slot:header>
-                      {{ `${building.spaces ? building.spaces[i].identifier : i}` }}
-                    </template>
-                    <space-form v-model="building.spaces[i]" :building="building" class="q-mt-md"/>
-                  </q-expansion-item>
-                </q-item-section>
-                <q-item-section side>
-                  <q-btn
-                    rounded
-                    dense
-                    flat
-                    color="grey-6"
-                    :title="$t('delete')"
-                    icon="delete"
-                    class="q-ml-xs"
-                    @click="onDeleteSpace(i)" />
-                </q-item-section>
-              </q-item>
-            
+            <q-item class="q-pl-none q-pr-none">
+              <q-item-section>
+                <q-expansion-item
+                  dense
+                  label="..."
+                  header-class="text-bold text-secondary"
+                >
+                  <template v-slot:header>
+                    {{
+                      `${building.spaces ? building.spaces[i].identifier : i}`
+                    }}
+                  </template>
+                  <space-form
+                    v-model="building.spaces[i]"
+                    :building="building"
+                    class="q-mt-md"
+                  />
+                </q-expansion-item>
+              </q-item-section>
+              <q-item-section side>
+                <q-btn
+                  rounded
+                  dense
+                  flat
+                  color="grey-6"
+                  :title="$t('delete')"
+                  icon="delete"
+                  class="q-ml-xs"
+                  @click="onDeleteSpace(i)"
+                />
+              </q-item-section>
+            </q-item>
           </template>
-          
         </q-list>
       </q-card-section>
       <q-card-actions class="bg-grey-3 q-pa-md">
-        <q-btn @click="onAddSpace" color="secondary" label="Add Space" icon="add" size="sm" />
+        <q-btn
+          @click="onAddSpace"
+          color="secondary"
+          label="Add Space"
+          icon="add"
+          size="sm"
+        />
       </q-card-actions>
     </q-card>
-    
   </div>
 </template>
-
 
 <script lang="ts">
 export default defineComponent({
@@ -272,10 +286,17 @@ export default defineComponent({
 });
 </script>
 <script setup lang="ts">
-import { climateOptions, buildingTypeOptions, outdoorEnvOptions, populationOptions, countryOptions, yesNoOptions } from 'src/utils/options';
+import {
+  climateOptions,
+  buildingTypeOptions,
+  outdoorEnvOptions,
+  populationOptions,
+  countryOptions,
+  yesNoOptions,
+} from 'src/utils/options';
 import { geocoderApi } from 'src/utils/geocoder';
 import { Building, Certification } from 'src/models';
-import SpaceForm from 'src/components/contribute/SpaceForm.vue'
+import SpaceForm from 'src/components/contribute/SpaceForm.vue';
 
 const contrib = useContributeStore();
 
@@ -288,8 +309,12 @@ const building = ref(props.modelValue);
 const loadingGeo = ref(false);
 const loadingAlt = ref(false);
 
-const hasCityCountry = computed(() => building.value.city && building.value.country)
-const hasLongLat = computed(() => building.value.longitude && building.value.latitude)
+const hasCityCountry = computed(
+  () => building.value.city && building.value.country,
+);
+const hasLongLat = computed(
+  () => building.value.longitude && building.value.latitude,
+);
 
 async function onLocationUpdated() {
   if (!hasCityCountry.value) {
@@ -302,7 +327,7 @@ async function onLocationUpdated() {
     const res = await geocoderApi.forwardGeocode({
       query: building.value.city,
       limit: 1,
-      countries: [building.value.country]
+      countries: [building.value.country],
     });
     if (res.features && res.features.length > 0 && res.features[0].center) {
       building.value.longitude = res.features[0].center[0];
@@ -327,13 +352,17 @@ function onLongLatUpdated() {
   }
   loadingAlt.value = true;
   Promise.all([
-    contrib.fetchAltitude(building.value.longitude, building.value.latitude).then((res) => {
-      building.value.altitude = res.altitude;
-    }),
-    contrib.fetchClimateZone(building.value.longitude, building.value.latitude).then((res) => {
-      building.value.climate_zone = res.name;
-    })
-  ]).finally(() => loadingAlt.value = false);
+    contrib
+      .fetchAltitude(building.value.longitude, building.value.latitude)
+      .then((res) => {
+        building.value.altitude = res.altitude;
+      }),
+    contrib
+      .fetchClimateZone(building.value.longitude, building.value.latitude)
+      .then((res) => {
+        building.value.climate_zone = res.name;
+      }),
+  ]).finally(() => (loadingAlt.value = false));
 }
 
 function onAddSpace() {

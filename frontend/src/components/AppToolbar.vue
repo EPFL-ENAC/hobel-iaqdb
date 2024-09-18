@@ -1,8 +1,16 @@
 <template>
   <q-toolbar class="bg-warning">
     <div>
-      <q-icon name="warning" class="on-left q-mb-xs" />Note: this is a preliminary version. A lot of functionalities are mocked, to experiment/propose what could be the final user interface.
-      Make any suggestions at: <a href="https://github.com/EPFL-ENAC/hobel-iaqdb/issues" target="_blank" class="text-bold epfl">HOBEL IAQDB project <q-icon name="arrow_outward"/></a>.
+      <q-icon name="warning" class="on-left q-mb-xs" />Note: this is a
+      preliminary version. A lot of functionalities are mocked, to
+      experiment/propose what could be the final user interface. Make any
+      suggestions at:
+      <a
+        href="https://github.com/EPFL-ENAC/hobel-iaqdb/issues"
+        target="_blank"
+        class="text-bold epfl"
+        >HOBEL IAQDB project <q-icon name="arrow_outward" /></a
+      >.
     </div>
   </q-toolbar>
   <q-toolbar>
@@ -19,27 +27,17 @@
       <img src="EPFL_logo.png" style="height: 25px" />
     </a>
     <span class="q-ml-md text-h6">{{ $t('app_title') }}</span>
-    <q-tabs v-if="!$q.screen.lt.sm" shrink stretch active-color="primary" class="q-ml-md">
-      <q-route-tab
-        to="/"
-        :label="$t('home')"
-        exact
-      />
-      <q-route-tab
-        :label="$t('map')"
-        to="/map"
-        exact
-      />
-      <q-route-tab
-        :label="$t('catalog')"
-        to="/catalog"
-        exact
-      />
-      <q-route-tab
-        :label="$t('contribute')"
-        to="/contribute"
-        exact
-      />
+    <q-tabs
+      v-if="!$q.screen.lt.sm"
+      shrink
+      stretch
+      active-color="primary"
+      class="q-ml-md"
+    >
+      <q-route-tab to="/" :label="$t('home')" exact />
+      <q-route-tab :label="$t('map')" to="/map" exact />
+      <q-route-tab :label="$t('catalog')" to="/catalog" exact />
+      <q-route-tab :label="$t('contribute')" to="/contribute" exact />
     </q-tabs>
     <q-space />
     <span v-if="!$q.screen.lt.md">
@@ -59,11 +57,7 @@
         class="on-left"
       ></q-btn>
     </span>
-    <q-btn 
-      v-if="$q.screen.lt.md"
-      flat
-      round
-      icon="more_vert">
+    <q-btn v-if="$q.screen.lt.md" flat round icon="more_vert">
       <q-popup-proxy>
         <q-list class="bg-white">
           <q-item v-if="$q.screen.lt.sm" clickable v-close-popup to="/">
@@ -76,7 +70,12 @@
               <q-item-label>{{ $t('catalog') }}</q-item-label>
             </q-item-section>
           </q-item>
-          <q-item v-if="$q.screen.lt.sm" clickable v-close-popup to="/contribute">
+          <q-item
+            v-if="$q.screen.lt.sm"
+            clickable
+            v-close-popup
+            to="/contribute"
+          >
             <q-item-section>
               <q-item-label>{{ $t('contribute') }}</q-item-label>
             </q-item-section>
@@ -103,11 +102,10 @@
   <simple-dialog
     v-model="showIntro"
     :title="$t('app_title')"
-    :content="IntroductionMd"/>
+    :content="IntroductionMd"
+  />
 
-  <simple-dialog
-    v-model="showResources"
-    :title="$t('resources')">
+  <simple-dialog v-model="showResources" :title="$t('resources')">
     <q-list separator>
       <essential-link
         v-for="link in essentialLinks"
@@ -116,7 +114,6 @@
       />
     </q-list>
   </simple-dialog>
-
 </template>
 
 <script lang="ts">

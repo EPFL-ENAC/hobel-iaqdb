@@ -253,11 +253,8 @@
         />
       </div>
     </div>
-
-
   </div>
 </template>
-
 
 <script lang="ts">
 export default defineComponent({
@@ -265,12 +262,20 @@ export default defineComponent({
 });
 </script>
 <script setup lang="ts">
-import { spaceTypeOptions, occupancyOptions, 
-  ventilationStatusOptions, ventilationTypeOptions, windowsStatusOptions,
-  coolingStatusOptions, coolingTypeOptions,
-  heatingStatusOptions, heatingTypeOptions,
-  minorCombustionSourcesOptions, majorCombustionSourcesOptions,
-  yesNoOptions } from 'src/utils/options';
+import {
+  spaceTypeOptions,
+  occupancyOptions,
+  ventilationStatusOptions,
+  ventilationTypeOptions,
+  windowsStatusOptions,
+  coolingStatusOptions,
+  coolingTypeOptions,
+  heatingStatusOptions,
+  heatingTypeOptions,
+  minorCombustionSourcesOptions,
+  majorCombustionSourcesOptions,
+  yesNoOptions,
+} from 'src/utils/options';
 import { Building, Space } from 'src/models';
 
 interface Props {
@@ -280,5 +285,4 @@ interface Props {
 const props = defineProps<Props>();
 
 const space = ref(props.modelValue);
-
 </script>

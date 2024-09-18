@@ -7,11 +7,23 @@
         icon="download"
         no-caps
         :label="$t('download')"
-        class="" />
+        class=""
+      />
       <q-space />
-      <q-input ref="filterRef" v-model="filter" label="Filter" style="width: 200px" dense>
+      <q-input
+        ref="filterRef"
+        v-model="filter"
+        label="Filter"
+        style="width: 200px"
+        dense
+      >
         <template v-slot:append>
-          <q-icon v-if="filter !== ''" name="clear" class="cursor-pointer" @click="resetFilter" />
+          <q-icon
+            v-if="filter !== ''"
+            name="clear"
+            class="cursor-pointer"
+            @click="resetFilter"
+          />
         </template>
       </q-input>
     </div>
@@ -24,11 +36,10 @@
           :filter="filter"
           default-expand-all
         />
-        </q-card-section>
-      </q-card>
+      </q-card-section>
+    </q-card>
   </div>
 </template>
-
 
 <script lang="ts">
 export default defineComponent({
@@ -36,7 +47,6 @@ export default defineComponent({
 });
 </script>
 <script setup lang="ts">
-
 const catalogStore = useCatalogStore();
 
 const filter = ref('');
@@ -44,37 +54,33 @@ const filterRef = ref(null);
 
 const study = computed(() => catalogStore.study);
 
-const simple = computed(() =>  [
-    {
-      label: study.value?.name,
-      children: [
-        { label: 'README.md' },
-        { label: 'License.md' },
-        { label: 'study.json' },
-        {
-          label: 'datasets',
-          children: [
-            'co2_atmotube',
-            'pm_atmotube',
-            'ufp_discmini',
-            'co2_rotronic',
-            'radon_radonscout',
-          ].map((ds) => {
-            return {
-              label: ds,
-              children:[
-                { label: 'dictionary.json' },
-                { label: 'data.csv' },
-              ]
-            }
-          })
-        },
-      ]
-    }
-  ]);
+const simple = computed(() => [
+  {
+    label: study.value?.name,
+    children: [
+      { label: 'README.md' },
+      { label: 'License.md' },
+      { label: 'study.json' },
+      {
+        label: 'datasets',
+        children: [
+          'co2_atmotube',
+          'pm_atmotube',
+          'ufp_discmini',
+          'co2_rotronic',
+          'radon_radonscout',
+        ].map((ds) => {
+          return {
+            label: ds,
+            children: [{ label: 'dictionary.json' }, { label: 'data.csv' }],
+          };
+        }),
+      },
+    ],
+  },
+]);
 
-function resetFilter () {
-  filter.value = ''
+function resetFilter() {
+  filter.value = '';
 }
-
 </script>

@@ -7,7 +7,8 @@
         height="400px"
         width="100%"
         @map:loaded="onMapLoaded"
-        @map:click="onMapClick" />
+        @map:click="onMapClick"
+      />
     </div>
     <q-table
       flat
@@ -15,7 +16,7 @@
       :columns="columms"
       v-model:pagination="pagination"
       row-key="id"
-      >
+    >
       <template v-slot:body-cell-city="props">
         <q-td :props="props">
           <span :title="`${props.row.long}, ${props.row.lat}`">
@@ -31,7 +32,6 @@
     </q-table>
   </div>
 </template>
-
 
 <script lang="ts">
 export default defineComponent({
@@ -61,7 +61,7 @@ const columms = computed(() => {
       name: 'identifier',
       label: 'ID',
       align: 'left',
-      field: 'identifier'
+      field: 'identifier',
     },
     {
       name: 'city',
@@ -73,28 +73,28 @@ const columms = computed(() => {
       name: 'climate_zone',
       label: 'Climate zone',
       align: 'left',
-      field: 'climate_zone'
+      field: 'climate_zone',
     },
     {
       name: 'outdoor_env',
       label: 'Outdoor env.',
       align: 'left',
-      field: 'outdoor_env'
+      field: 'outdoor_env',
     },
     {
       name: 'renovation_year',
       label: 'Renovation year',
       align: 'left',
-      field: 'renovation_year'
+      field: 'renovation_year',
     },
   ];
-})
+});
 
 function onMapLoaded(map: Map) {
   mapStore.initLayers(map).then(() => {
-    if (catalogStore.study?.id){
+    if (catalogStore.study?.id) {
       mapStore.applyFilters({
-        study_ids: [catalogStore.study?.id]
+        study_ids: [catalogStore.study?.id],
       });
     }
   });

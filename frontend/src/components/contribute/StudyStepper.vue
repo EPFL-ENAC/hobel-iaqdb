@@ -1,13 +1,12 @@
 <template>
   <div>
-
     <q-stepper
       v-model="step"
       header-nav
       ref="stepper"
       color="primary"
       animated
-      style="margin-bottom: 80px;"
+      style="margin-bottom: 80px"
     >
       <q-step
         :name="1"
@@ -19,19 +18,26 @@
         <q-card class="q-mb-lg bg-warning">
           <q-card-section>
             <div class="row">
-              <q-icon name="lightbulb" class="on-left" style="margin-top: 10px;" />
-              <div class="q-mt-sm">Tip: you can prepopulate the study, buildings, spaces etc. forms using an Excel file.</div>
+              <q-icon
+                name="lightbulb"
+                class="on-left"
+                style="margin-top: 10px"
+              />
+              <div class="q-mt-sm">
+                Tip: you can prepopulate the study, buildings, spaces etc. forms
+                using an Excel file.
+              </div>
               <q-btn
                 label="Download Excel template"
                 color="black"
                 icon="download"
                 size="sm"
-                outline 
-                no-caps 
-                class="on-right" 
+                outline
+                no-caps
+                class="on-right"
                 style="margin-top: 7px"
                 @click="onDownloadExcelTemplate"
-               />
+              />
             </div>
             <div class="row q-mt-md q-ml-md">
               <q-file
@@ -50,13 +56,25 @@
           </q-card-section>
         </q-card>
         <q-markdown no-heading-anchor-links :src="StepStudyMd" />
-        <study-form class="q-mt-lg"/>
+        <study-form class="q-mt-lg" />
 
-        <q-stepper-navigation class="stepper-nav" >
+        <q-stepper-navigation class="stepper-nav">
           <q-card bordered class="bg-grey-4">
             <q-card-section>
-              <q-btn @click="() => { done1 = true; step = 2 }" color="primary" label="Continue" />
-              <q-btn @click="onPause" flat color="secondary" label="Pause" class="on-right" />
+              <q-btn
+                @click="onNextStep"
+                :disable="!canNext"
+                color="primary"
+                label="Continue"
+              />
+              <q-btn
+                @click="onPause"
+                flat
+                color="secondary"
+                label="Pause"
+                :disable="!contrib.inProgress"
+                class="on-right"
+              />
             </q-card-section>
           </q-card>
         </q-stepper-navigation>
@@ -70,14 +88,32 @@
         :header-nav="step > 2"
       >
         <q-markdown no-heading-anchor-links :src="StepBuildingsMd" />
-        <buildings-form class="q-mt-lg"/>
+        <buildings-form class="q-mt-lg" />
 
-        <q-stepper-navigation  class="stepper-nav" >
+        <q-stepper-navigation class="stepper-nav">
           <q-card bordered class="bg-grey-4">
             <q-card-section>
-              <q-btn flat @click="step = 1" color="primary" label="Back" class="on-left" />
-              <q-btn @click="() => { done2 = true; step = 3 }" color="primary" label="Continue" />
-              <q-btn @click="onPause" flat color="secondary" label="Pause" class="on-right" />
+              <q-btn
+                flat
+                @click="onPreviousStep"
+                color="primary"
+                label="Back"
+                class="on-left"
+              />
+              <q-btn
+                @click="onNextStep"
+                :disable="!canNext"
+                color="primary"
+                label="Continue"
+              />
+              <q-btn
+                @click="onPause"
+                flat
+                color="secondary"
+                label="Pause"
+                :disable="!contrib.inProgress"
+                class="on-right"
+              />
             </q-card-section>
           </q-card>
         </q-stepper-navigation>
@@ -91,14 +127,32 @@
         :header-nav="step > 3"
       >
         <q-markdown no-heading-anchor-links :src="StepInstrumentsMd" />
-        <instruments-form class="q-mt-lg"/>
+        <instruments-form class="q-mt-lg" />
 
         <q-stepper-navigation class="stepper-nav">
           <q-card bordered class="bg-grey-4">
             <q-card-section>
-              <q-btn flat @click="step = 2" color="primary" label="Back" class="on-left" />
-              <q-btn @click="() => { done3 = true; step = 4 }" color="primary" label="Continue" />
-              <q-btn @click="onPause" flat color="secondary" label="Pause" class="on-right" />
+              <q-btn
+                flat
+                @click="onPreviousStep"
+                color="primary"
+                label="Back"
+                class="on-left"
+              />
+              <q-btn
+                @click="onNextStep"
+                :disable="!canNext"
+                color="primary"
+                label="Continue"
+              />
+              <q-btn
+                @click="onPause"
+                flat
+                color="secondary"
+                label="Pause"
+                :disable="!contrib.inProgress"
+                class="on-right"
+              />
             </q-card-section>
           </q-card>
         </q-stepper-navigation>
@@ -111,13 +165,26 @@
         :header-nav="step > 4"
       >
         <q-markdown no-heading-anchor-links :src="StepDatasetsMd" />
-        <datasets-form class="q-mt-lg"/>
+        <datasets-form class="q-mt-lg" />
         <q-stepper-navigation class="stepper-nav">
           <q-card bordered class="bg-grey-4">
             <q-card-section>
-              <q-btn flat @click="step = 3" color="primary" label="Back" class="on-left" />
+              <q-btn
+                flat
+                @click="onPreviousStep"
+                color="primary"
+                label="Back"
+                class="on-left"
+              />
               <q-btn color="primary" @click="onFinish" label="Finish" />
-              <q-btn @click="onPause" flat color="secondary" label="Pause" class="on-right" />
+              <q-btn
+                @click="onPause"
+                flat
+                color="secondary"
+                label="Pause"
+                :disable="!contrib.inProgress"
+                class="on-right"
+              />
             </q-card-section>
           </q-card>
         </q-stepper-navigation>
@@ -125,7 +192,6 @@
     </q-stepper>
   </div>
 </template>
-
 
 <script lang="ts">
 export default defineComponent({
@@ -151,6 +217,40 @@ const excelFile = ref<File | null>(null);
 const loading = ref(false);
 const step = ref(1);
 
+const canNext = computed(() => {
+  if (step.value === 1) {
+    // TODO study validation
+    return contrib.inProgress;
+  } else if (step.value === 2) {
+    // TODO buildings validation
+    return (
+      contrib.study.buildings &&
+      contrib.study.buildings.length > 0 &&
+      contrib.study.buildings.every(
+        (b) =>
+          b.identifier &&
+          b.spaces &&
+          b.spaces.length > 0 &&
+          b.spaces.every((s) => s.identifier),
+      )
+    );
+  } else if (step.value === 3) {
+    // TODO instruments validation
+    return (
+      contrib.study.instruments &&
+      contrib.study.instruments.length > 0 &&
+      contrib.study.instruments.every(
+        (i) =>
+          i.identifier &&
+          i.parameters &&
+          i.parameters.length > 0 &&
+          i.parameters.every((p) => p.physical_parameter),
+      )
+    );
+  }
+  return false;
+});
+
 function onPause() {
   emit('pause');
 }
@@ -159,17 +259,28 @@ function onFinish() {
   emit('finish');
 }
 
+function onPreviousStep() {
+  step.value -= 1;
+}
+
+function onNextStep() {
+  step.value += 1;
+}
+
 function onDownloadExcelTemplate() {
-  window.open('https://epflch.sharepoint.com/:x:/r/sites/ENAC-IT/Documents%20partages/Research%20IT/Advanced%20Services/0002%20%E2%80%93%20PILOT%20iAQ/Pilot_iAQ_Shared/Data/Metadata/Metadata_entry_form.xlsx?d=w057cb00af74445bdb7a4dca02ae52df1&csf=1&web=1&e=vgUhs1');
+  window.open(
+    'https://epflch.sharepoint.com/:x:/r/sites/ENAC-IT/Documents%20partages/Research%20IT/Advanced%20Services/0002%20%E2%80%93%20PILOT%20iAQ/Pilot_iAQ_Shared/Data/Metadata/Metadata_entry_form.xlsx?d=w057cb00af74445bdb7a4dca02ae52df1&csf=1&web=1&e=vgUhs1',
+  );
 }
 
 function onExcelFileUpdated() {
   if (excelFile.value) {
     loading.value = true;
-    contrib.readExcel(excelFile.value)
-      .then(() => step.value = 1)
+    contrib
+      .readExcel(excelFile.value)
+      .then(() => (step.value = 1))
       .catch((err) => console.error(err))
-      .finally(() => loading.value = false);
+      .finally(() => (loading.value = false));
   }
 }
 </script>

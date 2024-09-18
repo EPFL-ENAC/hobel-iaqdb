@@ -12,7 +12,6 @@
   </div>
 </template>
 
-
 <script lang="ts">
 export default defineComponent({
   components: { DataFileDialog },

@@ -4,7 +4,9 @@
       <div class="row">
         <div class="col"></div>
         <div class="col-8">
-          <span class="text-h4 text-weight-light">{{ $t('contribute_title') }}</span>
+          <span class="text-h4 text-weight-light">{{
+            $t('contribute_title')
+          }}</span>
         </div>
         <div class="col"></div>
       </div>
@@ -27,14 +29,19 @@
           />
           <q-btn
             color="secondary"
-            flat
+            :flat="!contrib.inProgress"
             :label="$t('resume')"
+            :disable="!contrib.inProgress"
             @click="onResume"
             class="q-mt-lg on-right"
           />
         </div>
         <div v-else>
-          <study-stepper class="q-mt-md" @pause="showIntro = true" @finish="onFinish"/>
+          <study-stepper
+            class="q-mt-md"
+            @pause="showIntro = true"
+            @finish="onFinish"
+          />
         </div>
       </div>
       <div class="col"></div>
