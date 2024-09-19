@@ -15,6 +15,7 @@ import {
   Person,
   Instrument,
   InstrumentParameter,
+  FileObject,
 } from 'src/models';
 
 export const useContributeStore = defineStore(
@@ -202,6 +203,29 @@ export const useContributeStore = defineStore(
       });
     }
 
+    async function saveOrUpdateDraft() {
+      if (study.value.identifier !== '' && study.value.identifier !== '_draft') {
+        return api.put(`/catalog/study-draft/${study.value.identifier}`, study.value)
+          .then((res) => study.value = res.data);
+      }
+      return api.post('/catalog/study-draft', study.value)
+        .then((res) => study.value = res.data);
+    }
+
+    function uploadFiles(path: string, files: FileObject[]) {
+      const formData = new FormData();
+      files.forEach((f) => {
+        formData.append('attachment', f);
+      });
+      return api.post(`/files${path}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    }
+
+
+
     return {
       study,
       reset,
@@ -219,6 +243,8 @@ export const useContributeStore = defineStore(
       fetchAltitude,
       fetchClimateZone,
       readExcel,
+      saveOrUpdateDraft,
+      uploadFiles,
     };
   },
   { persist: true },

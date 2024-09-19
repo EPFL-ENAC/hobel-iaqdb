@@ -21,6 +21,36 @@ class S3Client(object):
         self.s3_secret_access_key = s3_secret_access_key
         self.region = region
 
+    async def path_exists(self, file_path: str):
+        """Check if file exists in S3 storage
+
+        Args:
+            file_path (str): Path of the file in S3
+
+        Returns:
+            bool: True if file exists, False otherwise
+        """
+        key = file_path
+        if not file_path.startswith(config.S3_PATH_PREFIX):
+            key = f"{config.S3_PATH_PREFIX}{file_path}"
+
+        # check if file_path exists
+        session = get_session()
+        async with session.create_client(
+                's3',
+                region_name=self.region,
+                endpoint_url=self.s3_endpoint_url,
+                aws_secret_access_key=self.s3_secret_access_key,
+                aws_access_key_id=self.s3_access_key_id) as client:
+            try:
+                response = await client.head_object(
+                    Bucket=config.S3_BUCKET, Key=key)
+                if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
+                    return True
+            except Exception as e:
+                return False
+        return False
+
     async def get_file(self, file_path: str):
         """Extract file content and mimetype from S3 storage
 

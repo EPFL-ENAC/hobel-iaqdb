@@ -20,8 +20,16 @@
           </div>
         </q-linear-progress>
         <div v-if="status === 'Done'" class="q-mt-md">
-          Thanks for your contribution! A reviewer will verify your submission,
-          and you will get a notification when the study is online.
+          <div>
+            Thanks for your contribution! A reviewer will verify your submission,
+            and you will get a notification when the study is online.
+          </div>
+          <div class="q-mt-md">
+            <div class="q-mb-sm">
+              Please copy this study ID and keep it for future reference:
+            </div>
+            <q-chip color="secondary" icon-right="content_copy" :label="contrib.study.identifier" clickable @click="onCopy" text-color="white" />  
+          </div>
         </div>
       </q-card-section>
       <q-card-actions v-if="$q.screen.gt.xs" align="right">
@@ -43,6 +51,11 @@ export default defineComponent({
 });
 </script>
 <script setup lang="ts">
+import { copyToClipboard } from 'quasar';
+import { notifySuccess } from 'src/utils/notify';
+
+const contrib = useContributeStore();
+
 interface Props {
   modelValue: boolean;
 }
@@ -78,12 +91,8 @@ function onClose() {
 async function demo() {
   progress.value = 0;
   buffer.value = 0.25;
-  status.value = 'Uploading study...';
-  await sleep(1000);
-  progress.value = 0.25;
-  buffer.value = 0.5;
-  status.value = 'Uploading buildings and spaces...';
-  await sleep(1000);
+  status.value = 'Uploading study, buildings and instruments...';
+  await contrib.saveOrUpdateDraft();
   progress.value = 0.5;
   buffer.value = 0.75;
   status.value = 'Uploading data files...';
@@ -97,5 +106,10 @@ async function demo() {
 }
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function onCopy() {
+  copyToClipboard(contrib.study.identifier);
+  notifySuccess('Study ID copied to clipboard');
 }
 </script>

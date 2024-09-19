@@ -82,11 +82,15 @@
               Unknown column will be ignored.
             </div>
 
-            <div v-if="errors.length">
-              <q-card bordered class="bg-negative text-white">
+            <div v-if="warnings.length">
+              <q-card bordered class="bg-warning">
                 <div>
+                  <div class="q-pl-md q-pr-md q-pt-md">
+                    <span class="text-bold on-left">Warnings</span>
+                    <span>Please fix the following issues as much as possible before proceeding.</span>
+                  </div>
                   <ul>
-                    <li v-for="msg in errors" :key="msg">{{ msg }}</li>
+                    <li v-for="msg in warnings" :key="msg">{{ msg }}</li>
                   </ul>
                 </div>
               </q-card>
@@ -138,6 +142,7 @@
         <q-btn
           :label="$t('add')"
           color="primary"
+          @click="onAddDataset"
           v-close-popup
           :disable="!isValid"
         />
@@ -154,6 +159,7 @@ export default defineComponent({
 <script setup lang="ts">
 import { physicalParameterOptions } from 'src/utils/options';
 import Papa from 'papaparse';
+import { FileObject } from 'src/models';
 
 interface FieldSpec {
   field: string;
@@ -169,7 +175,7 @@ const emit = defineEmits(['update:modelValue', 'confirm', 'cancel']);
 
 const step = ref(1);
 const showDialog = ref(props.modelValue);
-const localFile = ref();
+const localFile = ref<FileObject>();
 const fields = ref([]);
 const rows = ref([]);
 const dictionary = ref<{ [Key: string]: FieldSpec }>({});
@@ -202,7 +208,7 @@ function isOther(variable: string) {
 }
 
 
-const errors = computed(() => {
+const warnings = computed(() => {
   const keys = Object.keys(dictionary.value);
   const rval = [];
   if (!keys.find((field) => dictionary.value[field].variable === 'building')) {
@@ -222,7 +228,7 @@ const errors = computed(() => {
   return rval;
 });
 
-const isValid = computed(() => localFile.value && errors.value.length === 0);
+const isValid = computed(() => localFile.value);
 
 watch(
   () => props.modelValue,
@@ -276,5 +282,13 @@ function guessFieldVariable(field: string) {
     })
     .filter((opt) => opt != null);
   return matches.length ? matches[0] : 'other';
+}
+
+function onAddDataset() {
+  const data = {
+    file: localFile.value,
+    dictionary: dictionary.value,
+  };
+  console.log(data);
 }
 </script>
