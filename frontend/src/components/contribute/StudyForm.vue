@@ -122,7 +122,7 @@
                 rounded
                 dense
                 flat
-                color="grey-6"
+                color="negative"
                 :title="$t('delete')"
                 icon="delete"
                 class="q-ml-xs"

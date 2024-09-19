@@ -256,7 +256,7 @@
                   rounded
                   dense
                   flat
-                  color="grey-6"
+                  color="negative"
                   :title="$t('delete')"
                   icon="delete"
                   class="q-ml-xs"
@@ -308,6 +308,11 @@ const props = defineProps<Props>();
 const building = ref(props.modelValue);
 const loadingGeo = ref(false);
 const loadingAlt = ref(false);
+
+watch(() => props.modelValue, (val) => {
+  building.value = val;
+  onGreenCertifiedUpdated();
+});
 
 const hasCityCountry = computed(
   () => building.value.city && building.value.country,

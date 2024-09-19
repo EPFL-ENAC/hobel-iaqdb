@@ -84,7 +84,7 @@
                   rounded
                   dense
                   flat
-                  color="grey-6"
+                  color="negative"
                   :title="$t('delete')"
                   icon="delete"
                   class="q-ml-xs"
@@ -130,6 +130,10 @@ interface Props {
 const props = defineProps<Props>();
 
 const instrument = ref(props.modelValue);
+
+watch(() => props.modelValue, (value) => {
+  instrument.value = value;
+});
 
 function getInstrumentParameterLabel(i: number) {
   if (!instrument.value.parameters) return i;

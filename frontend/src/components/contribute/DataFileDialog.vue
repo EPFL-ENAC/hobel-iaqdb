@@ -99,7 +99,17 @@
                 class="q-pl-none q-pr-none"
               >
                 <q-item-section>
-                  <div class="text-caption">{{ field }}</div>
+                  <div class="text-caption text-bold">{{ field }}</div>
+                  <div v-if="isTimestamp(dictionary[field].variable)" class="q-mt-sm">
+                    <q-input
+                      v-model="dictionary[field].format"
+                      filled
+                      dense
+                      label="Format"
+                      hint="e.g. YYYY-MM-DD HH:mm:ss"
+                      style="max-width: 300px;"
+                    />
+                  </div>
                 </q-item-section>
                 <q-item-section side>
                   <q-select
@@ -148,6 +158,7 @@ import Papa from 'papaparse';
 interface FieldSpec {
   field: string;
   variable: string;
+  format?: string;
 }
 
 interface Props {
@@ -177,6 +188,19 @@ const fieldOptions = [
   ...physicalParameterOptions,
   { value: 'other', label: 'Other' },
 ];
+
+function isPhysicalParameter(variable: string) {
+  return physicalParameterOptions.find((opt) => opt.value === variable);
+}
+
+function isTimestamp(variable: string) {
+  return variable === 'timestamp';
+}
+
+function isOther(variable: string) {
+  return variable === 'other';
+}
+
 
 const errors = computed(() => {
   const keys = Object.keys(dictionary.value);

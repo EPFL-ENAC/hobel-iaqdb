@@ -57,27 +57,6 @@
         </q-card>
         <q-markdown no-heading-anchor-links :src="StepStudyMd" />
         <study-form class="q-mt-lg" />
-
-        <q-stepper-navigation class="stepper-nav">
-          <q-card bordered class="bg-grey-4">
-            <q-card-section>
-              <q-btn
-                @click="onNextStep"
-                :disable="!canNext"
-                color="primary"
-                label="Continue"
-              />
-              <q-btn
-                @click="onPause"
-                flat
-                color="secondary"
-                label="Pause"
-                :disable="!contrib.inProgress"
-                class="on-right"
-              />
-            </q-card-section>
-          </q-card>
-        </q-stepper-navigation>
       </q-step>
 
       <q-step
@@ -89,34 +68,6 @@
       >
         <q-markdown no-heading-anchor-links :src="StepBuildingsMd" />
         <buildings-form class="q-mt-lg" />
-
-        <q-stepper-navigation class="stepper-nav">
-          <q-card bordered class="bg-grey-4">
-            <q-card-section>
-              <q-btn
-                flat
-                @click="onPreviousStep"
-                color="primary"
-                label="Back"
-                class="on-left"
-              />
-              <q-btn
-                @click="onNextStep"
-                :disable="!canNext"
-                color="primary"
-                label="Continue"
-              />
-              <q-btn
-                @click="onPause"
-                flat
-                color="secondary"
-                label="Pause"
-                :disable="!contrib.inProgress"
-                class="on-right"
-              />
-            </q-card-section>
-          </q-card>
-        </q-stepper-navigation>
       </q-step>
 
       <q-step
@@ -128,34 +79,6 @@
       >
         <q-markdown no-heading-anchor-links :src="StepInstrumentsMd" />
         <instruments-form class="q-mt-lg" />
-
-        <q-stepper-navigation class="stepper-nav">
-          <q-card bordered class="bg-grey-4">
-            <q-card-section>
-              <q-btn
-                flat
-                @click="onPreviousStep"
-                color="primary"
-                label="Back"
-                class="on-left"
-              />
-              <q-btn
-                @click="onNextStep"
-                :disable="!canNext"
-                color="primary"
-                label="Continue"
-              />
-              <q-btn
-                @click="onPause"
-                flat
-                color="secondary"
-                label="Pause"
-                :disable="!contrib.inProgress"
-                class="on-right"
-              />
-            </q-card-section>
-          </q-card>
-        </q-stepper-navigation>
       </q-step>
 
       <q-step
@@ -166,30 +89,42 @@
       >
         <q-markdown no-heading-anchor-links :src="StepDatasetsMd" />
         <datasets-form class="q-mt-lg" />
-        <q-stepper-navigation class="stepper-nav">
-          <q-card bordered class="bg-grey-4">
-            <q-card-section>
-              <q-btn
-                flat
-                @click="onPreviousStep"
-                color="primary"
-                label="Back"
-                class="on-left"
-              />
-              <q-btn color="primary" @click="onFinish" label="Finish" />
-              <q-btn
-                @click="onPause"
-                flat
-                color="secondary"
-                label="Pause"
-                :disable="!contrib.inProgress"
-                class="on-right"
-              />
-            </q-card-section>
-          </q-card>
-        </q-stepper-navigation>
       </q-step>
     </q-stepper>
+
+    <q-card bordered class="bg-grey-4 stepper-nav">
+      <q-card-section>
+        <q-btn
+          v-if="step > 1"
+          flat
+          @click="onPreviousStep"
+          color="primary"
+          label="Back"
+          class="on-left"
+        />
+        <q-btn
+          v-if="step < 4"
+          @click="onNextStep"
+          :disable="!canNext"
+          color="primary"
+          label="Continue"
+        />
+        <q-btn
+          v-if="step === 4"
+          color="primary"
+          @click="onFinish"
+          label="Finish"
+        />
+        <q-btn
+          @click="onPause"
+          flat
+          color="secondary"
+          label="Pause"
+          :disable="!contrib.inProgress"
+          class="on-right"
+        />
+      </q-card-section>
+    </q-card>
   </div>
 </template>
 
