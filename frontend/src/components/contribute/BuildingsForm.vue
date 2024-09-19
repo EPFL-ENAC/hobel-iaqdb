@@ -45,8 +45,31 @@
                 color="negative"
                 :title="$t('delete')"
                 icon="delete"
-                class="q-ml-xs"
                 @click="onDelete(selected)"
+              />
+              <q-btn
+                v-if="selected !== null"
+                rounded
+                dense
+                flat
+                size="sm"
+                :title="$t('previous')"
+                icon="arrow_back_ios"
+                class="on-right"
+                :disable="selected === 0"
+                @click="selected = selected !== null ? selected - 1 : null"
+              />
+              <q-btn
+                v-if="selected !== null"
+                rounded
+                dense
+                flat
+                size="sm"
+                :title="$t('next')"
+                icon="arrow_forward_ios"
+                class="q-ml-xs"
+                :disable="selected === buildingCount - 1"
+                @click="selected = selected !== null ? selected + 1 : null"
               />
             </q-toolbar>
           </div>

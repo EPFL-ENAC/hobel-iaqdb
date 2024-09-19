@@ -12,6 +12,8 @@ export default {
     'climate-zones': 'Climate zones',
   },
   delete: 'Delete',
+  previous: 'Previous',
+  next: 'Next',
   timeframe: 'Time frame',
   timeframe_help: 'Start/end dates of the studies are in the time frame.',
   altitudes: 'Altitude',
