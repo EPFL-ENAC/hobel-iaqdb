@@ -76,7 +76,9 @@ watch(
     progress.value = 0;
     buffer.value = 0;
     status.value = '';
-    demo();
+    if (value) {
+      doSave();
+    }
   },
 );
 
@@ -88,14 +90,14 @@ function onClose() {
   emit('close');
 }
 
-async function demo() {
+async function doSave() {
   progress.value = 0;
   buffer.value = 0.25;
   status.value = 'Uploading study, buildings and instruments...';
   await contrib.saveOrUpdateDraft();
   progress.value = 0.5;
   buffer.value = 0.75;
-  status.value = 'Uploading data files...';
+  status.value = '[fake] Uploading data files...';
   await sleep(1000);
   progress.value = 0.75;
   buffer.value = 1;
@@ -104,6 +106,7 @@ async function demo() {
   await sleep(2000);
   status.value = 'Done';
 }
+
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
