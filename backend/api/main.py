@@ -10,6 +10,7 @@ from api.views.seed import router as seed_router
 from api.views.catalog import router as catalog_router
 from api.views.map import router as map_router
 from api.views.files import router as files_router
+from api.views.auth import router as auth_router
 
 basicConfig(level=INFO)
 
@@ -76,4 +77,10 @@ app.include_router(
     files_router,
     prefix="/files",
     tags=["Files"],
+)
+
+app.include_router(
+    auth_router,
+    prefix="/auth",
+    tags=["Auth"],
 )

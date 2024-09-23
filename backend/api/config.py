@@ -17,6 +17,13 @@ class Config(BaseSettings):
     DB_URL: str | None = None
 
     API_KEYS: str
+
+    # Keycloak
+    KEYCLOAK_REALM: str
+    KEYCLOAK_URL: str
+    KEYCLOAK_API_ID: str
+    KEYCLOAK_API_SECRET: str
+
     PATH_PREFIX: str = "/api"
 
     ELEVATION_URL: str = "https://api.open-elevation.com/api/v1/lookup"

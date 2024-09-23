@@ -4,6 +4,7 @@ import { FilterParams } from 'src/stores/filters';
 
 const VERSION = '2024-07-01T14:54';
 const CDN_URL = `https://enacit4r-cdn.epfl.ch/iaq/${VERSION}/koppen_geiger/1991_2020`;
+//const CDN_URL = 'https://enacit4r-cdn.epfl.ch/iaqdb/tiles/koppen_geiger/1991_2020';
 
 export class ClimateZonesLayerManager extends LayerManager<FilterParams> {
   getId(): string {
