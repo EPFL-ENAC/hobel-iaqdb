@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from sqlalchemy.sql import text
 from api.views.seed import router as seed_router
 from api.views.catalog import router as catalog_router
+from api.views.contribute import router as contribute_router
 from api.views.map import router as map_router
 from api.views.files import router as files_router
 from api.views.auth import router as auth_router
@@ -59,6 +60,12 @@ app.include_router(
     seed_router,
     prefix="/seed",
     tags=["Seed"],
+)
+
+app.include_router(
+    contribute_router,
+    prefix="/contribute",
+    tags=["Contribute"],
 )
 
 app.include_router(

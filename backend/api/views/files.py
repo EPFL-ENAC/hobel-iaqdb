@@ -15,6 +15,8 @@ from api.auth import get_api_key
 
 from pydantic import BaseModel
 
+from api.utils.file_nodes import FileNode
+
 
 class FilePath(BaseModel):
     paths: list[str]
@@ -41,22 +43,38 @@ async def get_file(file_path: str,
         raise HTTPException(status_code=404, detail="File not found")
 
 
-# @router.post("",
-#              status_code=200,
-#              description="-- Upload any assets to S3 --",
-#              dependencies=[Depends(size_checker)])
-# async def upload_files(
-#         files: list[UploadFile] = File(description="multiple file upload"), api_key: str = Security(get_api_key)):
-#     current_time = datetime.datetime.now()
-#     # generate unique name for the files' base folder in S3
-#     s3_folder = str(current_time.timestamp()).replace('.', '')
-#     return {"files": [await s3_client.upload_file(file, s3_folder=s3_folder) for file in files]}
+@router.post("/tmp",
+             status_code=200,
+             description="-- Upload any assets to S3 --",
+             dependencies=[Depends(size_checker)])
+async def upload_temp_files(
+        files: list[UploadFile] = File(description="multiple file upload")):
+    current_time = datetime.datetime.now()
+    # generate unique name for the files' base folder in S3
+    folder_name = str(current_time.timestamp()).replace('.', '')
+    folder_path = f"tmp/{folder_name}"
+    children = [await s3_client.upload_file(file, s3_folder=folder_path) for file in files]
+
+    parent_path = folder_path
+    if children and len(children) > 0:
+        # extract the folder path from the first file's path
+        parent_path = children[0]["path"].replace(
+            f"/{children[0]['name']}", "")
+
+    return {
+        "name": folder_name,
+        "path": parent_path,
+        "is_file": False,
+        "children": children
+    }
 
 
-# @router.delete("",
-#                status_code=204,
-#                description="-- Delete asset present in S3 --",
-#                )
-# async def delete_files(filePath: FilePath, api_key: str = Security(get_api_key)):
-#     [await s3_client.delete_file(path) for path in filePath.paths]
-#     return
+@router.delete("/{file_path:path}",
+               status_code=204,
+               description="-- Delete asset present in S3 --",
+               )
+async def delete_temp_files(file_path: str):
+    # delete path if it contains /tmp/
+    if "/tmp/" in file_path:
+        await s3_client.delete_file(file_path)
+    return

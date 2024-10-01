@@ -46,6 +46,7 @@
       </div>
       <div class="col"></div>
     </div>
+    <study-start-dialog v-model="showStart" @started="onStarted" />
     <study-upload-dialog v-model="showUpload" @close="onUploaded" />
   </q-page>
 </template>
@@ -54,14 +55,19 @@
 import ContributeMd from 'src/assets/contribute.md';
 import StudyStepper from 'src/components/contribute/StudyStepper.vue';
 import StudyUploadDialog from 'src/components/contribute/StudyUploadDialog.vue';
+import StudyStartDialog from 'src/components/contribute/StudyStartDialog.vue';
 
 const contrib = useContributeStore();
 
 const showIntro = ref(true);
+const showStart = ref(false);
 const showUpload = ref(false);
 
 function onStart() {
-  contrib.reset();
+  showStart.value = true;
+}
+
+function onStarted() {
   showIntro.value = false;
 }
 

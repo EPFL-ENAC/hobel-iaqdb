@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="contrib.study.instruments?.length === 0" class="q-mb-md text-help">
+    <div v-if="instrumentCount === 0" class="q-mb-md text-help">
       No instruments defined yet.
       <div class="q-mt-md">
         <q-btn @click="onAdd" color="secondary" label="Add instrument" icon="add" />

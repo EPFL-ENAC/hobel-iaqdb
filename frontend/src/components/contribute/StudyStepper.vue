@@ -1,5 +1,9 @@
 <template>
   <div>
+    <div v-if="isUpdate" class="q-mb-md q-pa-md bg-secondary text-white">
+      You are currently editing the study draft
+      <q-badge class="q-pa-sm q-ml-sm" color="accent" :title="contrib.study.identifier">{{ contrib.study.identifier.split('-')[0] }}...</q-badge>
+    </div>
     <q-stepper
       v-model="step"
       header-nav
@@ -120,7 +124,6 @@
           flat
           color="secondary"
           label="Pause"
-          :disable="!contrib.inProgress"
           class="on-right"
         />
       </q-card-section>
@@ -151,6 +154,8 @@ const contrib = useContributeStore();
 const excelFile = ref<File | null>(null);
 const loading = ref(false);
 const step = ref(1);
+
+const isUpdate = computed(() => contrib.study.identifier && contrib.study.identifier !== '_draft');
 
 const canNext = computed(() => {
   if (step.value === 1) {

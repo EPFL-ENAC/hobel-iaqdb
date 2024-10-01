@@ -159,19 +159,14 @@ export default defineComponent({
 <script setup lang="ts">
 import { physicalParameterOptions } from 'src/utils/options';
 import Papa from 'papaparse';
-import { FileObject } from 'src/models';
+import { FileObject, FieldSpec, DataFile } from 'src/components/models';
 
-interface FieldSpec {
-  field: string;
-  variable: string;
-  format?: string;
-}
 
 interface Props {
   modelValue: boolean;
 }
 const props = defineProps<Props>();
-const emit = defineEmits(['update:modelValue', 'confirm', 'cancel']);
+const emit = defineEmits(['update:modelValue', 'add', 'cancel']);
 
 const step = ref(1);
 const showDialog = ref(props.modelValue);
@@ -235,7 +230,7 @@ watch(
   (value) => {
     showDialog.value = value;
     step.value = 1;
-    localFile.value = null;
+    localFile.value = undefined;
     rows.value = [];
     fields.value = [];
   },
@@ -287,8 +282,8 @@ function guessFieldVariable(field: string) {
 function onAddDataset() {
   const data = {
     file: localFile.value,
-    dictionary: dictionary.value,
-  };
-  console.log(data);
+    dictionary: Object.values(dictionary.value),
+  } as DataFile;
+  emit('add', data);
 }
 </script>

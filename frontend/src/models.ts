@@ -72,6 +72,7 @@ export interface Study extends DBModel {
   contributors?: Person[];
   buildings?: Building[];
   instruments?: Instrument[];
+  datasets?: Dataset[];
 }
 
 export interface StudiesResult extends ListResult {
@@ -87,7 +88,7 @@ export interface Space extends DBModel {
   windows_status?: string;
   ventilation_rate?: number;
   air_change_rate?: number;
-  particle_filtration_rating: number;
+  particle_filtration_rating?: number;
   cooling_status?: string;
   cooling_type?: string;
   other_cooling_type?: string;
@@ -129,10 +130,32 @@ export interface InstrumentsResult extends ListResult {
   data: Instrument[];
 }
 
+export interface Variable extends DBModel {
+  name: string;
+  type: string;
+  unit: string;
+  format: string;
+  reference: string;
+}
 
-export interface FileObject extends Blob {
-  readonly size: number;
-  readonly name: string;
-  readonly path: string;
-  readonly type: string;
+export interface Dataset extends DBModel {
+  name: string;
+  description?: string;
+  folder: FileNode;
+  variables?: Variable[];
+}
+
+export interface FileNode {
+  name: string;
+  path: string;
+  size: number | undefined;
+  alt_name: string | undefined;
+  alt_path: string | undefined;
+  alt_size: number | undefined;
+  is_file: boolean;
+  children: FileNode[] | undefined;
+}
+
+export interface UploadResult {
+  files: FileNode[];
 }

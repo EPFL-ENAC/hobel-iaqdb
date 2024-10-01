@@ -5,7 +5,6 @@ import {
   physicalParameterOptions,
   yesNoOptions,
 } from 'src/utils/options';
-import { v4 as uuidv4 } from 'uuid';
 import { defineStore } from 'pinia';
 import { api } from 'src/boot/api';
 import {
@@ -15,20 +14,28 @@ import {
   Person,
   Instrument,
   InstrumentParameter,
-  FileObject,
+  Dataset,
+  FileNode,
 } from 'src/models';
+
+import { FileObject, DataFile } from 'src/components/models';
+import P from 'app/dist/spa/assets/PageOne.d985d06c';
 
 export const useContributeStore = defineStore(
   'contribute',
   () => {
     const study = ref<Study>({
+      id: 0,
       identifier: '',
       name: '',
       description: '',
       contributors: [],
       buildings: [],
       instruments: [],
+      datasets: [],
     } as Study);
+
+    const dataFiles = ref<DataFile[]>([]);
 
     function reset() {
       study.value = {
@@ -38,7 +45,13 @@ export const useContributeStore = defineStore(
         contributors: [],
         buildings: [],
         instruments: [],
+        datasets: [],
       } as Study;
+      dataFiles.value = [];
+    }
+
+    async function load(identifier: string) {
+      return api.get(`/contribute/study-draft/${identifier}`).then((res) => study.value = res.data);
     }
 
     const inProgress = computed(
@@ -67,10 +80,13 @@ export const useContributeStore = defineStore(
     }
 
     function addBuilding() {
+      if (!study.value.buildings) {
+        study.value.buildings = [];
+      }
       let id = 1;
       while (
         study.value.buildings?.find(
-          (bld: Building) => bld.identifier === `${id}`,
+          (bld: Building) => bld.id === id || bld.identifier === `${id}`,
         )
       ) {
         id++;
@@ -81,7 +97,7 @@ export const useContributeStore = defineStore(
           study.value.buildings[study.value.buildings.length - 1].country;
       }
       study.value.buildings?.push({
-        id: `__${uuidv4()}`,
+        id: id,
         identifier: `${id}`,
         city: '',
         country,
@@ -114,11 +130,11 @@ export const useContributeStore = defineStore(
       if (!building) return;
 
       let id = 1;
-      while (building.spaces?.find((rm) => rm.identifier === `${id}`)) {
+      while (building.spaces?.find((rm) => rm.id === id || rm.identifier === `${id}`)) {
         id++;
       }
       building.spaces?.push({
-        id: `__${uuidv4()}`,
+        id: id,
         identifier: `${id}`,
         ...getSpaceDefaults(),
       } as Space);
@@ -134,16 +150,19 @@ export const useContributeStore = defineStore(
     }
 
     function addInstrument() {
+      if (!study.value.instruments) {
+        study.value.instruments = [];
+      }
       let id = 1;
       while (
         study.value.instruments?.find(
-          (inst: Instrument) => inst.identifier === `${id}`,
+          (inst: Instrument) => inst.id === id || inst.identifier === `${id}`,
         )
       ) {
         id++;
       }
       study.value.instruments?.push({
-        id: `__${uuidv4()}`,
+        id: id,
         identifier: `${id}`,
         manufacturer: '',
         model: '',
@@ -165,8 +184,16 @@ export const useContributeStore = defineStore(
       if (!instrument.parameters) {
         instrument.parameters = [];
       }
+      let id = 1;
+      while (
+        instrument.parameters?.find(
+          (param: InstrumentParameter) => param.id === id,
+        )
+      ) {
+        id++;
+      }
       instrument.parameters.push({
-        id: `__${uuidv4()}`,
+        id: id,
         physical_parameter: physicalParameterOptions[0].value,
         analysis_method: '',
         measurement_uncertainty: '',
@@ -180,6 +207,53 @@ export const useContributeStore = defineStore(
       if (!instrument) return;
 
       instrument.parameters?.splice(i, 1);
+    }
+
+    async function addDataset(dataFile: DataFile) {
+      const uploaded = await uploadTmpFiles([dataFile.file]);
+      if (!study.value.datasets) {
+        study.value.datasets = [];
+      }
+      let name = dataFile.file.name;
+      // remove extension
+      const ext = name.split('.').pop();
+      if (ext) {
+        name = name.replace(`.${ext}`, '');
+      }
+      let id = 0;
+      while (
+        study.value.datasets?.find(
+          (ds: Dataset) => ds.id === id,
+        )
+      ) {
+        id++;
+      }
+      let idName = study.value.datasets?.find((ds: Dataset) => ds.name === name) ? 1 : 0;
+      while (
+        study.value.datasets?.find(
+          (ds: Dataset) => ds.name === `${name}-${idName}`,
+        )
+      ) {
+        idName++;
+      }
+      if (idName > 0) {
+        name = `${name}-${idName}`;
+      }
+      study.value.datasets?.push({
+        id: id,
+        name: name,
+        description: dataFile.file.name,
+        folder: uploaded,
+      } as Dataset);
+    }
+
+    async function deleteDataset(i: number) {
+      const dataset = study.value.datasets?.[i];
+      if (!dataset) return;
+      if (dataset.folder?.children) {
+        await Promise.all(dataset.folder.children.map((f) => deleteFile(f)));
+      }
+      study.value.datasets?.splice(i, 1);
     }
 
     async function fetchAltitude(lon: number, lat: number) {
@@ -197,7 +271,7 @@ export const useContributeStore = defineStore(
     async function readExcel(file: File) {
       const formData = new FormData();
       formData.append('files', file);
-      return api.post('/catalog/study-excel', formData).then((res) => {
+      return api.post('/contribute/study-excel', formData).then((res) => {
         console.log(res.data);
         study.value = res.data;
       });
@@ -205,31 +279,34 @@ export const useContributeStore = defineStore(
 
     async function saveOrUpdateDraft() {
       if (study.value.identifier !== '' && study.value.identifier !== '_draft') {
-        return api.put(`/catalog/study-draft/${study.value.identifier}`, study.value)
+        return api.put(`/contribute/study-draft/${study.value.identifier}`, study.value)
           .then((res) => study.value = res.data);
       }
-      return api.post('/catalog/study-draft', study.value)
+      return api.post('/contribute/study-draft', study.value)
         .then((res) => study.value = res.data);
     }
 
-    function uploadFiles(path: string, files: FileObject[]) {
+    async function deleteFile(file: FileNode) {
+      return api.delete(`/files/${file.path}`);
+    }
+
+    function uploadTmpFiles(files: FileObject[]): Promise<FileNode> {
       const formData = new FormData();
       files.forEach((f) => {
-        formData.append('attachment', f);
+        formData.append('files', f);
       });
-      return api.post(`/files${path}`, formData, {
+      return api.post('/files/tmp', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-      });
+      }).then((res) => res.data);
     }
-
-
 
     return {
       study,
-      reset,
       inProgress,
+      reset,
+      load,
       addContributor,
       deleteContributor,
       addBuilding,
@@ -240,11 +317,13 @@ export const useContributeStore = defineStore(
       deleteInstrument,
       addInstrumentParameter,
       deleteInstrumentParameter,
+      addDataset,
+      deleteDataset,
       fetchAltitude,
       fetchClimateZone,
       readExcel,
       saveOrUpdateDraft,
-      uploadFiles,
+      uploadTmpFiles,
     };
   },
   { persist: true },

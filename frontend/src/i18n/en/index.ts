@@ -1,6 +1,3 @@
-// This is just an example,
-// so you can safely delete all default props below
-
 export default {
   app_title: 'iAQ DB',
   app_subtitle: 'The indoor air quality database',
@@ -42,6 +39,8 @@ export default {
   voc: 'VOC',
   voc_hint: 'Datasets with volatile organic compound measures.',
   study: {
+    identifier: 'Identifier',
+    identifier_hint: 'Unique identifier of the study draft. Leave empty to start a new draft.',
     name: 'Name',
     name_hint: 'Name of the project',
     description: 'Description',
@@ -191,6 +190,16 @@ export default {
       measurement_uncertainty: 'Measurement uncertainty',
       measurement_uncertainty_hint:
         'Measurement uncertainty of the physical parameter.',
+    },
+    dataset: {
+      name: 'Name',
+      name_hint: 'Name of the dataset.',
+      description: 'Description',
+      description_hint: 'Detailed description of the dataset.',
+      file: 'File',
+      file_hint: 'The dataset file.',
+      dictionary: 'Dictionary',
+      dictionary_hint: 'The dataset dictionary.',
     },
   },
 };

@@ -95,20 +95,8 @@ async function doSave() {
   buffer.value = 0.25;
   status.value = 'Uploading study, buildings and instruments...';
   await contrib.saveOrUpdateDraft();
-  progress.value = 0.5;
-  buffer.value = 0.75;
-  status.value = '[fake] Uploading data files...';
-  await sleep(1000);
-  progress.value = 0.75;
-  buffer.value = 1;
-  await sleep(1000);
   progress.value = 1;
-  await sleep(2000);
   status.value = 'Done';
-}
-
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function onCopy() {
