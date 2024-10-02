@@ -285,4 +285,8 @@ interface Props {
 const props = defineProps<Props>();
 
 const space = ref(props.modelValue);
+
+watch(() => props.modelValue, (val) => {
+  space.value = val;
+});
 </script>

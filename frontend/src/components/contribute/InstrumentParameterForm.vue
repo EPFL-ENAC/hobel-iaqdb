@@ -48,4 +48,11 @@ interface Props {
 const props = defineProps<Props>();
 
 const parameter = ref(props.modelValue);
+
+watch(
+  () => props.modelValue,
+  (newValue) => {
+    parameter.value = newValue;
+  }
+);
 </script>
