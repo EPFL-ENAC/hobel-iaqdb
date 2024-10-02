@@ -60,7 +60,6 @@
             </div>
 
             <q-stepper-navigation>
-              <q-btn @click="step = 3" color="secondary" label="Next" />
               <q-btn
                 flat
                 @click="step = 1"
@@ -71,82 +70,6 @@
             </q-stepper-navigation>
           </q-step>
 
-          <q-step
-            :name="3"
-            title="Fields"
-            caption="Data dictionary"
-            icon="add_comment"
-          >
-            <div class="text-help q-mb-md">
-              Each column needs to be qualified, using the IAQ data schema.
-              Unknown column will be ignored.
-            </div>
-
-            <div v-if="warnings.length">
-              <q-card bordered class="bg-warning">
-                <div>
-                  <div class="q-pl-md q-pr-md q-pt-md">
-                    <span class="text-bold on-left">Warnings</span>
-                    <span>Please fix the following issues as much as possible before proceeding.</span>
-                  </div>
-                  <ul>
-                    <li v-for="msg in warnings" :key="msg">{{ msg }}</li>
-                  </ul>
-                </div>
-              </q-card>
-            </div>
-
-            <q-list separator>
-              <q-item
-                v-for="field in fields"
-                :key="field"
-                class="q-pl-none q-pr-none"
-              >
-                <q-item-section>
-                  <div class="text-caption text-bold">{{ field }}</div>
-                </q-item-section>
-                <q-item-section>
-                  <div v-if="isTimestamp(dictionary[field].reference)" class="q-mt-sm">
-                    <q-input
-                      v-model="dictionary[field].format"
-                      filled
-                      dense
-                      label="Format"
-                      hint="e.g. YYYY-MM-DD HH:mm:ss"
-                      style="max-width: 300px;"
-                    />
-                  </div>
-                  <div v-else>
-                    <q-input
-                      v-model="dictionary[field].unit"
-                      filled
-                      dense
-                      label="Unit"
-                      hint="e.g. mg"
-                      style="max-width: 300px;"
-                    />
-                  </div>
-                </q-item-section>
-                <q-item-section side>
-                  <q-select
-                    v-model="dictionary[field].reference"
-                    :options="fieldOptions"
-                    emit-value
-                    map-options
-                  />
-                </q-item-section>
-              </q-item>
-            </q-list>
-
-            <q-stepper-navigation>
-              <q-btn
-                flat
-                @click="step = 2"
-                color="secondary"
-                label="Previous"
-              />
-            </q-stepper-navigation>
-          </q-step>
         </q-stepper>
       </q-card-section>
       <q-card-actions v-if="$q.screen.gt.xs" align="right">
@@ -169,7 +92,7 @@ export default defineComponent({
 });
 </script>
 <script setup lang="ts">
-import { physicalParameterOptions } from 'src/utils/options';
+import { referenceOptions } from 'src/utils/options';
 import Papa from 'papaparse';
 import { FileObject, DataFile } from 'src/components/models';
 import { Variable } from 'src/models';
@@ -192,48 +115,6 @@ const columns = computed(() =>
     return { name: field, label: field, field };
   }),
 );
-
-const fieldOptions = [
-  { value: 'building', label: 'Building ID' },
-  { value: 'space', label: 'Space ID' },
-  { value: 'instrument', label: 'Instrument ID' },
-  { value: 'timestamp', label: 'Timestamp' },
-  ...physicalParameterOptions,
-  { value: 'other', label: 'Other' },
-];
-
-function isPhysicalParameter(reference: string | undefined) {
-  return physicalParameterOptions.find((opt) => opt.value === reference);
-}
-
-function isTimestamp(reference: string | undefined) {
-  return reference === 'timestamp';
-}
-
-function isOther(reference: string | undefined) {
-  return reference === 'other';
-}
-
-
-const warnings = computed(() => {
-  const keys = Object.keys(dictionary.value);
-  const rval = [];
-  if (!keys.find((field) => dictionary.value[field].reference === 'building')) {
-    rval.push('Building ID is missing');
-  }
-  if (!keys.find((field) => dictionary.value[field].reference === 'space')) {
-    rval.push('Space ID is missing');
-  }
-  if (
-    !keys.find((field) => dictionary.value[field].reference === 'instrument')
-  ) {
-    rval.push('Instrument ID is missing');
-  }
-  if (!keys.find((field) => dictionary.value[field].reference === 'timestamp')) {
-    rval.push('Timestamp is missing');
-  }
-  return rval;
-});
 
 const isValid = computed(() => localFile.value);
 
@@ -269,7 +150,7 @@ function onFileUpdated() {
         dictionary.value[field] = {
           name: field,
           type: 'text',
-          reference: guessFieldVariable(field),
+          reference: guessFieldReference(field),
         };
       });
       fields.value = results.meta.fields;
@@ -277,8 +158,8 @@ function onFileUpdated() {
   });
 }
 
-function guessFieldVariable(field: string) {
-  const matches = fieldOptions
+function guessFieldReference(field: string) {
+  const matches = referenceOptions
     .map((opt) => {
       return {
         value: opt.value,

@@ -232,6 +232,15 @@ export const physicalParameterOptions = [
   { value: 'biocontaminants', label: 'Biocontaminants' },
 ];
 
+export const referenceOptions = [
+  { value: 'building', label: 'Building ID' },
+  { value: 'space', label: 'Space ID' },
+  { value: 'instrument', label: 'Instrument ID' },
+  { value: 'timestamp', label: 'Timestamp' },
+  ...physicalParameterOptions,
+  { value: 'other', label: 'Other' },
+];
+
 export const countryOptions = [
   { value: 'AF', label: 'Afghanistan' },
   { value: 'AX', label: 'Åland Islands' },

@@ -200,7 +200,7 @@ export default {
       file: 'File',
       file_hint: 'The dataset file.',
       dictionary: 'Dictionary',
-      dictionary_hint: 'The dataset dictionary.',
+      dictionary_hint: 'The dataset dictionary, following the IAQ reference dictionary.',
     },
   },
 };
