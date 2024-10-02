@@ -146,6 +146,7 @@ import StudyForm from 'src/components/contribute/StudyForm.vue';
 import BuildingsForm from 'src/components/contribute/BuildingsForm.vue';
 import InstrumentsForm from 'src/components/contribute/InstrumentsForm.vue';
 import DatasetsForm from 'src/components/contribute/DatasetsForm.vue';
+import { baseUrl } from 'src/boot/api';
 
 const emit = defineEmits(['pause', 'finish']);
 
@@ -208,9 +209,7 @@ function onNextStep() {
 }
 
 function onDownloadExcelTemplate() {
-  window.open(
-    'https://epflch.sharepoint.com/:x:/r/sites/ENAC-IT/Documents%20partages/Research%20IT/Advanced%20Services/0002%20%E2%80%93%20PILOT%20iAQ/Pilot_iAQ_Shared/Data/Metadata/Metadata_entry_form.xlsx?d=w057cb00af74445bdb7a4dca02ae52df1&csf=1&web=1&e=vgUhs1',
-  );
+  window.open(`${baseUrl}/contribute/study-template`);
 }
 
 function onExcelFileUpdated() {

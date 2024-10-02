@@ -1,9 +1,9 @@
+import pkg_resources
 from typing import List
-from fastapi import APIRouter, Security, Depends, Query, Body
+from fastapi import APIRouter, Depends, Body
+from fastapi.responses import FileResponse
 from fastapi.datastructures import UploadFile
 from fastapi.param_functions import File
-from api.db import get_session, AsyncSession
-from api.auth import get_api_key
 from api.services.study import StudyService
 from api.services.study_parser import StudyParser
 from api.services.study_draft import StudyDraftService
@@ -16,6 +16,13 @@ from api.utils.query import paramAsArray, paramAsDict
 from api.utils.file_size import size_checker
 
 router = APIRouter()
+
+
+@router.get("/study-template")
+async def get_study_template():
+    data_file_path = pkg_resources.resource_filename(
+        "api", "data/iaqdb_study_template.xlsx")
+    return FileResponse(data_file_path, filename="iaqdb_study_template.xlsx", media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
 @router.post("/study-excel",
