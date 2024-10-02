@@ -92,6 +92,20 @@
         :header-nav="step > 4"
       >
         <q-markdown no-heading-anchor-links :src="StepDatasetsMd" />
+
+        <div>
+          <q-btn
+            label="Download Dictionary Reference"
+            color="black"
+            icon="download"
+            size="sm"
+            outline
+            no-caps
+            class="q-mt-md"
+            @click="onDownloadDictionaryReference"
+          />
+        </div>
+
         <datasets-form class="q-mt-lg" />
       </q-step>
     </q-stepper>
@@ -210,6 +224,10 @@ function onNextStep() {
 
 function onDownloadExcelTemplate() {
   window.open(`${baseUrl}/contribute/study-template`);
+}
+
+function onDownloadDictionaryReference() {
+  window.open(`${baseUrl}/contribute/dataset-dictionary`);
 }
 
 function onExcelFileUpdated() {

@@ -21,8 +21,15 @@ router = APIRouter()
 @router.get("/study-template")
 async def get_study_template():
     data_file_path = pkg_resources.resource_filename(
-        "api", "data/iaqdb_study_template.xlsx")
+        "api", "data/Metadata_entry_form.xlsx")
     return FileResponse(data_file_path, filename="iaqdb_study_template.xlsx", media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+
+@router.get("/dataset-dictionary")
+async def get_study_template():
+    data_file_path = pkg_resources.resource_filename(
+        "api", "data/Dictionary_data.xlsx")
+    return FileResponse(data_file_path, filename="iaqdb_dataset_dictionary.xlsx", media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
 @router.post("/study-excel",
