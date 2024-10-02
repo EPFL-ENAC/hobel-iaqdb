@@ -62,8 +62,9 @@ function onHide() {
 async function doStart() {
   if (!identifier.value) {
     contrib.reset();
-  } else if (contrib.study?.identifier !== identifier.value) {
+  } else if (identifier.value !== '_draft') {
     try {
+      // reload
       await contrib.load(identifier.value);
     } catch (error) {
       console.error(error);

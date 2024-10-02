@@ -1,3 +1,5 @@
+import { Variable } from 'src/models';
+
 export interface FileObject extends Blob {
   readonly size: number;
   readonly name: string;
@@ -5,13 +7,7 @@ export interface FileObject extends Blob {
   readonly type: string;
 }
 
-export interface FieldSpec {
-  field: string;
-  variable: string;
-  format?: string;
-}
-
 export interface DataFile {
   file: FileObject;
-  dictionary: FieldSpec[];
+  variables: Variable[];
 }

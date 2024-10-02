@@ -6,7 +6,7 @@ import {
   yesNoOptions,
 } from 'src/utils/options';
 import { defineStore } from 'pinia';
-import { api } from 'src/boot/api';
+import { api, baseUrl } from 'src/boot/api';
 import {
   Study,
   Building,
@@ -243,6 +243,7 @@ export const useContributeStore = defineStore(
         id: id,
         name: name,
         description: dataFile.file.name,
+        variables: dataFile.variables,
         folder: uploaded,
       } as Dataset);
     }
@@ -290,6 +291,10 @@ export const useContributeStore = defineStore(
       return api.delete(`/files/${file.path}`);
     }
 
+    function downloadFile(file: FileNode) {
+      window.open(`${baseUrl}/files/${file.path}`);
+    }
+
     function uploadTmpFiles(files: FileObject[]): Promise<FileNode> {
       const formData = new FormData();
       files.forEach((f) => {
@@ -319,6 +324,7 @@ export const useContributeStore = defineStore(
       deleteInstrumentParameter,
       addDataset,
       deleteDataset,
+      downloadFile,
       fetchAltitude,
       fetchClimateZone,
       readExcel,

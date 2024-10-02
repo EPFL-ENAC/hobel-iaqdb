@@ -9,6 +9,7 @@ export default {
     'climate-zones': 'Climate zones',
   },
   delete: 'Delete',
+  download: 'Download',
   previous: 'Previous',
   next: 'Next',
   timeframe: 'Time frame',

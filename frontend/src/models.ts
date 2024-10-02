@@ -133,9 +133,9 @@ export interface InstrumentsResult extends ListResult {
 export interface Variable extends DBModel {
   name: string;
   type: string;
-  unit: string;
-  format: string;
-  reference: string;
+  unit?: string;
+  format?: string;
+  reference?: string;
 }
 
 export interface Dataset extends DBModel {

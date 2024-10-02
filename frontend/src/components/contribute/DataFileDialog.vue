@@ -1,6 +1,6 @@
 <template>
   <q-dialog :maximized="$q.screen.lt.sm" v-model="showDialog" @hide="onHide">
-    <q-card :style="$q.screen.lt.sm ? '' : 'width: 800px; max-width: 90vw'">
+    <q-card :style="$q.screen.lt.sm ? '' : 'width: 1000px; max-width: 90vw'">
       <q-card-actions v-if="$q.screen.lt.sm" align="right">
         <q-btn flat icon="close" color="primary" v-close-popup />
       </q-card-actions>
@@ -104,7 +104,9 @@
               >
                 <q-item-section>
                   <div class="text-caption text-bold">{{ field }}</div>
-                  <div v-if="isTimestamp(dictionary[field].variable)" class="q-mt-sm">
+                </q-item-section>
+                <q-item-section>
+                  <div v-if="isTimestamp(dictionary[field].reference)" class="q-mt-sm">
                     <q-input
                       v-model="dictionary[field].format"
                       filled
@@ -114,10 +116,20 @@
                       style="max-width: 300px;"
                     />
                   </div>
+                  <div v-else>
+                    <q-input
+                      v-model="dictionary[field].unit"
+                      filled
+                      dense
+                      label="Unit"
+                      hint="e.g. mg"
+                      style="max-width: 300px;"
+                    />
+                  </div>
                 </q-item-section>
                 <q-item-section side>
                   <q-select
-                    v-model="dictionary[field].variable"
+                    v-model="dictionary[field].reference"
                     :options="fieldOptions"
                     emit-value
                     map-options
@@ -159,8 +171,8 @@ export default defineComponent({
 <script setup lang="ts">
 import { physicalParameterOptions } from 'src/utils/options';
 import Papa from 'papaparse';
-import { FileObject, FieldSpec, DataFile } from 'src/components/models';
-
+import { FileObject, DataFile } from 'src/components/models';
+import { Variable } from 'src/models';
 
 interface Props {
   modelValue: boolean;
@@ -173,7 +185,7 @@ const showDialog = ref(props.modelValue);
 const localFile = ref<FileObject>();
 const fields = ref([]);
 const rows = ref([]);
-const dictionary = ref<{ [Key: string]: FieldSpec }>({});
+const dictionary = ref<{ [Key: string]: Variable }>({});
 
 const columns = computed(() =>
   fields.value.map((field) => {
@@ -190,34 +202,34 @@ const fieldOptions = [
   { value: 'other', label: 'Other' },
 ];
 
-function isPhysicalParameter(variable: string) {
-  return physicalParameterOptions.find((opt) => opt.value === variable);
+function isPhysicalParameter(reference: string | undefined) {
+  return physicalParameterOptions.find((opt) => opt.value === reference);
 }
 
-function isTimestamp(variable: string) {
-  return variable === 'timestamp';
+function isTimestamp(reference: string | undefined) {
+  return reference === 'timestamp';
 }
 
-function isOther(variable: string) {
-  return variable === 'other';
+function isOther(reference: string | undefined) {
+  return reference === 'other';
 }
 
 
 const warnings = computed(() => {
   const keys = Object.keys(dictionary.value);
   const rval = [];
-  if (!keys.find((field) => dictionary.value[field].variable === 'building')) {
+  if (!keys.find((field) => dictionary.value[field].reference === 'building')) {
     rval.push('Building ID is missing');
   }
-  if (!keys.find((field) => dictionary.value[field].variable === 'space')) {
+  if (!keys.find((field) => dictionary.value[field].reference === 'space')) {
     rval.push('Space ID is missing');
   }
   if (
-    !keys.find((field) => dictionary.value[field].variable === 'instrument')
+    !keys.find((field) => dictionary.value[field].reference === 'instrument')
   ) {
     rval.push('Instrument ID is missing');
   }
-  if (!keys.find((field) => dictionary.value[field].variable === 'timestamp')) {
+  if (!keys.find((field) => dictionary.value[field].reference === 'timestamp')) {
     rval.push('Timestamp is missing');
   }
   return rval;
@@ -255,8 +267,9 @@ function onFileUpdated() {
       rows.value = results.data;
       results.meta.fields.forEach((field: string) => {
         dictionary.value[field] = {
-          field,
-          variable: guessFieldVariable(field),
+          name: field,
+          type: 'text',
+          reference: guessFieldVariable(field),
         };
       });
       fields.value = results.meta.fields;
@@ -282,7 +295,7 @@ function guessFieldVariable(field: string) {
 function onAddDataset() {
   const data = {
     file: localFile.value,
-    dictionary: Object.values(dictionary.value),
+    variables: Object.values(dictionary.value),
   } as DataFile;
   emit('add', data);
 }
