@@ -19,7 +19,7 @@
         :done="step > 1"
         :header-nav="step > 1"
       >
-        <q-card class="q-mb-lg bg-warning">
+        <q-card v-if="!isUpdate" class="q-mb-lg bg-warning">
           <q-card-section>
             <div class="row">
               <q-icon
