@@ -67,7 +67,6 @@ const pagination = ref({
   descending: false,
   page: 1,
   rowsPerPage: 5,
-  rowsNumber: 0,
 });
 const loading = ref(false);
 

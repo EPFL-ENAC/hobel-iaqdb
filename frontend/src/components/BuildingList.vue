@@ -30,7 +30,6 @@ const pagination = ref({
   descending: false,
   page: 1,
   rowsPerPage: 10,
-  rowsNumber: 0,
 });
 const loading = ref(false);
 

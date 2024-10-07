@@ -17,6 +17,7 @@
     <q-table
       :rows="variables"
       :columns="columns"
+      v-model:pagination="pagination"
       row-key="name"
       table-header-style="background-color: #f5f5f5"
       flat
@@ -74,6 +75,12 @@ const props = defineProps<Props>();
 
 const dataset = ref(props.modelValue);
 const variables = ref<Variable[]>(props.modelValue.variables || []);
+const pagination = ref({
+  sortBy: 'id',
+  descending: false,
+  page: 1,
+  rowsPerPage: 10,
+});
 
 const columns = computed(() => [
   { name: 'name', label: 'Name', field: 'name', align: 'left', sortable: true },
