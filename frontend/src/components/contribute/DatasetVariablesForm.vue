@@ -19,7 +19,6 @@
       :columns="columns"
       row-key="name"
       table-header-style="background-color: #f5f5f5"
-      hide-bottom
       flat
       class="q-mt-sm"
     >

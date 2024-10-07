@@ -19,7 +19,6 @@ import {
 } from 'src/models';
 
 import { FileObject, DataFile } from 'src/components/models';
-import P from 'app/dist/spa/assets/PageOne.d985d06c';
 
 export const useContributeStore = defineStore(
   'contribute',
