@@ -5,9 +5,8 @@
         <q-btn flat icon="close" color="primary" v-close-popup />
       </q-card-actions>
       <q-card-section>
-        <div class="text-help q-mb-md">
-          Select a data file from your computer. The file will not be
-          uploaded at this point.
+        <div class=" q-mb-md">
+          Select a data file from your computer. If an archive of several files is provided, make sure that all files have the same schema.
         </div>
         <div>
           <q-file
@@ -15,7 +14,7 @@
             v-model="localFile"
             clearable
             label="Data file"
-            hint="Select a delimiter-separated format (CSV or TSV) file or a ZIP file containing one or more CSV/TSV files that use the same schema."
+            hint="Select a delimiter-separated format (CSV or TSV) file or a ZIP file containing one or more CSV/TSV files."
             accept=".csv, .tsv, .zip"
             @update:model-value="onFileUpdated"
           />
@@ -63,10 +62,11 @@ export default defineComponent({
 <script setup lang="ts">
 import { referenceOptions } from 'src/utils/options';
 import Papa from 'papaparse';
-import JSZip from 'jszip';
+import { ZipReader, BlobReader } from '@zip.js/zip.js';
 import { FileObject, DataFile } from 'src/components/models';
 import { Variable } from 'src/models';
 import { notifyError } from 'src/utils/notify';
+import { LimitedTransformStream } from 'src/utils/streams';
 
 interface Props {
   modelValue: boolean;
@@ -128,43 +128,38 @@ function onFileUpdated() {
   }
 }
 
-function parseZipFile(file: FileObject) {
+async function parseZipFile(file: FileObject) {
   // Create a FileReader to read the file
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    if (!e.target?.result) {
-      notifyError('No file content found.');
+  const zipReader = new ZipReader(new BlobReader(file));
+  try {
+    const csvEntry = (await zipReader.getEntries()).find(entry => entry.filename.endsWith('.csv') || entry.filename.endsWith('.tsv'));
+    if (!csvEntry) {
+      notifyError('No CSV/TSV entries found in the ZIP archive.');
       loadingFile.value = false;
-      return;
+    } else {
+      // Creates a TransformStream object, the content of the first entry in the zip
+      // will be written in the `writable` property.
+      const csvStream = new LimitedTransformStream();
+      // Creates a Promise object resolved to the content of the first entry returned
+      // as text from `helloWorldStream.readable`.
+      const csvTextPromise = new Response(csvStream.readable).text();
+      await csvEntry.getData(csvStream.writable);
+
+      // Read the content of the CSV file as a text stream
+      csvTextPromise.then((text: string) => {
+        // Split the CSV content into lines
+        const lines = text.split('\n');
+        // Read the header + first 10 lines
+        const firstLines = lines.slice(0, 11);
+        parseDelimitedData(firstLines.join('\n'));
+      });
     }
-    // Pass the ZIP data to JSZip
-    JSZip.loadAsync(e.target.result).then(zip => {
-      // Assume there is only one CSV file in the zip
-      console.log(zip.files);
-      const csvFile = Object.keys(zip.files).find(fileName => fileName.endsWith('.csv'));
-      // Read the CSV file content
-      if (csvFile) {
-        zip.file(csvFile)?.async('string').then(content => {
-          // Split CSV content into lines
-          const lines = content.split('\n');
-          // Get the first 10 lines (+header)
-          const firstLines = [];
-          for (let i = 0; i < lines.length && i < 11; i++) {
-            firstLines.push(lines[i]);
-          }
-          parseDelimitedData(firstLines.join('\n'));
-        });
-      } else {
-        notifyError('No CSV file found in the ZIP archive.');
-        loadingFile.value = false;
-      }
-    }).catch(error => {
-      notifyError('Error reading ZIP file: ' + error.message);
-      loadingFile.value = false;
-    });
-  };
-  // Read the file as an ArrayBuffer (required for JSZip)
-  reader.readAsArrayBuffer(file);
+  } catch (error) {
+    notifyError('Error reading ZIP file: ' + error.message);
+    loadingFile.value = false;
+  } finally {
+    zipReader.close();
+  }
 }
 
 function parseDelimitedData(csv: FileObject | string) {
