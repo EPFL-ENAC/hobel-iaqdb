@@ -5,72 +5,41 @@
         <q-btn flat icon="close" color="primary" v-close-popup />
       </q-card-actions>
       <q-card-section>
-        <q-stepper flat v-model="step" vertical color="secondary" animated>
-          <q-step
-            :name="1"
-            title="Select data file"
-            icon="settings"
-            :done="step > 1"
-          >
-            <div class="text-help q-mb-md">
-              Select a data file from your computer. The file will not be
-              uploaded at this point.
-            </div>
-            <div>
-              <q-file
-                filled
-                v-model="localFile"
-                clearable
-                label="Data file"
-                hint="Select a delimiter-separated format (CSV or TSV)."
-                accept=".csv, .tsv"
-                @update:model-value="onFileUpdated"
-              />
-            </div>
-
-            <q-stepper-navigation>
-              <q-btn
-                @click="step = 2"
-                color="secondary"
-                label="Next"
-                :disable="!localFile"
-              />
-            </q-stepper-navigation>
-          </q-step>
-
-          <q-step
-            :name="2"
-            title="Preview data"
-            icon="create_new_folder"
-            :done="step > 2"
-          >
+        <div class="text-help q-mb-md">
+          Select a data file from your computer. The file will not be
+          uploaded at this point.
+        </div>
+        <div>
+          <q-file
+            filled
+            v-model="localFile"
+            clearable
+            label="Data file"
+            hint="Select a delimiter-separated format (CSV or TSV) file or a ZIP file containing one or more CSV/TSV files that use the same schema."
+            accept=".csv, .tsv, .zip"
+            @update:model-value="onFileUpdated"
+          />
+        </div>
+          
+        <div v-if="loadingFile" class="q-mt-md">
+          <q-spinner-dots size="md"/>
+        </div>
+        <div v-else-if="localFile" class="q-mt-md">
+          <div v-if="fields">
             <div class="text-help q-mb-md">
               Verify that the data were correctly read before proceeding to the
-              next step. Note that is only a preview of the 10 first lines.
+              file upload. Note that is only a preview of the 10 first lines.
             </div>
-
-            <div>
-              <q-table
-                :rows="rows"
-                :columns="columns"
-                flat
-                bordered
-                table-header-class="text-bold"
-              />
-            </div>
-
-            <q-stepper-navigation>
-              <q-btn
-                flat
-                @click="step = 1"
-                color="secondary"
-                label="Previous"
-                class="q-ml-sm"
-              />
-            </q-stepper-navigation>
-          </q-step>
-
-        </q-stepper>
+            <q-table
+              :rows="rows"
+              :columns="columns"
+              flat
+              bordered
+              table-header-class="text-bold"
+              v-model:pagination="pagination"
+            />
+          </div>
+        </div>
       </q-card-section>
       <q-card-actions v-if="$q.screen.gt.xs" align="right">
         <q-btn flat :label="$t('cancel')" color="primary" v-close-popup />
@@ -94,8 +63,10 @@ export default defineComponent({
 <script setup lang="ts">
 import { referenceOptions } from 'src/utils/options';
 import Papa from 'papaparse';
+import JSZip from 'jszip';
 import { FileObject, DataFile } from 'src/components/models';
 import { Variable } from 'src/models';
+import { notifyError } from 'src/utils/notify';
 
 interface Props {
   modelValue: boolean;
@@ -109,6 +80,13 @@ const localFile = ref<FileObject>();
 const fields = ref([]);
 const rows = ref([]);
 const dictionary = ref<{ [Key: string]: Variable }>({});
+const loadingFile = ref(false);
+const pagination = ref({
+  sortBy: 'id',
+  descending: false,
+  page: 1,
+  rowsPerPage: 5,
+});
 
 const columns = computed(() =>
   fields.value.map((field) => {
@@ -116,7 +94,7 @@ const columns = computed(() =>
   }),
 );
 
-const isValid = computed(() => localFile.value);
+const isValid = computed(() => localFile.value && fields.value.length > 0);
 
 watch(
   () => props.modelValue,
@@ -134,28 +112,88 @@ function onHide() {
 }
 
 function onFileUpdated() {
-  if (!localFile.value) return;
+  if (!localFile.value) {
+    loadingFile.value = false;
+    return;
+  }
   fields.value = [];
   rows.value = [];
   dictionary.value = {};
-  Papa.parse(localFile.value, {
+  pagination.value.page = 1;
+  loadingFile.value = true;
+  if (localFile.value.type === 'application/zip') {
+    parseZipFile(localFile.value);
+  } else {
+    parseDelimitedData(localFile.value);
+  }
+}
+
+function parseZipFile(file: FileObject) {
+  // Create a FileReader to read the file
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    if (!e.target?.result) {
+      notifyError('No file content found.');
+      loadingFile.value = false;
+      return;
+    }
+    // Pass the ZIP data to JSZip
+    JSZip.loadAsync(e.target.result).then(zip => {
+      // Assume there is only one CSV file in the zip
+      console.log(zip.files);
+      const csvFile = Object.keys(zip.files).find(fileName => fileName.endsWith('.csv'));
+      // Read the CSV file content
+      if (csvFile) {
+        zip.file(csvFile)?.async('string').then(content => {
+          // Split CSV content into lines
+          const lines = content.split('\n');
+          // Get the first 10 lines (+header)
+          const firstLines = [];
+          for (let i = 0; i < lines.length && i < 11; i++) {
+            firstLines.push(lines[i]);
+          }
+          parseDelimitedData(firstLines.join('\n'));
+        });
+      } else {
+        notifyError('No CSV file found in the ZIP archive.');
+        loadingFile.value = false;
+      }
+    }).catch(error => {
+      notifyError('Error reading ZIP file: ' + error.message);
+      loadingFile.value = false;
+    });
+  };
+  // Read the file as an ArrayBuffer (required for JSZip)
+  reader.readAsArrayBuffer(file);
+}
+
+function parseDelimitedData(csv: FileObject | string) {
+  Papa.parse(csv, {
     preview: 10,
     skipEmptyLines: true,
     dynamicTyping: true,
     header: true,
-    complete: function (results) {
-      //console.log(results);
-      rows.value = results.data;
-      results.meta.fields.forEach((field: string) => {
-        dictionary.value[field] = {
-          name: field,
-          type: 'text',
-          reference: guessFieldReference(field),
-        };
-      });
-      fields.value = results.meta.fields;
-    },
+    delimiter: ',',
+    complete: onCSVParseCompleted,
   });
+}
+
+function onCSVParseCompleted(results) {
+  if (results.errors?.length) {
+    notifyError(results.errors);
+    loadingFile.value = false;
+    return;
+  }
+  rows.value = results.data;
+  results.meta.fields.forEach((field: string) => {
+    dictionary.value[field] = {
+      name: field,
+      type: 'text',
+      reference: guessFieldReference(field),
+    };
+  });
+  fields.value = results.meta.fields;
+  loadingFile.value = false;
 }
 
 function guessFieldReference(field: string) {
