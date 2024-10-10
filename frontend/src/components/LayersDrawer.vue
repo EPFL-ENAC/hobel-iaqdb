@@ -2,7 +2,7 @@
   <q-list>
     <q-item-label header>
       <span class="text-h6">
-        <q-icon name="filter_alt" class="q-pb-xs"/>
+        <q-icon name="filter_alt" class="q-pb-xs" />
         <span class="q-ml-sm">{{ $t('filters') }}</span>
       </span>
       <q-btn
@@ -12,8 +12,9 @@
         size="12px"
         icon="restart_alt"
         :label="$t('reset_filters')"
-        @click="onResetFilters" 
-        class="q-mt-none q-mr-lg q-pl-xs q-pr-xs float-right "/>
+        @click="onResetFilters"
+        class="q-mt-none q-mr-lg q-pl-xs q-pr-xs float-right"
+      />
     </q-item-label>
     <q-item>
       <q-item-section>
@@ -45,8 +46,8 @@
         <q-select
           v-model="populations"
           :options="populationOptions"
-          :label="$t('study.building.population')"
-          :hint="$t('study.building.population_hint')"
+          :label="$t('study.building.special_population')"
+          :hint="$t('study.building.special_population_hint')"
           multiple
           use-chips
           emit-value
@@ -95,7 +96,7 @@
         <div class="text-hint">{{ $t('altitudes_help') }}</div>
         <q-select
           v-model="filtersStore.ventilations"
-          :options="ventilationOptions"
+          :options="ventilationTypeOptions"
           :label="$t('ventilations')"
           :hint="$t('ventilations_hint')"
           multiple
@@ -124,7 +125,7 @@
 
     <template v-if="isMapPage">
       <q-item-label header class="text-h6">
-        <q-icon name="layers" class="q-pb-xs"/>
+        <q-icon name="layers" class="q-pb-xs" />
         <span class="q-ml-sm">{{ $t('layers') }}</span>
       </q-item-label>
       <q-item
@@ -135,12 +136,12 @@
         <q-item-section>
           <q-checkbox
             v-model="layer.visible"
-            :label="$t(`layer.${layer.id}`)" 
+            :label="$t(`layer.${layer.id}`)"
             @click="onToggleLayer(layer.id)"
           />
-        </q-item-section> 
+        </q-item-section>
         <q-item-section avatar>
-          <q-btn 
+          <q-btn
             flat
             round
             icon="help_outline"
@@ -148,9 +149,9 @@
           />
         </q-item-section>
       </q-item>
-    
+
       <q-item-label header class="text-h6">
-        <q-icon name="info" class="q-pb-xs"/>
+        <q-icon name="info" class="q-pb-xs" />
         <span class="q-ml-sm">{{ $t('legends') }}</span>
       </q-item-label>
       <q-item-label>
@@ -162,13 +163,18 @@
         </q-item-section>
         <q-item-section>{{ $t(cluster.label) }}</q-item-section>
       </q-item>
-      <q-item-label class=" q-mt-md">
+      <q-item-label class="q-mt-md">
         <span class="q-ml-md">{{ $t('climate_zones') }}</span>
       </q-item-label>
       <q-item>
         <div class="row">
-          <div v-for="zone in climateZonesColors" :key="zone.color" :title="zone.title" class="col-4">
-            <q-icon name="square" :style="`color: ${zone.color}`" size="sm"/>
+          <div
+            v-for="zone in climateZonesColors"
+            :key="zone.color"
+            :title="zone.title"
+            class="col-4"
+          >
+            <q-icon name="square" :style="`color: ${zone.color}`" size="sm" />
             <span class="q-pl-md">{{ zone.label }}</span>
           </div>
         </div>
@@ -183,7 +189,14 @@ export default defineComponent({
 });
 </script>
 <script setup lang="ts">
-import { climateOptions, ventilationOptions, buildingTypeOptions, populationOptions, outdoorEnvOptions, vocOptions } from 'src/utils/options';
+import {
+  climateOptions,
+  ventilationTypeOptions,
+  buildingTypeOptions,
+  populationOptions,
+  outdoorEnvOptions,
+  vocOptions,
+} from 'src/utils/options';
 
 const mapStore = useMapStore();
 const helpStore = useHelpStore();
@@ -193,29 +206,29 @@ const route = useRoute();
 // mock filters
 const timeframe = ref({
   min: 2000,
-  max: 2025
+  max: 2025,
 });
 const buildingTypes = ref([]);
 const populations = ref([]);
 const outdoorEnvs = ref([]);
 const vocs = ref([]);
 
-const isMapPage = computed(() => route.path === '/map')
+const isMapPage = computed(() => route.path === '/map');
 
 const clusterColors = [
   {
     color: 'cyan-5',
-    label: '< 10'
-  },  
+    label: '< 10',
+  },
   {
     color: 'yellow-6',
-    label: '1 - 20'
+    label: '1 - 20',
   },
   {
     color: 'pink-3',
-    label: '> 20'
-  }
-]
+    label: '> 20',
+  },
+];
 
 const climateZonesColors = [
   { color: '#0000fe', label: 'Af', title: 'Tropical, rainforest' },
@@ -225,30 +238,78 @@ const climateZonesColors = [
   { color: '#ff9696', label: 'BWk', title: 'Arid, desert, cold' },
   { color: '#f4a400', label: 'BSh', title: 'Arid, steppe, hot' },
   { color: '#fedb63', label: 'BSk', title: 'Arid, steppe, cold' },
-  { color: '#ffff00', label: 'Csa', title: 'Temperate, dry summer, hot summer' },
-  { color: '#c8c800', label: 'Csb', title: 'Temperate, dry summer, warm summer' },
-  { color: '#959500', label: 'Csc', title: 'Temperate, dry summer, cold summer' },
-  { color: '#96ff96', label: 'Cwa', title: 'Temperate, dry winter, hot summer' },
-  { color: '#63c763', label: 'Cwb', title: 'Temperate, dry winter, warm summer' },
-  { color: '#319531', label: 'Cwc', title: 'Temperate, dry winter, cold summer' },
-  { color: '#c8ff50', label: 'Cfa', title: 'Temperate, no dry season, hot summer' },
-  { color: '#63fe31', label: 'Cfb', title: 'Temperate, no dry season, warm summer' },
-  { color: '#32c800', label: 'Cfc', title: 'Temperate, no dry season, cold summer' },
+  {
+    color: '#ffff00',
+    label: 'Csa',
+    title: 'Temperate, dry summer, hot summer',
+  },
+  {
+    color: '#c8c800',
+    label: 'Csb',
+    title: 'Temperate, dry summer, warm summer',
+  },
+  {
+    color: '#959500',
+    label: 'Csc',
+    title: 'Temperate, dry summer, cold summer',
+  },
+  {
+    color: '#96ff96',
+    label: 'Cwa',
+    title: 'Temperate, dry winter, hot summer',
+  },
+  {
+    color: '#63c763',
+    label: 'Cwb',
+    title: 'Temperate, dry winter, warm summer',
+  },
+  {
+    color: '#319531',
+    label: 'Cwc',
+    title: 'Temperate, dry winter, cold summer',
+  },
+  {
+    color: '#c8ff50',
+    label: 'Cfa',
+    title: 'Temperate, no dry season, hot summer',
+  },
+  {
+    color: '#63fe31',
+    label: 'Cfb',
+    title: 'Temperate, no dry season, warm summer',
+  },
+  {
+    color: '#32c800',
+    label: 'Cfc',
+    title: 'Temperate, no dry season, cold summer',
+  },
   { color: '#fe00fe', label: 'Dsa', title: 'Cold, dry summer, hot summer' },
   { color: '#c800c8', label: 'Dsb', title: 'Cold, dry summer, warm summer' },
   { color: '#963196', label: 'Dsc', title: 'Cold, dry summer, cold summer' },
-  { color: '#966496', label: 'Dsd', title: 'Cold, dry summer, very cold winter' },
+  {
+    color: '#966496',
+    label: 'Dsd',
+    title: 'Cold, dry summer, very cold winter',
+  },
   { color: '#aaafff', label: 'Dwa', title: 'Cold, dry winter, hot summer' },
   { color: '#5977db', label: 'Dwb', title: 'Cold, dry winter, warm summer' },
   { color: '#4b50b4', label: 'Dwc', title: 'Cold, dry winter, cold summer' },
-  { color: '#320087', label: 'Dwd', title: 'Cold, dry winter, very cold winter' },
+  {
+    color: '#320087',
+    label: 'Dwd',
+    title: 'Cold, dry winter, very cold winter',
+  },
   { color: '#00ffff', label: 'Dfa', title: 'Cold, no dry season, hot summer' },
   { color: '#37c8ff', label: 'Dfb', title: 'Cold, no dry season, warm summer' },
   { color: '#007d7d', label: 'Dfc', title: 'Cold, no dry season, cold summer' },
-  { color: '#00455e', label: 'Dfd', title: 'Cold, no dry season, very cold winter' },
+  {
+    color: '#00455e',
+    label: 'Dfd',
+    title: 'Cold, no dry season, very cold winter',
+  },
   { color: '#b3b3b3', label: 'ET', title: 'Polar, tundra' },
   { color: '#656565', label: 'EF', title: 'Polar, frost' },
-]
+];
 
 function onToggleLayer(layerId: string) {
   mapStore.applyLayerVisibility(layerId);
@@ -260,7 +321,7 @@ function onResetFilters() {
   // mock filters
   timeframe.value = {
     min: 2000,
-    max: 2025
+    max: 2025,
   };
   buildingTypes.value = [];
   populations.value = [];

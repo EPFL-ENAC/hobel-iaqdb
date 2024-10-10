@@ -12,12 +12,14 @@
   },
   "glyphs": "https://orangemug.github.io/font-glyphs/glyphs/{fontstack}/{range}.pbf",
   "layers": [
-    { "id": "classic",
+    {
+      "id": "classic",
       "type": "raster",
       "source": "osm",
       "layout": { "visibility": "none" }
     },
-    { "id": "light",
+    {
+      "id": "light",
       "type": "raster",
       "source": "osm",
       "paint": {
@@ -26,7 +28,8 @@
       },
       "layout": { "visibility": "visible" }
     },
-    { "id": "dark",
+    {
+      "id": "dark",
       "type": "raster",
       "source": "osm",
       "paint": {

@@ -36,7 +36,6 @@
   </div>
 </template>
 
-
 <script lang="ts">
 export default defineComponent({
   name: 'PersonForm',
@@ -52,4 +51,10 @@ const props = defineProps<Props>();
 
 const person = ref(props.modelValue);
 
+watch(
+  () => props.modelValue,
+  (newValue) => {
+    person.value = newValue;
+  }
+);
 </script>

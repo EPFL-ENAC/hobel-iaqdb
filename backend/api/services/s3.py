@@ -21,6 +21,36 @@ class S3Client(object):
         self.s3_secret_access_key = s3_secret_access_key
         self.region = region
 
+    async def path_exists(self, file_path: str):
+        """Check if file exists in S3 storage
+
+        Args:
+            file_path (str): Path of the file in S3
+
+        Returns:
+            bool: True if file exists, False otherwise
+        """
+        key = file_path
+        if not file_path.startswith(config.S3_PATH_PREFIX):
+            key = f"{config.S3_PATH_PREFIX}{file_path}"
+
+        # check if file_path exists
+        session = get_session()
+        async with session.create_client(
+                's3',
+                region_name=self.region,
+                endpoint_url=self.s3_endpoint_url,
+                aws_secret_access_key=self.s3_secret_access_key,
+                aws_access_key_id=self.s3_access_key_id) as client:
+            try:
+                response = await client.head_object(
+                    Bucket=config.S3_BUCKET, Key=key)
+                if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
+                    return True
+            except Exception as e:
+                return False
+        return False
+
     async def get_file(self, file_path: str):
         """Extract file content and mimetype from S3 storage
 
@@ -30,24 +60,27 @@ class S3Client(object):
         Returns:
             Tuple: File content and mimetype
         """
+        key = file_path
+        if not file_path.startswith(config.S3_PATH_PREFIX):
+            key = f"{config.S3_PATH_PREFIX}{file_path}"
+
         # get file from file path
-        if file_path.startswith(config.S3_PATH_PREFIX):
-            session = get_session()
-            async with session.create_client(
-                    's3',
-                    region_name=self.region,
-                    endpoint_url=self.s3_endpoint_url,
-                    aws_secret_access_key=self.s3_secret_access_key,
-                    aws_access_key_id=self.s3_access_key_id) as client:
-                try:
-                    response = await client.get_object(
-                        Bucket=config.S3_BUCKET, Key=file_path)
-                    if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
-                        # Read the content of the S3 object
-                        file_content = await response['Body'].read()
-                        return file_content, response["ContentType"]
-                except Exception as e:
-                    return False, False
+        session = get_session()
+        async with session.create_client(
+                's3',
+                region_name=self.region,
+                endpoint_url=self.s3_endpoint_url,
+                aws_secret_access_key=self.s3_secret_access_key,
+                aws_access_key_id=self.s3_access_key_id) as client:
+            try:
+                response = await client.get_object(
+                    Bucket=config.S3_BUCKET, Key=key)
+                if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
+                    # Read the content of the S3 object
+                    file_content = await response['Body'].read()
+                    return file_content, response["ContentType"]
+            except Exception as e:
+                return False, False
         return False, False
 
     async def upload_local_file(self, parent_path, file_path: str, s3_folder: str = ""):
@@ -81,6 +114,66 @@ class S3Client(object):
         if upload_file.content_type in image_mimetypes:
             return await self._upload_image(upload_file, s3_folder)
         return await self._upload_file(upload_file, s3_folder)
+
+    async def move_file(self, file_path: str, destination_path: str):
+        """Move a file from one location to another in the same S3 storage
+
+        Args:
+            file_path (str): Path of the file in S3
+            destination_path (str): Destination path in S3
+
+        Returns:
+            Any: File path if deleted, False otherwise
+        """
+        source_key = file_path
+        if not file_path.startswith(config.S3_PATH_PREFIX):
+            source_key = f"{config.S3_PATH_PREFIX}{file_path}"
+
+        destination_key = destination_path
+        if not destination_path.startswith(config.S3_PATH_PREFIX):
+            destination_key = f"{config.S3_PATH_PREFIX}{destination_path}"
+
+        # copy to new location and delete source
+        res = await self.copy_file(source_key, destination_key)
+        if res is not False:
+            await self.delete_file(source_key)
+        return res
+
+    async def copy_file(self, file_path: str, destination_path: str):
+        """Copy a file from one location to another in the same S3 storage
+
+        Args:
+            file_path (str): Path of the file in S3
+            destination_path (str): Destination path in S3
+
+        Returns:
+            Any: File path if deleted, False otherwise
+        """
+        source_key = file_path
+        if not file_path.startswith(config.S3_PATH_PREFIX):
+            source_key = f"{config.S3_PATH_PREFIX}{file_path}"
+
+        destination_key = destination_path
+        if not destination_path.startswith(config.S3_PATH_PREFIX):
+            destination_key = f"{config.S3_PATH_PREFIX}{destination_path}"
+
+        # copy file_path to new location
+        session = get_session()
+        async with session.create_client(
+                's3',
+                region_name=self.region,
+                endpoint_url=self.s3_endpoint_url,
+                aws_secret_access_key=self.s3_secret_access_key,
+                aws_access_key_id=self.s3_access_key_id) as client:
+            response = await client.copy_object(
+                Bucket=config.S3_BUCKET,
+                CopySource={'Bucket': config.S3_BUCKET, 'Key': source_key},
+                Key=destination_key)
+            if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
+                logger.info(
+                    f"File copied path : {self.s3_endpoint_url}/{config.S3_BUCKET}/{destination_key}")
+                return destination_key
+        return False
 
     async def delete_file(self, file_path: str):
         """Delete file from S3 storage

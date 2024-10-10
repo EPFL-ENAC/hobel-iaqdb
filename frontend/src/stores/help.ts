@@ -4,7 +4,7 @@ export const useHelpStore = defineStore('help', () => {
   const show = ref(false);
   const content = ref('');
   const current = ref('');
-  
+
   async function toggleHelp(name: string) {
     if (current.value === name) {
       show.value = !show.value;
@@ -21,5 +21,4 @@ export const useHelpStore = defineStore('help', () => {
     content,
     toggleHelp,
   };
-
 });

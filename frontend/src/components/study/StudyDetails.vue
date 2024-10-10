@@ -11,13 +11,16 @@
         </div>
       </q-linear-progress>
     </div>
-    <fields-list :dbobject="study" :items="items"/>
+    <fields-list :dbobject="study" :items="items" />
     <div class="text-bold q-mt-md">{{ $t('Contributors') }}</div>
-    <template v-for="contributor in study?.contributors" :key="contributor.email">
-      <fields-list :dbobject="contributor" :items="contactItems"/>
+    <template
+      v-for="contributor in study?.contributors"
+      :key="contributor.email"
+    >
+      <fields-list :dbobject="contributor" :items="contactItems" />
     </template>
     <div class="text-bold q-mt-md">{{ $t('Marker paper') }}</div>
-    <fields-list :dbobject="study" :items="refItems"/>
+    <fields-list :dbobject="study" :items="refItems" />
     <div class="q-mt-md">
       <div class="text-bold">License</div>
       <div class="on-right q-mt-sm">
@@ -31,7 +34,6 @@
     </div>
   </div>
 </template>
-
 
 <script lang="ts">
 export default defineComponent({
@@ -48,45 +50,57 @@ const { t } = useI18n();
 
 const study = computed(() => catalogStore.study);
 
-const progress = computed(() => study.value?.start_year > 2024 ? 0 : study.value?.end_year > 2024 ? 0.5 : 1);
-const progressLabel = computed(() => progress.value <= 0 ? t('not_started') : progress.value >= 1 ? t('completed') : t('in_progress'))
+const progress = computed(() =>
+  study.value?.start_year > 2024 ? 0 : study.value?.end_year > 2024 ? 0.5 : 1,
+);
+const progressLabel = computed(() =>
+  progress.value <= 0
+    ? t('not_started')
+    : progress.value >= 1
+      ? t('completed')
+      : t('in_progress'),
+);
 
-const licenseLabel = computed(() => licenseOptions.find((lic) => lic.value === 'CC BY-SA')?.label)
-const licenseDescription = computed(() => licenseOptions.find((lic) => lic.value === 'CC BY-SA')?.description)
+const licenseLabel = computed(
+  () => licenseOptions.find((lic) => lic.value === 'CC BY-SA')?.label,
+);
+const licenseDescription = computed(
+  () => licenseOptions.find((lic) => lic.value === 'CC BY-SA')?.description,
+);
 
 const items: FieldItem<Study>[] = [
   { field: 'website', label: 'Website' },
   { field: 'building_count', label: 'Building count' },
   { field: 'space_count', label: 'Space count' },
-]
+];
 
 const refItems: FieldItem<Study>[] = [
   {
     field: 'citation',
-    label: 'Citation'
+    label: 'Citation',
   },
   {
     field: 'doi',
-    label: 'DOI'
+    label: 'DOI',
   },
-]
+];
 
 const contactItems: FieldItem<Study | Person>[] = [
   {
     field: 'contact',
     label: 'Name',
-    html: (val: Study) => val.name
+    html: (val: Study) => val.name,
   },
   {
     field: 'contact',
     label: 'Email',
-    html: (val: Study) => `&lt;<a href="mailto:${val.email}">${val.email}</a>&gt;`
+    html: (val: Study) =>
+      `&lt;<a href="mailto:${val.email}">${val.email}</a>&gt;`,
   },
   {
     field: 'contact',
     label: 'Institution',
-    html: (val: Study) => val.institution
+    html: (val: Study) => val.institution,
   },
-]
-
+];
 </script>

@@ -37,15 +37,39 @@
     <div class="row q-col-gutter-md">
       <div class="col">
         <q-select
-          v-model="space.ventilation_strategy"
-          :options="ventilationOptions"
+          v-model="space.ventilation_status"
+          :options="ventilationStatusOptions"
           filled
           emit-value
           map-options
-          :label="$t('study.space.ventilation_strategy')"
-          :hint="$t('study.space.ventilation_strategy_hint')"
+          :label="$t('study.space.ventilation_status')"
+          :hint="$t('study.space.ventilation_status_hint')"
         />
       </div>
+      <div class="col">
+        <q-select
+          v-model="space.ventilation_type"
+          :options="ventilationTypeOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.space.ventilation_type')"
+          :hint="$t('study.space.ventilation_type_hint')"
+        />
+      </div>
+      <div class="col">
+        <q-select
+          v-model="space.windows_status"
+          :options="windowsStatusOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.space.windows_status')"
+          :hint="$t('study.space.windows_status_hint')"
+        />
+      </div>
+    </div>
+    <div class="row q-col-gutter-md q-mb-md">
       <div class="col">
         <q-input
           v-model.number="space.ventilation_rate"
@@ -55,8 +79,6 @@
           :hint="$t('study.space.ventilation_rate_hint')"
         />
       </div>
-    </div>
-    <div class="row q-col-gutter-md">
       <div class="col">
         <q-input
           v-model.number="space.air_change_rate"
@@ -79,35 +101,46 @@
     <div class="row q-col-gutter-md">
       <div class="col">
         <q-select
-          v-model="space.cooling_strategy"
-          :options="ventilationOptions"
+          v-model="space.cooling_status"
+          :options="coolingStatusOptions"
           filled
           emit-value
           map-options
-          :label="$t('study.space.cooling_strategy')"
-          :hint="$t('study.space.cooling_strategy_hint')"
+          :label="$t('study.space.cooling_status')"
+          :hint="$t('study.space.cooling_status_hint')"
         />
       </div>
       <div class="col">
         <q-select
-          v-model="space.heating_strategy"
-          :options="ventilationOptions"
+          v-model="space.cooling_type"
+          :options="coolingTypeOptions"
           filled
           emit-value
           map-options
-          :label="$t('study.space.heating_strategy')"
-          :hint="$t('study.space.heating_strategy_hint')"
+          :label="$t('study.space.cooling_type')"
+          :hint="$t('study.space.cooling_type_hint')"
         />
       </div>
       <div class="col">
         <q-select
-          v-model="space.standalone_air_filtration"
-          :options="yesNoOptions"
+          v-model="space.heating_status"
+          :options="heatingStatusOptions"
           filled
           emit-value
           map-options
-          :label="$t('study.space.standalone_air_filtration')"
-          :hint="$t('study.space.standalone_air_filtration_hint')"
+          :label="$t('study.space.heating_status')"
+          :hint="$t('study.space.heating_status_hint')"
+        />
+      </div>
+      <div class="col">
+        <q-select
+          v-model="space.heating_type"
+          :options="heatingTypeOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.space.heating_type')"
+          :hint="$t('study.space.heating_type_hint')"
         />
       </div>
     </div>
@@ -128,7 +161,7 @@
       <div class="col">
         <q-select
           v-model="space.major_combustion_sources"
-          :options="yesNoOptions"
+          :options="majorCombustionSourcesOptions"
           filled
           emit-value
           map-options
@@ -138,13 +171,13 @@
       </div>
       <div class="col">
         <q-select
-          v-model="space.small_combustion_sources"
-          :options="yesNoOptions"
+          v-model="space.minor_combustion_sources"
+          :options="minorCombustionSourcesOptions"
           filled
           emit-value
           map-options
-          :label="$t('study.space.small_combustion_sources')"
-          :hint="$t('study.space.small_combustion_sources_hint')"
+          :label="$t('study.space.minor_combustion_sources')"
+          :hint="$t('study.space.minor_combustion_sources_hint')"
         />
       </div>
     </div>
@@ -188,43 +221,40 @@
     <div class="row q-col-gutter-md q-mb-md">
       <div class="col">
         <q-select
-          v-model="space.visible_dampness"
+          v-model="space.dampness"
           :options="yesNoOptions"
           filled
           emit-value
           map-options
-          :label="$t('study.space.visible_dampness')"
-          :hint="$t('study.space.visible_dampness_hint')"
+          :label="$t('study.space.dampness')"
+          :hint="$t('study.space.dampness_hint')"
         />
       </div>
       <div class="col">
         <q-select
-          v-model="space.visible_mold"
+          v-model="space.mold"
           :options="yesNoOptions"
           filled
           emit-value
           map-options
-          :label="$t('study.space.visible_mold')"
-          :hint="$t('study.space.visible_mold_hint')"
+          :label="$t('study.space.mold')"
+          :hint="$t('study.space.mold_hint')"
         />
       </div>
       <div class="col">
         <q-select
-          v-model="space.cleaning_with_detergents"
+          v-model="space.detergents"
           :options="yesNoOptions"
           filled
           emit-value
           map-options
-          :label="$t('study.space.cleaning_with_detergents')"
-          :hint="$t('study.space.cleaning_with_detergents_hint')"
+          :label="$t('study.space.detergents')"
+          :hint="$t('study.space.detergents_hint')"
         />
       </div>
     </div>
-
-
   </div>
 </template>
-
 
 <script lang="ts">
 export default defineComponent({
@@ -232,7 +262,20 @@ export default defineComponent({
 });
 </script>
 <script setup lang="ts">
-import { spaceTypeOptions, occupancyOptions, ventilationOptions, yesNoOptions } from 'src/utils/options';
+import {
+  spaceTypeOptions,
+  occupancyOptions,
+  ventilationStatusOptions,
+  ventilationTypeOptions,
+  windowsStatusOptions,
+  coolingStatusOptions,
+  coolingTypeOptions,
+  heatingStatusOptions,
+  heatingTypeOptions,
+  minorCombustionSourcesOptions,
+  majorCombustionSourcesOptions,
+  yesNoOptions,
+} from 'src/utils/options';
 import { Building, Space } from 'src/models';
 
 interface Props {
@@ -241,15 +284,9 @@ interface Props {
 }
 const props = defineProps<Props>();
 
-const contrib = useContributeStore();
-
 const space = ref(props.modelValue);
 
-function onAddPeriod() {
-  contrib.addPeriod(props.building.identifier, space.value.identifier);
-}
-
-function onDeletePeriod(i: number) {
-  contrib.deletePeriod(props.building.identifier, space.value.identifier, i);
-}
+watch(() => props.modelValue, (val) => {
+  space.value = val;
+});
 </script>

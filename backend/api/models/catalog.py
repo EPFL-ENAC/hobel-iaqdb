@@ -75,6 +75,7 @@ class StudyDraft(StudyRead):
     id: Optional[int] = Field(default=None)
     buildings: List["BuildingDraft"] = []
     instruments: List["InstrumentDraft"] = []
+    datasets: List["DatasetDraft"] = []
 
 
 # Buildings
@@ -326,6 +327,14 @@ class Variable(VariableBase, table=True):
     dataset: Optional[Dataset] = Relationship(back_populates="variables")
 
 
+class DatasetRead(DatasetBase):
+    id: int
+    variables: List[Variable] = []
+
+
+class DatasetDraft(DatasetRead):
+    id: Optional[int] = Field(default=None)
+
 #
 # Results
 #
@@ -354,4 +363,4 @@ class InstrumentsResult(ListResult):
 
 
 class DatasetsResult(ListResult):
-    data: List[Dataset]
+    data: List[DatasetRead]

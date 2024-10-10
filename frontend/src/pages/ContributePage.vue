@@ -4,7 +4,9 @@
       <div class="row">
         <div class="col"></div>
         <div class="col-8">
-          <span class="text-h4 text-weight-light">{{ $t('contribute_title') }}</span>
+          <span class="text-h4 text-weight-light">{{
+            $t('contribute_title')
+          }}</span>
         </div>
         <div class="col"></div>
       </div>
@@ -27,18 +29,24 @@
           />
           <q-btn
             color="secondary"
-            flat
+            :flat="!contrib.inProgress"
             :label="$t('resume')"
+            :disable="!contrib.inProgress"
             @click="onResume"
             class="q-mt-lg on-right"
           />
         </div>
         <div v-else>
-          <study-stepper class="q-mt-md" @pause="showIntro = true" @finish="onFinish"/>
+          <study-stepper
+            class="q-mt-md"
+            @pause="showIntro = true"
+            @finish="onFinish"
+          />
         </div>
       </div>
       <div class="col"></div>
     </div>
+    <study-start-dialog v-model="showStart" @started="onStarted" />
     <study-upload-dialog v-model="showUpload" @close="onUploaded" />
   </q-page>
 </template>
@@ -47,14 +55,19 @@
 import ContributeMd from 'src/assets/contribute.md';
 import StudyStepper from 'src/components/contribute/StudyStepper.vue';
 import StudyUploadDialog from 'src/components/contribute/StudyUploadDialog.vue';
+import StudyStartDialog from 'src/components/contribute/StudyStartDialog.vue';
 
 const contrib = useContributeStore();
 
 const showIntro = ref(true);
+const showStart = ref(false);
 const showUpload = ref(false);
 
 function onStart() {
-  contrib.reset();
+  showStart.value = true;
+}
+
+function onStarted() {
   showIntro.value = false;
 }
 

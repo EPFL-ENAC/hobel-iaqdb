@@ -1,36 +1,16 @@
 <template>
   <div>
-    <q-card class="q-mb-lg bg-grey-3">
-      <q-card-section>
-        <div class="row">
-          <q-icon name="lightbulb" class="on-left" style="margin-top: 10px;" />
-          <div class="q-mt-sm">Tip: you can prepopulate the study, buildings, spaces etc. forms using an Excel file.</div>
-          <q-btn label="Download Excel template" color="grey-8" icon="download" size="sm" outline no-caps class="on-right" style="margin-top: 7px" />
-        </div>
-        <div class="row q-mt-md q-ml-md">
-          <q-file
-            outlined
-            dense
-            v-model="excelFile"
-            label="Import from Excel"
-            :disable="loading"
-            :loading="loading"
-            accept=".xlsx"
-            clearable
-            color="secondary"
-            @update:model-value="onExcelFileUpdated"
-          />
-        </div>
-      </q-card-section>
-    </q-card>
-
+    <div v-if="isUpdate" class="q-mb-md q-pa-md bg-secondary text-white">
+      You are currently editing the study draft
+      <q-badge class="q-pa-sm q-ml-sm" color="accent" :title="contrib.study.identifier">{{ contrib.study.identifier.split('-')[0] }}...</q-badge>
+    </div>
     <q-stepper
       v-model="step"
       header-nav
       ref="stepper"
       color="primary"
       animated
-      style="margin-bottom: 80px;"
+      style="margin-bottom: 80px"
     >
       <q-step
         :name="1"
@@ -39,17 +19,48 @@
         :done="step > 1"
         :header-nav="step > 1"
       >
+        <q-card v-if="!isUpdate" class="q-mb-lg bg-warning">
+          <q-card-section>
+            <div class="row">
+              <q-icon
+                name="lightbulb"
+                class="on-left"
+                style="margin-top: 10px"
+              />
+              <div class="q-mt-sm">
+                Tip: you can prepopulate the study, buildings, spaces etc. forms
+                using an Excel file.
+              </div>
+              <q-btn
+                label="Download Excel template"
+                color="black"
+                icon="download"
+                size="sm"
+                outline
+                no-caps
+                class="on-right"
+                style="margin-top: 7px"
+                @click="onDownloadExcelTemplate"
+              />
+            </div>
+            <div class="row q-mt-md q-ml-md">
+              <q-file
+                outlined
+                dense
+                v-model="excelFile"
+                label="Import from Excel"
+                :disable="loading"
+                :loading="loading"
+                accept=".xlsx"
+                clearable
+                color="black"
+                @update:model-value="onExcelFileUpdated"
+              />
+            </div>
+          </q-card-section>
+        </q-card>
         <q-markdown no-heading-anchor-links :src="StepStudyMd" />
-        <study-form class="q-mt-lg"/>
-
-        <q-stepper-navigation class="stepper-nav" >
-          <q-card bordered class="bg-grey-4">
-            <q-card-section>
-              <q-btn @click="() => { done1 = true; step = 2 }" color="primary" label="Continue" />
-              <q-btn @click="onPause" flat color="secondary" label="Pause" class="on-right" />
-            </q-card-section>
-          </q-card>
-        </q-stepper-navigation>
+        <study-form class="q-mt-lg" />
       </q-step>
 
       <q-step
@@ -60,17 +71,7 @@
         :header-nav="step > 2"
       >
         <q-markdown no-heading-anchor-links :src="StepBuildingsMd" />
-        <buildings-form class="q-mt-lg"/>
-
-        <q-stepper-navigation  class="stepper-nav" >
-          <q-card bordered class="bg-grey-4">
-            <q-card-section>
-              <q-btn flat @click="step = 1" color="primary" label="Back" class="on-left" />
-              <q-btn @click="() => { done2 = true; step = 3 }" color="primary" label="Continue" />
-              <q-btn @click="onPause" flat color="secondary" label="Pause" class="on-right" />
-            </q-card-section>
-          </q-card>
-        </q-stepper-navigation>
+        <buildings-form class="q-mt-lg" />
       </q-step>
 
       <q-step
@@ -81,17 +82,7 @@
         :header-nav="step > 3"
       >
         <q-markdown no-heading-anchor-links :src="StepInstrumentsMd" />
-        <instruments-form class="q-mt-lg"/>
-
-        <q-stepper-navigation class="stepper-nav">
-          <q-card bordered class="bg-grey-4">
-            <q-card-section>
-              <q-btn flat @click="step = 2" color="primary" label="Back" class="on-left" />
-              <q-btn @click="() => { done3 = true; step = 4 }" color="primary" label="Continue" />
-              <q-btn @click="onPause" flat color="secondary" label="Pause" class="on-right" />
-            </q-card-section>
-          </q-card>
-        </q-stepper-navigation>
+        <instruments-form class="q-mt-lg" />
       </q-step>
 
       <q-step
@@ -101,21 +92,58 @@
         :header-nav="step > 4"
       >
         <q-markdown no-heading-anchor-links :src="StepDatasetsMd" />
-        <datasets-form class="q-mt-lg"/>
-        <q-stepper-navigation class="stepper-nav">
-          <q-card bordered class="bg-grey-4">
-            <q-card-section>
-              <q-btn flat @click="step = 3" color="primary" label="Back" class="on-left" />
-              <q-btn color="primary" @click="onFinish" label="Finish" />
-              <q-btn @click="onPause" flat color="secondary" label="Pause" class="on-right" />
-            </q-card-section>
-          </q-card>
-        </q-stepper-navigation>
+
+        <div>
+          <q-btn
+            label="Download Dictionary Reference"
+            color="black"
+            icon="download"
+            size="sm"
+            outline
+            no-caps
+            class="q-mt-md"
+            @click="onDownloadDictionaryReference"
+          />
+        </div>
+
+        <datasets-form class="q-mt-lg" />
       </q-step>
     </q-stepper>
+
+    <q-card bordered class="bg-grey-4 stepper-nav">
+      <q-card-section>
+        <q-btn
+          v-if="step > 1"
+          flat
+          @click="onPreviousStep"
+          color="primary"
+          label="Back"
+          class="on-left"
+        />
+        <q-btn
+          v-if="step < 4"
+          @click="onNextStep"
+          :disable="!canNext"
+          color="primary"
+          label="Continue"
+        />
+        <q-btn
+          v-if="step === 4"
+          color="primary"
+          @click="onFinish"
+          label="Finish"
+        />
+        <q-btn
+          @click="onPause"
+          flat
+          color="secondary"
+          label="Pause"
+          class="on-right"
+        />
+      </q-card-section>
+    </q-card>
   </div>
 </template>
-
 
 <script lang="ts">
 export default defineComponent({
@@ -132,6 +160,7 @@ import StudyForm from 'src/components/contribute/StudyForm.vue';
 import BuildingsForm from 'src/components/contribute/BuildingsForm.vue';
 import InstrumentsForm from 'src/components/contribute/InstrumentsForm.vue';
 import DatasetsForm from 'src/components/contribute/DatasetsForm.vue';
+import { baseUrl } from 'src/boot/api';
 
 const emit = defineEmits(['pause', 'finish']);
 
@@ -141,6 +170,42 @@ const excelFile = ref<File | null>(null);
 const loading = ref(false);
 const step = ref(1);
 
+const isUpdate = computed(() => contrib.study.identifier && contrib.study.identifier !== '_draft');
+
+const canNext = computed(() => {
+  if (step.value === 1) {
+    // TODO study validation
+    return contrib.inProgress;
+  } else if (step.value === 2) {
+    // TODO buildings validation
+    return (
+      contrib.study.buildings &&
+      contrib.study.buildings.length > 0 &&
+      contrib.study.buildings.every(
+        (b) =>
+          b.identifier &&
+          b.spaces &&
+          b.spaces.length > 0 &&
+          b.spaces.every((s) => s.identifier),
+      )
+    );
+  } else if (step.value === 3) {
+    // TODO instruments validation
+    return (
+      contrib.study.instruments &&
+      contrib.study.instruments.length > 0 &&
+      contrib.study.instruments.every(
+        (i) =>
+          i.identifier &&
+          i.parameters &&
+          i.parameters.length > 0 &&
+          i.parameters.every((p) => p.physical_parameter),
+      )
+    );
+  }
+  return false;
+});
+
 function onPause() {
   emit('pause');
 }
@@ -149,13 +214,30 @@ function onFinish() {
   emit('finish');
 }
 
+function onPreviousStep() {
+  step.value -= 1;
+}
+
+function onNextStep() {
+  step.value += 1;
+}
+
+function onDownloadExcelTemplate() {
+  window.open(`${baseUrl}/contribute/study-template`);
+}
+
+function onDownloadDictionaryReference() {
+  window.open(`${baseUrl}/contribute/dataset-dictionary`);
+}
+
 function onExcelFileUpdated() {
   if (excelFile.value) {
     loading.value = true;
-    contrib.readExcel(excelFile.value)
-      .then(() => step.value = 1)
+    contrib
+      .readExcel(excelFile.value)
+      .then(() => (step.value = 1))
       .catch((err) => console.error(err))
-      .finally(() => loading.value = false);
+      .finally(() => (loading.value = false));
   }
 }
 </script>

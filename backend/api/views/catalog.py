@@ -1,11 +1,12 @@
 from typing import List
-from fastapi import APIRouter, Security, Depends, Query
+from fastapi import APIRouter, Security, Depends, Query, Body
 from fastapi.datastructures import UploadFile
 from fastapi.param_functions import File
 from api.db import get_session, AsyncSession
 from api.auth import get_api_key
 from api.services.study import StudyService
 from api.services.study_parser import StudyParser
+from api.services.study_draft import StudyDraftService
 from api.services.building import BuildingService
 from api.services.space import SpaceService
 from api.services.instrument import InstrumentService
@@ -15,17 +16,6 @@ from api.utils.query import paramAsArray, paramAsDict
 from api.utils.file_size import size_checker
 
 router = APIRouter()
-
-
-@router.post("/study-excel",
-             status_code=200,
-             dependencies=[Depends(size_checker)],
-             response_model=StudyDraft)
-async def read_study_from_excel(
-    files: UploadFile = File(
-        description="Excel file containing study, building, space descriptions")):
-    study = StudyParser().parse(files.file._file)
-    return study
 
 
 @router.get("/studies", response_model=StudiesResult)

@@ -38,8 +38,8 @@ export interface Building extends DBModel {
   special_population?: string;
   other_special_population?: string;
   smoking?: string;
-  spaces?: Space[]
-  certifications?: Certification[]
+  spaces?: Space[];
+  certifications?: Certification[];
 }
 
 interface ListResult {
@@ -49,7 +49,7 @@ interface ListResult {
 }
 
 export interface BuildingsResult extends ListResult {
-  data: Building[]
+  data: Building[];
 }
 
 export interface Study extends DBModel {
@@ -72,10 +72,11 @@ export interface Study extends DBModel {
   contributors?: Person[];
   buildings?: Building[];
   instruments?: Instrument[];
+  datasets?: Dataset[];
 }
 
 export interface StudiesResult extends ListResult {
-  data: Study[]
+  data: Study[];
 }
 
 export interface Space extends DBModel {
@@ -87,7 +88,7 @@ export interface Space extends DBModel {
   windows_status?: string;
   ventilation_rate?: number;
   air_change_rate?: number;
-  particle_filtration_rating: number;
+  particle_filtration_rating?: number;
   cooling_status?: string;
   cooling_type?: string;
   other_cooling_type?: string;
@@ -107,7 +108,7 @@ export interface Space extends DBModel {
 }
 
 export interface SpacesResult extends ListResult {
-  data: Space[]
+  data: Space[];
 }
 
 export interface Instrument extends DBModel {
@@ -126,5 +127,35 @@ export interface InstrumentParameter extends DBModel {
 }
 
 export interface InstrumentsResult extends ListResult {
-  data: Instrument[]
+  data: Instrument[];
+}
+
+export interface Variable extends DBModel {
+  name: string;
+  type: string;
+  unit?: string;
+  format?: string;
+  reference?: string;
+}
+
+export interface Dataset extends DBModel {
+  name: string;
+  description?: string;
+  folder: FileNode;
+  variables?: Variable[];
+}
+
+export interface FileNode {
+  name: string;
+  path: string;
+  size: number | undefined;
+  alt_name: string | undefined;
+  alt_path: string | undefined;
+  alt_size: number | undefined;
+  is_file: boolean;
+  children: FileNode[] | undefined;
+}
+
+export interface UploadResult {
+  files: FileNode[];
 }

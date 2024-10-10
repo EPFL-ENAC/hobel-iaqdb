@@ -99,31 +99,47 @@
     </div>
 
     <div class="text-bold q-mb-sm q-mt-lg">Data contributors</div>
-    <div class="text-help q-mb-sm">Information about the data contributors who may be contacted for further details.</div>
+    <div class="text-help q-mb-sm">
+      Information about the data contributors who may be contacted for further
+      details.
+    </div>
     <q-card flat bordered class="q-mb-md bg-grey-2">
       <q-card-section>
-        <div v-if="contrib.study.contributors?.length === 0" class="text-help">No contributors defined yet.</div>
+        <div v-if="contrib.study.contributors?.length === 0" class="text-help">
+          No contributors defined yet.
+        </div>
         <q-list v-if="contrib.study.contributors?.length" separator>
-          <q-item v-for="(person, i) in contrib.study.contributors" :key="person.id" class="q-pl-none q-pr-none">
+          <q-item
+            v-for="(person, i) in contrib.study.contributors"
+            :key="person.id"
+            class="q-pl-none q-pr-none"
+          >
             <q-item-section>
-              <person-form v-model="contrib.study.contributors[i]"/>
+              <person-form v-model="contrib.study.contributors[i]" />
             </q-item-section>
             <q-item-section side>
               <q-btn
                 rounded
                 dense
                 flat
-                color="grey-6"
+                color="negative"
                 :title="$t('delete')"
                 icon="delete"
                 class="q-ml-xs"
-                @click="onDeleteContributor(i)" />
+                @click="onDeleteContributor(i)"
+              />
             </q-item-section>
           </q-item>
         </q-list>
       </q-card-section>
       <q-card-actions class="bg-grey-3 q-pa-md">
-        <q-btn @click="onAddContributor" color="secondary" label="Add contributor" icon="add" size="sm" />
+        <q-btn
+          @click="onAddContributor"
+          color="secondary"
+          label="Add contributor"
+          icon="add"
+          size="sm"
+        />
       </q-card-actions>
     </q-card>
     <div class="text-bold q-mb-md">Publication reference</div>
@@ -183,7 +199,9 @@
             <q-item v-bind="scope.itemProps">
               <q-item-section>
                 <q-item-label>{{ scope.opt.label }}</q-item-label>
-                <q-item-label caption style="max-width: 500px">{{ scope.opt.description }}</q-item-label>
+                <q-item-label caption style="max-width: 500px">{{
+                  scope.opt.description
+                }}</q-item-label>
               </q-item-section>
             </q-item>
           </template>
@@ -193,7 +211,6 @@
   </div>
 </template>
 
-
 <script lang="ts">
 export default defineComponent({
   name: 'StudyForm',
@@ -201,7 +218,11 @@ export default defineComponent({
 </script>
 <script setup lang="ts">
 import PersonForm from './PersonFom.vue';
-import { occupantImpactOptions, otherIndoorParamOptions, licenseOptions } from 'src/utils/options';
+import {
+  occupantImpactOptions,
+  otherIndoorParamOptions,
+  licenseOptions,
+} from 'src/utils/options';
 
 const contrib = useContributeStore();
 

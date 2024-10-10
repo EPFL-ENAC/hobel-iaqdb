@@ -7,8 +7,8 @@
         $q.screen.lt.sm
           ? 'height: 144px'
           : $q.screen.lt.md
-          ? 'height: 136px'
-          : 'height: 220px'
+            ? 'height: 136px'
+            : 'height: 220px'
       "
     >
       <div
@@ -19,15 +19,17 @@
         style="background: transparent"
       >
         <div class="col-2"></div>
-        <div class="col-lg-3 col-md-5 col-sm-5 col-xs-6 q-pl-md text-black bg-white"
-            style="opacity: 0.6;">
+        <div
+          class="col-lg-3 col-md-5 col-sm-5 col-xs-6 q-pl-md text-black bg-white"
+          style="opacity: 0.6"
+        >
           <div
             :class="
               $q.screen.lt.sm
                 ? 'text-h4'
                 : $q.screen.lt.md
-                ? 'text-h4'
-                : 'text-h2'
+                  ? 'text-h4'
+                  : 'text-h2'
             "
             class="text-weight-thin"
           >
@@ -38,8 +40,8 @@
               $q.screen.lt.sm
                 ? 'text-subtitle1'
                 : $q.screen.lt.md
-                ? 'text-h6'
-                : 'text-h5'
+                  ? 'text-h6'
+                  : 'text-h5'
             "
             class="text-black"
           >

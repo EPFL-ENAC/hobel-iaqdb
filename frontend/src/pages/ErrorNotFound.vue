@@ -5,7 +5,9 @@
     <div>
       <div style="font-size: 30vh">404</div>
 
-      <div class="text-h4" style="opacity: 0.4">{{ $t('error_not_found') }}</div>
+      <div class="text-h4" style="opacity: 0.4">
+        {{ $t('error_not_found') }}
+      </div>
 
       <q-btn
         class="q-mt-xl"

@@ -27,7 +27,6 @@
         <space-list />
       </q-tab-panel>
     </q-tab-panels>
-    
   </q-page>
 </template>
 
@@ -37,5 +36,4 @@ import BuildingList from 'src/components/BuildingList.vue';
 import SpaceList from 'src/components/SpaceList.vue';
 
 const tab = ref('studies');
-
 </script>

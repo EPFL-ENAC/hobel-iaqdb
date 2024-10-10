@@ -59,11 +59,17 @@ p:last-child {
 }
 
 .stepper-nav {
-  position: fixed; 
+  position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   margin: auto;
   width: 320px;
   text-align: center;
+}
+
+.q-popup-edit__buttons {
+  button {
+    font-size: smaller;
+  }
 }

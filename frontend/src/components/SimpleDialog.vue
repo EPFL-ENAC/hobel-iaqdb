@@ -32,16 +32,18 @@ interface Props {
   content?: string;
 }
 const props = defineProps<Props>();
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue']);
 
 const showDialog = ref(props.modelValue);
 
-watch(() => props.modelValue, (value) => {
-  showDialog.value = value;
-});
+watch(
+  () => props.modelValue,
+  (value) => {
+    showDialog.value = value;
+  },
+);
 
 function onHide() {
   emit('update:modelValue', false);
 }
-
 </script>
