@@ -44,6 +44,12 @@
       <q-btn
         flat
         round
+        icon="settings"
+        :to="'/admin'"
+      ></q-btn>
+      <q-btn
+        flat
+        round
         icon="menu_book"
         :title="$t('resources')"
         @click="showResources = true"
@@ -54,8 +60,29 @@
         icon="info"
         :title="$t('introduction')"
         @click="showIntro = true"
-        class="on-left"
       ></q-btn>
+      <q-btn
+        flat
+        round
+        icon="account_circle"
+        class="on-left"
+      >
+        <q-popup-proxy>
+          <q-list class="bg-white">
+            <q-item clickable v-close-popup to="/profile">
+              <q-item-section>
+                <q-item-label v-if="authStore.isAuthenticated">{{ $t('profile') }}</q-item-label>
+                <q-item-label v-else>{{ $t('user.login') }}</q-item-label>
+              </q-item-section>
+            </q-item>
+            <q-item v-if="authStore.isAuthenticated" clickable v-close-popup @click="authStore.logout">
+              <q-item-section>
+                <q-item-label>{{ $t('user.logout') }}</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-popup-proxy>
+      </q-btn>
     </span>
     <q-btn v-if="$q.screen.lt.md" flat round icon="more_vert">
       <q-popup-proxy>
@@ -81,6 +108,11 @@
             </q-item-section>
           </q-item>
           <q-separator v-if="$q.screen.lt.sm" />
+          <q-item clickable v-close-popup :to="'/admin'">
+            <q-item-section>
+              <q-item-label>{{ $t('administration') }}</q-item-label>
+            </q-item-section>
+          </q-item>
           <q-item clickable v-close-popup @click="showResources = true">
             <q-item-section>
               <q-item-label>{{ $t('resources') }}</q-item-label>
@@ -89,6 +121,11 @@
           <q-item clickable v-close-popup @click="showIntro = true">
             <q-item-section>
               <q-item-label>{{ $t('introduction') }}</q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-item clickable v-close-popup :to="'/profile'">
+            <q-item-section>
+              <q-item-label>{{ $t('profile') }}</q-item-label>
             </q-item-section>
           </q-item>
         </q-list>
@@ -139,6 +176,7 @@ withDefaults(defineProps<Props>(), {
 const emit = defineEmits(['toggle']);
 
 const settingsStore = useSettingsStore();
+const authStore = useAuthStore();
 
 const showIntro = ref(false);
 const showResources = ref(false);

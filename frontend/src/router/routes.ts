@@ -14,6 +14,14 @@ const routes: RouteRecordRaw[] = [
         path: '/study/:id',
         component: () => import('src/pages/StudyPage.vue'),
       },
+      {
+        path: '/admin',
+        component: () => import('pages/AdminPage.vue'),
+      },
+      {
+        path: '/profile',
+        component: () => import('pages/ProfilePage.vue'),
+      },
     ],
   },
   {

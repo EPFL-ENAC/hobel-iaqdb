@@ -74,6 +74,7 @@ declare global {
   const triggerRef: typeof import('vue')['triggerRef']
   const unref: typeof import('vue')['unref']
   const useAttrs: typeof import('vue')['useAttrs']
+  const useAuthStore: typeof import('./stores/auth')['useAuthStore']
   const useCatalogStore: typeof import('./stores/catalog')['useCatalogStore']
   const useContributeStore: typeof import('./stores/contribute')['useContributeStore']
   const useCounterStore: (typeof import('./stores/help'))['useCounterStore']
