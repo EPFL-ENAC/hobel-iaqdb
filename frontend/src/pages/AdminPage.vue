@@ -15,9 +15,7 @@
         <div class="text-help q-mb-md">
           {{ $t('admin.contributions_info') }}
         </div>
-        <div>
-          TODO
-        </div>
+        <study-drafts-table />
       </div>
       <div v-else>
         <q-card class="bg-negative text-white">
@@ -31,12 +29,14 @@
 </template>
 
 <script setup lang="ts">
+import StudyDraftsTable from 'src/components/admin/StudyDraftsTable.vue';
+
 const authStore = useAuthStore();
 
 onMounted(() => {
    authStore.init().then(() => {
      if (!authStore.isAuthenticated) {
-       authStore.login();
+       return authStore.login();
      }
    });
 })

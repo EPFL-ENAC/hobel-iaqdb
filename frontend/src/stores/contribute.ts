@@ -23,6 +23,9 @@ import { FileObject, DataFile } from 'src/components/models';
 export const useContributeStore = defineStore(
   'contribute',
   () => {
+
+    const authStore = useAuthStore();
+
     const study = ref<Study>({
       id: 0,
       identifier: '',
@@ -277,6 +280,17 @@ export const useContributeStore = defineStore(
       });
     }
 
+    async function getDrafts() {
+      if (!authStore.isAuthenticated) return Promise.reject('Not authenticated');
+      return authStore.updateToken().then(() => 
+        api.get('/contribute/study-drafts', {
+          headers: {
+            Authorization: `Bearer ${authStore.accessToken}`,
+          },
+        })
+          .then((res) => res.data));
+    }
+
     async function saveOrUpdateDraft() {
       if (study.value.identifier !== '' && study.value.identifier !== '_draft') {
         return api.put(`/contribute/study-draft/${study.value.identifier}`, study.value)
@@ -329,6 +343,7 @@ export const useContributeStore = defineStore(
       readExcel,
       saveOrUpdateDraft,
       uploadTmpFiles,
+      getDrafts,
     };
   },
   { persist: true },

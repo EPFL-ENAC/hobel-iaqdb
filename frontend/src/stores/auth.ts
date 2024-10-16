@@ -1,4 +1,3 @@
-import { log } from 'console';
 import { defineStore } from 'pinia';
 import { keycloak } from 'src/boot/api';
 
@@ -16,6 +15,7 @@ export const useAuthStore = defineStore('auth', () => {
   const realmRoles = ref<string[]>([]);
   const isAuthenticated = computed(() => profile.value !== undefined);
   const isAdmin = computed(() => realmRoles.value.includes('admin'));
+  const accessToken = computed(() => keycloak.token);
 
   async function init() {
     if (isAuthenticated.value) return Promise.resolve(true);
@@ -65,6 +65,7 @@ export const useAuthStore = defineStore('auth', () => {
     isAdmin,
     profile,
     realmRoles,
+    accessToken,
     init,
     login,
     logout,
