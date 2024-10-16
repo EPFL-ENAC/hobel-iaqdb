@@ -173,6 +173,7 @@ declare module 'vue' {
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly unref: UnwrapRef<typeof import('vue')['unref']>
     readonly useAttrs: UnwrapRef<typeof import('vue')['useAttrs']>
+    readonly useAuthStore: UnwrapRef<typeof import('./stores/auth')['useAuthStore']>
     readonly useCatalogStore: UnwrapRef<typeof import('./stores/catalog')['useCatalogStore']>
     readonly useContributeStore: UnwrapRef<typeof import('./stores/contribute')['useContributeStore']>
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
@@ -263,6 +264,7 @@ declare module '@vue/runtime-core' {
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly unref: UnwrapRef<typeof import('vue')['unref']>
     readonly useAttrs: UnwrapRef<typeof import('vue')['useAttrs']>
+    readonly useAuthStore: UnwrapRef<typeof import('./stores/auth')['useAuthStore']>
     readonly useCatalogStore: UnwrapRef<typeof import('./stores/catalog')['useCatalogStore']>
     readonly useContributeStore: UnwrapRef<typeof import('./stores/contribute')['useContributeStore']>
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>

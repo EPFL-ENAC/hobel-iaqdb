@@ -5,7 +5,7 @@ import Keycloak from 'keycloak-js';
 const keycloak = new Keycloak({
     url: 'https://enac-it-sso.epfl.ch/',
     realm: 'HOBEL',
-    clientId: 'local-ui'
+    clientId: process.env.AUTH_CLIENT_ID
 });
 
 declare module '@vue/runtime-core' {
