@@ -18,7 +18,8 @@
         </q-td>
       </template>
     </q-table>
-    <study-draft-dialog v-model="showDialog" />
+    <study-draft-dialog v-model="showDialog" @save="onSave"/>
+    <study-upload-dialog v-model="showUpload" @close="onUploadClose"/>
   </div>
 </template>
 
@@ -30,6 +31,7 @@ export default defineComponent({
 <script setup lang="ts">  
 import { Study, Building, Instrument, Dataset } from 'src/models';
 import StudyDraftDialog from 'src/components/admin/StudyDraftDialog.vue';
+import StudyUploadDialog from 'src/components/contribute/StudyUploadDialog.vue';
 
 const authStore = useAuthStore();
 const contrib = useContributeStore();
@@ -44,6 +46,7 @@ const studyDrafts = ref<Study[]>([]);
   rowsPerPage: 5,
 });
 const showDialog = ref(false);
+const showUpload = ref(false);
 
 onMounted(() => {
   fetchStudyDrafts();
@@ -85,5 +88,13 @@ function onRowDblClick(evt, row: Study) {
   contrib.load(row.identifier).then(() => {
     showDialog.value = true;
   });
+}
+
+function onSave() {
+  showUpload.value = true;
+}
+
+function onUploadClose() {
+  fetchStudyDrafts();
 }
 </script>

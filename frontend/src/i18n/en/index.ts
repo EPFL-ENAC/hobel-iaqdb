@@ -56,7 +56,7 @@ export default {
   voc_hint: 'Datasets with volatile organic compound measures.',
   study: {
     identifier: 'Identifier',
-    identifier_hint: 'Unique identifier of the study draft. Leave empty to start a new draft.',
+    identifier_hint: 'Unique identifier of the study draft.',
     name: 'Name',
     name_hint: 'Name of the project',
     description: 'Description',

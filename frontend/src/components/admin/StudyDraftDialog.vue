@@ -6,9 +6,10 @@
       </q-card-actions>
       <q-card-section>
         <study-stepper
-            class="q-mt-md"
-            @finish="onFinish"
-          />
+          class="q-mt-md"
+          dialog
+          @step="onStep"
+        />
       </q-card-section>
       <q-card-actions v-if="$q.screen.gt.xs" align="right">
         <q-btn
@@ -17,9 +18,9 @@
           v-close-popup
         />
         <q-btn
-          flat
           :label="$t('save')"
           color="primary"
+          :disable="!lastStep"
           v-close-popup
           @click="onSave"
         />
@@ -41,13 +42,17 @@ interface Props {
   modelValue: boolean;
 }
 const props = defineProps<Props>();
-const emit = defineEmits(['update:modelValue', 'saved']);
+const emit = defineEmits(['update:modelValue', 'save']);
 
 const showDialog = ref(props.modelValue);
+const lastStep = ref(false);
+const showUpload = ref(false);
 
 watch(
   () => props.modelValue,
   (value) => {
+    lastStep.value = false;
+    showUpload.value = false;
     showDialog.value = value;
   },
 );
@@ -56,7 +61,11 @@ function onHide() {
   emit('update:modelValue', false);
 }
 
+function onStep(step: number) {
+  lastStep.value = step === 4;
+}
+
 function onSave() {
-  emit('saved');
+  emit('save');
 }
 </script>

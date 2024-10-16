@@ -10,7 +10,7 @@
       ref="stepper"
       color="primary"
       animated
-      style="margin-bottom: 80px"
+      :style="dialog ? 'margin-bottom: 10px' : 'margin-bottom: 80px'"
     >
       <q-step
         :name="1"
@@ -110,7 +110,26 @@
       </q-step>
     </q-stepper>
 
-    <q-card bordered class="bg-grey-4 stepper-nav">
+    <q-card v-if="dialog" flat>
+      <q-card-section>
+        <q-btn
+          v-if="step > 1"
+          flat
+          @click="onPreviousStep"
+          color="primary"
+          label="Back"
+          class="on-left"
+        />
+        <q-btn
+          v-if="step < 4"
+          @click="onNextStep"
+          :disable="!canNext"
+          color="primary"
+          label="Continue"
+        />
+      </q-card-section>
+    </q-card>
+    <q-card v-else bordered class="bg-grey-4 stepper-nav">
       <q-card-section>
         <q-btn
           v-if="step > 1"
@@ -162,7 +181,11 @@ import InstrumentsForm from 'src/components/contribute/InstrumentsForm.vue';
 import DatasetsForm from 'src/components/contribute/DatasetsForm.vue';
 import { baseUrl } from 'src/boot/api';
 
-const emit = defineEmits(['pause', 'finish']);
+interface Props {
+  dialog?: boolean;
+}
+defineProps<Props>();
+const emit = defineEmits(['pause', 'finish', 'step']);
 
 const contrib = useContributeStore();
 
@@ -216,10 +239,12 @@ function onFinish() {
 
 function onPreviousStep() {
   step.value -= 1;
+  emit('step', step.value);
 }
 
 function onNextStep() {
   step.value += 1;
+  emit('step', step.value);
 }
 
 function onDownloadExcelTemplate() {
