@@ -15,6 +15,7 @@
         <q-btn
           flat
           :label="$t('cancel')"
+          color="secondary"
           v-close-popup
         />
         <q-btn

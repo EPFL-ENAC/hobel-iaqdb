@@ -8,8 +8,36 @@
       v-model:pagination="pagination"
       :loading="loading"
       row-key="identifier"
-      @row-dblclick="onRowDblClick"
     >
+      <template v-slot:body-cell-identifier="props">
+        <q-td :props="props">
+          <q-badge class="q-pa-xs" color="secondary" :title="props.value">{{ props.value.split('-')[0] }}...</q-badge>
+          <div class="float-right">
+            <q-btn
+              rounded
+              dense
+              flat
+              size="sm"
+              color="grey-8"
+              :title="$t('edit')"
+              icon="edit"
+              class="q-ml-xs"
+              @click="onShowEdit(props.row)"
+            />
+            <q-btn
+              rounded
+              dense
+              flat
+              size="sm"
+              color="grey-8"
+              :title="$t('delete')"
+              icon="delete"
+              class="q-ml-xs"
+              @click="onShowDelete(props.row)"
+            />
+          </div>
+        </q-td>
+      </template>
       <template v-slot:body-cell-contributors="props">
         <q-td :props="props">
           <div v-for="contributor in props.value" :key="contributor.email">
@@ -20,6 +48,7 @@
     </q-table>
     <study-draft-dialog v-model="showDialog" @save="onSave"/>
     <study-upload-dialog v-model="showUpload" @close="onUploadClose"/>
+    <confirm-dialog v-model="showDelete" :text="$t('confirm_study_draft_delete', { identifier: selected?.identifier })" @confirm="onDelete"/>
   </div>
 </template>
 
@@ -32,6 +61,7 @@ export default defineComponent({
 import { Study, Building, Instrument, Dataset } from 'src/models';
 import StudyDraftDialog from 'src/components/admin/StudyDraftDialog.vue';
 import StudyUploadDialog from 'src/components/contribute/StudyUploadDialog.vue';
+import ConfirmDialog from 'src/components/ConfirmDialog.vue';
 
 const authStore = useAuthStore();
 const contrib = useContributeStore();
@@ -47,6 +77,8 @@ const studyDrafts = ref<Study[]>([]);
 });
 const showDialog = ref(false);
 const showUpload = ref(false);
+const showDelete = ref(false);
+const selected = ref<Study | null>(null);
 
 onMounted(() => {
   fetchStudyDrafts();
@@ -84,10 +116,23 @@ async function fetchStudyDrafts() {
   });
 }
 
-function onRowDblClick(evt, row: Study) {
+function onShowEdit(row: Study) {
   contrib.load(row.identifier).then(() => {
     showDialog.value = true;
   });
+}
+
+function onShowDelete(row: Study) {
+  selected.value = row;
+  showDelete.value = true;
+}
+
+function onDelete() {
+  if (selected.value) {
+    contrib.deleteDraft(selected.value).then(() => {
+      fetchStudyDrafts();
+    });
+  }
 }
 
 function onSave() {

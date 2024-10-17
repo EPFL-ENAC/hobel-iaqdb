@@ -22,6 +22,7 @@ export default {
   administration: 'Administration',
   catalog: 'Catalog',
   contribute: 'Contribute',
+  confirm_study_draft_delete: 'Are you sure you want to delete the study draft "{identifier}"?',
   delete: 'Delete',
   download: 'Download',
   previous: 'Previous',

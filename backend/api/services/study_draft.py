@@ -48,6 +48,14 @@ class StudyDraftService:
 
         return study
 
+    async def delete(self, identifier: str):
+        exists = await self.exists(identifier)
+        if not exists:
+            raise Exception(
+                f"Study with identifier {identifier} does not exist.")
+
+        await s3_client.delete_files(f"draft/{identifier}")
+
     async def exists(self, identifier: str) -> bool:
         return await s3_client.path_exists(f"draft/{identifier}/study.json")
 
