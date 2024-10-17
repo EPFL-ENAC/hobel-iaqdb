@@ -131,7 +131,7 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
             })
             .join('');
 
-          return `<a href="#/study/${feat.properties['study_id']}" class="epfl">Study</a></div><table>${rows}</table><div>`;
+          return `<a href="/study/${feat.properties['study_id']}" class="epfl">Study</a></div><table>${rows}</table><div>`;
         })
         .join('<hr class="q-separator q-separator--horizontal">');
       new Popup().setLngLat(coordinates).setHTML(tables).addTo(map);
