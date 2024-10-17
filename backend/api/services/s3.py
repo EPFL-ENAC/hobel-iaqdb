@@ -21,6 +21,14 @@ class S3Client(object):
         self.s3_secret_access_key = s3_secret_access_key
         self.region = region
 
+    def to_s3_path(self, file_path: str):
+        if not file_path.startswith(config.S3_PATH_PREFIX):
+            return f"{config.S3_PATH_PREFIX}{file_path}"
+        return file_path
+
+    def to_s3_key(self, file_path: str):
+        return urllib.parse.unquote(self.to_s3_path(file_path))
+
     async def path_exists(self, file_path: str):
         """Check if file exists in S3 storage
 
@@ -30,9 +38,7 @@ class S3Client(object):
         Returns:
             bool: True if file exists, False otherwise
         """
-        key = file_path
-        if not file_path.startswith(config.S3_PATH_PREFIX):
-            key = f"{config.S3_PATH_PREFIX}{file_path}"
+        key = self.to_s3_key(file_path)
 
         # check if file_path exists
         session = get_session()
@@ -57,9 +63,7 @@ class S3Client(object):
         Args:
             folder_path (str): Path of the folder in S3
         """
-        key = folder_path
-        if not folder_path.startswith(config.S3_PATH_PREFIX):
-            key = f"{config.S3_PATH_PREFIX}{folder_path}"
+        key = self.to_s3_key(folder_path)
 
         keys = []
         # list files in folder_path
@@ -86,9 +90,7 @@ class S3Client(object):
         Returns:
             Tuple: File content and mimetype
         """
-        key = file_path
-        if not file_path.startswith(config.S3_PATH_PREFIX):
-            key = f"{config.S3_PATH_PREFIX}{file_path}"
+        key = self.to_s3_key(file_path)
 
         # get file from file path
         session = get_session()
@@ -149,15 +151,11 @@ class S3Client(object):
             destination_path (str): Destination path in S3
 
         Returns:
-            Any: File path if deleted, False otherwise
+            Any: File S3 key if deleted, False otherwise
         """
-        source_key = file_path
-        if not file_path.startswith(config.S3_PATH_PREFIX):
-            source_key = f"{config.S3_PATH_PREFIX}{file_path}"
+        source_key = self.to_s3_key(file_path)
 
-        destination_key = destination_path
-        if not destination_path.startswith(config.S3_PATH_PREFIX):
-            destination_key = f"{config.S3_PATH_PREFIX}{destination_path}"
+        destination_key = self.to_s3_key(destination_path)
 
         # copy to new location and delete source
         res = await self.copy_file(source_key, destination_key)
@@ -173,15 +171,11 @@ class S3Client(object):
             destination_path (str): Destination path in S3
 
         Returns:
-            Any: File path if deleted, False otherwise
+            Any: File S3 key if deleted, False otherwise
         """
-        source_key = file_path
-        if not file_path.startswith(config.S3_PATH_PREFIX):
-            source_key = f"{config.S3_PATH_PREFIX}{file_path}"
+        source_key = self.to_s3_key(file_path)
 
-        destination_key = destination_path
-        if not destination_path.startswith(config.S3_PATH_PREFIX):
-            destination_key = f"{config.S3_PATH_PREFIX}{destination_path}"
+        destination_key = self.to_s3_key(destination_path)
 
         # copy file_path to new location
         session = get_session()
@@ -210,9 +204,7 @@ class S3Client(object):
         Returns:
             Any: File path if deleted, False otherwise
         """
-        key = file_path
-        if not file_path.startswith(config.S3_PATH_PREFIX):
-            key = f"{config.S3_PATH_PREFIX}{file_path}"
+        key = self.to_s3_key(file_path)
 
         # delete file_path
         session = get_session()
@@ -239,9 +231,7 @@ class S3Client(object):
         Returns:
             Any: File path if deleted, False otherwise
         """
-        folder_key = file_path
-        if not file_path.startswith(config.S3_PATH_PREFIX):
-            folder_key = f"{config.S3_PATH_PREFIX}{file_path}"
+        folder_key = self.to_s3_key(file_path)
 
         # delete file_path
         session = get_session()
