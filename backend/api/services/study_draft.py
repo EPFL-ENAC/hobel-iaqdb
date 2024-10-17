@@ -2,6 +2,7 @@ import os
 import uuid
 import json
 import tempfile
+import urllib.parse
 from api.services.s3 import s3_client
 from api.config import config
 from api.models.catalog import Study, StudyDraft
@@ -23,11 +24,12 @@ class StudyDraftService:
                     for i, file in enumerate(dataset.folder["children"]):
                         if "/tmp/" in file["path"]:
                             dataset_file_path = f"{s3_folder}/files/{dataset.name}/{file['name']}"
-                            new_path = await s3_client.move_file(file["path"], dataset_file_path)
-                            file["path"] = new_path
+                            new_key = await s3_client.move_file(file["path"], dataset_file_path)
+                            file["path"] = urllib.parse.quote(new_key)
                             dataset.folder["children"][i] = file
                 dataset.folder["name"] = dataset.name
-                dataset.folder["path"] = f"{config.S3_PATH_PREFIX}{s3_folder}/files/{dataset.name}"
+                dataset.folder["path"] = s3_client.to_s3_path(
+                    urllib.parse.quote(f"{s3_folder}/files/{dataset.name}"))
 
         # TODO Remove files that are not linked to a dataset
 
@@ -45,6 +47,14 @@ class StudyDraftService:
             await s3_client.upload_local_file(temp_dir, "study.json", s3_folder=s3_folder)
 
         return study
+
+    async def delete(self, identifier: str):
+        exists = await self.exists(identifier)
+        if not exists:
+            raise Exception(
+                f"Study with identifier {identifier} does not exist.")
+
+        await s3_client.delete_files(f"draft/{identifier}")
 
     async def exists(self, identifier: str) -> bool:
         return await s3_client.path_exists(f"draft/{identifier}/study.json")

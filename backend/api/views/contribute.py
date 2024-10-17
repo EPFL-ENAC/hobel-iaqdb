@@ -84,3 +84,12 @@ async def update_study_draft(
     service = StudyDraftService()
     study = await service.createOrUpdate(StudyDraft.model_validate(study))
     return study
+
+
+@router.delete("/study-draft/{identifier}")
+async def delete_study_draft(
+    identifier: str,
+) -> None:
+    """Delete a study draft"""
+    service = StudyDraftService()
+    await service.delete(identifier)

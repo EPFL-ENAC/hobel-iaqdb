@@ -54,13 +54,7 @@ async def upload_temp_files(
     folder_name = str(current_time.timestamp()).replace('.', '')
     folder_path = f"tmp/{folder_name}"
     children = [await s3_client.upload_file(file, s3_folder=folder_path) for file in files]
-
-    parent_path = folder_path
-    if children and len(children) > 0:
-        # extract the folder path from the first file's path
-        parent_path = children[0]["path"].replace(
-            f"/{children[0]['name']}", "")
-
+    parent_path = s3_client.to_s3_path(folder_path)
     return {
         "name": folder_name,
         "path": parent_path,

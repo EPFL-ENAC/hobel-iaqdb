@@ -116,8 +116,8 @@
           v-if="step > 1"
           flat
           @click="onPreviousStep"
-          color="primary"
-          label="Back"
+          color="secondary"
+          :label="$t('back')"
           class="on-left"
         />
         <q-btn
@@ -125,7 +125,7 @@
           @click="onNextStep"
           :disable="!canNext"
           color="primary"
-          label="Continue"
+          :label="$t('continue')"
         />
       </q-card-section>
     </q-card>
@@ -135,8 +135,8 @@
           v-if="step > 1"
           flat
           @click="onPreviousStep"
-          color="primary"
-          label="Back"
+          color="secondary"
+          :label="$t('back')"
           class="on-left"
         />
         <q-btn
@@ -144,19 +144,19 @@
           @click="onNextStep"
           :disable="!canNext"
           color="primary"
-          label="Continue"
+          :label="$t('continue')"
         />
         <q-btn
           v-if="step === 4"
           color="primary"
           @click="onFinish"
-          label="Finish"
+          :label="$t('finish')"
         />
         <q-btn
           @click="onPause"
           flat
           color="secondary"
-          label="Pause"
+          :label="$t('pause')"
           class="on-right"
         />
       </q-card-section>
