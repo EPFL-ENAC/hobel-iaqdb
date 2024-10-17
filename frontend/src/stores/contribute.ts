@@ -300,6 +300,10 @@ export const useContributeStore = defineStore(
         .then((res) => study.value = res.data);
     }
 
+    async function deleteDraft(study: Study) {
+      return api.delete(`/contribute/study-draft/${study.identifier}`);
+    }
+
     async function deleteFile(file: FileNode) {
       return api.delete(`/files/${file.path}`);
     }
@@ -342,6 +346,7 @@ export const useContributeStore = defineStore(
       fetchClimateZone,
       readExcel,
       saveOrUpdateDraft,
+      deleteDraft,
       uploadTmpFiles,
       getDrafts,
     };

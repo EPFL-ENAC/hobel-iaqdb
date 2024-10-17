@@ -41,7 +41,7 @@
         </div>
       </q-card-section>
       <q-card-actions v-if="$q.screen.gt.xs" align="right">
-        <q-btn flat :label="$t('cancel')" color="primary" v-close-popup />
+        <q-btn flat :label="$t('cancel')" color="secondary" v-close-popup />
         <q-btn
           :label="$t('add')"
           color="primary"
