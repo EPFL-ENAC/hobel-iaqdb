@@ -97,6 +97,7 @@
     "useSettingsStore": true,
     "useCatalogStore": true,
     "DEFAULT_ALTITUDES": true,
-    "useContributeStore": true
+    "useContributeStore": true,
+    "useAuthStore": true
   }
 }

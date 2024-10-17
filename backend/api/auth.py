@@ -49,26 +49,13 @@ keycloak_openid = KeycloakOpenID(
     verify=True,
 )
 
-
-async def get_idp_public_key():
-    return (
-        "-----BEGIN PUBLIC KEY-----\n"
-        f"{keycloak_openid.public_key()}"
-        "\n-----END PUBLIC KEY-----"
-    )
-
-
 # Get the payload/token from keycloak
+
+
 async def get_payload(token: str = Security(oauth2_scheme)) -> dict:
     try:
         return keycloak_openid.decode_token(
             token,
-            key=await get_idp_public_key(),
-            options={
-                "verify_signature": True,
-                "verify_aud": False,
-                "exp": True,
-            },
         )
     except Exception as e:
         raise HTTPException(

@@ -364,3 +364,7 @@ class InstrumentsResult(ListResult):
 
 class DatasetsResult(ListResult):
     data: List[DatasetRead]
+
+
+class StudyDraftsResult(ListResult):
+    data: List[StudyDraft]

@@ -1,5 +1,12 @@
 import { boot } from 'quasar/wrappers';
 import axios, { AxiosInstance } from 'axios';
+import Keycloak from 'keycloak-js';
+
+const keycloak = new Keycloak({
+    url: 'https://enac-it-sso.epfl.ch/',
+    realm: 'HOBEL',
+    clientId: process.env.AUTH_CLIENT_ID
+});
 
 declare module '@vue/runtime-core' {
   interface ComponentCustomProperties {
@@ -28,4 +35,4 @@ export default boot(({ app }) => {
   //       so you can easily perform requests against your app's API
 });
 
-export { api, baseUrl, cdnUrl };
+export { api, baseUrl, cdnUrl, keycloak };

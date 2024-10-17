@@ -55,7 +55,7 @@ interface Props {
   navigation?: boolean;
 }
 const props = withDefaults(defineProps<Props>(), {
-  styleSpec: 'style.json',
+  styleSpec: '/style.json',
   center: [6.566547557495834, 46.521590682027536] as LngLatLike,
   zoom: 12,
   aspectRatio: undefined,
@@ -89,7 +89,7 @@ let map: Map | undefined = undefined;
 onMounted(() => {
   map = new Map({
     container: 'maplibre-map',
-    style: props.styleSpec || 'style.json',
+    style: props.styleSpec || '/style.json',
     center: props.center,
     zoom: props.zoom,
     minZoom: props.minZoom,

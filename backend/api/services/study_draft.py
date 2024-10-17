@@ -59,3 +59,16 @@ class StudyDraftService:
         content, mime_type = await s3_client.get_file(file_path)
         study_dict = json.loads(content)
         return StudyDraft(**study_dict)
+
+    async def list(self) -> list[StudyDraft]:
+        """List all studies"""
+        folder_path = "draft/"
+        files = [study_file for study_file in await s3_client.list_files(folder_path) if study_file.endswith("/study.json")]
+
+        study_drafts = []
+        for file in files:
+            content, mime_type = await s3_client.get_file(file)
+            study_dict = json.loads(content)
+            study_drafts.append(StudyDraft(**study_dict))
+
+        return study_drafts

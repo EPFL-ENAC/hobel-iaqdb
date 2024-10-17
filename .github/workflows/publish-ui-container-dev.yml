@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build image
-        run: docker build frontend --build-arg API_URL=https://iaqdb-dev.epfl.ch --build-arg API_PATH=/api --tag $IMAGE_NAME
+        run: docker build frontend --build-arg API_URL=https://iaqdb-dev.epfl.ch --build-arg API_PATH=/api --build-arg AUTH_CLIENT_ID=iaqdb-dev-ui --tag $IMAGE_NAME
 
       - name: Log into registry
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login docker.pkg.github.com -u ${{ github.actor }} --password-stdin

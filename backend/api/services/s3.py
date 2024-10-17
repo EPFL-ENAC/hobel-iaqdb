@@ -51,6 +51,32 @@ class S3Client(object):
                 return False
         return False
 
+    async def list_files(self, folder_path: str):
+        """List files in a folder in S3 storage
+
+        Args:
+            folder_path (str): Path of the folder in S3
+        """
+        key = folder_path
+        if not folder_path.startswith(config.S3_PATH_PREFIX):
+            key = f"{config.S3_PATH_PREFIX}{folder_path}"
+
+        keys = []
+        # list files in folder_path
+        session = get_session()
+        async with session.create_client(
+                's3',
+                region_name=self.region,
+                endpoint_url=self.s3_endpoint_url,
+                aws_secret_access_key=self.s3_secret_access_key,
+                aws_access_key_id=self.s3_access_key_id) as client:
+            paginator = client.get_paginator('list_objects_v2')
+            async for page in paginator.paginate(Bucket=config.S3_BUCKET, Prefix=key):
+                if 'Contents' in page:
+                    for obj in page['Contents']:
+                        keys.append(obj['Key'])
+        return keys
+
     async def get_file(self, file_path: str):
         """Extract file content and mimetype from S3 storage
 

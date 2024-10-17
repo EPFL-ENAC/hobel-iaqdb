@@ -6,8 +6,9 @@ from fastapi.datastructures import UploadFile
 from fastapi.param_functions import File
 from api.services.study_parser import StudyParser
 from api.services.study_draft import StudyDraftService
-from api.models.catalog import StudyDraft
+from api.models.catalog import StudyDraft, StudyDraftsResult
 from api.utils.file_size import size_checker
+from api.auth import require_admin, User
 
 router = APIRouter()
 
@@ -35,6 +36,16 @@ async def read_study_from_excel(
         description="Excel file containing study, building, space descriptions")):
     study = StudyParser().parse(files.file._file)
     return study
+
+
+@router.get("/study-drafts", response_model=StudyDraftsResult)
+async def get_study_drafts(
+    user: User = Depends(require_admin),
+) -> StudyDraftsResult:
+    """Get all study drafts"""
+    service = StudyDraftService()
+    studies = await service.list()
+    return StudyDraftsResult(total=len(studies), skip=0, limit=None, data=studies)
 
 
 @router.post("/study-draft", response_model=StudyDraft)

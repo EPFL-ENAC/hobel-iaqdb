@@ -5,7 +5,13 @@
         <q-btn flat icon="close" color="primary" v-close-popup />
       </q-card-actions>
       <q-card-section>
+        <q-option-group
+          v-model="startMode"
+          :options="options"
+          color="primary"
+        />
         <q-input
+          v-show="startMode === '_existing'"
           v-model="identifier"
           filled
           :label="$t('study.identifier')"
@@ -17,6 +23,7 @@
         <q-btn
           :label="$t('start')"
           color="primary"
+          :disable="startMode === '_existing' && !identifier"
           @click="doStart"
           v-close-popup
         />
@@ -43,6 +50,12 @@ const emit = defineEmits(['update:modelValue', 'started']);
 const showDialog = ref(props.modelValue);
 const identifier = ref('');
 
+const startMode = ref('_draft');
+const options = [
+  { label: 'New Study', value: '_draft' },
+  { label: 'Existing Study', value: '_existing' },
+];
+
 watch(
   () => props.modelValue,
   (value) => {
@@ -60,7 +73,7 @@ function onHide() {
 }
 
 async function doStart() {
-  if (!identifier.value) {
+  if (startMode.value === '_draft' || !identifier.value) {
     contrib.reset();
   } else if (identifier.value !== '_draft') {
     try {
