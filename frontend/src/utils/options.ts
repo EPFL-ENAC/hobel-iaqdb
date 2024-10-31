@@ -214,12 +214,13 @@ export const placementOptions = sortByLabel([
   { value: 'unknown', label: 'Unknown' },
 ]);
 
-export const physicalParameterOptions = sortByLabel([
-  { value: 'individual voc', label: 'Individual VOC' },
-  { value: 'tvoc', label: 'TVOC' },
+export const physicalParameterOptions = [
   { value: 'particle mass concentration', label: 'Particle mass concentration' },
   { value: 'particle number concentration', label: 'Particle number concentration' },
-  { value: 'nanoparticles', label: 'Nanoparticles' },
+  { value: 'individual voc', label: 'Individual VOC' },
+  { value: 'individual aldehydes', label: 'Individual Aldehydes' },
+  { value: 'tvoc', label: 'TVOC' },
+  { value: 'black carbon', label: 'Black carbon' },
   { value: 'carbon dioxide', label: 'Carbon dioxide' },
   { value: 'carbon monoxide', label: 'Carbon monoxide' },
   { value: 'ozone', label: 'Ozone' },
@@ -229,22 +230,16 @@ export const physicalParameterOptions = sortByLabel([
   { value: 'lead', label: 'Lead' },
   { value: 'air temperature', label: 'Air temperature' },
   { value: 'relative humidity', label: 'Relative humidity' },
-  { value: 'occupancy', label: 'Occupancy' },
-  {
-    value: 'mechanical ventilation rate',
-    label: 'Mechanical ventilation rate',
-  },
-  { value: 'biocontaminants', label: 'Biocontaminants' },
-]);
+];
 
-export const referenceOptions = sortByLabel([
+export const referenceOptions = [
   { value: 'building', label: 'Building ID' },
   { value: 'space', label: 'Space ID' },
   { value: 'instrument', label: 'Instrument ID' },
   { value: 'timestamp', label: 'Timestamp' },
   ...physicalParameterOptions,
   { value: 'other', label: 'Other' },
-]);
+];
 
 export const countryOptions = sortByLabel([
   { value: 'AF', label: 'Afghanistan' },
