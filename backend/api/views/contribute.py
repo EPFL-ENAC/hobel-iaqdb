@@ -1,6 +1,6 @@
 import pkg_resources
 from typing import List
-from fastapi import APIRouter, Depends, Body
+from fastapi import APIRouter, Depends, Body, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.datastructures import UploadFile
 from fastapi.param_functions import File
@@ -34,8 +34,11 @@ async def get_study_template():
 async def read_study_from_excel(
     files: UploadFile = File(
         description="Excel file containing study, building, space descriptions")):
-    study = StudyParser().parse(files.file._file)
-    return study
+    try:
+        study = StudyParser().parse(files.file._file)
+        return study
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/study-drafts", response_model=StudyDraftsResult)

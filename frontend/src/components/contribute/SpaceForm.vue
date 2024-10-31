@@ -3,8 +3,9 @@
     <q-input
       v-model="space.identifier"
       filled
-      :label="$t('study.space.identifier')"
+      :label="$t('study.space.identifier') + ' *'"
       :hint="$t('study.space.identifier_hint')"
+      :rules="[val => !!val || $t('required')]"
       class="q-mb-md"
     />
 
@@ -16,8 +17,9 @@
           filled
           emit-value
           map-options
-          :label="$t('study.space.type')"
+          :label="$t('study.space.type') + ' *'"
           :hint="$t('study.space.type_hint')"
+          :rules="[val => !!val || $t('required')]"
         />
       </div>
       <div class="col">

@@ -55,6 +55,8 @@ export default {
   from_to: 'From {from} to {to}',
   voc: 'VOC',
   voc_hint: 'Datasets with volatile organic compound measures.',
+  required: 'Required',
+  fix_validation_errors: 'Please make sure mandatory fields have been provided with a valid value.',
   study: {
     identifier: 'Identifier',
     identifier_hint: 'Unique identifier of the study draft.',

@@ -23,21 +23,19 @@
         <div v-if="loadingFile" class="q-mt-md">
           <q-spinner-dots size="md"/>
         </div>
-        <div v-else-if="localFile" class="q-mt-md">
-          <div v-if="fields">
-            <div class="text-help q-mb-md">
-              Verify that the data were correctly read before proceeding to the
-              file upload. Note that is only a preview of the 10 first lines.
-            </div>
-            <q-table
-              :rows="rows"
-              :columns="columns"
-              flat
-              bordered
-              table-header-class="text-bold"
-              v-model:pagination="pagination"
-            />
+        <div v-else-if="localFile && fields.length" class="q-mt-md">
+          <div class="text-help q-mb-md">
+            Verify that the data were correctly read before proceeding to the
+            file upload. Note that is only a preview of the 10 first lines.
           </div>
+          <q-table
+            :rows="rows"
+            :columns="columns"
+            flat
+            bordered
+            table-header-class="text-bold"
+            v-model:pagination="pagination"
+          />
         </div>
       </q-card-section>
       <q-card-actions v-if="$q.screen.gt.xs" align="right">
@@ -168,7 +166,7 @@ function parseDelimitedData(csv: FileObject | string) {
     skipEmptyLines: true,
     dynamicTyping: true,
     header: true,
-    delimiter: ',',
+    delimiter: '', // try most common delimiters
     complete: onCSVParseCompleted,
   });
 }

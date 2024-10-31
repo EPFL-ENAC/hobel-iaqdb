@@ -3,8 +3,9 @@
     <q-input
       v-model="contrib.study.name"
       filled
-      :label="$t('study.name')"
+      :label="$t('study.name') + ' *'"
       :hint="$t('study.name_hint')"
+      :rules="[val => !!val || $t('required')]"
       class="q-mb-md"
     />
     <q-input
@@ -192,8 +193,9 @@
           filled
           emit-value
           map-options
-          :label="$t('study.license')"
+          :label="$t('study.license') + ' *'"
           :hint="$t('study.license_hint')"
+          :rules="[val => !!val || $t('required')]"
         >
           <template v-slot:option="scope">
             <q-item v-bind="scope.itemProps">
@@ -223,6 +225,7 @@ import {
   otherIndoorParamOptions,
   licenseOptions,
 } from 'src/utils/options';
+import { notifyError } from 'src/utils/notify';
 
 const contrib = useContributeStore();
 

@@ -1,8 +1,14 @@
 <template>
   <div>
-    <div v-if="isUpdate" class="q-mb-md q-pa-md bg-secondary text-white">
-      You are currently editing the study draft
-      <q-badge class="q-pa-sm q-ml-sm" color="accent" :title="contrib.study.identifier">{{ contrib.study.identifier.split('-')[0] }}...</q-badge>
+    <div class="q-mb-md q-pa-md bg-secondary text-white">
+      <div v-if="isUpdate">
+        You are currently editing the study draft
+        <q-badge class="q-pa-sm q-ml-sm" color="accent" :title="contrib.study.identifier">{{ contrib.study.identifier.split('-')[0] }}...</q-badge>
+      </div>
+      <div v-else>
+        <p class="text-bold">You are currently editing a new study.</p>
+        Note that the study information are automatically saved in your browser: you can pause/resume the form at any time. The study draft will be permanently saved on the iAQ DB server once submitted only. 
+      </div>
     </div>
     <q-stepper
       v-model="step"
@@ -60,7 +66,9 @@
           </q-card-section>
         </q-card>
         <q-markdown no-heading-anchor-links :src="StepStudyMd" />
-        <study-form class="q-mt-lg" />
+        <q-form ref="studyFormRef">
+          <study-form class="q-mt-lg" />
+        </q-form>
       </q-step>
 
       <q-step
@@ -71,7 +79,9 @@
         :header-nav="step > 2"
       >
         <q-markdown no-heading-anchor-links :src="StepBuildingsMd" />
-        <buildings-form class="q-mt-lg" />
+        <q-form ref="buildingsFormRef">
+          <buildings-form class="q-mt-lg" />
+        </q-form>
       </q-step>
 
       <q-step
@@ -82,7 +92,9 @@
         :header-nav="step > 3"
       >
         <q-markdown no-heading-anchor-links :src="StepInstrumentsMd" />
-        <instruments-form class="q-mt-lg" />
+        <q-form ref="instrumentsFormRef">
+          <instruments-form class="q-mt-lg" />
+        </q-form>
       </q-step>
 
       <q-step
@@ -142,15 +154,14 @@
         <q-btn
           v-if="step < 4"
           @click="onNextStep"
-          :disable="!canNext"
           color="primary"
           :label="$t('continue')"
         />
         <q-btn
           v-if="step === 4"
           color="primary"
-          @click="onFinish"
-          :label="$t('finish')"
+          @click="onSubmit"
+          :label="$t('submit')"
         />
         <q-btn
           @click="onPause"
@@ -180,15 +191,19 @@ import BuildingsForm from 'src/components/contribute/BuildingsForm.vue';
 import InstrumentsForm from 'src/components/contribute/InstrumentsForm.vue';
 import DatasetsForm from 'src/components/contribute/DatasetsForm.vue';
 import { baseUrl } from 'src/boot/api';
+import { notifyError } from 'src/utils/notify';
 
 interface Props {
   dialog?: boolean;
 }
 defineProps<Props>();
-const emit = defineEmits(['pause', 'finish', 'step']);
+const emit = defineEmits(['pause', 'submit', 'step']);
 
 const contrib = useContributeStore();
 
+const studyFormRef = ref();
+const buildingsFormRef = ref();
+const instrumentsFormRef = ref();
 const excelFile = ref<File | null>(null);
 const loading = ref(false);
 const step = ref(1);
@@ -198,6 +213,7 @@ const isUpdate = computed(() => contrib.study.identifier && contrib.study.identi
 const canNext = computed(() => {
   if (step.value === 1) {
     // TODO study validation
+    const valid = studyFormRef.value?.validate();
     return contrib.inProgress;
   } else if (step.value === 2) {
     // TODO buildings validation
@@ -233,8 +249,8 @@ function onPause() {
   emit('pause');
 }
 
-function onFinish() {
-  emit('finish');
+function onSubmit() {
+  emit('submit');
 }
 
 function onPreviousStep() {
@@ -242,7 +258,47 @@ function onPreviousStep() {
   emit('step', step.value);
 }
 
-function onNextStep() {
+async function onNextStep() {
+  if (step.value === 1) {
+    // study validation
+    const valid = await studyFormRef.value?.validate();
+    if (valid) {
+      goNext();
+    } else {
+      notifyError('fix_validation_errors');
+    }
+  } else if (step.value === 2) {
+    // buildings validation
+    if (contrib.study.buildings &&
+      contrib.study.buildings.length > 0) {
+      const valid = await buildingsFormRef.value?.validate();
+      if (valid) {
+        goNext();
+      } else {
+        notifyError('fix_validation_errors');
+      }
+    } else {
+      notifyError('Please add at least one building');
+    }
+  } else if (step.value === 3) {
+    // instruments validation
+    if (contrib.study.instruments &&
+      contrib.study.instruments.length > 0) {
+      const valid = await instrumentsFormRef.value?.validate();
+      if (valid) {
+        goNext();
+      } else {
+        notifyError('fix_validation_errors');
+      }
+    } else {
+      notifyError('Please add at least one instrument');
+    }
+  } else {
+    goNext();
+  }
+}
+
+function goNext() {
   step.value += 1;
   emit('step', step.value);
 }
@@ -261,7 +317,7 @@ function onExcelFileUpdated() {
     contrib
       .readExcel(excelFile.value)
       .then(() => (step.value = 1))
-      .catch((err) => console.error(err))
+      .catch((err) => notifyError(err))
       .finally(() => (loading.value = false));
   }
 }

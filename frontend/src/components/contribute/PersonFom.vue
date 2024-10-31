@@ -5,16 +5,18 @@
         <q-input
           v-model="person.name"
           filled
-          :label="$t('study.person_name')"
+          :label="$t('study.person_name') + ' *'"
           :hint="$t('study.person_name_hint')"
+          :rules="[val => !!val || $t('required')]"
         />
       </div>
       <div class="col">
         <q-input
           v-model="person.email"
           filled
-          :label="$t('study.person_email')"
+          :label="$t('study.person_email') + ' *'"
           :hint="$t('study.person_email_hint')"
+          :rules="[val => !!val || $t('required')]"
         />
       </div>
       <div class="col">

@@ -8,8 +8,9 @@
           filled
           emit-value
           map-options
-          :label="$t('study.parameter.physical_parameter')"
+          :label="$t('study.parameter.physical_parameter') + ' *'"
           :hint="$t('study.parameter.physical_parameter_hint')"
+          :rules="[val => !!val || $t('required')]"
         />
       </div>
       <div class="col">

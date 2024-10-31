@@ -3,8 +3,9 @@
     <q-input
       v-model="building.identifier"
       filled
-      :label="$t('study.building.identifier')"
+      :label="$t('study.building.identifier') + ' *'"
       :hint="$t('study.building.identifier_hint')"
+      :rules="[val => !!val || $t('required')]"
       class="q-mb-md"
     />
 
@@ -16,8 +17,9 @@
           filled
           emit-value
           map-options
-          :label="$t('study.building.type')"
+          :label="$t('study.building.type') + ' *'"
           :hint="$t('study.building.type_hint')"
+          :rules="[val => !!val || $t('required')]"
         />
       </div>
       <div class="col">
@@ -107,8 +109,9 @@
         <q-input
           v-model="building.city"
           filled
-          :label="$t('study.building.city')"
+          :label="$t('study.building.city') + ' *'"
           :hint="$t('study.building.city_hint')"
+          :rules="[val => !!val || $t('required')]"
           :debounce="500"
           @update:model-value="onLocationUpdated"
         />
@@ -120,8 +123,9 @@
           filled
           emit-value
           map-options
-          :label="$t('study.building.country')"
+          :label="$t('study.building.country') + ' *'"
           :hint="$t('study.building.country_hint')"
+          :rules="[val => !!val || $t('required')]"
           @update:model-value="onLocationUpdated"
         />
       </div>
