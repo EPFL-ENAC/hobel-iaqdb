@@ -28,7 +28,7 @@
             <div class="q-mb-sm">
               Please copy this study ID and keep it for future reference:
             </div>
-            <q-chip color="secondary" icon-right="content_copy" :label="contrib.study.identifier" clickable @click="onCopy" text-color="white" />  
+            <q-chip color="secondary" icon-right="content_copy" :label="contrib.study.identifier" clickable @click="onCopy" text-color="white" />
           </div>
         </div>
         <div v-if="status === 'Error'" class="q-mt-md">
@@ -55,7 +55,7 @@ export default defineComponent({
 </script>
 <script setup lang="ts">
 import { copyToClipboard } from 'quasar';
-import { notifyError, notifySuccess } from 'src/utils/notify';
+import { notifyError, notifyInfo } from 'src/utils/notify';
 
 const contrib = useContributeStore();
 
@@ -116,6 +116,6 @@ async function doSave() {
 
 function onCopy() {
   copyToClipboard(contrib.study.identifier);
-  notifySuccess('Study ID copied to clipboard');
+  notifyInfo('Study ID copied to clipboard');
 }
 </script>

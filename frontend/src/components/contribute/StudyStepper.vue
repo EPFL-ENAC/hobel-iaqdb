@@ -3,7 +3,7 @@
     <div class="q-mb-md q-pa-md bg-secondary text-white">
       <div v-if="isUpdate">
         You are currently editing the study draft
-        <q-badge class="q-pa-sm q-ml-sm" color="accent" :title="contrib.study.identifier">{{ contrib.study.identifier.split('-')[0] }}...</q-badge>
+        <q-chip color="accent" icon-right="content_copy" :label="contrib.study.identifier" clickable @click="onCopy" text-color="white" />
       </div>
       <div v-else>
         <p class="text-bold">You are currently editing a new study.</p>
@@ -191,7 +191,8 @@ import BuildingsForm from 'src/components/contribute/BuildingsForm.vue';
 import InstrumentsForm from 'src/components/contribute/InstrumentsForm.vue';
 import DatasetsForm from 'src/components/contribute/DatasetsForm.vue';
 import { baseUrl } from 'src/boot/api';
-import { notifyError } from 'src/utils/notify';
+import { copyToClipboard } from 'quasar';
+import { notifyError, notifyInfo } from 'src/utils/notify';
 
 interface Props {
   dialog?: boolean;
@@ -320,5 +321,10 @@ function onExcelFileUpdated() {
       .catch((err) => notifyError(err))
       .finally(() => (loading.value = false));
   }
+}
+
+function onCopy() {
+  copyToClipboard(contrib.study.identifier);
+  notifyInfo('Study ID copied to clipboard');
 }
 </script>
