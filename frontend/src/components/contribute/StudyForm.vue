@@ -57,24 +57,28 @@
     <div class="row q-col-gutter-md q-mb-md">
       <div class="col">
         <q-select
-          v-model="contrib.study.occupant_impact"
+          v-model="occupant_impacts"
           :options="occupantImpactOptions"
           filled
+          multiple
           emit-value
           map-options
           :label="$t('study.occupant_impact')"
           :hint="$t('study.occupant_impact_hint')"
+          @update:model-value="contrib.study.occupant_impact = $event.join(',')"
         />
       </div>
       <div class="col">
         <q-select
-          v-model="contrib.study.other_indoor_param"
+          v-model="other_indoor_params"
           :options="otherIndoorParamOptions"
           filled
+          multiple
           emit-value
           map-options
           :label="$t('study.other_indoor_param')"
           :hint="$t('study.other_indoor_param_hint')"
+          @update:model-value="contrib.study.other_indoor_param = $event.join(',')"
         />
       </div>
     </div>
@@ -205,9 +209,26 @@ import {
   otherIndoorParamOptions,
   licenseOptions,
 } from 'src/utils/options';
-import { notifyError } from 'src/utils/notify';
 
 const contrib = useContributeStore();
+
+const occupant_impacts = ref<string[]>([]);
+const other_indoor_params = ref<string[]>([]);
+
+onMounted(
+  () => {
+    if (contrib.study.occupant_impact) {
+      occupant_impacts.value = contrib.study.occupant_impact.split(',');
+    } else {
+      occupant_impacts.value = [];
+    }
+    if (contrib.study.other_indoor_param) {
+      other_indoor_params.value = contrib.study.other_indoor_param.split(',');
+    } else {
+      other_indoor_params.value = [];
+    }
+  },
+);
 
 function onAddContributor() {
   contrib.addContributor();
