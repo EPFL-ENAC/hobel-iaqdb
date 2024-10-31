@@ -1,5 +1,5 @@
 import {
-  spaceTypeOptions,
+  buildingSpaceTypeOptions,
   occupancyOptions,
   ventilationTypeOptions,
   physicalParameterOptions,
@@ -118,9 +118,13 @@ export const useContributeStore = defineStore(
       }
     }
 
-    function getSpaceDefaults() {
+    function getSpaceDefaults(type: string) {
+      let space = 'other';
+      if (buildingSpaceTypeOptions[type]) {
+        space = buildingSpaceTypeOptions[type][0].value;
+      }
       return {
-        space: spaceTypeOptions[0].value,
+        space,
         occupancy: occupancyOptions[0].value,
         ventilation: ventilationTypeOptions[0].value,
         smoking: yesNoOptions[2].value,
@@ -151,7 +155,7 @@ export const useContributeStore = defineStore(
         building.spaces?.push({
           id: id,
           identifier: `${id}`,
-          ...getSpaceDefaults(),
+          ...getSpaceDefaults(building.type),
         } as Space);
       }
     }

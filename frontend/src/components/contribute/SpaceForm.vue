@@ -158,6 +158,7 @@
           map-options
           :label="$t('study.space.combustion_sources')"
           :hint="$t('study.space.combustion_sources_hint')"
+          @update:model-value="onCombustionSourcesChange"
         />
       </div>
       <div class="col">
@@ -169,6 +170,7 @@
           map-options
           :label="$t('study.space.major_combustion_sources')"
           :hint="$t('study.space.major_combustion_sources_hint')"
+          :disable="space.combustion_sources !== 'yes'"
         />
       </div>
       <div class="col">
@@ -180,6 +182,7 @@
           map-options
           :label="$t('study.space.minor_combustion_sources')"
           :hint="$t('study.space.minor_combustion_sources_hint')"
+          :disable="space.combustion_sources !== 'yes'"
         />
       </div>
     </div>
@@ -265,7 +268,7 @@ export default defineComponent({
 </script>
 <script setup lang="ts">
 import {
-  spaceTypeOptions,
+  buildingSpaceTypeOptions,
   occupancyOptions,
   ventilationStatusOptions,
   ventilationTypeOptions,
@@ -288,7 +291,27 @@ const props = defineProps<Props>();
 
 const space = ref(props.modelValue);
 
+const spaceTypeOptions = computed(() => {
+  if (props.building.type) {
+    return buildingSpaceTypeOptions[props.building.type];
+  }
+  return [];
+});
+
 watch(() => props.modelValue, (val) => {
   space.value = val;
 });
+
+watch(() => props.building.type, (val) => {
+  if (!spaceTypeOptions.value.map((o) => o.value).includes(space.value.type)) {
+    space.value.type = 'other';
+  }
+});
+
+function onCombustionSourcesChange() {
+  if (space.value.combustion_sources !== 'yes') {
+    space.value.major_combustion_sources = undefined;
+    space.value.minor_combustion_sources = undefined;
+  }
+}
 </script>

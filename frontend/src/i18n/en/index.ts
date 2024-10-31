@@ -190,7 +190,7 @@ export default {
       mold: 'Mold',
       mold_hint: '',
       detergents: 'Detergents',
-      detergents_hint: '',
+      detergents_hint: 'Cleaning with detergents.',
     },
     instrument: {
       identifier: 'Identifier',

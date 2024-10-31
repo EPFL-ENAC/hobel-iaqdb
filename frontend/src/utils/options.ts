@@ -141,8 +141,7 @@ export const buildingTypeOptions = sortByLabel([
   { value: 'school', label: 'School' },
   { value: 'senior center', label: 'Senior Center' },
   { value: 'hospital', label: 'Hospital' },
-  { value: 'retail', label: 'Retail' },
-  { value: 'sport center,', label: 'Sport center' },
+  { value: 'commercial', label: 'Commercial' },
   { value: 'other', label: 'Other' },
 ]);
 
@@ -170,25 +169,99 @@ export const yesNoOptions = [
   { value: 'unknown', label: 'Unknown' },
 ];
 
-export const spaceTypeOptions = sortByLabel([
+export const residentialSpaceTypeOptions = sortByLabel([
   { value: 'living room', label: 'Living room' },
   { value: 'kitchen', label: 'Kitchen' },
   { value: 'bedroom', label: 'Bedroom' },
+  { value: 'bathroom', label: 'Bathroom' },
   { value: 'basement', label: 'Basement' },
   { value: 'garage', label: 'Garage' },
-  { value: 'enclosed shared office', label: 'Enclosed shared office' },
-  { value: 'enclosed private office', label: 'Enclosed private office' },
-  { value: 'open office', label: 'Open office' },
-  { value: 'focus room', label: 'Focus room' },
   { value: 'hallway', label: 'Hallway' },
-  { value: 'restaurant', label: 'Restaurant' },
-  { value: 'supermarket', label: 'Supermarket' },
-  { value: 'waiting room', label: 'Waiting room' },
-  { value: 'patient room', label: 'Patient room' },
-  { value: 'classroom', label: 'Classroom' },
   { value: 'outdoor', label: 'Outdoor' },
   { value: 'other', label: 'Other' },
 ]);
+
+export const dwellingSpaceTypeOptions = sortByLabel([
+  { value: 'living room', label: 'Living room' },
+  { value: 'kitchen', label: 'Kitchen' },
+  { value: 'bedroom', label: 'Bedroom' },
+  { value: 'bathroom', label: 'Bathroom' },
+  { value: 'basement', label: 'Basement' },
+  { value: 'garage', label: 'Garage' },
+  { value: 'hallway', label: 'Hallway' },
+  { value: 'outdoor', label: 'Outdoor' },
+  { value: 'other', label: 'Other' },
+]);
+
+export const officSpaceTypeOptions = sortByLabel([
+  { value: 'shared office', label: 'Shared office' },
+  { value: 'private office', label: 'Private office' },
+  { value: 'open office', label: 'Open office' },
+  { value: 'focus room', label: 'Focus room' },
+  { value: 'meeting room', label: 'Meeting room' },
+  { value: 'bathroom', label: 'Bathroom' },
+  { value: 'hallway', label: 'Hallway' },
+  { value: 'kitchen', label: 'Kitchen' },
+  { value: 'outdoor', label: 'Outdoor' },
+  { value: 'other', label: 'Other' },
+]);
+
+export const schoolSpaceTypeOptions = sortByLabel([
+  { value: 'classroom', label: 'Classroom' },
+  { value: 'office', label: 'Office' },
+  { value: 'activity room', label: 'Activity room' },
+  { value: 'bathroom', label: 'Bathroom' },
+  { value: 'hallway', label: 'Hallway' },
+  { value: 'kitchen', label: 'Kitchen' },
+  { value: 'outdoor', label: 'Outdoor' },
+  { value: 'other', label: 'Other' },
+]);
+
+export const seniorSpaceTypeOptions = sortByLabel([
+  { value: 'living room', label: 'Living room' },
+  { value: 'kitchen', label: 'Kitchen' },
+  { value: 'bedroom', label: 'Bedroom' },
+  { value: 'bathroom', label: 'Bathroom' },
+  { value: 'hallway', label: 'Hallway' },
+  { value: 'office', label: 'Office' },
+  { value: 'outdoor', label: 'Outdoor' },
+  { value: 'other', label: 'Other' },
+]);
+
+export const hospitalSpaceTypeOptions = sortByLabel([
+  { value: 'waiting room', label: 'Waiting room' },
+  { value: 'patient room', label: 'Patient room' },
+  { value: 'bathroom', label: 'Bathroom' },
+  { value: 'hallway', label: 'Hallway' },
+  { value: 'office', label: 'Office' },
+  { value: 'outdoor', label: 'Outdoor' },
+  { value: 'other', label: 'Other' },
+]);
+
+export const commercialSpaceTypeOptions = sortByLabel([
+  { value: 'waiting room', label: 'Waiting room' },
+  { value: 'patient room', label: 'Patient room' },
+  { value: 'bathroom', label: 'Bathroom' },
+  { value: 'hallway', label: 'Hallway' },
+  { value: 'office', label: 'Office' },
+  { value: 'outdoor', label: 'Outdoor' },
+  { value: 'other', label: 'Other' },
+]);
+
+export const otherSpaceTypeOptions = sortByLabel([
+  { value: 'other', label: 'Other' },
+]);
+
+export const buildingSpaceTypeOptions: { [key: string]: OptionItem[] } = {
+  'multifamily residential': residentialSpaceTypeOptions,
+  dwelling: dwellingSpaceTypeOptions,
+  office: officSpaceTypeOptions,
+  school: schoolSpaceTypeOptions,
+  'senior center': seniorSpaceTypeOptions,
+  hospital: hospitalSpaceTypeOptions,
+  commercial: commercialSpaceTypeOptions,
+  other: otherSpaceTypeOptions,
+}
 
 export const occupancyOptions = sortByLabel([
   { value: 'occupied', label: 'Occupied' },
@@ -210,7 +283,7 @@ export const placementOptions = sortByLabel([
   { value: 'air return', label: 'Air return' },
   { value: 'desk', label: 'Desk' },
   { value: 'other', label: 'Other' },
-  { value: 'mixed', label: 'Mixed' },
+  { value: 'mixed', label: 'Mixed (intermittent)' },
   { value: 'unknown', label: 'Unknown' },
 ]);
 
