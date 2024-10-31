@@ -256,16 +256,27 @@
                 </q-expansion-item>
               </q-item-section>
               <q-item-section side>
-                <q-btn
-                  rounded
-                  dense
-                  flat
-                  color="negative"
-                  :title="$t('delete')"
-                  icon="delete"
-                  class="q-ml-xs"
-                  @click="onDeleteSpace(i)"
-                />
+                <div>
+                  <q-btn
+                    rounded
+                    dense
+                    flat
+                    :title="$t('duplicate')"
+                    icon="content_copy"
+                    size="sm"
+                    @click="onDuplicateSpace(i)"
+                  />
+                  <q-btn
+                    rounded
+                    dense
+                    flat
+                    color="negative"
+                    :title="$t('delete')"
+                    icon="delete"
+                    size="sm"
+                    @click="onDeleteSpace(i)"
+                  />
+                </div>
               </q-item-section>
             </q-item>
           </template>
@@ -301,6 +312,7 @@ import {
 import { geocoderApi } from 'src/utils/geocoder';
 import { Building, Certification } from 'src/models';
 import SpaceForm from 'src/components/contribute/SpaceForm.vue';
+import { notifyInfo } from 'src/utils/notify';
 
 const contrib = useContributeStore();
 
@@ -374,12 +386,20 @@ function onLongLatUpdated() {
   ]).finally(() => (loadingAlt.value = false));
 }
 
+function onDuplicateSpace(i: number) {
+  if (!building.value.spaces) return;
+  contrib.addSpace(building.value.identifier, building.value.spaces[i]);
+  notifyInfo('Space duplicated');
+}
+
 function onAddSpace() {
   contrib.addSpace(building.value.identifier);
+  notifyInfo('New space added');
 }
 
 function onDeleteSpace(i: number) {
   contrib.deleteSpace(building.value.identifier, i);
+  notifyInfo('Space deleted');
 }
 
 function onGreenCertifiedUpdated() {

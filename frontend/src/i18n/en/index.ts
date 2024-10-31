@@ -24,6 +24,7 @@ export default {
   contribute: 'Contribute',
   confirm_study_draft_delete: 'Are you sure you want to delete the study draft "{identifier}"?',
   delete: 'Delete',
+  duplicate: 'Duplicate',
   download: 'Download',
   previous: 'Previous',
   next: 'Next',

@@ -81,7 +81,7 @@ export const useContributeStore = defineStore(
       study.value.contributors?.splice(i, 1);
     }
 
-    function addBuilding() {
+    function addBuilding(buildingSource: Building | undefined = undefined) {
       if (!study.value.buildings) {
         study.value.buildings = [];
       }
@@ -93,22 +93,29 @@ export const useContributeStore = defineStore(
       ) {
         id++;
       }
-      let country = '';
-      if (study.value.buildings && study.value.buildings.length > 0) {
-        country =
-          study.value.buildings[study.value.buildings.length - 1].country;
+      if (buildingSource) {
+        const buildingCopy = JSON.parse(JSON.stringify(buildingSource));
+        buildingCopy.id = id;
+        buildingCopy.identifier = `${id}`;
+        study.value.buildings?.push(buildingCopy);
+      } else {
+        let country = '';
+        if (study.value.buildings && study.value.buildings.length > 0) {
+          country =
+            study.value.buildings[study.value.buildings.length - 1].country;
+        }
+        study.value.buildings?.push({
+          id: id,
+          identifier: `${id}`,
+          city: '',
+          country,
+          certification: {
+            name: '',
+            level: '',
+          },
+          spaces: [],
+        } as Building);
       }
-      study.value.buildings?.push({
-        id: id,
-        identifier: `${id}`,
-        city: '',
-        country,
-        certification: {
-          name: '',
-          level: '',
-        },
-        spaces: [],
-      } as Building);
     }
 
     function getSpaceDefaults() {
@@ -125,7 +132,7 @@ export const useContributeStore = defineStore(
       study.value.buildings?.splice(i, 1);
     }
 
-    function addSpace(bId: string) {
+    function addSpace(bId: string, spaceSource: Space | undefined = undefined) {
       const building = study.value.buildings?.find(
         (bld) => bld.identifier === bId,
       );
@@ -135,11 +142,18 @@ export const useContributeStore = defineStore(
       while (building.spaces?.find((rm) => rm.id === id || rm.identifier === `${id}`)) {
         id++;
       }
-      building.spaces?.push({
-        id: id,
-        identifier: `${id}`,
-        ...getSpaceDefaults(),
-      } as Space);
+      if (spaceSource) {
+        const spaceCopy = JSON.parse(JSON.stringify(spaceSource));
+        spaceCopy.id = id;
+        spaceCopy.identifier = `${id}`;
+        building.spaces?.push(spaceCopy);
+      } else {
+        building.spaces?.push({
+          id: id,
+          identifier: `${id}`,
+          ...getSpaceDefaults(),
+        } as Space);
+      }
     }
 
     function deleteSpace(bId: string, i: number) {
@@ -151,7 +165,7 @@ export const useContributeStore = defineStore(
       building.spaces?.splice(i, 1);
     }
 
-    function addInstrument() {
+    function addInstrument(instrumentSource: Instrument | undefined = undefined) {
       if (!study.value.instruments) {
         study.value.instruments = [];
       }
@@ -163,21 +177,28 @@ export const useContributeStore = defineStore(
       ) {
         id++;
       }
-      study.value.instruments?.push({
-        id: id,
-        identifier: `${id}`,
-        manufacturer: '',
-        model: '',
-        equipment_grade_rating: 'unknown',
-        placement: 'unknown',
-      } as Instrument);
+      if (instrumentSource) {
+        const instrumentCopy = JSON.parse(JSON.stringify(instrumentSource));
+        instrumentCopy.id = id;
+        instrumentCopy.identifier = `${id}`;
+        study.value.instruments?.push(instrumentCopy);
+      } else {
+        study.value.instruments?.push({
+          id: id,
+          identifier: `${id}`,
+          manufacturer: '',
+          model: '',
+          equipment_grade_rating: 'unknown',
+          placement: 'unknown',
+        } as Instrument);
+      }
     }
 
     function deleteInstrument(i: number) {
       study.value.instruments?.splice(i, 1);
     }
 
-    function addInstrumentParameter(instId: string) {
+    function addInstrumentParameter(instId: string, parameterSource: InstrumentParameter | undefined = undefined) {
       const instrument = study.value.instruments?.find(
         (inst) => inst.identifier === instId,
       );
@@ -194,12 +215,18 @@ export const useContributeStore = defineStore(
       ) {
         id++;
       }
-      instrument.parameters.push({
-        id: id,
-        physical_parameter: physicalParameterOptions[0].value,
-        analysis_method: '',
-        measurement_uncertainty: '',
-      } as InstrumentParameter);
+      if (parameterSource) {
+        const parameterCopy = JSON.parse(JSON.stringify(parameterSource));
+        parameterCopy.id = id;
+        instrument.parameters?.push(parameterCopy);
+      } else {
+        instrument.parameters.push({
+          id: id,
+          physical_parameter: physicalParameterOptions[0].value,
+          analysis_method: '',
+          measurement_uncertainty: '',
+        } as InstrumentParameter);
+      }
     }
 
     function deleteInstrumentParameter(instId: string, i: number) {

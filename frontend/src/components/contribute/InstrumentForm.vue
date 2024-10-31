@@ -51,7 +51,7 @@
         />
       </div>
     </div>
-    <div class="text-bold q-mb-md">Parameters</div>
+    <div class="text-bold q-mb-md">Instrument parameters</div>
     <q-card flat bordered class="q-mb-md bg-grey-2">
       <q-card-section>
         <div
@@ -80,16 +80,27 @@
                 </q-expansion-item>
               </q-item-section>
               <q-item-section side>
-                <q-btn
-                  rounded
-                  dense
-                  flat
-                  color="negative"
-                  :title="$t('delete')"
-                  icon="delete"
-                  class="q-ml-xs"
-                  @click="onDeleteParameter(i)"
-                />
+                <div>
+                  <q-btn
+                    rounded
+                    dense
+                    flat
+                    :title="$t('duplicate')"
+                    icon="content_copy"
+                    size="sm"
+                    @click="onDuplicateParameter(i)"
+                  />
+                  <q-btn
+                    rounded
+                    dense
+                    flat
+                    color="negative"
+                    :title="$t('delete')"
+                    icon="delete"
+                    size="sm"
+                    @click="onDeleteParameter(i)"
+                  />
+                </div>
               </q-item-section>
             </q-item>
           </template>
@@ -121,6 +132,7 @@ import {
   physicalParameterOptions,
 } from 'src/utils/options';
 import { Instrument } from 'src/models';
+import { notifyInfo } from 'src/utils/notify';
 
 const contrib = useContributeStore();
 
@@ -141,11 +153,19 @@ function getInstrumentParameterLabel(i: number) {
   return physicalParameterOptions.find((o) => o.value === val)?.label || val;
 }
 
+function onDuplicateParameter(i: number) {
+  if (!instrument.value.parameters) return;
+  contrib.addInstrumentParameter(instrument.value.identifier, instrument.value.parameters[i]);
+  notifyInfo('Instrument parameter duplicated');
+}
+
 function onAddParameter() {
   contrib.addInstrumentParameter(instrument.value.identifier);
+  notifyInfo('New instrument parameter added');
 }
 
 function onDeleteParameter(i: number) {
   contrib.deleteInstrumentParameter(instrument.value.identifier, i);
+  notifyInfo('Instrument parameter deleted');
 }
 </script>

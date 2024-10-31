@@ -38,6 +38,14 @@
               {{ contrib.study.buildings[selected].identifier }}
               <q-space />
               <q-btn
+                rounded
+                dense
+                flat
+                :title="$t('duplicate')"
+                icon="content_copy"
+                @click="onDuplicate(selected)"
+              />
+              <q-btn
                 v-if="selected !== null"
                 rounded
                 dense
@@ -45,6 +53,7 @@
                 color="negative"
                 :title="$t('delete')"
                 icon="delete"
+                class="on-right"
                 @click="onDelete(selected)"
               />
               <q-btn
@@ -90,6 +99,7 @@ export default defineComponent({
 });
 </script>
 <script setup lang="ts">
+import { notifyInfo } from 'src/utils/notify';
 import BuildingForm from './BuildingForm.vue';
 const contrib = useContributeStore();
 
@@ -109,9 +119,17 @@ onMounted(() => {
   }
 });
 
+function onDuplicate(i: number) {
+  if (!contrib.study.buildings) return;
+  contrib.addBuilding(contrib.study.buildings[i]);
+  selected.value = contrib.study.buildings.length - 1;
+  notifyInfo('Building duplicated with its spaces');
+}
+
 function onAdd() {
   contrib.addBuilding();
   selected.value = contrib.study.buildings ? contrib.study.buildings.length - 1 : null;
+  notifyInfo('New building added');
 }
 
 function onDelete(i: number) {
@@ -122,6 +140,6 @@ function onDelete(i: number) {
     selected.value = selected.value ? selected.value - 1 : null;
   }
   contrib.deleteBuilding(i);
-
+  notifyInfo('Building deleted');
 }
 </script>
