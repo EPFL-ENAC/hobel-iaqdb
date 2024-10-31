@@ -122,6 +122,7 @@ export interface InstrumentParameter extends DBModel {
   physical_parameter: string;
   analysis_method?: string;
   measurement_uncertainty?: string;
+  note?: string;
 }
 
 export interface InstrumentsResult extends ListResult {

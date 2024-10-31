@@ -198,7 +198,7 @@ export const occupancyOptions = sortByLabel([
 ]);
 
 export const equipmentGradeOptions = sortByLabel([
-  { value: 'research-grade', label: 'Research-grade' },
+  { value: 'reference-grade', label: 'Reference-grade' },
   { value: 'mid-level', label: 'Mid-level' },
   { value: 'low-cost', label: 'Low-cost' },
   { value: 'unknown', label: 'Unknown' },

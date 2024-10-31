@@ -51,7 +51,7 @@
         />
       </div>
     </div>
-    <div class="text-bold q-mb-md">Instrument parameters</div>
+    <div class="text-bold q-mb-md">Measurement parameters</div>
     <q-card flat bordered class="q-mb-md bg-grey-2">
       <q-card-section>
         <div

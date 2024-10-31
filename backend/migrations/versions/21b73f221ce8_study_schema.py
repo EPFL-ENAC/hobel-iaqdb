@@ -19,9 +19,11 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.drop_column('study', 'building_count')
-    op.drop_column('study', 'space_count')
+    op.drop_column("study", "building_count")
+    op.drop_column("study", "space_count")
+    op.add_column("instrumentparameter", sa.Column(
+        "note", sa.String(), nullable=True))
 
 
 def downgrade() -> None:
-    pass
+    op.drop_column("instrumentparameter", "note")

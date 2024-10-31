@@ -220,6 +220,7 @@ class InstrumentParameterBase(SQLModel):
     physical_parameter: str
     analysis_method: Optional[str] = Field(default=None)
     measurement_uncertainty: Optional[str] = Field(default=None)
+    note: Optional[str] = Field(default=None)
 
     instrument_id: Optional[int] = Field(
         default=None, foreign_key="instrument.id", ondelete="CASCADE")
