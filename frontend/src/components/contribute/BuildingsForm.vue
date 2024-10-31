@@ -21,9 +21,10 @@
                 flat
                 no-caps
                 :label="building.identifier"
+                :title="building.identifier"
                 align="left"
                 size="12px"
-                class="full-width"
+                class="full-width ellipsis"
                 :class="`${selected === i ? 'bg-light-blue-1' : ''}`"
                 @click="selected = i"
               />
@@ -101,6 +102,7 @@ export default defineComponent({
 <script setup lang="ts">
 import { notifyInfo } from 'src/utils/notify';
 import BuildingForm from './BuildingForm.vue';
+import { title } from 'process';
 const contrib = useContributeStore();
 
 const selected = ref<number | null>(null);

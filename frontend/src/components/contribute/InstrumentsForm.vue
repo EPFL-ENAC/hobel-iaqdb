@@ -16,9 +16,10 @@
                 flat
                 no-caps
                 :label="instrument.identifier"
+                :title="instrument.identifier"
                 align="left"
                 size="12px"
-                class="full-width"
+                class="full-width ellipsis"
                 :class="`${selected === i ? 'bg-light-blue-1' : ''}`"
                 @click="selected = i"
               />
