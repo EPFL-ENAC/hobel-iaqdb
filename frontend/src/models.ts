@@ -60,8 +60,6 @@ export interface Study extends DBModel {
   start_year?: number;
   end_year?: number;
   duration?: number;
-  building_count?: number;
-  space_count?: number;
   occupant_impact?: string;
   other_indoor_param?: string;
   citation?: string;

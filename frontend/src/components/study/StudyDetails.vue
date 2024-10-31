@@ -70,8 +70,6 @@ const licenseDescription = computed(
 
 const items: FieldItem<Study>[] = [
   { field: 'website', label: 'Website' },
-  { field: 'building_count', label: 'Building count' },
-  { field: 'space_count', label: 'Space count' },
 ];
 
 const refItems: FieldItem<Study>[] = [

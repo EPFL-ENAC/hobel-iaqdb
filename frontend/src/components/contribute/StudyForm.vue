@@ -56,26 +56,6 @@
     </div>
     <div class="row q-col-gutter-md q-mb-md">
       <div class="col">
-        <q-input
-          v-model.number="contrib.study.building_count"
-          filled
-          type="number"
-          :label="$t('study.building_count')"
-          :hint="$t('study.building_count_hint')"
-        />
-      </div>
-      <div class="col">
-        <q-input
-          v-model.number="contrib.study.space_count"
-          filled
-          type="number"
-          :label="$t('study.space_count')"
-          :hint="$t('study.space_count_hint')"
-        />
-      </div>
-    </div>
-    <div class="row q-col-gutter-md q-mb-md">
-      <div class="col">
         <q-select
           v-model="contrib.study.occupant_impact"
           :options="occupantImpactOptions"

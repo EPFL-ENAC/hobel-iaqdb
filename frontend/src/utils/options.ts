@@ -1,4 +1,13 @@
-export const climateOptions = [
+interface OptionItem {
+  value: string;
+  label: string;
+}
+
+function sortByLabel(opts: OptionItem[]): OptionItem[] {
+  return opts.sort((a, b) => a.label.localeCompare(b.label));
+}
+
+export const climateOptions = sortByLabel([
   { value: 'Af', label: '[Af]  Tropical, rainforest' },
   { value: 'Am', label: '[Am]  Tropical, monsoon' },
   { value: 'Aw', label: '[Aw]  Tropical, savannah' },
@@ -29,57 +38,57 @@ export const climateOptions = [
   { value: 'Dfd', label: '[Dfd] Cold, no dry season, very cold winter' },
   { value: 'ET', label: '[ET]  Polar, tundra' },
   { value: 'EF', label: '[EF]  Polar, frost' },
-];
+]);
 
-export const occupantImpactOptions = [
+export const occupantImpactOptions = sortByLabel([
   { value: 'health', label: 'Health' },
   { value: 'comfort', label: 'Comfort' },
   { value: 'satisfaction', label: 'Satisfaction' },
   { value: 'performance', label: 'Performance' },
   { value: 'well-being', label: 'Well-being' },
   { value: 'na', label: 'Not applicable' },
-];
+]);
 
-export const otherIndoorParamOptions = [
+export const otherIndoorParamOptions = sortByLabel([
   { value: 'thermal', label: 'Thermal' },
   { value: 'acoustic', label: 'Acoustic' },
   { value: 'visual', label: 'Visual' },
   { value: 'na', label: 'Not applicable' },
-];
+]);
 
-export const ventilationStatusOptions = [
+export const ventilationStatusOptions = sortByLabel([
   { value: 'on', label: 'On' },
   { value: 'off', label: 'Off' },
   { value: 'mixed', label: 'Mixed' },
   { value: 'unknown', label: 'Unknown' },
   { value: 'na', label: 'Not applicable' },
-];
+]);
 
-export const ventilationTypeOptions = [
+export const ventilationTypeOptions = sortByLabel([
   { value: 'mixing', label: 'Mixing' },
   { value: 'displacement', label: 'Displacement' },
   { value: 'exhaust only', label: 'Exhaust only' },
   { value: 'other', label: 'Other' },
   { value: 'unknown', label: 'Unknown' },
   { value: 'na', label: 'Not applicable' },
-];
+]);
 
-export const windowsStatusOptions = [
+export const windowsStatusOptions = sortByLabel([
   { value: 'open', label: 'Open' },
   { value: 'closed', label: 'Closed' },
   { value: 'unknown', label: 'Unknown' },
   { value: 'na', label: 'Not applicable' },
-];
+]);
 
-export const coolingStatusOptions = [
+export const coolingStatusOptions = sortByLabel([
   { value: 'on', label: 'On' },
   { value: 'off', label: 'Off' },
   { value: 'mixed', label: 'Mixed' },
   { value: 'unknown', label: 'Unknown' },
   { value: 'na', label: 'Not applicable' },
-];
+]);
 
-export const coolingTypeOptions = [
+export const coolingTypeOptions = sortByLabel([
   { value: 'forced air', label: 'Forced air' },
   { value: 'fan coil units', label: 'Fan coil units' },
   { value: 'ceiling radiant', label: 'Ceiling radiant' },
@@ -87,17 +96,17 @@ export const coolingTypeOptions = [
   { value: 'other', label: 'Other' },
   { value: 'unknown', label: 'Unknown' },
   { value: 'na', label: 'Not applicable' },
-];
+]);
 
-export const heatingStatusOptions = [
+export const heatingStatusOptions = sortByLabel([
   { value: 'on', label: 'On' },
   { value: 'off', label: 'Off' },
   { value: 'mixed', label: 'Mixed' },
   { value: 'unknown', label: 'Unknown' },
   { value: 'na', label: 'Not applicable' },
-];
+]);
 
-export const heatingTypeOptions = [
+export const heatingTypeOptions = sortByLabel([
   { value: 'forced air', label: 'Forced air' },
   { value: 'fan coil units', label: 'Fan coil units' },
   { value: 'ceiling radiant', label: 'Ceiling radiant' },
@@ -106,9 +115,9 @@ export const heatingTypeOptions = [
   { value: 'other', label: 'Other' },
   { value: 'unknown', label: 'Unknown' },
   { value: 'na', label: 'Not applicable' },
-];
+]);
 
-export const majorCombustionSourcesOptions = [
+export const majorCombustionSourcesOptions = sortByLabel([
   {
     value: 'unvented kerosene and gas space heaters',
     label: 'Unvented kerosene and gas space heaters',
@@ -117,15 +126,15 @@ export const majorCombustionSourcesOptions = [
   { value: 'fireplaces', label: 'Fireplaces' },
   { value: 'gas stoves', label: 'Gas stoves' },
   { value: 'other', label: 'Other' },
-];
+]);
 
-export const minorCombustionSourcesOptions = [
+export const minorCombustionSourcesOptions = sortByLabel([
   { value: 'candles', label: 'Candles' },
   { value: 'incense', label: 'Incense' },
   { value: 'other', label: 'Other' },
-];
+]);
 
-export const buildingTypeOptions = [
+export const buildingTypeOptions = sortByLabel([
   { value: 'multifamily residential', label: 'Multifamily residential' },
   { value: 'dwelling', label: 'Dwelling' },
   { value: 'office', label: 'Office' },
@@ -135,17 +144,17 @@ export const buildingTypeOptions = [
   { value: 'retail', label: 'Retail' },
   { value: 'sport center,', label: 'Sport center' },
   { value: 'other', label: 'Other' },
-];
+]);
 
-export const outdoorEnvOptions = [
+export const outdoorEnvOptions = sortByLabel([
   { value: 'rural', label: 'Rural' },
   { value: 'urban', label: 'Urban' },
   { value: 'suburban', label: 'Suburban' },
   { value: 'industrialized', label: 'Industrialized' },
   { value: 'unknown', label: 'Unknown' },
-];
+]);
 
-export const populationOptions = [
+export const populationOptions = sortByLabel([
   { value: 'low-income', label: 'Low-income' },
   { value: 'middle-income', label: 'Middle-income' },
   { value: 'high-income', label: 'High-income' },
@@ -153,7 +162,7 @@ export const populationOptions = [
   { value: 'children', label: 'Children' },
   { value: 'other', label: 'Other' },
   { value: 'na', label: 'Not applicable' },
-];
+]);
 
 export const yesNoOptions = [
   { value: 'yes', label: 'Yes' },
@@ -161,7 +170,7 @@ export const yesNoOptions = [
   { value: 'unknown', label: 'Unknown' },
 ];
 
-export const spaceTypeOptions = [
+export const spaceTypeOptions = sortByLabel([
   { value: 'living room', label: 'Living room' },
   { value: 'kitchen', label: 'Kitchen' },
   { value: 'bedroom', label: 'Bedroom' },
@@ -179,23 +188,23 @@ export const spaceTypeOptions = [
   { value: 'classroom', label: 'Classroom' },
   { value: 'outdoor', label: 'Outdoor' },
   { value: 'other', label: 'Other' },
-];
+]);
 
-export const occupancyOptions = [
+export const occupancyOptions = sortByLabel([
   { value: 'occupied', label: 'Occupied' },
   { value: 'unoccupied', label: 'Unoccupied' },
   { value: 'combined', label: 'Combined' },
   { value: 'unknown', label: 'Unknown' },
-];
+]);
 
-export const equipmentGradeOptions = [
+export const equipmentGradeOptions = sortByLabel([
   { value: 'research-grade', label: 'Research-grade' },
   { value: 'mid-level', label: 'Mid-level' },
   { value: 'low-cost', label: 'Low-cost' },
   { value: 'unknown', label: 'Unknown' },
-];
+]);
 
-export const placementOptions = [
+export const placementOptions = sortByLabel([
   { value: 'ceiling', label: 'Ceiling' },
   { value: 'lateral wall', label: 'Lateral wall' },
   { value: 'air return', label: 'Air return' },
@@ -203,9 +212,9 @@ export const placementOptions = [
   { value: 'other', label: 'Other' },
   { value: 'mixed', label: 'Mixed' },
   { value: 'unknown', label: 'Unknown' },
-];
+]);
 
-export const physicalParameterOptions = [
+export const physicalParameterOptions = sortByLabel([
   { value: 'individual voc', label: 'Individual VOC' },
   { value: 'tvoc', label: 'TVOC' },
   { value: 'pm10', label: 'PM10' },
@@ -230,18 +239,18 @@ export const physicalParameterOptions = [
     label: 'Mechanical ventilation rate',
   },
   { value: 'biocontaminants', label: 'Biocontaminants' },
-];
+]);
 
-export const referenceOptions = [
+export const referenceOptions = sortByLabel([
   { value: 'building', label: 'Building ID' },
   { value: 'space', label: 'Space ID' },
   { value: 'instrument', label: 'Instrument ID' },
   { value: 'timestamp', label: 'Timestamp' },
   ...physicalParameterOptions,
   { value: 'other', label: 'Other' },
-];
+]);
 
-export const countryOptions = [
+export const countryOptions = sortByLabel([
   { value: 'AF', label: 'Afghanistan' },
   { value: 'AX', label: 'Åland Islands' },
   { value: 'AL', label: 'Albania' },
@@ -494,7 +503,7 @@ export const countryOptions = [
   { value: 'YE', label: 'Yemen' },
   { value: 'ZM', label: 'Zambia' },
   { value: 'ZW', label: 'Zimbabwe' },
-];
+]);
 
 export const licenseOptions = [
   {
@@ -595,7 +604,7 @@ export const licenseOptions = [
   },
 ];
 
-export const vocOptions = [
+export const vocOptions = sortByLabel([
   { value: '100-41-4', label: 'Ethyl Benzene' },
   { value: '100-42-5', label: 'Styrene' },
   { value: '100-44-7', label: 'Benzyl Chloride' },
@@ -800,4 +809,4 @@ export const vocOptions = [
   { value: '107-01-7', label: '2-butene' },
   { value: '560-21-4', label: '2,3,3-Trimethylpentane' },
   { value: '584-94-1', label: '2,3-Dimethylhexane' },
-];
+]);
