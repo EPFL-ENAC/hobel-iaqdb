@@ -52,11 +52,9 @@ class StudyParser:
         study.instruments = instruments
 
         spaces = self.read_spaces(io)
-        study.space_count = sum(len(sp) for sp in spaces.values())
 
         buildings = self.read_buildings(io, spaces)
         study.buildings = buildings
-        study.building_count = len(buildings)
 
         if study.identifier is None:
             study.identifier = '_draft'

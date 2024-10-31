@@ -31,8 +31,6 @@ class StudyBase(SQLModel):
     name: str
     description: str
     website: Optional[str] = Field(default=None)
-    building_count: Optional[int] = Field(default=None)
-    space_count: Optional[int] = Field(default=None)
     start_year: Optional[int] = Field(default=None)
     end_year: Optional[int] = Field(default=None)
     duration: Optional[int] = Field(default=None)

@@ -89,8 +89,6 @@ async def seed(session: AsyncSession = Depends(get_session)) -> SeedStatus:
                       name=fake.word(),
                       description=fake.paragraph(nb_sentences=4),
                       website=fake.url(),
-                      building_count=random.randint(1, 10),
-                      space_count=random.randint(1, 100),
                       start_year=random.randint(2000, 2010),
                       end_year=random.randint(2010, 2020),
                       duration=random.randint(1, 24),
