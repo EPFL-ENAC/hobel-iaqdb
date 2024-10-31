@@ -131,6 +131,8 @@ export default {
       certification_level_hint: 'Level of building certification.',
       construction_year: 'Construction year',
       construction_year_hint: '',
+      renovation: 'Renovation',
+      renovation_hint: '',
       renovation_year: 'Renovation year',
       renovation_year_hint: '',
       special_population: 'Special population',

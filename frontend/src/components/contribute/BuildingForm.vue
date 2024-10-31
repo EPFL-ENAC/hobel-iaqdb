@@ -57,12 +57,25 @@
         />
       </div>
       <div class="col">
+        <q-select
+          v-model="building.renovation"
+          :options="yesNoOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.building.renovation')"
+          :hint="$t('study.building.renovation_hint')"
+          @update:model-value="onRenovationUpdated"
+        />
+      </div>
+      <div class="col">
         <q-input
           v-model.number="building.renovation_year"
           filled
           type="number"
           :label="$t('study.building.renovation_year')"
           :hint="$t('study.building.renovation_year_hint')"
+          :disable="building.renovation !== 'yes'"
         />
       </div>
     </div>
@@ -407,6 +420,12 @@ function onGreenCertifiedUpdated() {
     building.value.certifications = [{} as Certification];
   } else {
     building.value.certifications = [];
+  }
+}
+
+function onRenovationUpdated() {
+  if (building.value.renovation !== 'yes') {
+    building.value.renovation_year = undefined;
   }
 }
 </script>

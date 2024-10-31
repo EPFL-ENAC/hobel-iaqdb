@@ -127,11 +127,13 @@ class StudyParser:
                 if ppCol in inst and inst[ppCol] is not None:
                     amCol = f"analysis method {i}"
                     muCol = f"measurement uncertainty {i}"
+                    noteCol = f"note {i}"
                     param = {
                         "id": i,
                         "physical_parameter": inst[ppCol],
                         "analysis_method": inst[amCol] if amCol in inst else None,
                         "measurement_uncertainty": inst[muCol] if muCol in inst else None,
+                        "note": inst[noteCol] if noteCol in inst else None,
                         "study_id": 0,
                         "instrument_id": index,
                     }
