@@ -57,7 +57,7 @@
                 label="Import from Excel"
                 :disable="loading"
                 :loading="loading"
-                accept=".xlsx"
+                accept=".xlsx,.xlsm"
                 clearable
                 color="black"
                 @update:model-value="onExcelFileUpdated"

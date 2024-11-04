@@ -24,17 +24,6 @@
       </div>
       <div class="col">
         <q-select
-          v-model="building.special_population"
-          :options="populationOptions"
-          filled
-          emit-value
-          map-options
-          :label="$t('study.building.special_population')"
-          :hint="$t('study.building.special_population_hint')"
-        />
-      </div>
-      <div class="col">
-        <q-select
           v-model="building.outdoor_env"
           :options="outdoorEnvOptions"
           filled
@@ -42,6 +31,31 @@
           map-options
           :label="$t('study.building.outdoor_env')"
           :hint="$t('study.building.outdoor_env_hint')"
+        />
+      </div>
+    </div>
+
+    <div class="row q-col-gutter-md q-mb-md">
+      <div class="col">
+        <q-select
+          v-model="building.age_group"
+          :options="ageGroupOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.building.age_group')"
+          :hint="$t('study.building.age_group_hint')"
+        />
+      </div>
+      <div class="col">
+        <q-select
+          v-model="building.socioeconomic_status"
+          :options="socioeconomicStatusOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.building.socioeconomic_status')"
+          :hint="$t('study.building.socioeconomic_status_hint')"
         />
       </div>
     </div>
@@ -330,7 +344,8 @@ import {
   climateOptions,
   buildingTypeOptions,
   outdoorEnvOptions,
-  populationOptions,
+  ageGroupOptions,
+  socioeconomicStatusOptions,
   countryOptions,
   yesNoOptions,
 } from 'src/utils/options';

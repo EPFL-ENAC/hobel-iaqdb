@@ -153,13 +153,18 @@ export const outdoorEnvOptions = sortByLabel([
   { value: 'unknown', label: 'Unknown' },
 ]);
 
-export const populationOptions = sortByLabel([
+export const ageGroupOptions = sortByLabel([
+  { value: 'elderly', label: 'Elderly' },
+  { value: 'children', label: 'Children' },
+  { value: 'adult', label: 'Adult' },
+  { value: 'unknown', label: 'Unknown' },
+]);
+
+export const socioeconomicStatusOptions = sortByLabel([
   { value: 'low-income', label: 'Low-income' },
   { value: 'middle-income', label: 'Middle-income' },
   { value: 'high-income', label: 'High-income' },
-  { value: 'Elderly', label: 'Elderly' },
-  { value: 'children', label: 'Children' },
-  { value: 'other', label: 'Other' },
+  { value: 'unknown', label: 'Unknown' },
   { value: 'na', label: 'Not applicable' },
 ]);
 

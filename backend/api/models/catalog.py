@@ -110,7 +110,8 @@ class BuildingBase(SQLModel):
     lat: float
     type: Optional[str] = Field(default=None)
     other_type: Optional[str] = Field(default=None)
-    special_population: Optional[str] = Field(default=None)
+    age_group: Optional[str] = Field(default=None)
+    socioeconomic_status: Optional[str] = Field(default=None)
     outdoor_env: Optional[str] = Field(default=None)
     other_outdoor_env: Optional[str] = Field(default=None)
     green_certified: Optional[str] = Field(default=None)
@@ -120,7 +121,6 @@ class BuildingBase(SQLModel):
     mechanical_ventilation: str
     particle_filtration_rating: Optional[int] = Field(default=None)
     operable_windows: str
-    special_population: Optional[str] = Field(default=None)
     other_special_population: Optional[str] = Field(default=None)
     smoking: str
     study_id: Optional[int] = Field(

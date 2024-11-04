@@ -36,7 +36,8 @@ export interface Building extends DBModel {
   mechanical_ventilation?: string;
   particle_filtration_rating?: number;
   operable_windows?: string;
-  special_population?: string;
+  age_group?: string;
+  socioeconomic_status?: string;
   other_special_population?: string;
   smoking?: string;
   spaces?: Space[];

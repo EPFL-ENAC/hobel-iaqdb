@@ -44,10 +44,10 @@
           @update:model-value="onUpdatedFilter"
         />
         <q-select
-          v-model="populations"
-          :options="populationOptions"
-          :label="$t('study.building.special_population')"
-          :hint="$t('study.building.special_population_hint')"
+          v-model="ageGroup"
+          :options="ageGroupOptions"
+          :label="$t('study.building.age_group')"
+          :hint="$t('study.building.age_group_hint')"
           multiple
           use-chips
           emit-value
@@ -193,7 +193,7 @@ import {
   climateOptions,
   ventilationTypeOptions,
   buildingTypeOptions,
-  populationOptions,
+  ageGroupOptions,
   outdoorEnvOptions,
   vocOptions,
 } from 'src/utils/options';
@@ -209,7 +209,7 @@ const timeframe = ref({
   max: 2025,
 });
 const buildingTypes = ref([]);
-const populations = ref([]);
+const ageGroup = ref([]);
 const outdoorEnvs = ref([]);
 const vocs = ref([]);
 
@@ -324,7 +324,7 @@ function onResetFilters() {
     max: 2025,
   };
   buildingTypes.value = [];
-  populations.value = [];
+  ageGroup.value = [];
   outdoorEnvs.value = [];
   vocs.value = [];
   onUpdatedFilter();

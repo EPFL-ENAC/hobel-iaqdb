@@ -19,19 +19,30 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.drop_column("space", "particle_filtration_rating")
     op.add_column("building", sa.Column(
         "particle_filtration_rating", sa.Integer(), nullable=True))
+    op.add_column("building", sa.Column(
+        "age_group", sa.String(), nullable=True))
+    op.add_column("building", sa.Column(
+        "socioeconomic_status", sa.String(), nullable=True))
+    op.drop_column("building", "special_population")
+
     op.add_column("space", sa.Column(
         "floor_area", sa.Float(), nullable=True))
     op.add_column("space", sa.Column(
         "space_volume", sa.Float(), nullable=True))
     op.add_column("space", sa.Column(
         "occupant_density", sa.Float(), nullable=True))
+    op.drop_column("space", "particle_filtration_rating")
 
 
 def downgrade() -> None:
+    op.add_column("building", sa.Column(
+        "special_population", sa.String(), nullable=True))
     op.drop_column("building", "particle_filtration_rating")
+    op.drop_column("building", "age_group")
+    op.drop_column("building", "socioeconomic_status")
+
     op.add_column("space", sa.Column(
         "particle_filtration_rating", sa.Integer(), nullable=True))
     op.drop_column("space", "floor_area")

@@ -164,7 +164,8 @@ class StudyParser:
                 'mechanical ventilation': 'mechanical_ventilation',
                 'particle filtration rating': 'particle_filtration_rating',
                 'operable windows': 'operable_windows',
-                'special population designation': 'special_population',
+                'occupant age group': 'age_group',
+                'occupant socioeconomic status': 'socioeconomic_status',
                 'if other, specify special population': 'other_special_population',
                 'smoking permitted': 'smoking',
             },
@@ -176,7 +177,7 @@ class StudyParser:
                 df[col] = pd.to_numeric(
                     df[col], downcast='integer', errors='coerce')
         # Lower case of categorical columns
-        for col in ['type', 'outdoor_env', 'green_certified', 'renovation', 'mechanical_ventilation', 'operable_windows', 'special_population', 'smoking']:
+        for col in ['type', 'outdoor_env', 'green_certified', 'renovation', 'mechanical_ventilation', 'operable_windows', 'age_group', 'socioeconomic_status', 'smoking']:
             if col in df.columns:
                 df[col] = self.mormalize_column(df, col)
         # To explicitly convert NaN to None
@@ -187,6 +188,8 @@ class StudyParser:
         for index, row in df.iterrows():
             bldg = row.to_dict()
             building = Building(**bldg)
+            if building.identifier is None:
+                pass
             if bldg['green_certified'] is not None and bldg['green_certified'].lower() == 'yes' and bldg['green_certification_name'] is not None:
                 crtf = Certification(
                     program=bldg['green_certification_name'], level=bldg['green_certification_level'])
@@ -196,10 +199,11 @@ class StudyParser:
             building.id = index
             building.study_id = 0
             # look up spaces
-            building.spaces = spaces[building.identifier]
-            for space in building.spaces:
-                space.building_id = index
-                space.study_id = 0
+            if building.identifier in spaces:
+                building.spaces = spaces[building.identifier]
+                for space in building.spaces:
+                    space.building_id = index
+                    space.study_id = 0
             # building.id = index
             buildings.append(building)
         return buildings
@@ -211,7 +215,7 @@ class StudyParser:
             columns={
                 'building identifier': 'building_identifier',
                 'space identifier': 'identifier',
-                'space types': 'type',
+                'space type': 'type',
                 'space volume': 'space_volume',
                 'floor area': 'floor_area',
                 'occupancy density': 'occupancy_density',
@@ -259,6 +263,8 @@ class StudyParser:
         for index, row in df.iterrows():
             spc = row.to_dict()
             space = Space(**spc)
+            if space.identifier is None:
+                pass
             # ensure it is a string
             space.identifier = f"{space.identifier}"
             space.id = index
