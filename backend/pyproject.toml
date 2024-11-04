@@ -25,6 +25,7 @@ timezonefinder = "^6.5.2"
 pandas = "^2.2.2"
 openpyxl = "^3.1.5"
 python-keycloak = "^4.4.0"
+country-converter = "^1.2"
 
 
 [build-system]

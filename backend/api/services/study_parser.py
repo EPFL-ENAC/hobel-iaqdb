@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import country_converter as coco
 from typing import List, Dict
 from api.models.catalog import Study, Building, Space, Certification, Person, Instrument, InstrumentParameter
 
@@ -180,6 +181,9 @@ class StudyParser:
         for col in ['type', 'outdoor_env', 'green_certified', 'renovation', 'mechanical_ventilation', 'operable_windows', 'age_group', 'socioeconomic_status', 'smoking']:
             if col in df.columns:
                 df[col] = self.mormalize_column(df, col)
+        if 'country' in df.columns:
+            df['country'] = df['country'].apply(
+                lambda x: coco.convert(names=x, to='ISO2', not_found=None))
         # To explicitly convert NaN to None
         df = df.replace({np.nan: None})
         # print(df)
