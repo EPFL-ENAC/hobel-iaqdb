@@ -156,7 +156,7 @@
     <div v-if="hasCityCountry" class="row q-col-gutter-md q-mb-md">
       <div class="col">
         <q-input
-          v-model.number="building.longitude"
+          v-model.number="building.long"
           type="number"
           filled
           :label="$t('study.building.longitude')"
@@ -167,7 +167,7 @@
       </div>
       <div class="col">
         <q-input
-          v-model.number="building.latitude"
+          v-model.number="building.lat"
           type="number"
           filled
           :label="$t('study.building.latitude')"
@@ -347,13 +347,13 @@ const hasCityCountry = computed(
   () => building.value.city && building.value.country,
 );
 const hasLongLat = computed(
-  () => building.value.longitude && building.value.latitude,
+  () => building.value.long && building.value.lat,
 );
 
 async function onLocationUpdated() {
   if (!hasCityCountry.value) {
-    building.value.longitude = undefined;
-    building.value.latitude = undefined;
+    building.value.long = undefined;
+    building.value.lat = undefined;
     onLongLatUpdated();
     return;
   }
@@ -364,16 +364,16 @@ async function onLocationUpdated() {
       countries: [building.value.country],
     });
     if (res.features && res.features.length > 0 && res.features[0].center) {
-      building.value.longitude = res.features[0].center[0];
-      building.value.latitude = res.features[0].center[1];
+      building.value.long = res.features[0].center[0];
+      building.value.lat = res.features[0].center[1];
     } else {
-      building.value.longitude = null;
-      building.value.latitude = null;
+      building.value.long = undefined;
+      building.value.lat = undefined;
     }
   } catch (err) {
     console.error(err);
-    building.value.longitude = null;
-    building.value.latitude = null;
+    building.value.long = undefined;
+    building.value.lat = undefined;
   }
   onLongLatUpdated();
 }
@@ -387,12 +387,12 @@ function onLongLatUpdated() {
   loadingAlt.value = true;
   Promise.all([
     contrib
-      .fetchAltitude(building.value.longitude, building.value.latitude)
+      .fetchAltitude(building.value.long, building.value.lat)
       .then((res) => {
         building.value.altitude = res.altitude;
       }),
     contrib
-      .fetchClimateZone(building.value.longitude, building.value.latitude)
+      .fetchClimateZone(building.value.long, building.value.lat)
       .then((res) => {
         building.value.climate_zone = res.name;
       }),
