@@ -9,7 +9,7 @@
       class="q-mb-md"
     />
 
-    <div class="row q-col-gutter-md">
+    <div class="row q-col-gutter-md q-mb-md">
       <div class="col">
         <q-select
           v-model="space.type"
@@ -23,6 +23,27 @@
         />
       </div>
       <div class="col">
+        <q-input
+          v-model.number="space.floor_area"
+          type="number"
+          filled
+          :label="$t('study.space.floor_area')"
+          :hint="$t('study.space.floor_area_hint')"
+        />
+      </div>
+      <div class="col">
+        <q-input
+          v-model.number="space.space_volume"
+          type="number"
+          filled
+          :label="$t('study.space.space_volume')"
+          :hint="$t('study.space.space_volume_hint')"
+        />
+      </div>
+    </div>
+
+    <div class="row q-col-gutter-md q-mb-md">
+      <div class="col">
         <q-select
           v-model="space.occupancy"
           :options="occupancyOptions"
@@ -31,6 +52,17 @@
           map-options
           :label="$t('study.space.occupancy')"
           :hint="$t('study.space.occupancy_hint')"
+          @update:model-value="onOccupancyChange"
+        />
+      </div>
+      <div class="col">
+        <q-input
+          v-model.number="space.occupancy_density"
+          type="number"
+          filled
+          :label="$t('study.space.occupancy_density')"
+          :hint="$t('study.space.occupancy_density_hint')"
+          :disable="space.occupancy === 'unknown'"
         />
       </div>
     </div>
@@ -88,15 +120,6 @@
           filled
           :label="$t('study.space.air_change_rate')"
           :hint="$t('study.space.air_change_rate_hint')"
-        />
-      </div>
-      <div class="col">
-        <q-input
-          v-model.number="space.particle_filtration_rating"
-          type="number"
-          filled
-          :label="$t('study.space.particle_filtration_rating')"
-          :hint="$t('study.space.particle_filtration_rating_hint')"
         />
       </div>
     </div>
@@ -312,6 +335,12 @@ function onCombustionSourcesChange() {
   if (space.value.combustion_sources !== 'yes') {
     space.value.major_combustion_sources = undefined;
     space.value.minor_combustion_sources = undefined;
+  }
+}
+
+function onOccupancyChange() {
+  if (!space.value.occupancy || ['unknown', 'unoccupied'].includes(space.value.occupancy)) {
+    space.value.occupancy_density = undefined;
   }
 }
 </script>

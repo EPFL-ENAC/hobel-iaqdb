@@ -93,6 +93,18 @@
         />
       </div>
       <div class="col">
+        <q-input
+          v-model.number="building.particle_filtration_rating"
+          type="number"
+          filled
+          :label="$t('study.building.particle_filtration_rating')"
+          :hint="$t('study.building.particle_filtration_rating_hint')"
+        />
+      </div>
+    </div>
+
+    <div class="row q-col-gutter-md q-mb-md">
+      <div class="col">
         <q-select
           v-model="building.operable_windows"
           :options="yesNoOptions"

@@ -118,6 +118,7 @@ class BuildingBase(SQLModel):
     renovation: str
     renovation_year: Optional[int] = Field(default=None)
     mechanical_ventilation: str
+    particle_filtration_rating: Optional[int] = Field(default=None)
     operable_windows: str
     special_population: Optional[str] = Field(default=None)
     other_special_population: Optional[str] = Field(default=None)
@@ -178,7 +179,6 @@ class SpaceBase(SQLModel):
     windows_status: str
     ventilation_rate: Optional[float] = Field(default=None)
     air_change_rate: Optional[float] = Field(default=None)
-    particle_filtration_rating: Optional[int] = Field(default=None)
     cooling_status: str
     cooling_type: Optional[str] = Field(default=None)
     other_cooling_type: Optional[str] = Field(default=None)

@@ -162,6 +162,7 @@ class StudyParser:
                 'renovation': 'renovation',
                 'year of renovation': 'renovation_year',
                 'mechanical ventilation': 'mechanical_ventilation',
+                'particle filtration rating': 'particle_filtration_rating',
                 'operable windows': 'operable_windows',
                 'special population designation': 'special_population',
                 'if other, specify special population': 'other_special_population',
@@ -170,7 +171,7 @@ class StudyParser:
             inplace=True)
 
         # Convert columns to numeric, invalid parsing will be set as NaN (None in case of conversion to object type)
-        for col in ['construction_year', 'renovation_year']:
+        for col in ['construction_year', 'particle_filtration_rating', 'renovation_year']:
             if col in df.columns:
                 df[col] = pd.to_numeric(
                     df[col], downcast='integer', errors='coerce')
@@ -211,13 +212,15 @@ class StudyParser:
                 'building identifier': 'building_identifier',
                 'space identifier': 'identifier',
                 'space types': 'type',
+                'space volume': 'space_volume',
+                'floor area': 'floor_area',
+                'occupancy density': 'occupancy_density',
                 'occupancy status': 'occupancy',
                 'mechanical ventilation system type': 'mechanical_ventilation_type',
                 'mechanical ventilation system status': 'mechanical_ventilation_status',
                 'windows status': 'windows_status',
                 'ventilation rate': 'ventilation_rate',
                 'air change rate': 'air_change_rate',
-                'particle filtration rating': 'particle_filtration_rating',
                 'cooling system type': 'cooling_type',
                 'if other, specify cooling system type': 'other_cooling_type',
                 'cooling system status': 'cooling_status',
@@ -238,10 +241,7 @@ class StudyParser:
             inplace=True)
 
         # Convert columns to numeric, invalid parsing will be set as NaN (None in case of conversion to object type)
-        if 'particle_filtration_rating' in df.columns:
-            df['particle_filtration_rating'] = pd.to_numeric(
-                df['particle_filtration_rating'], downcast='integer', errors='coerce')
-        for col in ['ventilation_rate', 'air_change_rate']:
+        for col in ['ventilation_rate', 'air_change_rate', 'space_volume', 'floor_area', 'occupancy_density']:
             if col in df.columns:
                 df[col] = pd.to_numeric(
                     df[col], downcast='float', errors='coerce')

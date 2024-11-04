@@ -34,6 +34,7 @@ export interface Building extends DBModel {
   renovation?: string;
   renovation_year?: number;
   mechanical_ventilation?: string;
+  particle_filtration_rating?: number;
   operable_windows?: string;
   special_population?: string;
   other_special_population?: string;
@@ -80,13 +81,15 @@ export interface StudiesResult extends ListResult {
 export interface Space extends DBModel {
   identifier: string;
   type: string;
+  space_volume?: number;
+  floor_area?: number;
+  occupancy_density?: number;
   occupancy?: string;
   mechanical_ventilation_status?: string;
   mechanical_ventilation_type?: string;
   windows_status?: string;
   ventilation_rate?: number;
   air_change_rate?: number;
-  particle_filtration_rating?: number;
   cooling_status?: string;
   cooling_type?: string;
   other_cooling_type?: string;
