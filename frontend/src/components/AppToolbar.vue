@@ -151,7 +151,6 @@ withDefaults(defineProps<Props>(), {
 const emit = defineEmits(['toggle']);
 
 const settingsStore = useSettingsStore();
-const authStore = useAuthStore();
 
 const showIntro = ref(false);
 const showResources = ref(false);

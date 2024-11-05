@@ -73,8 +73,11 @@ async def get_study_draft(
 ) -> StudyDraft:
     """Get a study draft"""
     service = StudyDraftService()
-    study = await service.get(identifier)
-    return study
+    try:
+        study = await service.get(identifier)
+        return study
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.put("/study-draft/{identifier}", response_model=StudyDraft)

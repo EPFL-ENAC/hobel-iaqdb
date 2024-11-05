@@ -303,11 +303,16 @@ export const useContributeStore = defineStore(
     }
 
     async function readExcel(file: File) {
+      let identifier = study.value.identifier;
+      if (!isUUID(identifier)) {
+        identifier = '';
+      }
       const formData = new FormData();
       formData.append('files', file);
       return api.post('/contribute/study-excel', formData).then((res) => {
         console.log(res.data);
         study.value = res.data;
+        study.value.identifier = identifier;
       });
     }
 
@@ -322,10 +327,27 @@ export const useContributeStore = defineStore(
           .then((res) => res.data));
     }
 
+    function isUUID(str: string) {
+      return str.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+    }
+
     async function saveOrUpdateDraft() {
+      // check study identifier is a valid uuid
+      if (!isUUID(study.value.identifier)) {
+        study.value.identifier = '';
+      }
       if (study.value.identifier !== '' && study.value.identifier !== '_draft') {
-        return api.put(`/contribute/study-draft/${study.value.identifier}`, study.value)
-          .then((res) => study.value = res.data);
+        // check if study exists
+        api.get(`/contribute/study-draft/${study.value.identifier}`).then(() => {
+          // update existing study
+          return api.put(`/contribute/study-draft/${study.value.identifier}`, study.value)
+            .then((res) => study.value = res.data);
+        }).catch(() => {
+          // create new study, ensure identifier is empty
+          study.value.identifier = '';
+          return api.post('/contribute/study-draft', study.value)
+            .then((res) => study.value = res.data);
+        });
       }
       return api.post('/contribute/study-draft', study.value)
         .then((res) => study.value = res.data);
