@@ -710,7 +710,7 @@ yaml = ["ruamel.yaml"]
 
 [[package]]
 name = "enacit4r"
-version = "0.1.0"
+version = "0.2.0"
 description = "Python utils for EPFL ENAC IT4R developments"
 optional = false
 python-versions = "^3.10"
@@ -726,8 +726,8 @@ pydantic = "^2.9.2"
 [package.source]
 type = "git"
 url = "https://github.com/EPFL-ENAC/enacit4r-pyutils"
-reference = "0.1.0"
-resolved_reference = "cea912f75a2fdca0d4b673796fffceec9045de6b"
+reference = "0.2.0"
+resolved_reference = "b60996518120f0da295a9539489220a9f872ff32"
 
 [[package]]
 name = "et-xmlfile"
@@ -2468,4 +2468,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "b9abd813355b678964c1129d4091df0e3ac4f8a353719b59072bfbc656a75a66"
+content-hash = "199db0b26587070ffb91e6e556d4131f98dafa9e148c1feae17dfa1f605394e5"

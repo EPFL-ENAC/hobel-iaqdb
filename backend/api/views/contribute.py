@@ -7,7 +7,7 @@ from fastapi.param_functions import File
 from api.services.study_parser import StudyParser
 from api.services.study_draft import StudyDraftService
 from api.models.catalog import StudyDraft, StudyDraftsResult
-from api.utils.file_size import size_checker
+from api.utils.files import file_checker
 from api.auth import require_admin, User
 
 router = APIRouter()
@@ -30,7 +30,7 @@ async def get_study_template():
 
 @router.post("/study-excel",
              status_code=200,
-             dependencies=[Depends(size_checker)],
+             dependencies=[Depends(file_checker.check_size)],
              response_model=StudyDraft)
 async def read_study_from_excel(
     files: UploadFile = File(

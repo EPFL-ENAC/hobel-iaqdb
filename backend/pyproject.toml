@@ -25,7 +25,7 @@ pandas = "^2.2.2"
 openpyxl = "^3.1.5"
 python-keycloak = "^4.4.0"
 country-converter = "^1.2"
-enacit4r = {git = "https://github.com/EPFL-ENAC/enacit4r-pyutils", rev = "0.1.0"}
+enacit4r = {git = "https://github.com/EPFL-ENAC/enacit4r-pyutils", rev = "0.2.0"}
 python-multipart = "^0.0.17"
 uvicorn = "^0.32.0"
 

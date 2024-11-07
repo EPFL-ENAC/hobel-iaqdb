@@ -1,19 +1,13 @@
-from typing import List
 from fastapi import APIRouter, Security, Depends, Query, Body
-from fastapi.datastructures import UploadFile
-from fastapi.param_functions import File
 from api.db import get_session, AsyncSession
 from api.auth import get_api_key
 from api.services.study import StudyService
-from api.services.study_parser import StudyParser
-from api.services.study_draft import StudyDraftService
 from api.services.building import BuildingService
 from api.services.space import SpaceService
 from api.services.instrument import InstrumentService
 from api.services.dataset import DatasetService
-from api.models.catalog import Study, StudyRead, StudyDraft, StudiesResult, Building, BuildingRead, BuildingsResult, Space, SpacesResult, Instrument, InstrumentsResult, Dataset, DatasetsResult
+from api.models.catalog import Study, StudyRead, StudiesResult, Building, BuildingRead, BuildingsResult, Space, SpacesResult, Instrument, InstrumentsResult, Dataset, DatasetsResult
 from api.utils.query import paramAsArray, paramAsDict
-from api.utils.file_size import size_checker
 
 router = APIRouter()
 
