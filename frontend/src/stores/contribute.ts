@@ -336,9 +336,23 @@ export const useContributeStore = defineStore(
       if (!isUUID(study.value.identifier)) {
         study.value.identifier = '';
       }
+      // make sure numeric fields are numbers or undefined
+      ['start_year', 'end_year', 'duration'].forEach((field) => {
+        if (typeof study.value[field] !== 'number') study.value[field] = undefined;
+      });
+      study.value.buildings?.forEach((b) => {
+        ['construction_year', 'renovation_year', 'particle_filtration_rating', 'long', 'lat', 'altitude'].forEach((field) => {
+          if (typeof b[field] !== 'number') b[field] = undefined;
+        });
+        b.spaces?.forEach((s) => {
+          ['floor_area', 'space_volume', 'occupancy_density', 'ventilation_rate', 'air_change_rate'].forEach((field) => {
+            if (typeof s[field] !== 'number') s[field] = undefined;
+          });
+        });
+      });
       if (study.value.identifier !== '' && study.value.identifier !== '_draft') {
         // check if study exists
-        api.get(`/contribute/study-draft/${study.value.identifier}`).then(() => {
+        return api.get(`/contribute/study-draft/${study.value.identifier}`).then(() => {
           // update existing study
           return api.put(`/contribute/study-draft/${study.value.identifier}`, study.value)
             .then((res) => study.value = res.data);

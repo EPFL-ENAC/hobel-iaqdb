@@ -66,6 +66,8 @@
           v-model.number="building.construction_year"
           filled
           type="number"
+          :min="0"
+          :max="new Date().getFullYear()"
           :label="$t('study.building.construction_year')"
           :hint="$t('study.building.construction_year_hint')"
         />
@@ -87,6 +89,8 @@
           v-model.number="building.renovation_year"
           filled
           type="number"
+          :min="0"
+          :max="new Date().getFullYear()"
           :label="$t('study.building.renovation_year')"
           :hint="$t('study.building.renovation_year_hint')"
           :disable="building.renovation !== 'yes'"
@@ -110,6 +114,7 @@
         <q-input
           v-model.number="building.particle_filtration_rating"
           type="number"
+          :min="0"
           filled
           :label="$t('study.building.particle_filtration_rating')"
           :hint="$t('study.building.particle_filtration_rating_hint')"
@@ -184,6 +189,8 @@
         <q-input
           v-model.number="building.long"
           type="number"
+          :min="-180"
+          :max="180"
           filled
           :label="$t('study.building.longitude')"
           :hint="$t('study.building.longitude_hint')"
@@ -195,6 +202,8 @@
         <q-input
           v-model.number="building.lat"
           type="number"
+          :min="-90"
+          :max="90"
           filled
           :label="$t('study.building.latitude')"
           :hint="$t('study.building.latitude_hint')"
@@ -208,6 +217,8 @@
         <q-input
           v-model.number="building.altitude"
           type="number"
+          :min="-1000"
+          :max="10000"
           filled
           :label="$t('study.building.altitude')"
           :hint="$t('study.building.altitude_hint')"

@@ -31,6 +31,8 @@
           v-model.number="contrib.study.start_year"
           filled
           type="number"
+          :min="1900"
+          :max="new Date().getFullYear()"
           :label="$t('study.start_year')"
           :hint="$t('study.start_year_hint')"
         />
@@ -40,6 +42,8 @@
           v-model.number="contrib.study.end_year"
           filled
           type="number"
+          :min="1900"
+          :max="new Date().getFullYear()"
           :label="$t('study.end_year')"
           :hint="$t('study.end_year_hint')"
         />
@@ -49,6 +53,7 @@
           v-model.number="contrib.study.duration"
           filled
           type="number"
+          :min="0"
           :label="$t('study.duration')"
           :hint="$t('study.duration_hint')"
         />

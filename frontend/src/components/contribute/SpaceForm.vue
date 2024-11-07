@@ -26,6 +26,7 @@
         <q-input
           v-model.number="space.floor_area"
           type="number"
+          :min="0"
           filled
           :label="$t('study.space.floor_area')"
           :hint="$t('study.space.floor_area_hint')"
@@ -35,6 +36,7 @@
         <q-input
           v-model.number="space.space_volume"
           type="number"
+          :min="0"
           filled
           :label="$t('study.space.space_volume')"
           :hint="$t('study.space.space_volume_hint')"
@@ -59,6 +61,7 @@
         <q-input
           v-model.number="space.occupancy_density"
           type="number"
+          :min="0"
           filled
           :label="$t('study.space.occupancy_density')"
           :hint="$t('study.space.occupancy_density_hint')"
@@ -108,6 +111,7 @@
         <q-input
           v-model.number="space.ventilation_rate"
           type="number"
+          :min="0"
           filled
           :label="$t('study.space.ventilation_rate')"
           :hint="$t('study.space.ventilation_rate_hint')"
@@ -117,6 +121,7 @@
         <q-input
           v-model.number="space.air_change_rate"
           type="number"
+          :min="0"
           filled
           :label="$t('study.space.air_change_rate')"
           :hint="$t('study.space.air_change_rate_hint')"
