@@ -26,9 +26,9 @@ openpyxl = "^3.1.5"
 country-converter = "^1.2"
 python-multipart = "^0.0.17"
 uvicorn = "^0.32.0"
-enacit4r-files = {git = "https://github.com/EPFL-ENAC/enacit4r-pyutils", rev = "main", subdirectory = "files"}
-enacit4r-auth = {git = "https://github.com/EPFL-ENAC/enacit4r-pyutils", rev = "main", subdirectory = "auth"}
-enacit4r-sql = {git = "https://github.com/EPFL-ENAC/enacit4r-pyutils", rev = "main", subdirectory = "sql"}
+enacit4r-auth = {git = "https://github.com/EPFL-ENAC/enacit4r-auth", rev = "0.1.0"}
+enacit4r-files = {git = "https://github.com/EPFL-ENAC/enacit4r-files", rev = "0.4.0"}
+enacit4r-sql = {git = "https://github.com/EPFL-ENAC/enacit4r-sql", rev = "0.1.0"}
 
 
 [build-system]
