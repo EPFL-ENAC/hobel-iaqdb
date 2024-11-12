@@ -4,7 +4,31 @@ from sqlalchemy.orm import selectinload
 from sqlmodel import select
 from fastapi import HTTPException
 from api.models.catalog import Building, BuildingsResult, Study, Space
-from api.utils.query import QueryBuilder
+from enacit4r_sql.utils.query import QueryBuilder
+
+
+class BuildingQueryBuilder(QueryBuilder):
+
+    def build_count_query_with_joins(self, filter):
+        query = self.build_count_query()
+        query = self._apply_joins(query, filter)
+        return query
+
+    def build_query_with_joins(self, total_count, filter):
+        start, end, query = self.build_query(total_count)
+        query = self._apply_joins(query, filter)
+        query = query.options(selectinload(Building.certifications),
+                              selectinload(Building.spaces),
+                              selectinload(Building.study))
+        return start, end, query
+
+    def _apply_joins(self, query, filter):
+        if "$study" in filter:
+            query = query.join(Study, Study.id == Building.study_id)
+        if "$space" in filter:
+            query = query.join(Space, Building.id == Space.building_id)
+        query = query.distinct()
+        return query
 
 
 class BuildingService:
@@ -45,19 +69,16 @@ class BuildingService:
 
     async def find(self, filter: dict, sort: list, range: list) -> BuildingsResult:
         """Get all buildings matching filter and range"""
-        builder = QueryBuilder(Building, filter, sort, range, {
-                               "$study": Study, "$space": Space})
+        builder = BuildingQueryBuilder(Building, filter, sort, range, {
+            "$study": Study, "$space": Space})
 
         # Do a query to satisfy total count
-        count_query = self.apply_joins(builder.build_count_query(), filter)
+        count_query = builder.build_count_query_with_joins(filter)
         total_count_query = await self.session.exec(count_query)
         total_count = total_count_query.one()
 
         # Main query
-        start, end, query = builder.build_query(total_count)
-        query = self.apply_joins(query, filter)
-        query = query.options(selectinload(
-            Building.certifications), selectinload(Building.spaces), selectinload(Building.study))
+        start, end, query = builder.build_query_with_joins(total_count, filter)
 
         # Execute query
         results = await self.session.exec(query)
@@ -69,11 +90,3 @@ class BuildingService:
             limit=end - start + 1,
             data=buildings
         )
-
-    def apply_joins(self, query, filter):
-        if "$study" in filter:
-            query = query.join(Study, Study.id == Building.study_id)
-        if "$space" in filter:
-            query = query.join(Space, Building.id == Space.building_id)
-        query = query.distinct()
-        return query

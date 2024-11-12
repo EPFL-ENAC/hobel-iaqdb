@@ -1,3 +1,3 @@
-from enacit4r.tools.files import FileChecker
+from enacit4r_files.utils.files import FileChecker
 
 file_checker = FileChecker()

@@ -1,5 +1,4 @@
 import pkg_resources
-from typing import List
 from fastapi import APIRouter, Depends, Body, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.datastructures import UploadFile
@@ -8,7 +7,7 @@ from api.services.study_parser import StudyParser
 from api.services.study_draft import StudyDraftService
 from api.models.catalog import StudyDraft, StudyDraftsResult
 from api.utils.files import file_checker
-from api.auth import require_admin, User
+from api.auth import kc_service, User
 
 router = APIRouter()
 
@@ -44,7 +43,7 @@ async def read_study_from_excel(
 
 @router.get("/study-drafts", response_model=StudyDraftsResult)
 async def get_study_drafts(
-    user: User = Depends(require_admin),
+    user: User = Depends(kc_service.require_admin()),
 ) -> StudyDraftsResult:
     """Get all study drafts"""
     service = StudyDraftService()
@@ -55,6 +54,7 @@ async def get_study_drafts(
 @router.post("/study-draft", response_model=StudyDraft)
 async def create_study_draft(
     study: StudyDraft = Body(...),
+    user: User = Depends(kc_service.require_admin()),
 ) -> StudyDraft:
     """Create a study draft"""
     service = StudyDraftService()
@@ -84,6 +84,7 @@ async def get_study_draft(
 async def update_study_draft(
     identifier: str,
     study: StudyDraft = Body(...),
+    user: User = Depends(kc_service.require_admin()),
 ) -> StudyDraft:
     """Update a study draft"""
     if identifier != study.identifier:
@@ -96,6 +97,7 @@ async def update_study_draft(
 @router.delete("/study-draft/{identifier}")
 async def delete_study_draft(
     identifier: str,
+    user: User = Depends(kc_service.require_admin()),
 ) -> None:
     """Delete a study draft"""
     service = StudyDraftService()

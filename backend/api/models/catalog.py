@@ -1,6 +1,6 @@
 from typing import List, Dict, Optional
 from sqlmodel import SQLModel, Field, Relationship, UniqueConstraint, Column, JSON
-from pydantic import BaseModel
+from enacit4r_sql.models.query import ListResult
 
 
 # Studies
@@ -337,12 +337,6 @@ class DatasetDraft(DatasetRead):
 #
 # Results
 #
-
-
-class ListResult(BaseModel):
-    total: int
-    skip: int | None
-    limit: int | None
 
 
 class StudiesResult(ListResult):

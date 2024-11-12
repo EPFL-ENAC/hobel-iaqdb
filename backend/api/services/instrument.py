@@ -4,7 +4,30 @@ from sqlalchemy.orm import selectinload
 from sqlmodel import select
 from fastapi import HTTPException
 from api.models.catalog import Study, Instrument, InstrumentsResult, InstrumentParameter
-from api.utils.query import QueryBuilder
+from enacit4r_sql.utils.query import QueryBuilder
+
+
+class InstrumentQueryBuilder(QueryBuilder):
+
+    def build_count_query_with_joins(self, filter):
+        query = self.build_count_query()
+        query = self._apply_joins(query, filter)
+        return query
+
+    def build_query_with_joins(self, total_count, filter):
+        start, end, query = self.build_query(total_count)
+        query = self._apply_joins(query, filter)
+        query = query.options(selectinload(Instrument.parameters))
+        return start, end, query
+
+    def _apply_joins(self, query, filter):
+        if "$study" in filter:
+            query = query.join(Study, Study.id == Instrument.study_id)
+        if "$instrumentparameter" in filter:
+            query = query.join(InstrumentParameter, Instrument.id ==
+                               InstrumentParameter.instrument_id)
+        query = query.distinct()
+        return query
 
 
 class InstrumentService:
@@ -45,19 +68,16 @@ class InstrumentService:
 
     async def find(self, filter: dict, sort: list, range: list) -> InstrumentsResult:
         """Get all instruments matching filter and range"""
-        builder = QueryBuilder(Instrument, filter, sort,
-                               range, {"$study": Study, "$instrumentparameter": InstrumentParameter})
+        builder = InstrumentQueryBuilder(Instrument, filter, sort,
+                                         range, {"$study": Study, "$instrumentparameter": InstrumentParameter})
 
         # Do a query to satisfy total count
-        count_query = self.apply_joins(builder.build_count_query(), filter)
+        count_query = builder.build_count_query_with_joins(filter)
         total_count_query = await self.session.exec(count_query)
         total_count = total_count_query.one()
 
         # Main query
-        start, end, query = builder.build_query(total_count)
-        query = self.apply_joins(query, filter)
-        query = query.options(
-            selectinload(Instrument.parameters))
+        start, end, query = builder.build_query_with_joins(total_count, filter)
 
         # Execute query
         results = await self.session.exec(query)
@@ -69,12 +89,3 @@ class InstrumentService:
             limit=end - start + 1,
             data=instruments
         )
-
-    def apply_joins(self, query, filter):
-        if "$study" in filter:
-            query = query.join(Study, Study.id == Instrument.study_id)
-        if "$instrumentparameter" in filter:
-            query = query.join(InstrumentParameter, Instrument.id ==
-                               InstrumentParameter.instrument_id)
-        query = query.distinct()
-        return query

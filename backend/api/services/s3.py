@@ -1,4 +1,4 @@
-from enacit4r.services.s3 import S3Service
+from enacit4r_files.services.s3 import S3Service
 from api.config import config
 
 s3_client = S3Service(config.S3_ENDPOINT_PROTOCOL + config.S3_ENDPOINT_HOSTNAME,
