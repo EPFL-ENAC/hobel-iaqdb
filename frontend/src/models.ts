@@ -34,11 +34,12 @@ export interface Building extends DBModel {
   renovation?: string;
   renovation_year?: number;
   mechanical_ventilation?: string;
+  particle_filtration_system?: string; 
   particle_filtration_rating?: number;
   operable_windows?: string;
+  airtightness?: number;  
   age_group?: string;
   socioeconomic_status?: string;
-  other_special_population?: string;
   smoking?: string;
   spaces?: Space[];
   certifications?: Certification[];
@@ -62,8 +63,8 @@ export interface Study extends DBModel {
   start_year?: number;
   end_year?: number;
   duration?: number;
-  occupant_impact?: string;
-  other_indoor_param?: string;
+  occupant_impact?: string[];
+  other_indoor_param?: string[];
   citation?: string;
   doi?: string;
   funding?: string;
@@ -82,19 +83,14 @@ export interface StudiesResult extends ListResult {
 export interface Space extends DBModel {
   identifier: string;
   type: string;
-  space_volume?: number;
   floor_area?: number;
+  space_volume?: number;
   occupancy_density?: number;
   occupancy?: string;
-  mechanical_ventilation_status?: string;
   mechanical_ventilation_type?: string;
-  windows_status?: string;
-  ventilation_rate?: number;
-  air_change_rate?: number;
-  cooling_status?: string;
+  other_mechanical_ventilation_type?: string;
   cooling_type?: string;
   other_cooling_type?: string;
-  heating_status?: string;
   heating_type?: string;
   other_heating_type?: string;
   air_filtration?: string;

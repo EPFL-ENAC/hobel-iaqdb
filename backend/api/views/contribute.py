@@ -14,14 +14,14 @@ router = APIRouter()
 
 @router.get("/study-template")
 async def get_study_template():
-    version = "2.1"
+    version = "3.1"
     data_file_path = pkg_resources.resource_filename(
         "api", f"data/Metadata_entry_form_v{version}.xlsm")
     return FileResponse(data_file_path, filename=f"iaqdb_study_template_v{version}.xlsm", media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
 @router.get("/dataset-dictionary")
-async def get_study_template():
+async def get_dataset_dictionary():
     data_file_path = pkg_resources.resource_filename(
         "api", "data/Dictionary_data.xlsx")
     return FileResponse(data_file_path, filename="iaqdb_dataset_dictionary.xlsx", media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")

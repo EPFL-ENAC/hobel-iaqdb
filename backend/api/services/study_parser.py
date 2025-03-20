@@ -101,6 +101,9 @@ class StudyParser:
                 'model': 'model',
                 'equipment rating': 'equipment_grade_rating',
                 'placement': 'placement',
+                'parameter': 'physical_parameter',
+                'analysis method': 'analysis_method',
+                'measurement uncertainty': 'measurement_uncertainty',
             },
             inplace=True)
 
@@ -108,39 +111,39 @@ class StudyParser:
         for col in ['equipment_grade_rating', 'placement']:
             if col in df.columns:
                 df[col] = self.mormalize_column(df, col)
-        for i in range(1, 50):
-            ppCol = f"physical parameter {i}"
-            if ppCol in df.columns:
-                df[ppCol] = self.mormalize_column(df, ppCol)
         # To explicitly convert NaN to None
         df = df.replace({np.nan: None})
 
         instruments = []
+        id = 1
         for index, row in df.iterrows():
             inst = row.to_dict()
             instrument = Instrument(**inst)
-            instrument.id = index
             instrument.study_id = 0
             # ensure it is a string
-            instrument.identifier = f"{instrument.identifier}"
-            for i in range(1, 50):
-                ppCol = f"physical parameter {i}"
-                if ppCol in inst and inst[ppCol] is not None:
-                    amCol = f"analysis method {i}"
-                    muCol = f"measurement uncertainty {i}"
-                    noteCol = f"note {i}"
-                    param = {
-                        "id": i,
-                        "physical_parameter": inst[ppCol],
-                        "analysis_method": inst[amCol] if amCol in inst else None,
-                        "measurement_uncertainty": inst[muCol] if muCol in inst else None,
-                        "note": inst[noteCol] if noteCol in inst else None,
-                        "study_id": 0,
-                        "instrument_id": index,
-                    }
-                    instrument.parameters.append(InstrumentParameter(**param))
+            instrument.identifier = str(instrument.identifier)
 
-            instruments.append(instrument)
+            # find instrument by identifier in the instruments list
+            found = [inst for inst in instruments if inst.identifier ==
+                     instrument.identifier]
+            if len(found) > 0:
+                instrument = found[0]
+            else:
+                instrument.id = id
+                id += 1
+                instruments.append(instrument)
+
+            param = {
+                "id": len(instrument.parameters) + 1,
+                "physical_parameter": inst["physical_parameter"] if "physical_parameter" in inst else None,
+                "analysis_method": inst["analysis_method"] if "analysis_method" in inst else None,
+                "measurement_uncertainty": inst["measurement_uncertainty"] if "measurement_uncertainty" in inst else None,
+                "note": None,
+                "study_id": 0,
+                "instrument_id": instrument.id,
+            }
+            instrument.parameters.append(InstrumentParameter(**param))
+
         return instruments
 
     def read_buildings(self, io, spaces: List[Space]) -> List[Building]:
@@ -163,11 +166,12 @@ class StudyParser:
                 'renovation': 'renovation',
                 'year of renovation': 'renovation_year',
                 'mechanical ventilation': 'mechanical_ventilation',
-                'particle filtration rating': 'particle_filtration_rating',
+                'particle filter rating system': 'particle_filtration_system',
+                'particle filter rating level': 'particle_filtration_rating',
                 'operable windows': 'operable_windows',
+                'airtightness (ach50)': 'airtightness',
                 'occupant age group': 'age_group',
                 'occupant socioeconomic status': 'socioeconomic_status',
-                'if other, specify special population': 'other_special_population',
                 'smoking permitted': 'smoking',
             },
             inplace=True)
@@ -199,7 +203,7 @@ class StudyParser:
                     program=bldg['green_certification_name'], level=bldg['green_certification_level'])
                 building.certifications = [crtf]
             # ensure it is a string
-            building.identifier = f"{building.identifier}"
+            building.identifier = str(building.identifier)
             building.id = index
             building.study_id = 0
             # look up spaces
@@ -220,26 +224,21 @@ class StudyParser:
                 'building identifier': 'building_identifier',
                 'space identifier': 'identifier',
                 'space type': 'type',
-                'space volume': 'space_volume',
                 'floor area': 'floor_area',
+                'space volume': 'space_volume',
                 'occupancy density': 'occupancy_density',
                 'occupancy status': 'occupancy',
                 'mechanical ventilation system type': 'mechanical_ventilation_type',
-                'mechanical ventilation system status': 'mechanical_ventilation_status',
-                'windows status': 'windows_status',
-                'ventilation rate': 'ventilation_rate',
-                'air change rate': 'air_change_rate',
+                'if other, specify mechanical ventilation type': 'other_mechanical_ventilation_type',
                 'cooling system type': 'cooling_type',
                 'if other, specify cooling system type': 'other_cooling_type',
-                'cooling system status': 'cooling_status',
                 'heating system type': 'heating_type',
                 'if other, specify heating system type': 'other_heating_type',
-                'heating system status': 'heating_status',
                 'presence of standalone air filtration/purification': 'air_filtration',
                 'presence of printers or photocopiers': 'printers',
                 'presence of carpets': 'carpets',
                 'presence of any combustion sources': 'combustion_sources',
-                'marjor combustion sources': 'major_combustion_sources',
+                'major combustion sources': 'major_combustion_sources',
                 'minor combustion sources': 'minor_combustion_sources',
                 'presence of pets': 'pets',
                 'presence of visible dampness': 'dampness',
@@ -249,13 +248,13 @@ class StudyParser:
             inplace=True)
 
         # Convert columns to numeric, invalid parsing will be set as NaN (None in case of conversion to object type)
-        for col in ['ventilation_rate', 'air_change_rate', 'space_volume', 'floor_area', 'occupancy_density']:
+        for col in ['space_volume', 'floor_area', 'occupancy_density']:
             if col in df.columns:
                 df[col] = pd.to_numeric(
                     df[col], downcast='float', errors='coerce')
         # Lower case of categorical columns
-        for col in ['type', 'occupancy', 'mechanical_ventilation_type', 'mechanical_ventilation_status', 'windows_status',
-                    'cooling_type', 'cooling_status', 'heating_type', 'heating_status', 'air_filtration',
+        for col in ['type', 'occupancy', 'mechanical_ventilation_type',
+                    'cooling_type', 'heating_type', 'air_filtration',
                     'printers', 'carpets', 'combustion_sources', 'major_combustion_sources', 'minor_combustion_sources',
                     'pets', 'dampness', 'mold', 'detergents']:
             df[col] = self.mormalize_column(df, col)
@@ -270,7 +269,7 @@ class StudyParser:
             if space.identifier is None:
                 pass
             # ensure it is a string
-            space.identifier = f"{space.identifier}"
+            space.identifier = str(space.identifier)
             space.id = index
             space.study_id = 0
             if spc['building_identifier'] is not None:
@@ -291,6 +290,9 @@ class StudyParser:
         return df
 
     def mormalize_column(self, df: pd.DataFrame, column: str) -> pd.DataFrame:
-      # Lower case and replace non-printable/invisible characters with space and do stripping
-        return df[column].str.lower().str.replace(
-            r'[^\x20-\x7E]', ' ', regex=True).str.strip()
+        # Lower case and replace non-printable/invisible characters with space and do stripping
+        # column is in df.columns
+        if column in df.columns:
+            return df[column].str.lower().str.replace(
+                r'[^\x20-\x7E]', ' ', regex=True).str.strip()
+        return None

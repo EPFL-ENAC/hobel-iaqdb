@@ -22,6 +22,14 @@
           :rules="[val => !!val || $t('required')]"
         />
       </div>
+      <div v-if="building.type === 'other'" class="col">
+        <q-input
+          v-model="building.other_type"
+          filled
+          :label="$t('study.building.other_type')"
+          :hint="$t('study.building.other_type_hint')"
+        />
+      </div>
       <div class="col">
         <q-select
           v-model="building.outdoor_env"
@@ -33,29 +41,12 @@
           :hint="$t('study.building.outdoor_env_hint')"
         />
       </div>
-    </div>
-
-    <div class="row q-col-gutter-md q-mb-md">
-      <div class="col">
-        <q-select
-          v-model="building.age_group"
-          :options="ageGroupOptions"
+      <div v-if="building.outdoor_env === 'other'" class="col">
+        <q-input
+          v-model="building.other_outdoor_env"
           filled
-          emit-value
-          map-options
-          :label="$t('study.building.age_group')"
-          :hint="$t('study.building.age_group_hint')"
-        />
-      </div>
-      <div class="col">
-        <q-select
-          v-model="building.socioeconomic_status"
-          :options="socioeconomicStatusOptions"
-          filled
-          emit-value
-          map-options
-          :label="$t('study.building.socioeconomic_status')"
-          :hint="$t('study.building.socioeconomic_status_hint')"
+          :label="$t('study.building.other_outdoor_env')"
+          :hint="$t('study.building.other_outdoor_env_hint')"
         />
       </div>
     </div>
@@ -97,56 +88,7 @@
         />
       </div>
     </div>
-
-    <div class="row q-col-gutter-md q-mb-md">
-      <div class="col">
-        <q-select
-          v-model="building.mechanical_ventilation"
-          :options="yesNoOptions"
-          filled
-          emit-value
-          map-options
-          :label="$t('study.building.mechanical_ventilation')"
-          :hint="$t('study.building.mechanical_ventilation_hint')"
-        />
-      </div>
-      <div class="col">
-        <q-input
-          v-model.number="building.particle_filtration_rating"
-          type="number"
-          :min="0"
-          filled
-          :label="$t('study.building.particle_filtration_rating')"
-          :hint="$t('study.building.particle_filtration_rating_hint')"
-        />
-      </div>
-    </div>
-
-    <div class="row q-col-gutter-md q-mb-md">
-      <div class="col">
-        <q-select
-          v-model="building.operable_windows"
-          :options="yesNoOptions"
-          filled
-          emit-value
-          map-options
-          :label="$t('study.building.operable_windows')"
-          :hint="$t('study.building.operable_windows_hint')"
-        />
-      </div>
-      <div class="col">
-        <q-select
-          v-model="building.smoking"
-          :options="yesNoOptions"
-          filled
-          emit-value
-          map-options
-          :label="$t('study.building.smoking')"
-          :hint="$t('study.building.smoking_hint')"
-        />
-      </div>
-    </div>
-
+    
     <div class="text-bold q-mb-md">Location</div>
     <div class="row q-col-gutter-md q-mb-md">
       <div class="col">
@@ -240,6 +182,100 @@
     </div>
     <div v-if="loadingAlt">
       <q-spinner-dots />
+    </div>
+
+    <div class="text-bold q-mb-md">Ventilation</div>
+    <div class="row q-col-gutter-md q-mb-md">
+      <div class="col">
+        <q-select
+          v-model="building.mechanical_ventilation"
+          :options="yesNoOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.building.mechanical_ventilation')"
+          :hint="$t('study.building.mechanical_ventilation_hint')"
+        />
+      </div>
+      <div class="col">
+        <q-input
+          v-model="building.particle_filtration_system"
+          filled
+          :label="$t('study.building.particle_filtration_system')"
+          :hint="$t('study.building.particle_filtration_system_hint')"
+        />
+      </div>
+      <div class="col">
+        <q-input
+          v-model.number="building.particle_filtration_rating"
+          type="number"
+          :min="0"
+          filled
+          :label="$t('study.building.particle_filtration_rating')"
+          :hint="$t('study.building.particle_filtration_rating_hint')"
+        />
+      </div>
+    </div>
+
+    <div class="row q-col-gutter-md q-mb-md">
+      <div class="col">
+        <q-select
+          v-model="building.operable_windows"
+          :options="yesNoOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.building.operable_windows')"
+          :hint="$t('study.building.operable_windows_hint')"
+        />
+      </div>
+      <div class="col">
+        <q-input
+          v-model.number="building.airtightness"
+          type="number"
+          :min="0"
+          filled
+          :label="$t('study.building.airtightness')"
+          :hint="$t('study.building.airtightness_hint')"
+        />
+      </div>
+      <div class="col">
+        <q-select
+          v-model="building.smoking"
+          :options="yesNoOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.building.smoking')"
+          :hint="$t('study.building.smoking_hint')"
+        />
+      </div>
+    </div>
+
+    <div class="text-bold q-mb-md">Occupancy</div>
+    <div class="row q-col-gutter-md q-mb-md">
+      <div class="col">
+        <q-select
+          v-model="building.age_group"
+          :options="ageGroupOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.building.age_group')"
+          :hint="$t('study.building.age_group_hint')"
+        />
+      </div>
+      <div class="col">
+        <q-select
+          v-model="building.socioeconomic_status"
+          :options="socioeconomicStatusOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.building.socioeconomic_status')"
+          :hint="$t('study.building.socioeconomic_status_hint')"
+        />
+      </div>
     </div>
 
     <div class="text-bold q-mb-md">Certification</div>

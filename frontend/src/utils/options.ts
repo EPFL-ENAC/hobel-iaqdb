@@ -40,84 +40,53 @@ export const climateOptions = sortByLabel([
   { value: 'EF', label: '[EF]  Polar, frost' },
 ]);
 
-export const occupantImpactOptions = sortByLabel([
+export const occupantImpactOptions = [
   { value: 'health', label: 'Health' },
   { value: 'comfort', label: 'Comfort' },
   { value: 'satisfaction', label: 'Satisfaction' },
   { value: 'performance', label: 'Performance' },
   { value: 'well-being', label: 'Well-being' },
   { value: 'na', label: 'Not applicable' },
-]);
+];
 
-export const otherIndoorParamOptions = sortByLabel([
+export const otherIndoorParamOptions = [
   { value: 'thermal', label: 'Thermal' },
   { value: 'acoustic', label: 'Acoustic' },
   { value: 'visual', label: 'Visual' },
   { value: 'na', label: 'Not applicable' },
-]);
+];
 
-export const ventilationStatusOptions = sortByLabel([
-  { value: 'on', label: 'On' },
-  { value: 'off', label: 'Off' },
-  { value: 'mixed', label: 'Mixed' },
-  { value: 'unknown', label: 'Unknown' },
-  { value: 'na', label: 'Not applicable' },
-]);
-
-export const ventilationTypeOptions = sortByLabel([
+export const mechanicalVentilationTypeOptions = [
   { value: 'mixing', label: 'Mixing' },
   { value: 'displacement', label: 'Displacement' },
   { value: 'exhaust only', label: 'Exhaust only' },
   { value: 'other', label: 'Other' },
   { value: 'unknown', label: 'Unknown' },
   { value: 'na', label: 'Not applicable' },
-]);
+];
 
-export const windowsStatusOptions = sortByLabel([
-  { value: 'open', label: 'Open' },
-  { value: 'closed', label: 'Closed' },
-  { value: 'unknown', label: 'Unknown' },
-  { value: 'na', label: 'Not applicable' },
-]);
-
-export const coolingStatusOptions = sortByLabel([
-  { value: 'on', label: 'On' },
-  { value: 'off', label: 'Off' },
-  { value: 'mixed', label: 'Mixed' },
-  { value: 'unknown', label: 'Unknown' },
-  { value: 'na', label: 'Not applicable' },
-]);
-
-export const coolingTypeOptions = sortByLabel([
-  { value: 'forced air', label: 'Forced air' },
+export const coolingTypeOptions = [
+  { value: 'centralized air handling unit', label: 'Centralized air handling unit' },
   { value: 'fan coil units', label: 'Fan coil units' },
-  { value: 'ceiling radiant', label: 'Ceiling radiant' },
-  { value: 'floor radiant', label: 'Floor radiant' },
+  { value: 'radiant ceiling', label: 'Radiant ceiling' },
+  { value: 'radiant floor', label: 'Radiant floor' },
   { value: 'other', label: 'Other' },
   { value: 'unknown', label: 'Unknown' },
   { value: 'na', label: 'Not applicable' },
-]);
+];
 
-export const heatingStatusOptions = sortByLabel([
-  { value: 'on', label: 'On' },
-  { value: 'off', label: 'Off' },
-  { value: 'mixed', label: 'Mixed' },
-  { value: 'unknown', label: 'Unknown' },
-  { value: 'na', label: 'Not applicable' },
-]);
-
-export const heatingTypeOptions = sortByLabel([
-  { value: 'forced air', label: 'Forced air' },
+export const heatingTypeOptions = [
+  { value: 'centralized air handling unit', label: 'Centralized air handling unit' },
   { value: 'fan coil units', label: 'Fan coil units' },
-  { value: 'ceiling radiant', label: 'Ceiling radiant' },
-  { value: 'floor radiant', label: 'Floor radiant' },
-  { value: 'radiator', label: 'Radiator' },
+  { value: 'radiant ceiling', label: 'Radiant ceiling' },
+  { value: 'radiant floor', label: 'Radiant floor' },
+  { value: 'radiators', label: 'Radiators' },
   { value: 'other', label: 'Other' },
   { value: 'unknown', label: 'Unknown' },
   { value: 'na', label: 'Not applicable' },
-]);
+];
 
-export const majorCombustionSourcesOptions = sortByLabel([
+export const majorCombustionSourcesOptions = [
   {
     value: 'unvented kerosene and gas space heaters',
     label: 'Unvented kerosene and gas space heaters',
@@ -126,15 +95,19 @@ export const majorCombustionSourcesOptions = sortByLabel([
   { value: 'fireplaces', label: 'Fireplaces' },
   { value: 'gas stoves', label: 'Gas stoves' },
   { value: 'other', label: 'Other' },
-]);
+  { value: 'unknown', label: 'Unknown' },
+  { value: 'na', label: 'Not applicable' },
+];
 
-export const minorCombustionSourcesOptions = sortByLabel([
+export const minorCombustionSourcesOptions = [
   { value: 'candles', label: 'Candles' },
   { value: 'incense', label: 'Incense' },
   { value: 'other', label: 'Other' },
-]);
+  { value: 'unknown', label: 'Unknown' },
+  { value: 'na', label: 'Not applicable' },
+];
 
-export const buildingTypeOptions = sortByLabel([
+export const buildingTypeOptions = [
   { value: 'multifamily residential', label: 'Multifamily residential' },
   { value: 'dwelling', label: 'Dwelling' },
   { value: 'office', label: 'Office' },
@@ -143,30 +116,31 @@ export const buildingTypeOptions = sortByLabel([
   { value: 'hospital', label: 'Hospital' },
   { value: 'commercial', label: 'Commercial' },
   { value: 'other', label: 'Other' },
-]);
+];
 
-export const outdoorEnvOptions = sortByLabel([
+export const outdoorEnvOptions = [
   { value: 'rural', label: 'Rural' },
   { value: 'urban', label: 'Urban' },
   { value: 'suburban', label: 'Suburban' },
   { value: 'industrialized', label: 'Industrialized' },
-  { value: 'unknown', label: 'Unknown' },
-]);
+  { value: 'other', label: 'Other' },
+];
 
-export const ageGroupOptions = sortByLabel([
+export const ageGroupOptions = [
   { value: 'elderly', label: 'Elderly' },
   { value: 'children', label: 'Children' },
   { value: 'adult', label: 'Adult' },
+  { value: 'mixed', label: 'Mixed' },
   { value: 'unknown', label: 'Unknown' },
-]);
+];
 
-export const socioeconomicStatusOptions = sortByLabel([
+export const socioeconomicStatusOptions = [
   { value: 'low-income', label: 'Low-income' },
   { value: 'middle-income', label: 'Middle-income' },
   { value: 'high-income', label: 'High-income' },
+  { value: 'mixed', label: 'Mixed' },
   { value: 'unknown', label: 'Unknown' },
-  { value: 'na', label: 'Not applicable' },
-]);
+];
 
 export const yesNoOptions = [
   { value: 'yes', label: 'Yes' },
@@ -174,7 +148,7 @@ export const yesNoOptions = [
   { value: 'unknown', label: 'Unknown' },
 ];
 
-export const residentialSpaceTypeOptions = sortByLabel([
+export const residentialSpaceTypeOptions = [
   { value: 'living room', label: 'Living room' },
   { value: 'kitchen', label: 'Kitchen' },
   { value: 'bedroom', label: 'Bedroom' },
@@ -184,9 +158,9 @@ export const residentialSpaceTypeOptions = sortByLabel([
   { value: 'hallway', label: 'Hallway' },
   { value: 'outdoor', label: 'Outdoor' },
   { value: 'other', label: 'Other' },
-]);
+];
 
-export const dwellingSpaceTypeOptions = sortByLabel([
+export const dwellingSpaceTypeOptions = [
   { value: 'living room', label: 'Living room' },
   { value: 'kitchen', label: 'Kitchen' },
   { value: 'bedroom', label: 'Bedroom' },
@@ -196,9 +170,9 @@ export const dwellingSpaceTypeOptions = sortByLabel([
   { value: 'hallway', label: 'Hallway' },
   { value: 'outdoor', label: 'Outdoor' },
   { value: 'other', label: 'Other' },
-]);
+];
 
-export const officSpaceTypeOptions = sortByLabel([
+export const officSpaceTypeOptions = [
   { value: 'shared office', label: 'Shared office' },
   { value: 'private office', label: 'Private office' },
   { value: 'open office', label: 'Open office' },
@@ -209,9 +183,9 @@ export const officSpaceTypeOptions = sortByLabel([
   { value: 'kitchen', label: 'Kitchen' },
   { value: 'outdoor', label: 'Outdoor' },
   { value: 'other', label: 'Other' },
-]);
+];
 
-export const schoolSpaceTypeOptions = sortByLabel([
+export const schoolSpaceTypeOptions = [
   { value: 'classroom', label: 'Classroom' },
   { value: 'office', label: 'Office' },
   { value: 'activity room', label: 'Activity room' },
@@ -220,9 +194,9 @@ export const schoolSpaceTypeOptions = sortByLabel([
   { value: 'kitchen', label: 'Kitchen' },
   { value: 'outdoor', label: 'Outdoor' },
   { value: 'other', label: 'Other' },
-]);
+];
 
-export const seniorSpaceTypeOptions = sortByLabel([
+export const seniorSpaceTypeOptions = [
   { value: 'living room', label: 'Living room' },
   { value: 'kitchen', label: 'Kitchen' },
   { value: 'bedroom', label: 'Bedroom' },
@@ -231,9 +205,9 @@ export const seniorSpaceTypeOptions = sortByLabel([
   { value: 'office', label: 'Office' },
   { value: 'outdoor', label: 'Outdoor' },
   { value: 'other', label: 'Other' },
-]);
+];
 
-export const hospitalSpaceTypeOptions = sortByLabel([
+export const hospitalSpaceTypeOptions = [
   { value: 'waiting room', label: 'Waiting room' },
   { value: 'patient room', label: 'Patient room' },
   { value: 'bathroom', label: 'Bathroom' },
@@ -241,9 +215,9 @@ export const hospitalSpaceTypeOptions = sortByLabel([
   { value: 'office', label: 'Office' },
   { value: 'outdoor', label: 'Outdoor' },
   { value: 'other', label: 'Other' },
-]);
+];
 
-export const commercialSpaceTypeOptions = sortByLabel([
+export const commercialSpaceTypeOptions = [
   { value: 'waiting room', label: 'Waiting room' },
   { value: 'patient room', label: 'Patient room' },
   { value: 'bathroom', label: 'Bathroom' },
@@ -251,11 +225,11 @@ export const commercialSpaceTypeOptions = sortByLabel([
   { value: 'office', label: 'Office' },
   { value: 'outdoor', label: 'Outdoor' },
   { value: 'other', label: 'Other' },
-]);
+];
 
-export const otherSpaceTypeOptions = sortByLabel([
+export const otherSpaceTypeOptions = [
   { value: 'other', label: 'Other' },
-]);
+];
 
 export const buildingSpaceTypeOptions: { [key: string]: OptionItem[] } = {
   'multifamily residential': residentialSpaceTypeOptions,
@@ -268,21 +242,22 @@ export const buildingSpaceTypeOptions: { [key: string]: OptionItem[] } = {
   other: otherSpaceTypeOptions,
 }
 
-export const occupancyOptions = sortByLabel([
+export const occupancyOptions = [
   { value: 'occupied', label: 'Occupied' },
   { value: 'unoccupied', label: 'Unoccupied' },
-  { value: 'combined', label: 'Combined' },
+  { value: 'mixed (intermittent)', label: 'Mixed (intermittent)' },
   { value: 'unknown', label: 'Unknown' },
-]);
+  { value: 'na', label: 'Not applicable' },
+];
 
-export const equipmentGradeOptions = sortByLabel([
+export const equipmentGradeOptions = [
   { value: 'reference-grade', label: 'Reference-grade' },
   { value: 'mid-level', label: 'Mid-level' },
   { value: 'low-cost', label: 'Low-cost' },
   { value: 'unknown', label: 'Unknown' },
-]);
+];
 
-export const placementOptions = sortByLabel([
+export const placementOptions = [
   { value: 'ceiling', label: 'Ceiling' },
   { value: 'lateral wall', label: 'Lateral wall' },
   { value: 'air return', label: 'Air return' },
@@ -290,7 +265,7 @@ export const placementOptions = sortByLabel([
   { value: 'other', label: 'Other' },
   { value: 'mixed', label: 'Mixed (intermittent)' },
   { value: 'unknown', label: 'Unknown' },
-]);
+];
 
 export const physicalParameterOptions = [
   { value: 'particle mass concentration', label: 'Particle mass concentration' },

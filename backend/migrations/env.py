@@ -8,6 +8,8 @@ from api.config import config as app_config
 from alembic import context
 from sqlmodel import SQLModel
 
+from api.models.catalog import Person, Study, Building, Space, Instrument, Dataset, Certification, InstrumentParameter, Variable
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config

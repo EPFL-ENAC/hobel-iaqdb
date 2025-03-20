@@ -1,7 +1,7 @@
 import {
   buildingSpaceTypeOptions,
   occupancyOptions,
-  ventilationTypeOptions,
+  mechanicalVentilationTypeOptions,
   physicalParameterOptions,
   yesNoOptions,
 } from 'src/utils/options';
@@ -126,7 +126,7 @@ export const useContributeStore = defineStore(
       return {
         space,
         occupancy: occupancyOptions[0].value,
-        ventilation: ventilationTypeOptions[0].value,
+        mechanical_ventilation_type: mechanicalVentilationTypeOptions[0].value,
         smoking: yesNoOptions[2].value,
         periods: [],
       };

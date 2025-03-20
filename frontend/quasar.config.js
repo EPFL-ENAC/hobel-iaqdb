@@ -88,7 +88,7 @@ module.exports = configure(function (ctx) {
           {
             imports: ['vue', 'vue-router', 'vue-i18n', 'pinia', 'vue/macros'],
             dts: 'src/auto-imports.d.ts',
-            dirs: ['src/composables', 'src/models', 'src/stores'],
+            dirs: ['src/models', 'src/stores'],
             vueTemplate: true,
             eslintrc: {
               enabled: true, // Default `false`
@@ -222,7 +222,7 @@ module.exports = configure(function (ctx) {
       builder: {
         // https://www.electron.build/configuration/configuration
 
-        appId: 'it4r-webmap',
+        appId: 'iaqdb',
       },
     },
 

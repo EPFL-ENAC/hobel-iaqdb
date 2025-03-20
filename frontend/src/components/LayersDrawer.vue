@@ -96,7 +96,7 @@
         <div class="text-hint">{{ $t('altitudes_help') }}</div>
         <q-select
           v-model="filtersStore.ventilations"
-          :options="ventilationTypeOptions"
+          :options="mechanicalVentilationTypeOptions"
           :label="$t('ventilations')"
           :hint="$t('ventilations_hint')"
           multiple
@@ -191,7 +191,7 @@ export default defineComponent({
 <script setup lang="ts">
 import {
   climateOptions,
-  ventilationTypeOptions,
+  mechanicalVentilationTypeOptions,
   buildingTypeOptions,
   ageGroupOptions,
   outdoorEnvOptions,

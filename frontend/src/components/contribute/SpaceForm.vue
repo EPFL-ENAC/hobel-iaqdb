@@ -74,72 +74,25 @@
     <div class="row q-col-gutter-md">
       <div class="col">
         <q-select
-          v-model="space.ventilation_status"
-          :options="ventilationStatusOptions"
+          v-model="space.mechanical_ventilation_type"
+          :options="mechanicalVentilationTypeOptions"
           filled
           emit-value
           map-options
-          :label="$t('study.space.ventilation_status')"
-          :hint="$t('study.space.ventilation_status_hint')"
+          :label="$t('study.space.mechanical_ventilation_type')"
+          :hint="$t('study.space.mechanical_ventilation_type_hint')"
         />
       </div>
-      <div class="col">
-        <q-select
-          v-model="space.ventilation_type"
-          :options="ventilationTypeOptions"
-          filled
-          emit-value
-          map-options
-          :label="$t('study.space.ventilation_type')"
-          :hint="$t('study.space.ventilation_type_hint')"
-        />
-      </div>
-      <div class="col">
-        <q-select
-          v-model="space.windows_status"
-          :options="windowsStatusOptions"
-          filled
-          emit-value
-          map-options
-          :label="$t('study.space.windows_status')"
-          :hint="$t('study.space.windows_status_hint')"
-        />
-      </div>
-    </div>
-    <div class="row q-col-gutter-md q-mb-md">
-      <div class="col">
+      <div v-if="space.mechanical_ventilation_type === 'other'" class="col">
         <q-input
-          v-model.number="space.ventilation_rate"
-          type="number"
-          :min="0"
+          v-model="space.other_mechanical_ventilation_type"
           filled
-          :label="$t('study.space.ventilation_rate')"
-          :hint="$t('study.space.ventilation_rate_hint')"
-        />
-      </div>
-      <div class="col">
-        <q-input
-          v-model.number="space.air_change_rate"
-          type="number"
-          :min="0"
-          filled
-          :label="$t('study.space.air_change_rate')"
-          :hint="$t('study.space.air_change_rate_hint')"
+          :label="$t('study.space.other_mechanical_ventilation_type')"
+          :hint="$t('study.space.other_mechanical_ventilation_type_hint')"
         />
       </div>
     </div>
     <div class="row q-col-gutter-md">
-      <div class="col">
-        <q-select
-          v-model="space.cooling_status"
-          :options="coolingStatusOptions"
-          filled
-          emit-value
-          map-options
-          :label="$t('study.space.cooling_status')"
-          :hint="$t('study.space.cooling_status_hint')"
-        />
-      </div>
       <div class="col">
         <q-select
           v-model="space.cooling_type"
@@ -151,15 +104,12 @@
           :hint="$t('study.space.cooling_type_hint')"
         />
       </div>
-      <div class="col">
-        <q-select
-          v-model="space.heating_status"
-          :options="heatingStatusOptions"
+      <div v-if="space.cooling_type === 'other'" class="col">
+        <q-input
+          v-model="space.other_cooling_type"
           filled
-          emit-value
-          map-options
-          :label="$t('study.space.heating_status')"
-          :hint="$t('study.space.heating_status_hint')"
+          :label="$t('study.space.other_cooling_type')"
+          :hint="$t('study.space.other_cooling_type_hint')"
         />
       </div>
       <div class="col">
@@ -172,6 +122,29 @@
           :label="$t('study.space.heating_type')"
           :hint="$t('study.space.heating_type_hint')"
         />
+      </div>
+      <div v-if="space.heating_type === 'other'" class="col">
+        <q-input
+          v-model="space.other_heating_type"
+          filled
+          :label="$t('study.space.other_heating_type')"
+          :hint="$t('study.space.other_heating_type_hint')"
+        />
+      </div>
+    </div>
+    <div class="row q-col-gutter-md q-mb-md">
+      <div class="col">
+        <q-select
+          v-model="space.air_filtration"
+          :options="yesNoOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.space.air_filtration')"
+          :hint="$t('study.space.air_filtration_hint')"
+        />
+      </div>
+      <div class="col">
       </div>
     </div>
 
@@ -298,12 +271,8 @@ export default defineComponent({
 import {
   buildingSpaceTypeOptions,
   occupancyOptions,
-  ventilationStatusOptions,
-  ventilationTypeOptions,
-  windowsStatusOptions,
-  coolingStatusOptions,
+  mechanicalVentilationTypeOptions,
   coolingTypeOptions,
-  heatingStatusOptions,
   heatingTypeOptions,
   minorCombustionSourcesOptions,
   majorCombustionSourcesOptions,
