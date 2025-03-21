@@ -20,6 +20,7 @@
           :label="$t('study.building.type') + ' *'"
           :hint="$t('study.building.type_hint')"
           :rules="[val => !!val || $t('required')]"
+          @update:model-value="onBuildingTypeChange"
         />
       </div>
       <div v-if="building.type === 'other'" class="col">
@@ -39,6 +40,7 @@
           map-options
           :label="$t('study.building.outdoor_env')"
           :hint="$t('study.building.outdoor_env_hint')"
+          @update:model-value="onOutdoorEnvChange"
         />
       </div>
       <div v-if="building.outdoor_env === 'other'" class="col">
@@ -500,6 +502,18 @@ function onGreenCertifiedUpdated() {
 function onRenovationUpdated() {
   if (building.value.renovation !== 'yes') {
     building.value.renovation_year = undefined;
+  }
+}
+
+function onBuildingTypeChange() {
+  if (building.value.type !== 'other') {
+    building.value.other_type = undefined;
+  }
+}
+
+function onOutdoorEnvChange() {
+  if (building.value.outdoor_env !== 'other') {
+    building.value.other_outdoor_env = undefined;
   }
 }
 </script>

@@ -81,6 +81,7 @@
           map-options
           :label="$t('study.space.mechanical_ventilation_type')"
           :hint="$t('study.space.mechanical_ventilation_type_hint')"
+          @update:model-value="onMechanicalVentilationTypeChange"
         />
       </div>
       <div v-if="space.mechanical_ventilation_type === 'other'" class="col">
@@ -102,6 +103,7 @@
           map-options
           :label="$t('study.space.cooling_type')"
           :hint="$t('study.space.cooling_type_hint')"
+          @update:model-value="onCoolingTypeChange"
         />
       </div>
       <div v-if="space.cooling_type === 'other'" class="col">
@@ -121,6 +123,7 @@
           map-options
           :label="$t('study.space.heating_type')"
           :hint="$t('study.space.heating_type_hint')"
+          @update:model-value="onHeatingTypeChange"
         />
       </div>
       <div v-if="space.heating_type === 'other'" class="col">
@@ -315,6 +318,24 @@ function onCombustionSourcesChange() {
 function onOccupancyChange() {
   if (!space.value.occupancy || ['unknown', 'unoccupied'].includes(space.value.occupancy)) {
     space.value.occupancy_density = undefined;
+  }
+}
+
+function onMechanicalVentilationTypeChange() {
+  if (space.value.mechanical_ventilation_type !== 'other') {
+    space.value.other_mechanical_ventilation_type = undefined;
+  }
+}
+
+function onCoolingTypeChange() {
+  if (space.value.cooling_type !== 'other') {
+    space.value.other_cooling_type = undefined;
+  }
+}
+
+function onHeatingTypeChange() {
+  if (space.value.heating_type !== 'other') {
+    space.value.other_heating_type = undefined;
   }
 }
 </script>
