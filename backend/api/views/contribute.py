@@ -54,7 +54,6 @@ async def get_study_drafts(
 @router.post("/study-draft", response_model=StudyDraft)
 async def create_study_draft(
     study: StudyDraft = Body(...),
-    user: User = Depends(kc_service.require_admin()),
 ) -> StudyDraft:
     """Create a study draft"""
     service = StudyDraftService()
@@ -97,7 +96,6 @@ async def update_study_draft(
 @router.delete("/study-draft/{identifier}")
 async def delete_study_draft(
     identifier: str,
-    user: User = Depends(kc_service.require_admin()),
 ) -> None:
     """Delete a study draft"""
     service = StudyDraftService()
