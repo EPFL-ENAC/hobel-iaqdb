@@ -83,7 +83,6 @@ async def get_study_draft(
 async def update_study_draft(
     identifier: str,
     study: StudyDraft = Body(...),
-    user: User = Depends(kc_service.require_admin()),
 ) -> StudyDraft:
     """Update a study draft"""
     if identifier != study.identifier:
