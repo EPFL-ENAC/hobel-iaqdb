@@ -376,7 +376,7 @@ export const useContributeStore = defineStore(
     }
 
     function downloadFile(file: FileNode) {
-      window.open(`${baseUrl}/files/${file.path}`);
+      window.open(`${baseUrl}/files/${file.path}?d=true`);
     }
 
     function uploadTmpFiles(files: FileObject[]): Promise<FileNode> {
