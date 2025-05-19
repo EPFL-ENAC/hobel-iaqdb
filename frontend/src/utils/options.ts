@@ -43,7 +43,6 @@ export const climateOptions = sortByLabel([
 export const occupantImpactOptions = [
   { value: 'health', label: 'Health' },
   { value: 'comfort', label: 'Comfort' },
-  { value: 'satisfaction', label: 'Satisfaction' },
   { value: 'performance', label: 'Performance' },
   { value: 'well-being', label: 'Well-being' },
   { value: 'na', label: 'Not applicable' },
@@ -108,10 +107,11 @@ export const minorCombustionSourcesOptions = [
 ];
 
 export const buildingTypeOptions = [
-  { value: 'multifamily residential', label: 'Multifamily residential' },
-  { value: 'dwelling', label: 'Dwelling' },
+  { value: 'multifamily residential', label: 'Multi-family residential' },
+  { value: 'singlefamily residential', label: 'Single-family residential' },
   { value: 'office', label: 'Office' },
   { value: 'school', label: 'School' },
+  { value: 'daycare', label: 'Daycare' },
   { value: 'senior center', label: 'Senior Center' },
   { value: 'hospital', label: 'Hospital' },
   { value: 'commercial', label: 'Commercial' },
@@ -149,18 +149,6 @@ export const yesNoOptions = [
 ];
 
 export const residentialSpaceTypeOptions = [
-  { value: 'living room', label: 'Living room' },
-  { value: 'kitchen', label: 'Kitchen' },
-  { value: 'bedroom', label: 'Bedroom' },
-  { value: 'bathroom', label: 'Bathroom' },
-  { value: 'basement', label: 'Basement' },
-  { value: 'garage', label: 'Garage' },
-  { value: 'hallway', label: 'Hallway' },
-  { value: 'outdoor', label: 'Outdoor' },
-  { value: 'other', label: 'Other' },
-];
-
-export const dwellingSpaceTypeOptions = [
   { value: 'living room', label: 'Living room' },
   { value: 'kitchen', label: 'Kitchen' },
   { value: 'bedroom', label: 'Bedroom' },
@@ -233,9 +221,10 @@ export const otherSpaceTypeOptions = [
 
 export const buildingSpaceTypeOptions: { [key: string]: OptionItem[] } = {
   'multifamily residential': residentialSpaceTypeOptions,
-  dwelling: dwellingSpaceTypeOptions,
+  'singlefamily residential': residentialSpaceTypeOptions,
   office: officSpaceTypeOptions,
   school: schoolSpaceTypeOptions,
+  daycare: schoolSpaceTypeOptions,
   'senior center': seniorSpaceTypeOptions,
   hospital: hospitalSpaceTypeOptions,
   commercial: commercialSpaceTypeOptions,

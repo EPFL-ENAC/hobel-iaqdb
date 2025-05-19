@@ -97,7 +97,7 @@ const contactItems: FieldItem<Study | Person>[] = [
   },
   {
     field: 'contact',
-    label: 'Institution',
+    label: 'Institution/Company',
     html: (val: Study) => val.institution,
   },
 ];

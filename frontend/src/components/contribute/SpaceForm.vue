@@ -70,7 +70,7 @@
       </div>
     </div>
 
-    <div class="text-bold q-mb-md">Air</div>
+    <div class="text-bold q-mb-md">HVAC</div>
     <div class="row q-col-gutter-md">
       <div class="col">
         <q-select
