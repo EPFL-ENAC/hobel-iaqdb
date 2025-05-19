@@ -32,6 +32,7 @@ export interface Building extends DBModel {
   green_certified?: string;
   construction_year?: number;
   renovation?: string;
+  renovation_details?: string;
   renovation_year?: number;
   mechanical_ventilation?: string;
   particle_filtration_system?: string; 
@@ -70,6 +71,7 @@ export interface Study extends DBModel {
   funding?: string;
   ethics?: string;
   license?: string;
+  data_processing?: string;
   contributors?: Person[];
   buildings?: Building[];
   instruments?: Instrument[];
@@ -86,6 +88,7 @@ export interface Space extends DBModel {
   floor_area?: number;
   space_volume?: number;
   occupancy_density?: number;
+  occupancy_number?: number;
   occupancy?: string;
   mechanical_ventilation_type?: string;
   other_mechanical_ventilation_type?: string;

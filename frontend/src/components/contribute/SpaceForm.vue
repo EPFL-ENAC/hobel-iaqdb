@@ -68,6 +68,18 @@
           :disable="space.occupancy === 'unknown'"
         />
       </div>
+      <div class="col">
+        <q-input
+          v-model.number="space.occupancy_number"
+          type="number"
+          :min="0"
+          filled
+          :label="$t('study.space.occupancy_number')"
+          :hint="$t('study.space.occupancy_number_hint')"
+          :disable="space.occupancy === 'unknown'"
+          :rules="[val => val === '' || val === undefined || val === null || Number.isInteger(val) || $t('must_be_integer')]"
+        />
+      </div>
     </div>
 
     <div class="text-bold q-mb-md">HVAC</div>

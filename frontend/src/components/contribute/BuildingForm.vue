@@ -53,7 +53,7 @@
       </div>
     </div>
 
-    <div class="row q-col-gutter-md q-mb-md">
+    <div class="row q-col-gutter-md q-mb-sm">
       <div class="col">
         <q-input
           v-model.number="building.construction_year"
@@ -77,6 +77,9 @@
           @update:model-value="onRenovationUpdated"
         />
       </div>
+    </div>
+
+    <div class="row q-col-gutter-md q-mb-md">
       <div class="col">
         <q-input
           v-model.number="building.renovation_year"
@@ -86,6 +89,16 @@
           :max="new Date().getFullYear()"
           :label="$t('study.building.renovation_year')"
           :hint="$t('study.building.renovation_year_hint')"
+          :disable="building.renovation !== 'yes'"
+        />
+      </div>
+      <div class="col">
+        <q-input
+          v-model="building.renovation_details"
+          filled
+          type="textarea"
+          :label="$t('study.building.renovation_details')"
+          :hint="$t('study.building.renovation_details_hint')"
           :disable="building.renovation !== 'yes'"
         />
       </div>
@@ -502,6 +515,7 @@ function onGreenCertifiedUpdated() {
 function onRenovationUpdated() {
   if (building.value.renovation !== 'yes') {
     building.value.renovation_year = undefined;
+    building.value.renovation_details = undefined;
   }
 }
 

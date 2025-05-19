@@ -41,6 +41,7 @@ class StudyBase(SQLModel):
     funding: Optional[str] = Field(default=None)
     ethics: Optional[str] = Field(default=None)
     license: Optional[str] = Field(default=None)
+    data_processing: Optional[str] = Field(default=None)
 
 
 class Study(StudyBase, table=True):
@@ -115,6 +116,7 @@ class BuildingBase(SQLModel):
     green_certified: Optional[str] = Field(default=None)
     construction_year: Optional[int] = Field(default=None)
     renovation: Optional[str] = Field(default=None)
+    renovation_details: Optional[str] = Field(default=None)
     renovation_year: Optional[int] = Field(default=None)
     mechanical_ventilation: Optional[str] = Field(default=None)
     particle_filtration_system: Optional[str] = Field(default=None)
@@ -165,6 +167,7 @@ class SpaceBase(SQLModel):
     floor_area: Optional[float] = Field(default=None)
     space_volume: Optional[float] = Field(default=None)
     occupancy_density: Optional[float] = Field(default=None)
+    occupancy_number: Optional[int] = Field(default=None)
     occupancy: Optional[str] = Field(default=None)
     mechanical_ventilation_type: Optional[str] = Field(default=None)
     other_mechanical_ventilation_type: Optional[str] = Field(default=None)

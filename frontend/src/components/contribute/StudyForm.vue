@@ -176,6 +176,18 @@
         />
       </div>
       <div class="col">
+        <q-input
+          v-model="contrib.study.data_processing"
+          filled
+          type="textarea"
+          :label="$t('study.data_processing')"
+          :hint="$t('study.data_processing_hint')"
+          class="q-mb-md"
+        />
+      </div>
+    </div>
+    <div class="row q-col-gutter-md q-mb-md">
+      <div class="col">
         <q-select
           v-model="contrib.study.license"
           :options="licenseOptions"

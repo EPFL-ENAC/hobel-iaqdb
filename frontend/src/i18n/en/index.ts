@@ -1,3 +1,5 @@
+import { data } from "autoprefixer";
+
 export default {
   layer: {
     buildings: 'Buildings',
@@ -57,6 +59,8 @@ export default {
     doi_hint: '',
     license: 'License',
     license_hint: 'Usage license that applies to the contributed datasets.',
+    data_processing: 'Data processing',
+    data_processing_hint: 'Note for data cleaning and processing.',
     building: {
       age_group: 'Age group',
       age_group_hint: 'Age group of the building occupants.',
@@ -95,6 +99,8 @@ export default {
       construction_year_hint: '',
       renovation: 'Renovation',
       renovation_hint: '',
+      renovation_details: 'Renovation details',
+      renovation_details_hint: '',
       renovation_year: 'Renovation year',
       renovation_year_hint: '',
       socioeconomic_status: 'Socioeconomic status',
@@ -127,6 +133,8 @@ export default {
       occupancy_hint: '',
       occupancy_density: 'Occupancy density',
       occupancy_density_hint: 'In persons per m2.',
+      occupancy_number: 'Occupancy number',
+      occupancy_number_hint: 'Number of building occupants.',
       mechanical_ventilation_type: 'Mechanical ventilation type',
       mechanical_ventilation_type_hint: '',
       other_mechanical_ventilation_type: 'Other mechanical ventilation type',
@@ -221,6 +229,7 @@ export default {
   layers: 'Layers',
   legends: 'Legends',
   mechanical: 'Mechanical',
+  must_be_integer: 'Must be an integer',
   natural: 'Natural',
   next: 'Next',
   number_of_buildings: 'Number of buildings',
