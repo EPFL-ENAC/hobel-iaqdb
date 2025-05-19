@@ -105,7 +105,7 @@
       >
         <q-markdown no-heading-anchor-links :src="StepDatasetsMd" />
 
-        <div>
+        <div v-show="false">
           <q-btn
             label="Download Dictionary Reference"
             color="black"
