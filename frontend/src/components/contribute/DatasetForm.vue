@@ -27,7 +27,20 @@
           <template v-slot:after>
           <q-btn
             flat
+            dense
+            round
+            icon="edit"
+            :disable="uploading"
+            :title="$t('edit')"
+            color="primary"
+            @click="onShowDataFile"
+          />
+          <q-btn
+            flat
+            dense
+            round
             icon="download"
+            :disable="uploading"
             :title="$t('download')"
             color="primary"
             @click="onDownload(child)"
@@ -43,6 +56,7 @@
       {{ $t('study.dataset.dictionary_hint') }}
     </div>
     <dataset-variables-form v-model="dataset" />
+    <data-file-dialog v-model="showDataFile" update @add="onUpdateDataFile"/>
   </div>
 </template>
 
@@ -54,7 +68,10 @@ export default defineComponent({
 </script>
 <script setup lang="ts">
 import DatasetVariablesForm from 'src/components/contribute/DatasetVariablesForm.vue';
+import DataFileDialog from 'src/components/contribute/DataFileDialog.vue';
 import { Dataset, FileNode } from 'src/models';
+import { DataFile } from 'src/components/models';
+import { notifyError } from 'src/utils/notify';
 
 const contrib = useContributeStore();
 
@@ -63,6 +80,9 @@ interface Props {
 }
 const props = defineProps<Props>();
 
+const showDataFile = ref(false);
+const uploading = ref(false);
+
 const dataset = ref(props.modelValue);
 
 watch(() => props.modelValue, (val) => {
@@ -70,8 +90,22 @@ watch(() => props.modelValue, (val) => {
 });
 
 function onDownload(file: FileNode) {
-  console.log('Download', file);
   contrib.downloadFile(file);
+}
+
+function onShowDataFile() {
+  showDataFile.value = true;
+}
+
+async function onUpdateDataFile(dataFile: DataFile) {
+  uploading.value = true;
+  try {
+    dataset.value = await contrib.updateDataset(dataset.value, dataFile);
+  } catch (error) {
+    notifyError(error);
+  } finally {
+    uploading.value = false;
+  }
 }
 
 </script>

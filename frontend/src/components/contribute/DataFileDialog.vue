@@ -41,9 +41,9 @@
       <q-card-actions v-if="$q.screen.gt.xs" align="right">
         <q-btn flat :label="$t('cancel')" color="secondary" v-close-popup />
         <q-btn
-          :label="$t('add')"
+          :label="update ? $t('update') : $t('add')"
           color="primary"
-          @click="onAddDataset"
+          @click="onAddDataFile"
           v-close-popup
           :disable="!isValid"
         />
@@ -68,6 +68,7 @@ import { LimitedTransformStream } from 'src/utils/streams';
 
 interface Props {
   modelValue: boolean;
+  update: boolean | undefined;
 }
 const props = defineProps<Props>();
 const emit = defineEmits(['update:modelValue', 'add', 'cancel']);
@@ -204,7 +205,7 @@ function guessFieldReference(field: string) {
   return matches.length ? matches[0] : 'other';
 }
 
-function onAddDataset() {
+function onAddDataFile() {
   const data = {
     file: localFile.value,
     variables: Object.values(dictionary.value),

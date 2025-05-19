@@ -281,6 +281,13 @@ export const useContributeStore = defineStore(
       } as Dataset);
     }
 
+    async function updateDataset(dataset: Dataset, dataFile: DataFile) {
+      const uploaded = await uploadTmpFiles([dataFile.file]);
+      dataset.variables = dataFile.variables;
+      dataset.folder = uploaded;
+      return dataset;
+    }
+
     async function deleteDataset(i: number) {
       const dataset = study.value.datasets?.[i];
       if (!dataset) return;
@@ -407,6 +414,7 @@ export const useContributeStore = defineStore(
       addInstrumentParameter,
       deleteInstrumentParameter,
       addDataset,
+      updateDataset,
       deleteDataset,
       downloadFile,
       fetchAltitude,
