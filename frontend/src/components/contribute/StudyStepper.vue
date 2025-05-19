@@ -262,11 +262,15 @@ function onPreviousStep() {
 async function onNextStep() {
   if (step.value === 1) {
     // study validation
-    const valid = await studyFormRef.value?.validate();
-    if (valid) {
-      goNext();
+    if (contrib.study.contributors && contrib.study.contributors.length > 0) {
+      const valid = await studyFormRef.value?.validate();
+      if (valid) {
+        goNext();
+      } else {
+        notifyError('fix_validation_errors');
+      }
     } else {
-      notifyError('fix_validation_errors');
+      notifyError('Please add at least one data contributor');
     }
   } else if (step.value === 2) {
     // buildings validation
