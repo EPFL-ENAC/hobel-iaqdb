@@ -113,7 +113,7 @@
           :label="$t('study.building.city') + ' *'"
           :hint="$t('study.building.city_hint')"
           :rules="[val => !!val || $t('required')]"
-          :debounce="500"
+          :debounce="1000"
           @update:model-value="onLocationUpdated"
         />
       </div>
@@ -415,6 +415,7 @@ import { geocoderApi } from 'src/utils/geocoder';
 import { Building, Certification } from 'src/models';
 import SpaceForm from 'src/components/contribute/SpaceForm.vue';
 import { notifyInfo } from 'src/utils/notify';
+import { on } from 'events';
 
 const contrib = useContributeStore();
 
@@ -427,8 +428,14 @@ const building = ref(props.modelValue);
 const loadingGeo = ref(false);
 const loadingAlt = ref(false);
 
+onMounted(() => {
+  onInitLocation();
+  onGreenCertifiedUpdated();
+});
+
 watch(() => props.modelValue, (val) => {
   building.value = val;
+  onInitLocation();
   onGreenCertifiedUpdated();
 });
 
@@ -438,6 +445,21 @@ const hasCityCountry = computed(
 const hasLongLat = computed(
   () => building.value.long && building.value.lat,
 );
+
+function isNumber(value: any): boolean {
+  return typeof value === 'number' && !isNaN(value);
+}
+
+async function onInitLocation() {
+  if (!hasCityCountry.value) {
+    building.value.long = undefined;
+    building.value.lat = undefined;
+    onLongLatUpdated();
+    return;
+  } else if (!isNumber(building.value.long) || !isNumber(building.value.lat)) {
+    onLocationUpdated();
+  }
+}
 
 async function onLocationUpdated() {
   if (!hasCityCountry.value) {
