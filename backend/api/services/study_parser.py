@@ -39,6 +39,10 @@ class StudyParser:
         for col in ['occupant_impact', 'other_indoor_param']:
             if col in df.columns:
                 df[col] = self.mormalize_column(df, col)
+        # Convert 'yes' to default license, and handle unexpected strings by converting them to empty string
+        if 'license' in df.columns:
+            df['license'] = df['license'].str.lower().map(
+                {'yes': 'CC BY-NC', 'true': 'CC BY-NC', '1': 'CC BY-NC'}).fillna('')
         # To explicitly convert NaN to None
         df = df.replace({np.nan: None})
         # print(df)

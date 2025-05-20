@@ -59,6 +59,9 @@ export default {
     doi_hint: '',
     license: 'License',
     license_hint: 'Usage license that applies to the contributed datasets.',
+    license_accept: 'I accept the license CC BY-NC 4.0.',
+    license_accept_hint: 'See details about the [Creative Commons Attribution-NonCommercial license](https://creativecommons.org/licenses/by-nc/4.0/deed.en).',
+    license_error: 'You must accept the license to proceed.',
     data_processing: 'Data processing',
     data_processing_hint: 'Note for data cleaning and processing.',
     building: {

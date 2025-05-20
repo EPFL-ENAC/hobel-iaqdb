@@ -213,11 +213,11 @@ const isUpdate = computed(() => contrib.study.identifier && contrib.study.identi
 
 const canNext = computed(() => {
   if (step.value === 1) {
-    // TODO study validation
+    // study form validation
     const valid = studyFormRef.value?.validate();
     return contrib.inProgress;
   } else if (step.value === 2) {
-    // TODO buildings validation
+    // buildings form validation
     return (
       contrib.study.buildings &&
       contrib.study.buildings.length > 0 &&
@@ -230,7 +230,7 @@ const canNext = computed(() => {
       )
     );
   } else if (step.value === 3) {
-    // TODO instruments validation
+    // instruments form validation
     return (
       contrib.study.instruments &&
       contrib.study.instruments.length > 0 &&
@@ -262,15 +262,22 @@ function onPreviousStep() {
 async function onNextStep() {
   if (step.value === 1) {
     // study validation
-    if (contrib.study.contributors && contrib.study.contributors.length > 0) {
-      const valid = await studyFormRef.value?.validate();
+    let valid = true;
+    if (!contrib.study.contributors || contrib.study.contributors.length === 0) {
+      valid = false;
+      notifyError('Please add at least one data contributor');
+    }
+    if (contrib.study.license !== 'CC BY-NC') {
+      valid = false;
+      notifyError('study.license_error');
+    }
+    if (valid){
+      valid = await studyFormRef.value?.validate();
       if (valid) {
         goNext();
       } else {
         notifyError('fix_validation_errors');
       }
-    } else {
-      notifyError('Please add at least one data contributor');
     }
   } else if (step.value === 2) {
     // buildings validation

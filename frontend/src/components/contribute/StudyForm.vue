@@ -188,27 +188,13 @@
     </div>
     <div class="row q-col-gutter-md q-mb-md">
       <div class="col">
-        <q-select
-          v-model="contrib.study.license"
-          :options="licenseOptions"
-          filled
-          emit-value
-          map-options
-          :label="$t('study.license') + ' *'"
-          :hint="$t('study.license_hint')"
-          :rules="[val => !!val || $t('required')]"
-        >
-          <template v-slot:option="scope">
-            <q-item v-bind="scope.itemProps">
-              <q-item-section>
-                <q-item-label>{{ scope.opt.label }}</q-item-label>
-                <q-item-label caption style="max-width: 500px">{{
-                  scope.opt.description
-                }}</q-item-label>
-              </q-item-section>
-            </q-item>
-          </template>
-        </q-select>
+        <q-checkbox
+          v-model="license_accepted"
+          dense
+          :label="$t('study.license_accept')"
+          @update:model-value="onToggleLicenseAccepted"
+        />
+        <q-markdown class="text-hint q-mt-sm" :src="$t('study.license_accept_hint')" />
       </div>
     </div>
   </div>
@@ -224,13 +210,13 @@ import PersonForm from './PersonFom.vue';
 import {
   occupantImpactOptions,
   otherIndoorParamOptions,
-  licenseOptions,
 } from 'src/utils/options';
 
 const contrib = useContributeStore();
 
 const occupant_impacts = ref<string[]>([]);
 const other_indoor_params = ref<string[]>([]);
+const license_accepted = ref(false);
 
 onMounted(
   () => {
@@ -244,8 +230,24 @@ onMounted(
     } else {
       other_indoor_params.value = [];
     }
+    license_accepted.value = contrib.study.license === 'CC BY-NC';
   },
 );
+
+watch(
+  () => contrib.study,
+  (study) => {
+    license_accepted.value = study.license === 'CC BY-NC';
+  },
+);
+
+function onToggleLicenseAccepted() {
+  if (license_accepted.value) {
+    contrib.study.license = 'CC BY-NC';
+  } else {
+    contrib.study.license = '';
+  }
+}
 
 function onAddContributor() {
   contrib.addContributor();
