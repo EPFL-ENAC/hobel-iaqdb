@@ -1,6 +1,6 @@
 <template>
   <q-dialog :maximized="$q.screen.lt.sm" v-model="showDialog" @hide="onHide">
-    <q-card :style="$q.screen.lt.sm ? '' : 'width: 500px; max-width: 80vw'">
+    <q-card :style="$q.screen.lt.sm ? '' : `width: ${size === 'md' ? '600px' : '500px'}; max-width: 80vw`">
       <q-card-actions v-if="$q.screen.lt.sm" align="right">
         <q-btn flat icon="close" color="primary" v-close-popup />
       </q-card-actions>
@@ -9,7 +9,7 @@
           {{ title }}
         </div>
         <div v-if="props.content">
-          <q-markdown :src="props.content" />
+          <q-markdown no-heading-anchor-links :src="props.content" />
         </div>
         <slot></slot>
       </q-card-section>
@@ -29,6 +29,7 @@ export default defineComponent({
 interface Props {
   modelValue: boolean;
   title?: string;
+  size?: string;
   content?: string;
 }
 const props = defineProps<Props>();

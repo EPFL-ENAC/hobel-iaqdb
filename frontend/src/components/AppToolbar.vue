@@ -113,7 +113,7 @@
 
   <simple-dialog
     v-model="showIntro"
-    :title="$t('app_title')"
+    size="md"
     :content="IntroductionMd"
   />
 

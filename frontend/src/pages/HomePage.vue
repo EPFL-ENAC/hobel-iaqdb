@@ -6,7 +6,7 @@
       <div class="col-8">
         <q-card flat class="q-mt-lg">
           <q-card-section>
-            <q-markdown no-heading-anchor-links :src="content" />
+            <q-markdown no-heading-anchor-links :src="IntroductionMd" />
           </q-card-section>
         </q-card>
         <q-btn flat color="primary" :label="$t('search')" to="/map" />
@@ -18,15 +18,6 @@
 </template>
 
 <script setup lang="ts">
+import IntroductionMd from 'src/assets/introduction.md';
 import AppHeader from 'src/components/AppHeader.vue';
-
-const ReadmeMd =
-  'https://raw.githubusercontent.com/EPFL-ENAC/hobel-iaqdb/main/README.md';
-
-const content = ref();
-
-onMounted(async () => {
-  const response = await fetch(ReadmeMd);
-  content.value = await response.text();
-});
 </script>
