@@ -216,6 +216,7 @@ export default {
   climate_zones_hint: 'The Köppen-Geiger climate classes (1991-2020).',
   climate_zones: 'Climate zones',
   confirm_study_draft_delete: 'Are you sure you want to delete the study draft "{identifier}"?',
+  confirm_study_delete: 'Are you sure you want to delete the study "{identifier}"?',
   contribute_title: 'Contribute to the Indoor Air Quality Research Database',
   contribute: 'Contribute',
   delete: 'Delete',

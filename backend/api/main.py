@@ -55,11 +55,11 @@ async def get_health(
 
     return HealthCheck(status="OK")
 
-app.include_router(
-    seed_router,
-    prefix="/seed",
-    tags=["Seed"],
-)
+# app.include_router(
+#     seed_router,
+#     prefix="/seed",
+#     tags=["Seed"],
+# )
 
 app.include_router(
     contribute_router,

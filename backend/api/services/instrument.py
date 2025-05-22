@@ -78,6 +78,13 @@ class InstrumentService:
 
         # Main query
         start, end, query = builder.build_query_with_joins(total_count, filter)
+        if total_count == 0:
+            return InstrumentsResult(
+                total=total_count,
+                skip=start,
+                limit=end - start + 1,
+                data=[]
+            )
 
         # Execute query
         results = await self.session.exec(query)
