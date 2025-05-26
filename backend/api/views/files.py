@@ -8,7 +8,7 @@ from fastapi.param_functions import File
 from api.services.s3 import s3_client
 
 from fastapi import Depends, Query, APIRouter, HTTPException
-from fastapi.responses import Response, StreamingResponse
+from fastapi.responses import Response
 
 from api.utils.files import file_checker
 

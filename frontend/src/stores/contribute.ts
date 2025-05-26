@@ -374,8 +374,18 @@ export const useContributeStore = defineStore(
         .then((res) => study.value = res.data);
     }
 
+    async function publishDraft(study: Study) {
+      if (!authStore.isAuthenticated) return Promise.reject('Not authenticated');
+      return authStore.updateToken().then(() => 
+        api.put(`/contribute/study-draft/${study.identifier}/_publish`)
+      );
+    }
+    
     async function deleteDraft(study: Study) {
-      return api.delete(`/contribute/study-draft/${study.identifier}`);
+      if (!authStore.isAuthenticated) return Promise.reject('Not authenticated');
+      return authStore.updateToken().then(() => 
+        api.delete(`/contribute/study-draft/${study.identifier}`)
+      );
     }
 
     async function deleteFile(file: FileNode) {
@@ -421,6 +431,7 @@ export const useContributeStore = defineStore(
       fetchClimateZone,
       readExcel,
       saveOrUpdateDraft,
+      publishDraft,
       deleteDraft,
       uploadTmpFiles,
       getDrafts,

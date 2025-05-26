@@ -82,3 +82,21 @@ class StudyDraftService:
             study_drafts.append(StudyDraft(**study_dict))
 
         return study_drafts
+
+    async def reinstate(self, identifier: str) -> None:
+        """Reinstate a study draft by checking if it exists."""
+
+        draft_folder = f"draft/{identifier}"
+        pub_folder = f"pub/{identifier}"
+
+        exists = await self.exists(identifier)
+        if exists:
+            await self.delete(identifier)
+
+        # Copy all study draft files to pub folder
+        study_files = [file for file in await s3_client.list_files(pub_folder)]
+        if study_files:
+            # Copy the study files to the draft folder
+            for file in study_files:
+                new_file = file.replace("/pub/", "/draft/")
+                await s3_client.copy_file(file, new_file)

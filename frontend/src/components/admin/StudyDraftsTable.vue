@@ -19,6 +19,17 @@
               flat
               size="sm"
               color="grey-8"
+              :title="$t('approve')"
+              icon="publish"
+              class="q-ml-xs"
+              @click="onShowApprove(props.row)"
+            />
+            <q-btn
+              rounded
+              dense
+              flat
+              size="sm"
+              color="grey-8"
               :title="$t('edit')"
               icon="edit"
               class="q-ml-xs"
@@ -49,6 +60,7 @@
     <study-draft-dialog v-model="showDialog" @save="onSave"/>
     <study-upload-dialog v-model="showUpload" @close="onUploadClose"/>
     <confirm-dialog v-model="showDelete" :text="$t('confirm_study_draft_delete', { identifier: selected?.identifier })" @confirm="onDelete"/>
+    <confirm-dialog v-model="showApprove" :text="$t('confirm_study_draft_approval', { identifier: selected?.identifier })" @confirm="onApprove"/>
   </div>
 </template>
 
@@ -62,6 +74,7 @@ import { Study, Building, Instrument, Dataset } from 'src/models';
 import StudyDraftDialog from 'src/components/admin/StudyDraftDialog.vue';
 import StudyUploadDialog from 'src/components/contribute/StudyUploadDialog.vue';
 import ConfirmDialog from 'src/components/ConfirmDialog.vue';
+import { notifyError, notifySuccess } from 'src/utils/notify';
 
 const authStore = useAuthStore();
 const contrib = useContributeStore();
@@ -78,6 +91,7 @@ const studyDrafts = ref<Study[]>([]);
 const showDialog = ref(false);
 const showUpload = ref(false);
 const showDelete = ref(false);
+const showApprove = ref(false);
 const selected = ref<Study | null>(null);
 
 onMounted(() => {
@@ -120,6 +134,27 @@ function onShowEdit(row: Study) {
   contrib.load(row.identifier).then(() => {
     showDialog.value = true;
   });
+}
+
+function onShowApprove(row: Study) {
+  selected.value = row;
+  showApprove.value = true;
+}
+
+function onApprove() {
+  if (selected.value) {
+    contrib.publishDraft(selected.value).then(() => {
+      fetchStudyDrafts();
+    })
+    .then(() => {
+      notifySuccess('study_draft_approval_success');
+    })
+    .catch(notifyError)
+    .finally(() => {
+      showApprove.value = false;
+      selected.value = null;
+    });
+  }
 }
 
 function onShowDelete(row: Study) {

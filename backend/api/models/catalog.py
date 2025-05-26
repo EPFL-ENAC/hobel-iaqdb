@@ -68,6 +68,7 @@ class StudyRead(StudyBase):
     contributors: List["Person"] = []
     buildings: List["Building"] = []
     instruments: List["Instrument"] = []
+    datasets: List["Dataset"] = []
 
 
 class StudyDraft(StudyRead):

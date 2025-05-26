@@ -1,11 +1,14 @@
 import pkg_resources
 from fastapi import APIRouter, Depends, Body, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.datastructures import UploadFile
 from fastapi.param_functions import File
+from api.config import config
+from api.db import get_session, AsyncSession
 from api.services.study_parser import StudyParser
+from api.services.study import StudyService
 from api.services.study_draft import StudyDraftService
-from api.models.catalog import StudyDraft, StudyDraftsResult
+from api.models.catalog import StudyDraft, StudyDraftsResult, StudyRead, Study
 from api.utils.files import file_checker
 from api.auth import kc_service, User
 
@@ -90,6 +93,39 @@ async def update_study_draft(
     service = StudyDraftService()
     study = await service.createOrUpdate(StudyDraft.model_validate(study))
     return study
+
+
+@router.put("/study-draft/{identifier}/_publish", response_model=StudyRead)
+async def publish_study_draft(
+    identifier: str,
+    session: AsyncSession = Depends(get_session)
+) -> Study:
+    """Save the study draft in the database"""
+    service = StudyDraftService()
+    study_draft = await service.get(identifier)
+    study_service = StudyService(session)
+    return await study_service.save(study_draft)
+
+
+@router.put("/study-draft/{identifier}/_reinstate", response_model=StudyRead)
+async def reinstate_study_draft(
+    identifier: str,
+    session: AsyncSession = Depends(get_session)
+) -> Response:
+    """Get the study from the database and push it in draft"""
+    study_service = StudyService(session)
+    results = await study_service.find(filter={'identifier': identifier}, sort=[], range=[])
+    if not results or results.total == 0:
+        raise HTTPException(
+            status_code=404, detail=f"Study with identifier {identifier} not found")
+    service = StudyDraftService()
+    await service.reinstate(identifier)
+    return Response(
+        content="Study reinstated in draft",
+        status_code=200,
+        headers={
+            "Location": f"{config.PATH_PREFIX}/contribute/study-draft/{identifier}"}
+    )
 
 
 @router.delete("/study-draft/{identifier}")

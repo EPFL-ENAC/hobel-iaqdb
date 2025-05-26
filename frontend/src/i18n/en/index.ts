@@ -1,5 +1,3 @@
-import { data } from "autoprefixer";
-
 export default {
   layer: {
     buildings: 'Buildings',
@@ -211,12 +209,15 @@ export default {
   altitudes: 'Altitude',
   app_subtitle: 'The indoor air quality database',
   app_title: 'iAQ DB',
+  approve_contribution: 'Approve contribution',
+  approve: 'Approve',
   buildings: 'Buildings',
   catalog: 'Catalog',
   climate_zones_hint: 'The Köppen-Geiger climate classes (1991-2020).',
   climate_zones: 'Climate zones',
-  confirm_study_draft_delete: 'Are you sure you want to delete the study draft "{identifier}"?',
   confirm_study_delete: 'Are you sure you want to delete the study "{identifier}"?',
+  confirm_study_draft_approval: 'This action will copy the contribution "{identifier}" to the database so that the information appear online. Do you want to proceed?',
+  confirm_study_draft_delete: 'Are you sure you want to delete the study draft "{identifier}"?',
   contribute_title: 'Contribute to the Indoor Air Quality Research Database',
   contribute: 'Contribute',
   delete: 'Delete',
@@ -246,6 +247,7 @@ export default {
   source_code: 'Source Code',
   spaces: 'Spaces',
   studies: 'Studies',
+  study_draft_approval_success: 'The study was successfully saved in the database, you can safely remove the draft.',
   timeframe_help: 'Start/end dates of the studies are in the time frame.',
   timeframe: 'Time frame',
   update: 'Update',
@@ -253,5 +255,4 @@ export default {
   ventilations: 'Ventilations',
   voc_hint: 'Datasets with volatile organic compound measures.',
   voc: 'VOC',
-  with_tsunami: 'With tsunami',
 };
