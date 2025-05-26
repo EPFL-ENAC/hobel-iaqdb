@@ -11,6 +11,17 @@
             dense
             round
             class="on-right q-mb-sm"
+            color="grey-8"
+            icon="edit"
+            :title="$t('edit')"
+            @click="onShowDraft"
+          />
+          <q-btn
+            v-if="authStore.isAuthenticated && authStore.isAdmin"
+            flat
+            dense
+            round
+            class="q-mb-sm"
             color="negative"
             icon="delete"
             :title="$t('delete')"
@@ -29,6 +40,7 @@
       <div class="col"></div>
     </div>
     <confirm-dialog v-model="showDelete" :text="$t('confirm_study_delete', { identifier: catalogStore.study?.name })" @confirm="onDelete"/>
+    <confirm-dialog v-model="showDraft" :text="$t('confirm_study_draft', { identifier: catalogStore.study?.name })" @confirm="onDraft"/>
   </q-page>
 </template>
 
@@ -38,10 +50,12 @@ import ConfirmDialog from 'src/components/ConfirmDialog.vue';
 
 const authStore = useAuthStore();
 const catalogStore = useCatalogStore();
+const contributeStore = useContributeStore();
 const route = useRoute();
 const router = useRouter();
 
 const showDelete = ref(false);
+const showDraft = ref(false);
 
 watch(
   () => route.params.id,
@@ -62,5 +76,13 @@ function onDelete() {
   catalogStore.deleteStudy(route.params.id as string).then(() => {
     router.push({ name: 'catalog' });
   });
+}
+
+function onShowDraft() {
+  showDraft.value = true;
+}
+
+function onDraft() {
+  contributeStore.reinstateDraft(catalogStore.study);
 }
 </script>

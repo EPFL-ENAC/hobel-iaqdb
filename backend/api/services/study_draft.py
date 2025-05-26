@@ -100,3 +100,14 @@ class StudyDraftService:
             for file in study_files:
                 new_file = file.replace("/pub/", "/draft/")
                 await s3_client.copy_file(file, new_file)
+
+        # Rewrite the study.json file in the draft folder
+        study_draft = await self.get(identifier)
+        for dataset in study_draft.datasets:
+            dataset.folder["path"] = dataset.folder["path"].replace(
+                "/pub/", "/draft/")
+            if "children" in dataset.folder:
+                for i, file in enumerate(dataset.folder["children"]):
+                    file["path"] = file["path"].replace("/pub/", "/draft/")
+                    dataset.folder["children"][i] = file
+        await self.createOrUpdate(study_draft)
