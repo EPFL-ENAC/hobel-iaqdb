@@ -16,8 +16,6 @@ class Config(BaseSettings):
 
     DB_URL: str | None = None
 
-    API_KEYS: str
-
     # Keycloak
     KEYCLOAK_REALM: str = "HOBEL"
     KEYCLOAK_URL: str = "https://enac-it-sso.epfl.ch"

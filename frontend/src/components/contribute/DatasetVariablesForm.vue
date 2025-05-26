@@ -112,7 +112,13 @@ watch(
   () => props.modelValue,
   (value) => {
     dataset.value = value;
-    variables.value = value.variables || [];
+  },
+);
+
+watch(
+  () => props.modelValue.variables,
+  (value) => {
+    variables.value = value || [];
   },
 );
 

@@ -1,4 +1,13 @@
-export const climateOptions = [
+interface OptionItem {
+  value: string;
+  label: string;
+}
+
+function sortByLabel(opts: OptionItem[]): OptionItem[] {
+  return opts.sort((a, b) => a.label.localeCompare(b.label));
+}
+
+export const climateOptions = sortByLabel([
   { value: 'Af', label: '[Af]  Tropical, rainforest' },
   { value: 'Am', label: '[Am]  Tropical, monsoon' },
   { value: 'Aw', label: '[Aw]  Tropical, savannah' },
@@ -29,12 +38,11 @@ export const climateOptions = [
   { value: 'Dfd', label: '[Dfd] Cold, no dry season, very cold winter' },
   { value: 'ET', label: '[ET]  Polar, tundra' },
   { value: 'EF', label: '[EF]  Polar, frost' },
-];
+]);
 
 export const occupantImpactOptions = [
   { value: 'health', label: 'Health' },
   { value: 'comfort', label: 'Comfort' },
-  { value: 'satisfaction', label: 'Satisfaction' },
   { value: 'performance', label: 'Performance' },
   { value: 'well-being', label: 'Well-being' },
   { value: 'na', label: 'Not applicable' },
@@ -47,15 +55,7 @@ export const otherIndoorParamOptions = [
   { value: 'na', label: 'Not applicable' },
 ];
 
-export const ventilationStatusOptions = [
-  { value: 'on', label: 'On' },
-  { value: 'off', label: 'Off' },
-  { value: 'mixed', label: 'Mixed' },
-  { value: 'unknown', label: 'Unknown' },
-  { value: 'na', label: 'Not applicable' },
-];
-
-export const ventilationTypeOptions = [
+export const mechanicalVentilationTypeOptions = [
   { value: 'mixing', label: 'Mixing' },
   { value: 'displacement', label: 'Displacement' },
   { value: 'exhaust only', label: 'Exhaust only' },
@@ -64,45 +64,22 @@ export const ventilationTypeOptions = [
   { value: 'na', label: 'Not applicable' },
 ];
 
-export const windowsStatusOptions = [
-  { value: 'open', label: 'Open' },
-  { value: 'closed', label: 'Closed' },
-  { value: 'unknown', label: 'Unknown' },
-  { value: 'na', label: 'Not applicable' },
-];
-
-export const coolingStatusOptions = [
-  { value: 'on', label: 'On' },
-  { value: 'off', label: 'Off' },
-  { value: 'mixed', label: 'Mixed' },
-  { value: 'unknown', label: 'Unknown' },
-  { value: 'na', label: 'Not applicable' },
-];
-
 export const coolingTypeOptions = [
-  { value: 'forced air', label: 'Forced air' },
+  { value: 'centralized air handling unit', label: 'Centralized air handling unit' },
   { value: 'fan coil units', label: 'Fan coil units' },
-  { value: 'ceiling radiant', label: 'Ceiling radiant' },
-  { value: 'floor radiant', label: 'Floor radiant' },
+  { value: 'radiant ceiling', label: 'Radiant ceiling' },
+  { value: 'radiant floor', label: 'Radiant floor' },
   { value: 'other', label: 'Other' },
   { value: 'unknown', label: 'Unknown' },
   { value: 'na', label: 'Not applicable' },
 ];
 
-export const heatingStatusOptions = [
-  { value: 'on', label: 'On' },
-  { value: 'off', label: 'Off' },
-  { value: 'mixed', label: 'Mixed' },
-  { value: 'unknown', label: 'Unknown' },
-  { value: 'na', label: 'Not applicable' },
-];
-
 export const heatingTypeOptions = [
-  { value: 'forced air', label: 'Forced air' },
+  { value: 'centralized air handling unit', label: 'Centralized air handling unit' },
   { value: 'fan coil units', label: 'Fan coil units' },
-  { value: 'ceiling radiant', label: 'Ceiling radiant' },
-  { value: 'floor radiant', label: 'Floor radiant' },
-  { value: 'radiator', label: 'Radiator' },
+  { value: 'radiant ceiling', label: 'Radiant ceiling' },
+  { value: 'radiant floor', label: 'Radiant floor' },
+  { value: 'radiators', label: 'Radiators' },
   { value: 'other', label: 'Other' },
   { value: 'unknown', label: 'Unknown' },
   { value: 'na', label: 'Not applicable' },
@@ -117,23 +94,27 @@ export const majorCombustionSourcesOptions = [
   { value: 'fireplaces', label: 'Fireplaces' },
   { value: 'gas stoves', label: 'Gas stoves' },
   { value: 'other', label: 'Other' },
+  { value: 'unknown', label: 'Unknown' },
+  { value: 'na', label: 'Not applicable' },
 ];
 
 export const minorCombustionSourcesOptions = [
   { value: 'candles', label: 'Candles' },
   { value: 'incense', label: 'Incense' },
   { value: 'other', label: 'Other' },
+  { value: 'unknown', label: 'Unknown' },
+  { value: 'na', label: 'Not applicable' },
 ];
 
 export const buildingTypeOptions = [
-  { value: 'multifamily residential', label: 'Multifamily residential' },
-  { value: 'dwelling', label: 'Dwelling' },
+  { value: 'multifamily residential', label: 'Multi-family residential' },
+  { value: 'singlefamily residential', label: 'Single-family residential' },
   { value: 'office', label: 'Office' },
   { value: 'school', label: 'School' },
+  { value: 'daycare', label: 'Daycare' },
   { value: 'senior center', label: 'Senior Center' },
   { value: 'hospital', label: 'Hospital' },
-  { value: 'retail', label: 'Retail' },
-  { value: 'sport center,', label: 'Sport center' },
+  { value: 'commercial', label: 'Commercial' },
   { value: 'other', label: 'Other' },
 ];
 
@@ -142,17 +123,23 @@ export const outdoorEnvOptions = [
   { value: 'urban', label: 'Urban' },
   { value: 'suburban', label: 'Suburban' },
   { value: 'industrialized', label: 'Industrialized' },
+  { value: 'other', label: 'Other' },
+];
+
+export const ageGroupOptions = [
+  { value: 'elderly', label: 'Elderly' },
+  { value: 'children', label: 'Children' },
+  { value: 'adult', label: 'Adult' },
+  { value: 'mixed', label: 'Mixed' },
   { value: 'unknown', label: 'Unknown' },
 ];
 
-export const populationOptions = [
+export const socioeconomicStatusOptions = [
   { value: 'low-income', label: 'Low-income' },
   { value: 'middle-income', label: 'Middle-income' },
   { value: 'high-income', label: 'High-income' },
-  { value: 'Elderly', label: 'Elderly' },
-  { value: 'children', label: 'Children' },
-  { value: 'other', label: 'Other' },
-  { value: 'na', label: 'Not applicable' },
+  { value: 'mixed', label: 'Mixed' },
+  { value: 'unknown', label: 'Unknown' },
 ];
 
 export const yesNoOptions = [
@@ -161,35 +148,99 @@ export const yesNoOptions = [
   { value: 'unknown', label: 'Unknown' },
 ];
 
-export const spaceTypeOptions = [
+export const residentialSpaceTypeOptions = [
   { value: 'living room', label: 'Living room' },
   { value: 'kitchen', label: 'Kitchen' },
   { value: 'bedroom', label: 'Bedroom' },
+  { value: 'bathroom', label: 'Bathroom' },
   { value: 'basement', label: 'Basement' },
   { value: 'garage', label: 'Garage' },
-  { value: 'enclosed shared office', label: 'Enclosed shared office' },
-  { value: 'enclosed private office', label: 'Enclosed private office' },
-  { value: 'open office', label: 'Open office' },
-  { value: 'focus room', label: 'Focus room' },
   { value: 'hallway', label: 'Hallway' },
-  { value: 'restaurant', label: 'Restaurant' },
-  { value: 'supermarket', label: 'Supermarket' },
-  { value: 'waiting room', label: 'Waiting room' },
-  { value: 'patient room', label: 'Patient room' },
-  { value: 'classroom', label: 'Classroom' },
   { value: 'outdoor', label: 'Outdoor' },
   { value: 'other', label: 'Other' },
 ];
 
+export const officSpaceTypeOptions = [
+  { value: 'shared office', label: 'Shared office' },
+  { value: 'private office', label: 'Private office' },
+  { value: 'open office', label: 'Open office' },
+  { value: 'focus room', label: 'Focus room' },
+  { value: 'meeting room', label: 'Meeting room' },
+  { value: 'bathroom', label: 'Bathroom' },
+  { value: 'hallway', label: 'Hallway' },
+  { value: 'kitchen', label: 'Kitchen' },
+  { value: 'outdoor', label: 'Outdoor' },
+  { value: 'other', label: 'Other' },
+];
+
+export const schoolSpaceTypeOptions = [
+  { value: 'classroom', label: 'Classroom' },
+  { value: 'office', label: 'Office' },
+  { value: 'activity room', label: 'Activity room' },
+  { value: 'bathroom', label: 'Bathroom' },
+  { value: 'hallway', label: 'Hallway' },
+  { value: 'kitchen', label: 'Kitchen' },
+  { value: 'outdoor', label: 'Outdoor' },
+  { value: 'other', label: 'Other' },
+];
+
+export const seniorSpaceTypeOptions = [
+  { value: 'living room', label: 'Living room' },
+  { value: 'kitchen', label: 'Kitchen' },
+  { value: 'bedroom', label: 'Bedroom' },
+  { value: 'bathroom', label: 'Bathroom' },
+  { value: 'hallway', label: 'Hallway' },
+  { value: 'office', label: 'Office' },
+  { value: 'outdoor', label: 'Outdoor' },
+  { value: 'other', label: 'Other' },
+];
+
+export const hospitalSpaceTypeOptions = [
+  { value: 'waiting room', label: 'Waiting room' },
+  { value: 'patient room', label: 'Patient room' },
+  { value: 'bathroom', label: 'Bathroom' },
+  { value: 'hallway', label: 'Hallway' },
+  { value: 'office', label: 'Office' },
+  { value: 'outdoor', label: 'Outdoor' },
+  { value: 'other', label: 'Other' },
+];
+
+export const commercialSpaceTypeOptions = [
+  { value: 'waiting room', label: 'Waiting room' },
+  { value: 'patient room', label: 'Patient room' },
+  { value: 'bathroom', label: 'Bathroom' },
+  { value: 'hallway', label: 'Hallway' },
+  { value: 'office', label: 'Office' },
+  { value: 'outdoor', label: 'Outdoor' },
+  { value: 'other', label: 'Other' },
+];
+
+export const otherSpaceTypeOptions = [
+  { value: 'other', label: 'Other' },
+];
+
+export const buildingSpaceTypeOptions: { [key: string]: OptionItem[] } = {
+  'multifamily residential': residentialSpaceTypeOptions,
+  'singlefamily residential': residentialSpaceTypeOptions,
+  office: officSpaceTypeOptions,
+  school: schoolSpaceTypeOptions,
+  daycare: schoolSpaceTypeOptions,
+  'senior center': seniorSpaceTypeOptions,
+  hospital: hospitalSpaceTypeOptions,
+  commercial: commercialSpaceTypeOptions,
+  other: otherSpaceTypeOptions,
+}
+
 export const occupancyOptions = [
   { value: 'occupied', label: 'Occupied' },
   { value: 'unoccupied', label: 'Unoccupied' },
-  { value: 'combined', label: 'Combined' },
+  { value: 'mixed (intermittent)', label: 'Mixed (intermittent)' },
   { value: 'unknown', label: 'Unknown' },
+  { value: 'na', label: 'Not applicable' },
 ];
 
 export const equipmentGradeOptions = [
-  { value: 'research-grade', label: 'Research-grade' },
+  { value: 'reference-grade', label: 'Reference-grade' },
   { value: 'mid-level', label: 'Mid-level' },
   { value: 'low-cost', label: 'Low-cost' },
   { value: 'unknown', label: 'Unknown' },
@@ -201,20 +252,17 @@ export const placementOptions = [
   { value: 'air return', label: 'Air return' },
   { value: 'desk', label: 'Desk' },
   { value: 'other', label: 'Other' },
-  { value: 'mixed', label: 'Mixed' },
+  { value: 'mixed', label: 'Mixed (intermittent)' },
   { value: 'unknown', label: 'Unknown' },
 ];
 
 export const physicalParameterOptions = [
+  { value: 'particle mass concentration', label: 'Particle mass concentration' },
+  { value: 'particle number concentration', label: 'Particle number concentration' },
   { value: 'individual voc', label: 'Individual VOC' },
+  { value: 'individual aldehydes', label: 'Individual Aldehydes' },
   { value: 'tvoc', label: 'TVOC' },
-  { value: 'pm10', label: 'PM10' },
-  { value: 'pm2.5', label: 'PM2.5' },
-  { value: 'pm1', label: 'PM1' },
-  { value: 'particle number ≤10μm', label: 'Particle number ≤10μm' },
-  { value: 'particle number ≤2.5μm', label: 'Particle number ≤2.5μm' },
-  { value: 'particle number ≤1μm', label: 'Particle number ≤1μm' },
-  { value: 'nanoparticles', label: 'Nanoparticles' },
+  { value: 'black carbon', label: 'Black carbon' },
   { value: 'carbon dioxide', label: 'Carbon dioxide' },
   { value: 'carbon monoxide', label: 'Carbon monoxide' },
   { value: 'ozone', label: 'Ozone' },
@@ -224,12 +272,6 @@ export const physicalParameterOptions = [
   { value: 'lead', label: 'Lead' },
   { value: 'air temperature', label: 'Air temperature' },
   { value: 'relative humidity', label: 'Relative humidity' },
-  { value: 'occupancy', label: 'Occupancy' },
-  {
-    value: 'mechanical ventilation rate',
-    label: 'Mechanical ventilation rate',
-  },
-  { value: 'biocontaminants', label: 'Biocontaminants' },
 ];
 
 export const referenceOptions = [
@@ -241,7 +283,7 @@ export const referenceOptions = [
   { value: 'other', label: 'Other' },
 ];
 
-export const countryOptions = [
+export const countryOptions = sortByLabel([
   { value: 'AF', label: 'Afghanistan' },
   { value: 'AX', label: 'Åland Islands' },
   { value: 'AL', label: 'Albania' },
@@ -494,7 +536,7 @@ export const countryOptions = [
   { value: 'YE', label: 'Yemen' },
   { value: 'ZM', label: 'Zambia' },
   { value: 'ZW', label: 'Zimbabwe' },
-];
+]);
 
 export const licenseOptions = [
   {
@@ -595,7 +637,7 @@ export const licenseOptions = [
   },
 ];
 
-export const vocOptions = [
+export const vocOptions = sortByLabel([
   { value: '100-41-4', label: 'Ethyl Benzene' },
   { value: '100-42-5', label: 'Styrene' },
   { value: '100-44-7', label: 'Benzyl Chloride' },
@@ -800,4 +842,4 @@ export const vocOptions = [
   { value: '107-01-7', label: '2-butene' },
   { value: '560-21-4', label: '2,3,3-Trimethylpentane' },
   { value: '584-94-1', label: '2,3-Dimethylhexane' },
-];
+]);

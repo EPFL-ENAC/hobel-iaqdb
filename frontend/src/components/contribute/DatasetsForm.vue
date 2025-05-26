@@ -22,10 +22,11 @@
                 flat
                 no-caps
                 :label="dataset.name"
+                :title="dataset.name"
                 :disable="uploading"
                 align="left"
                 size="12px"
-                class="full-width"
+                class="full-width ellipsis"
                 :class="`${selected === i ? 'bg-light-blue-1' : ''}`"
                 @click="selected = i"
               />
@@ -108,6 +109,7 @@ export default defineComponent({
 import DataFileDialog from 'src/components/contribute/DataFileDialog.vue';
 import DatasetForm from 'src/components/contribute/DatasetForm.vue';
 import { DataFile } from 'src/components/models';
+import { notifyError } from 'src/utils/notify';
 
 const contrib = useContributeStore();
 
@@ -129,9 +131,14 @@ function onShowDataFile() {
 
 async function onAddDataFile(dataFile: DataFile) {
   uploading.value = true;
-  await contrib.addDataset(dataFile);
-  uploading.value = false;
-  selected.value = contrib.study.datasets ? contrib.study.datasets.length - 1 : null;
+  try {
+    await contrib.addDataset(dataFile);
+    selected.value = contrib.study.datasets ? contrib.study.datasets.length - 1 : null;
+  } catch (error) {
+    notifyError(error);
+  } finally {
+    uploading.value = false;
+  }
 }
 
 function onDelete(i: number) {

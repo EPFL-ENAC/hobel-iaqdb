@@ -22,15 +22,27 @@ export function notifyWarning(message: string) {
   });
 }
 
+function getErrorMessage(error) {
+  let message = error.message;
+  if (error.response?.data && error.response.data?.detail) {
+    message = error.response.data?.detail;
+  }
+  else if (error.response?.data && error.response.data?.status) {
+    message = t(`error.${error.response?.data.status}`, error.response?.data.arguments);
+  }
+  return message || t('unknown_error');
+}
+
 export function notifyError(error) {
   let message = t('unknown_error');
   if (typeof error === 'string') {
     message = t(error);
   } else {
     console.error(error);
-    message = error.message;
-    if (error.response?.data && error.response.data?.status) {
-      message = t(`error.${error.response?.data.status}`, error.response?.data.arguments);
+    if (Array.isArray(error)) {
+      message = error.map(getErrorMessage).join(' | ');
+    } else {
+      message = getErrorMessage(error);
     }
   }
   Notify.create({

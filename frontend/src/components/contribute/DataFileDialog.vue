@@ -23,29 +23,27 @@
         <div v-if="loadingFile" class="q-mt-md">
           <q-spinner-dots size="md"/>
         </div>
-        <div v-else-if="localFile" class="q-mt-md">
-          <div v-if="fields">
-            <div class="text-help q-mb-md">
-              Verify that the data were correctly read before proceeding to the
-              file upload. Note that is only a preview of the 10 first lines.
-            </div>
-            <q-table
-              :rows="rows"
-              :columns="columns"
-              flat
-              bordered
-              table-header-class="text-bold"
-              v-model:pagination="pagination"
-            />
+        <div v-else-if="localFile && fields.length" class="q-mt-md">
+          <div class="text-help q-mb-md">
+            Verify that the data were correctly read before proceeding to the
+            file upload. Note that is only a preview of the 10 first lines.
           </div>
+          <q-table
+            :rows="rows"
+            :columns="columns"
+            flat
+            bordered
+            table-header-class="text-bold"
+            v-model:pagination="pagination"
+          />
         </div>
       </q-card-section>
       <q-card-actions v-if="$q.screen.gt.xs" align="right">
         <q-btn flat :label="$t('cancel')" color="secondary" v-close-popup />
         <q-btn
-          :label="$t('add')"
+          :label="update ? $t('update') : $t('add')"
           color="primary"
-          @click="onAddDataset"
+          @click="onAddDataFile"
           v-close-popup
           :disable="!isValid"
         />
@@ -70,6 +68,7 @@ import { LimitedTransformStream } from 'src/utils/streams';
 
 interface Props {
   modelValue: boolean;
+  update: boolean | undefined;
 }
 const props = defineProps<Props>();
 const emit = defineEmits(['update:modelValue', 'add', 'cancel']);
@@ -168,7 +167,7 @@ function parseDelimitedData(csv: FileObject | string) {
     skipEmptyLines: true,
     dynamicTyping: true,
     header: true,
-    delimiter: ',',
+    delimiter: '', // try most common delimiters
     complete: onCSVParseCompleted,
   });
 }
@@ -206,7 +205,7 @@ function guessFieldReference(field: string) {
   return matches.length ? matches[0] : 'other';
 }
 
-function onAddDataset() {
+function onAddDataFile() {
   const data = {
     file: localFile.value,
     variables: Object.values(dictionary.value),

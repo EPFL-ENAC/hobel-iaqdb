@@ -73,7 +73,7 @@ const studyDrafts = ref<Study[]>([]);
   sortBy: 'identifier',
   descending: false,
   page: 1,
-  rowsPerPage: 5,
+  rowsPerPage: 25,
 });
 const showDialog = ref(false);
 const showUpload = ref(false);

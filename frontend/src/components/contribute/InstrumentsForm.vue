@@ -16,9 +16,10 @@
                 flat
                 no-caps
                 :label="instrument.identifier"
+                :title="instrument.identifier"
                 align="left"
                 size="12px"
-                class="full-width"
+                class="full-width ellipsis"
                 :class="`${selected === i ? 'bg-light-blue-1' : ''}`"
                 @click="selected = i"
               />
@@ -32,6 +33,14 @@
               <q-icon name="thermostat" class="q-mr-xs" size="sm"/>
               {{ contrib.study.instruments[selected].identifier }}
               <q-space />
+              <q-btn
+                rounded
+                dense
+                flat
+                :title="$t('duplicate')"
+                icon="content_copy"
+                @click="onDuplicate(selected)"
+              />
               <q-btn
                 v-if="selected !== null"
                 rounded
@@ -87,6 +96,7 @@ export default defineComponent({
 });
 </script>
 <script setup lang="ts">
+import { notifyInfo } from 'src/utils/notify';
 import InstrumentForm from './InstrumentForm.vue';
 const contrib = useContributeStore();
 
@@ -100,9 +110,17 @@ onMounted(() => {
   }
 });
 
+function onDuplicate(i: number) {
+  if (!contrib.study.instruments) return;
+  contrib.addInstrument(contrib.study.instruments[i]);
+  selected.value = contrib.study.instruments.length - 1;
+  notifyInfo('Instrument duplicated with its parameters');
+}
+
 function onAdd() {
   contrib.addInstrument();
   selected.value = contrib.study.instruments ? contrib.study.instruments.length - 1 : null;
+  notifyInfo('New instrument added');
 }
 
 function onDelete(i: number) {
@@ -113,5 +131,6 @@ function onDelete(i: number) {
     selected.value = selected.value ? selected.value - 1 : null;
   }
   contrib.deleteInstrument(i);
+  notifyInfo('Instrument deleted');
 }
 </script>

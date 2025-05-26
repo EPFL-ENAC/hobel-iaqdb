@@ -3,8 +3,9 @@
     <q-input
       v-model="building.identifier"
       filled
-      :label="$t('study.building.identifier')"
+      :label="$t('study.building.identifier') + ' *'"
       :hint="$t('study.building.identifier_hint')"
+      :rules="[val => !!val || $t('required')]"
       class="q-mb-md"
     />
 
@@ -16,19 +17,18 @@
           filled
           emit-value
           map-options
-          :label="$t('study.building.type')"
+          :label="$t('study.building.type') + ' *'"
           :hint="$t('study.building.type_hint')"
+          :rules="[val => !!val || $t('required')]"
+          @update:model-value="onBuildingTypeChange"
         />
       </div>
-      <div class="col">
-        <q-select
-          v-model="building.special_population"
-          :options="populationOptions"
+      <div v-if="building.type === 'other'" class="col">
+        <q-input
+          v-model="building.other_type"
           filled
-          emit-value
-          map-options
-          :label="$t('study.building.special_population')"
-          :hint="$t('study.building.special_population_hint')"
+          :label="$t('study.building.other_type')"
+          :hint="$t('study.building.other_type_hint')"
         />
       </div>
       <div class="col">
@@ -40,76 +40,80 @@
           map-options
           :label="$t('study.building.outdoor_env')"
           :hint="$t('study.building.outdoor_env_hint')"
+          @update:model-value="onOutdoorEnvChange"
+        />
+      </div>
+      <div v-if="building.outdoor_env === 'other'" class="col">
+        <q-input
+          v-model="building.other_outdoor_env"
+          filled
+          :label="$t('study.building.other_outdoor_env')"
+          :hint="$t('study.building.other_outdoor_env_hint')"
         />
       </div>
     </div>
 
-    <div class="row q-col-gutter-md q-mb-md">
+    <div class="row q-col-gutter-md q-mb-sm">
       <div class="col">
         <q-input
           v-model.number="building.construction_year"
           filled
           type="number"
+          :min="0"
+          :max="new Date().getFullYear()"
           :label="$t('study.building.construction_year')"
           :hint="$t('study.building.construction_year_hint')"
         />
       </div>
       <div class="col">
-        <q-input
-          v-model.number="building.renovation_year"
+        <q-select
+          v-model="building.renovation"
+          :options="yesNoOptions"
           filled
-          type="number"
-          :label="$t('study.building.renovation_year')"
-          :hint="$t('study.building.renovation_year_hint')"
+          emit-value
+          map-options
+          :label="$t('study.building.renovation')"
+          :hint="$t('study.building.renovation_hint')"
+          @update:model-value="onRenovationUpdated"
         />
       </div>
     </div>
 
     <div class="row q-col-gutter-md q-mb-md">
       <div class="col">
-        <q-select
-          v-model="building.mechanical_ventilation"
-          :options="yesNoOptions"
+        <q-input
+          v-model.number="building.renovation_year"
           filled
-          emit-value
-          map-options
-          :label="$t('study.building.mechanical_ventilation')"
-          :hint="$t('study.building.mechanical_ventilation_hint')"
+          type="number"
+          :min="0"
+          :max="new Date().getFullYear()"
+          :label="$t('study.building.renovation_year')"
+          :hint="$t('study.building.renovation_year_hint')"
+          :disable="building.renovation !== 'yes'"
         />
       </div>
       <div class="col">
-        <q-select
-          v-model="building.operable_windows"
-          :options="yesNoOptions"
+        <q-input
+          v-model="building.renovation_details"
           filled
-          emit-value
-          map-options
-          :label="$t('study.building.operable_windows')"
-          :hint="$t('study.building.operable_windows_hint')"
-        />
-      </div>
-      <div class="col">
-        <q-select
-          v-model="building.smoking"
-          :options="yesNoOptions"
-          filled
-          emit-value
-          map-options
-          :label="$t('study.building.smoking')"
-          :hint="$t('study.building.smoking_hint')"
+          type="textarea"
+          :label="$t('study.building.renovation_details')"
+          :hint="$t('study.building.renovation_details_hint')"
+          :disable="building.renovation !== 'yes'"
         />
       </div>
     </div>
-
+    
     <div class="text-bold q-mb-md">Location</div>
     <div class="row q-col-gutter-md q-mb-md">
       <div class="col">
         <q-input
           v-model="building.city"
           filled
-          :label="$t('study.building.city')"
+          :label="$t('study.building.city') + ' *'"
           :hint="$t('study.building.city_hint')"
-          :debounce="500"
+          :rules="[val => !!val || $t('required')]"
+          :debounce="1000"
           @update:model-value="onLocationUpdated"
         />
       </div>
@@ -120,8 +124,9 @@
           filled
           emit-value
           map-options
-          :label="$t('study.building.country')"
+          :label="$t('study.building.country') + ' *'"
           :hint="$t('study.building.country_hint')"
+          :rules="[val => !!val || $t('required')]"
           @update:model-value="onLocationUpdated"
         />
       </div>
@@ -139,8 +144,10 @@
     <div v-if="hasCityCountry" class="row q-col-gutter-md q-mb-md">
       <div class="col">
         <q-input
-          v-model.number="building.longitude"
+          v-model.number="building.long"
           type="number"
+          :min="-180"
+          :max="180"
           filled
           :label="$t('study.building.longitude')"
           :hint="$t('study.building.longitude_hint')"
@@ -150,8 +157,10 @@
       </div>
       <div class="col">
         <q-input
-          v-model.number="building.latitude"
+          v-model.number="building.lat"
           type="number"
+          :min="-90"
+          :max="90"
           filled
           :label="$t('study.building.latitude')"
           :hint="$t('study.building.latitude_hint')"
@@ -165,6 +174,8 @@
         <q-input
           v-model.number="building.altitude"
           type="number"
+          :min="-1000"
+          :max="10000"
           filled
           :label="$t('study.building.altitude')"
           :hint="$t('study.building.altitude_hint')"
@@ -186,6 +197,100 @@
     </div>
     <div v-if="loadingAlt">
       <q-spinner-dots />
+    </div>
+
+    <div class="text-bold q-mb-md">Ventilation</div>
+    <div class="row q-col-gutter-md q-mb-md">
+      <div class="col">
+        <q-select
+          v-model="building.mechanical_ventilation"
+          :options="yesNoOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.building.mechanical_ventilation')"
+          :hint="$t('study.building.mechanical_ventilation_hint')"
+        />
+      </div>
+      <div class="col">
+        <q-input
+          v-model="building.particle_filtration_system"
+          filled
+          :label="$t('study.building.particle_filtration_system')"
+          :hint="$t('study.building.particle_filtration_system_hint')"
+        />
+      </div>
+      <div class="col">
+        <q-input
+          v-model.number="building.particle_filtration_rating"
+          type="number"
+          :min="0"
+          filled
+          :label="$t('study.building.particle_filtration_rating')"
+          :hint="$t('study.building.particle_filtration_rating_hint')"
+        />
+      </div>
+    </div>
+
+    <div class="row q-col-gutter-md q-mb-md">
+      <div class="col">
+        <q-select
+          v-model="building.operable_windows"
+          :options="yesNoOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.building.operable_windows')"
+          :hint="$t('study.building.operable_windows_hint')"
+        />
+      </div>
+      <div class="col">
+        <q-input
+          v-model.number="building.airtightness"
+          type="number"
+          :min="0"
+          filled
+          :label="$t('study.building.airtightness')"
+          :hint="$t('study.building.airtightness_hint')"
+        />
+      </div>
+      <div class="col">
+        <q-select
+          v-model="building.smoking"
+          :options="yesNoOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.building.smoking')"
+          :hint="$t('study.building.smoking_hint')"
+        />
+      </div>
+    </div>
+
+    <div class="text-bold q-mb-md">Occupancy</div>
+    <div class="row q-col-gutter-md q-mb-md">
+      <div class="col">
+        <q-select
+          v-model="building.age_group"
+          :options="ageGroupOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.building.age_group')"
+          :hint="$t('study.building.age_group_hint')"
+        />
+      </div>
+      <div class="col">
+        <q-select
+          v-model="building.socioeconomic_status"
+          :options="socioeconomicStatusOptions"
+          filled
+          emit-value
+          map-options
+          :label="$t('study.building.socioeconomic_status')"
+          :hint="$t('study.building.socioeconomic_status_hint')"
+        />
+      </div>
     </div>
 
     <div class="text-bold q-mb-md">Certification</div>
@@ -252,16 +357,27 @@
                 </q-expansion-item>
               </q-item-section>
               <q-item-section side>
-                <q-btn
-                  rounded
-                  dense
-                  flat
-                  color="negative"
-                  :title="$t('delete')"
-                  icon="delete"
-                  class="q-ml-xs"
-                  @click="onDeleteSpace(i)"
-                />
+                <div>
+                  <q-btn
+                    rounded
+                    dense
+                    flat
+                    :title="$t('duplicate')"
+                    icon="content_copy"
+                    size="sm"
+                    @click="onDuplicateSpace(i)"
+                  />
+                  <q-btn
+                    rounded
+                    dense
+                    flat
+                    color="negative"
+                    :title="$t('delete')"
+                    icon="delete"
+                    size="sm"
+                    @click="onDeleteSpace(i)"
+                  />
+                </div>
               </q-item-section>
             </q-item>
           </template>
@@ -290,13 +406,16 @@ import {
   climateOptions,
   buildingTypeOptions,
   outdoorEnvOptions,
-  populationOptions,
+  ageGroupOptions,
+  socioeconomicStatusOptions,
   countryOptions,
   yesNoOptions,
 } from 'src/utils/options';
 import { geocoderApi } from 'src/utils/geocoder';
 import { Building, Certification } from 'src/models';
 import SpaceForm from 'src/components/contribute/SpaceForm.vue';
+import { notifyInfo } from 'src/utils/notify';
+import { on } from 'events';
 
 const contrib = useContributeStore();
 
@@ -309,8 +428,14 @@ const building = ref(props.modelValue);
 const loadingGeo = ref(false);
 const loadingAlt = ref(false);
 
+onMounted(() => {
+  onInitLocation();
+  onGreenCertifiedUpdated();
+});
+
 watch(() => props.modelValue, (val) => {
   building.value = val;
+  onInitLocation();
   onGreenCertifiedUpdated();
 });
 
@@ -318,13 +443,28 @@ const hasCityCountry = computed(
   () => building.value.city && building.value.country,
 );
 const hasLongLat = computed(
-  () => building.value.longitude && building.value.latitude,
+  () => building.value.long && building.value.lat,
 );
+
+function isNumber(value: any): boolean {
+  return typeof value === 'number' && !isNaN(value);
+}
+
+async function onInitLocation() {
+  if (!hasCityCountry.value) {
+    building.value.long = undefined;
+    building.value.lat = undefined;
+    onLongLatUpdated();
+    return;
+  } else if (!isNumber(building.value.long) || !isNumber(building.value.lat)) {
+    onLocationUpdated();
+  }
+}
 
 async function onLocationUpdated() {
   if (!hasCityCountry.value) {
-    building.value.longitude = undefined;
-    building.value.latitude = undefined;
+    building.value.long = undefined;
+    building.value.lat = undefined;
     onLongLatUpdated();
     return;
   }
@@ -335,16 +475,16 @@ async function onLocationUpdated() {
       countries: [building.value.country],
     });
     if (res.features && res.features.length > 0 && res.features[0].center) {
-      building.value.longitude = res.features[0].center[0];
-      building.value.latitude = res.features[0].center[1];
+      building.value.long = res.features[0].center[0];
+      building.value.lat = res.features[0].center[1];
     } else {
-      building.value.longitude = null;
-      building.value.latitude = null;
+      building.value.long = undefined;
+      building.value.lat = undefined;
     }
   } catch (err) {
     console.error(err);
-    building.value.longitude = null;
-    building.value.latitude = null;
+    building.value.long = undefined;
+    building.value.lat = undefined;
   }
   onLongLatUpdated();
 }
@@ -358,24 +498,32 @@ function onLongLatUpdated() {
   loadingAlt.value = true;
   Promise.all([
     contrib
-      .fetchAltitude(building.value.longitude, building.value.latitude)
+      .fetchAltitude(building.value.long, building.value.lat)
       .then((res) => {
         building.value.altitude = res.altitude;
       }),
     contrib
-      .fetchClimateZone(building.value.longitude, building.value.latitude)
+      .fetchClimateZone(building.value.long, building.value.lat)
       .then((res) => {
         building.value.climate_zone = res.name;
       }),
   ]).finally(() => (loadingAlt.value = false));
 }
 
+function onDuplicateSpace(i: number) {
+  if (!building.value.spaces) return;
+  contrib.addSpace(building.value.identifier, building.value.spaces[i]);
+  notifyInfo('Space duplicated');
+}
+
 function onAddSpace() {
   contrib.addSpace(building.value.identifier);
+  notifyInfo('New space added');
 }
 
 function onDeleteSpace(i: number) {
   contrib.deleteSpace(building.value.identifier, i);
+  notifyInfo('Space deleted');
 }
 
 function onGreenCertifiedUpdated() {
@@ -383,6 +531,25 @@ function onGreenCertifiedUpdated() {
     building.value.certifications = [{} as Certification];
   } else {
     building.value.certifications = [];
+  }
+}
+
+function onRenovationUpdated() {
+  if (building.value.renovation !== 'yes') {
+    building.value.renovation_year = undefined;
+    building.value.renovation_details = undefined;
+  }
+}
+
+function onBuildingTypeChange() {
+  if (building.value.type !== 'other') {
+    building.value.other_type = undefined;
+  }
+}
+
+function onOutdoorEnvChange() {
+  if (building.value.outdoor_env !== 'other') {
+    building.value.other_outdoor_env = undefined;
   }
 }
 </script>

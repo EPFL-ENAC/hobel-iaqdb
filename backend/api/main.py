@@ -11,7 +11,6 @@ from api.views.catalog import router as catalog_router
 from api.views.contribute import router as contribute_router
 from api.views.map import router as map_router
 from api.views.files import router as files_router
-from api.views.auth import router as auth_router
 
 basicConfig(level=INFO)
 
@@ -56,11 +55,11 @@ async def get_health(
 
     return HealthCheck(status="OK")
 
-app.include_router(
-    seed_router,
-    prefix="/seed",
-    tags=["Seed"],
-)
+# app.include_router(
+#     seed_router,
+#     prefix="/seed",
+#     tags=["Seed"],
+# )
 
 app.include_router(
     contribute_router,
@@ -84,10 +83,4 @@ app.include_router(
     files_router,
     prefix="/files",
     tags=["Files"],
-)
-
-app.include_router(
-    auth_router,
-    prefix="/auth",
-    tags=["Auth"],
 )

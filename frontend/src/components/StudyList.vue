@@ -22,12 +22,7 @@
                 <q-chip
                   color="secondary"
                   class="text-white"
-                  :label="`${props.row.building_count} buildings`"
-                />
-                <q-chip
-                  color="accent"
-                  class="on-right text-white"
-                  :label="`${props.row.space_count} spaces`"
+                  :label="`${getBuildingCount(props.row)} buildings`"
                 />
                 <q-chip
                   class="on-right"
@@ -73,6 +68,10 @@ const loading = ref(false);
 onMounted(updateTable);
 
 watch(() => filtersStore.updates, updateTable);
+
+function getBuildingCount(study: Study) {
+  return study.buildings?.length || 0;
+}
 
 function updateTable() {
   tableRef.value.requestServerInteraction();

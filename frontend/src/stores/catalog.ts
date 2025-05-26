@@ -10,12 +10,13 @@ import {
 } from 'src/models';
 
 export const useCatalogStore = defineStore('catalog', () => {
+  const authStore = useAuthStore();
+  const filterStore = useFiltersStore();
+
   const study = ref<Study>();
   const buildings = ref<Building[]>([]);
   const spaces = ref<Space[]>([]);
-
-  const filterStore = useFiltersStore();
-
+  
   async function loadStudies(
     skip: number,
     limit: number,
@@ -89,8 +90,17 @@ export const useCatalogStore = defineStore('catalog', () => {
     };
   }
 
+  async function deleteStudy(id: string) {
+    if (!authStore.isAuthenticated) return Promise.reject('Not authenticated');
+    return authStore.updateToken().then(() => 
+      api.delete(`/catalog/study/${id}`, {
+        headers: {
+          Authorization: `Bearer ${authStore.accessToken}`,
+        },
+      }));
+  }
+
   async function loadStudy(id: string) {
-    // 66866e82e2a2c5f0504c88f2
     return api.get(`/catalog/study/${id}`).then((response) => {
       study.value = response.data;
       return Promise.all([loadStudyBuildings(), loadStudySpaces()]);
@@ -116,6 +126,7 @@ export const useCatalogStore = defineStore('catalog', () => {
   }
 
   return {
+    deleteStudy,
     loadStudies,
     loadBuildings,
     loadSpaces,

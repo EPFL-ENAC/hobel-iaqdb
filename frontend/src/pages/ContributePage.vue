@@ -40,7 +40,7 @@
           <study-stepper
             class="q-mt-md"
             @pause="showIntro = true"
-            @finish="onFinish"
+            @submit="onSubmit"
           />
         </div>
       </div>
@@ -75,7 +75,7 @@ function onResume() {
   showIntro.value = false;
 }
 
-function onFinish() {
+function onSubmit() {
   // TODO contribute store to upload stuff
   showUpload.value = true;
 }

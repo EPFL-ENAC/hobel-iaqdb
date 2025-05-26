@@ -7,15 +7,12 @@ from fastapi.datastructures import UploadFile
 from fastapi.param_functions import File
 from api.services.s3 import s3_client
 
-from fastapi import Depends, Security, Query, APIRouter, HTTPException
-from fastapi.responses import Response
+from fastapi import Depends, Query, APIRouter, HTTPException
+from fastapi.responses import Response, StreamingResponse
 
-from api.utils.file_size import size_checker
-from api.auth import get_api_key
+from api.utils.files import file_checker
 
 from pydantic import BaseModel
-
-from api.utils.file_nodes import FileNode
 
 
 class FilePath(BaseModel):
@@ -35,7 +32,12 @@ async def get_file(file_path: str,
     if body:
         if download:
             # download file
-            return Response(content=body, media_type=content_type)
+            return Response(
+                content=body,
+                media_type=content_type,
+                headers={
+                    "Content-Disposition": "attachment; filename=" + file_path.split("/")[-1]},
+            )
         else:
             # inline image
             return Response(content=body)
@@ -46,7 +48,7 @@ async def get_file(file_path: str,
 @router.post("/tmp",
              status_code=200,
              description="-- Upload any assets to S3 --",
-             dependencies=[Depends(size_checker)])
+             dependencies=[Depends(file_checker.check_size)])
 async def upload_temp_files(
         files: list[UploadFile] = File(description="multiple file upload")):
     current_time = datetime.datetime.now()

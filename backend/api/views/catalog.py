@@ -1,19 +1,13 @@
-from typing import List
-from fastapi import APIRouter, Security, Depends, Query, Body
-from fastapi.datastructures import UploadFile
-from fastapi.param_functions import File
+from fastapi import APIRouter, Depends, Query
 from api.db import get_session, AsyncSession
-from api.auth import get_api_key
+from api.auth import kc_service, User
 from api.services.study import StudyService
-from api.services.study_parser import StudyParser
-from api.services.study_draft import StudyDraftService
 from api.services.building import BuildingService
 from api.services.space import SpaceService
 from api.services.instrument import InstrumentService
 from api.services.dataset import DatasetService
-from api.models.catalog import Study, StudyRead, StudyDraft, StudiesResult, Building, BuildingRead, BuildingsResult, Space, SpacesResult, Instrument, InstrumentsResult, Dataset, DatasetsResult
-from api.utils.query import paramAsArray, paramAsDict
-from api.utils.file_size import size_checker
+from api.models.catalog import Study, StudyRead, StudiesResult, Building, BuildingRead, BuildingsResult, Space, SpacesResult, Instrument, InstrumentsResult, Dataset, DatasetsResult
+from enacit4r_sql.utils.query import paramAsArray, paramAsDict
 
 router = APIRouter()
 
@@ -47,7 +41,7 @@ async def get_study(
 async def delete_study(
     id: int,
     session: AsyncSession = Depends(get_session),
-    api_key: str = Security(get_api_key),
+    user: User = Depends(kc_service.require_admin()),
 ) -> None:
     """Delete study by id"""
     service = StudyService(session)
@@ -144,7 +138,7 @@ async def get_building(
 async def delete_building(
     id: int,
     session: AsyncSession = Depends(get_session),
-    api_key: str = Security(get_api_key),
+    user: User = Depends(kc_service.require_admin()),
 ) -> None:
     """Delete building by id"""
     service = BuildingService(session)
@@ -180,7 +174,7 @@ async def get_space(
 async def delete_space(
     id: int,
     session: AsyncSession = Depends(get_session),
-    api_key: str = Security(get_api_key),
+    user: User = Depends(kc_service.require_admin()),
 ) -> None:
     """Delete space by id"""
     service = SpaceService(session)

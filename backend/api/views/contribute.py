@@ -1,27 +1,27 @@
 import pkg_resources
-from typing import List
-from fastapi import APIRouter, Depends, Body
+from fastapi import APIRouter, Depends, Body, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.datastructures import UploadFile
 from fastapi.param_functions import File
 from api.services.study_parser import StudyParser
 from api.services.study_draft import StudyDraftService
 from api.models.catalog import StudyDraft, StudyDraftsResult
-from api.utils.file_size import size_checker
-from api.auth import require_admin, User
+from api.utils.files import file_checker
+from api.auth import kc_service, User
 
 router = APIRouter()
 
 
 @router.get("/study-template")
 async def get_study_template():
+    version = "3.1"
     data_file_path = pkg_resources.resource_filename(
-        "api", "data/Metadata_entry_form.xlsx")
-    return FileResponse(data_file_path, filename="iaqdb_study_template.xlsx", media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        "api", f"data/Metadata_entry_form_v{version}.xlsm")
+    return FileResponse(data_file_path, filename=f"iaqdb_study_template_v{version}.xlsm", media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 
 @router.get("/dataset-dictionary")
-async def get_study_template():
+async def get_dataset_dictionary():
     data_file_path = pkg_resources.resource_filename(
         "api", "data/Dictionary_data.xlsx")
     return FileResponse(data_file_path, filename="iaqdb_dataset_dictionary.xlsx", media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
@@ -29,18 +29,21 @@ async def get_study_template():
 
 @router.post("/study-excel",
              status_code=200,
-             dependencies=[Depends(size_checker)],
+             dependencies=[Depends(file_checker.check_size)],
              response_model=StudyDraft)
 async def read_study_from_excel(
     files: UploadFile = File(
         description="Excel file containing study, building, space descriptions")):
-    study = StudyParser().parse(files.file._file)
-    return study
+    try:
+        study = StudyParser().parse(files.file._file)
+        return study
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.get("/study-drafts", response_model=StudyDraftsResult)
 async def get_study_drafts(
-    user: User = Depends(require_admin),
+    user: User = Depends(kc_service.require_admin()),
 ) -> StudyDraftsResult:
     """Get all study drafts"""
     service = StudyDraftService()
@@ -69,8 +72,11 @@ async def get_study_draft(
 ) -> StudyDraft:
     """Get a study draft"""
     service = StudyDraftService()
-    study = await service.get(identifier)
-    return study
+    try:
+        study = await service.get(identifier)
+        return study
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
 
 
 @router.put("/study-draft/{identifier}", response_model=StudyDraft)

@@ -1,6 +1,6 @@
 from typing import List, Dict, Optional
 from sqlmodel import SQLModel, Field, Relationship, UniqueConstraint, Column, JSON
-from pydantic import BaseModel
+from enacit4r_sql.models.query import ListResult
 
 
 # Studies
@@ -9,7 +9,7 @@ class PersonBase(SQLModel):
     name: str
     email: str
     email_public: bool = Field(default=False)
-    institution: str
+    institution: Optional[str] = Field(default=None)
     study_id: Optional[int] = Field(
         default=None, foreign_key="study.id", ondelete="CASCADE")
 
@@ -28,11 +28,9 @@ class Person(PersonBase, table=True):
 
 class StudyBase(SQLModel):
     identifier: str
-    name: str
-    description: str
+    name: Optional[str] = Field(default=None)
+    description: Optional[str] = Field(default=None)
     website: Optional[str] = Field(default=None)
-    building_count: Optional[int] = Field(default=None)
-    space_count: Optional[int] = Field(default=None)
     start_year: Optional[int] = Field(default=None)
     end_year: Optional[int] = Field(default=None)
     duration: Optional[int] = Field(default=None)
@@ -43,6 +41,7 @@ class StudyBase(SQLModel):
     funding: Optional[str] = Field(default=None)
     ethics: Optional[str] = Field(default=None)
     license: Optional[str] = Field(default=None)
+    data_processing: Optional[str] = Field(default=None)
 
 
 class Study(StudyBase, table=True):
@@ -82,7 +81,7 @@ class StudyDraft(StudyRead):
 
 class CertificationBase(SQLModel):
     program: str
-    level: str
+    level: Optional[str] = Field(default=None)
     building_id: Optional[int] = Field(
         default=None, foreign_key="building.id", ondelete="CASCADE")
 
@@ -102,28 +101,32 @@ class Certification(CertificationBase, table=True):
 
 class BuildingBase(SQLModel):
     identifier: str
-    country: str
-    city: str
+    country: Optional[str] = Field(default=None)
+    city: Optional[str] = Field(default=None)
     postcode: Optional[str] = Field(default=None)
-    timezone: str
-    altitude: int
-    climate_zone: str
-    long: float
-    lat: float
+    timezone: Optional[str] = Field(default=None)
+    altitude: Optional[int] = Field(default=None)
+    climate_zone: Optional[str] = Field(default=None)
+    long: Optional[float] = Field(default=None)
+    lat: Optional[float] = Field(default=None)
     type: Optional[str] = Field(default=None)
     other_type: Optional[str] = Field(default=None)
-    special_population: Optional[str] = Field(default=None)
     outdoor_env: Optional[str] = Field(default=None)
     other_outdoor_env: Optional[str] = Field(default=None)
     green_certified: Optional[str] = Field(default=None)
     construction_year: Optional[int] = Field(default=None)
-    renovation: str
+    renovation: Optional[str] = Field(default=None)
+    renovation_details: Optional[str] = Field(default=None)
     renovation_year: Optional[int] = Field(default=None)
-    mechanical_ventilation: str
-    operable_windows: str
-    special_population: Optional[str] = Field(default=None)
-    other_special_population: Optional[str] = Field(default=None)
-    smoking: str
+    mechanical_ventilation: Optional[str] = Field(default=None)
+    particle_filtration_system: Optional[str] = Field(default=None)
+    particle_filtration_rating: Optional[int] = Field(default=None)
+    operable_windows: Optional[str] = Field(default=None)
+    airtightness: Optional[float] = Field(default=None)
+    age_group: Optional[str] = Field(default=None)
+    socioeconomic_status: Optional[str] = Field(default=None)
+    smoking: Optional[str] = Field(default=None)
+
     study_id: Optional[int] = Field(
         default=None, foreign_key="study.id", ondelete="CASCADE")
 
@@ -153,19 +156,6 @@ class BuildingRead(BuildingBase):
 
 class BuildingDraft(BuildingRead):
     id: Optional[int] = Field(default=None)
-    country: Optional[str] = Field(default=None)
-    city: Optional[str] = Field(default=None)
-    timezone: Optional[str] = Field(default=None)
-    altitude: Optional[int] = Field(default=None)
-    climate_zone: Optional[str] = Field(default=None)
-    long: Optional[float] = Field(default=None)
-    lat: Optional[float] = Field(default=None)
-    type: Optional[str] = Field(default=None)
-    other_type: Optional[str] = Field(default=None)
-    renovation: Optional[str] = Field(default=None)
-    mechanical_ventilation: Optional[str] = Field(default=None)
-    operable_windows: Optional[str] = Field(default=None)
-    smoking: Optional[str] = Field(default=None)
 
 
 # Spaces
@@ -173,18 +163,16 @@ class BuildingDraft(BuildingRead):
 
 class SpaceBase(SQLModel):
     identifier: str
-    type: str
+    type: Optional[str] = Field(default=None)
+    floor_area: Optional[float] = Field(default=None)
+    space_volume: Optional[float] = Field(default=None)
+    occupancy_density: Optional[float] = Field(default=None)
+    occupancy_number: Optional[int] = Field(default=None)
     occupancy: Optional[str] = Field(default=None)
-    mechanical_ventilation_status: str
     mechanical_ventilation_type: Optional[str] = Field(default=None)
-    windows_status: str
-    ventilation_rate: Optional[float] = Field(default=None)
-    air_change_rate: Optional[float] = Field(default=None)
-    particle_filtration_rating: Optional[int] = Field(default=None)
-    cooling_status: str
+    other_mechanical_ventilation_type: Optional[str] = Field(default=None)
     cooling_type: Optional[str] = Field(default=None)
     other_cooling_type: Optional[str] = Field(default=None)
-    heating_status: str
     heating_type: Optional[str] = Field(default=None)
     other_heating_type: Optional[str] = Field(default=None)
     air_filtration: Optional[str] = Field(default=None)
@@ -222,6 +210,7 @@ class InstrumentParameterBase(SQLModel):
     physical_parameter: str
     analysis_method: Optional[str] = Field(default=None)
     measurement_uncertainty: Optional[str] = Field(default=None)
+    note: Optional[str] = Field(default=None)
 
     instrument_id: Optional[int] = Field(
         default=None, foreign_key="instrument.id", ondelete="CASCADE")
@@ -338,12 +327,6 @@ class DatasetDraft(DatasetRead):
 #
 # Results
 #
-
-
-class ListResult(BaseModel):
-    total: int
-    skip: int | None
-    limit: int | None
 
 
 class StudiesResult(ListResult):

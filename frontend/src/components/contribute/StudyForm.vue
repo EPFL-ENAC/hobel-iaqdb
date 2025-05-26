@@ -3,8 +3,9 @@
     <q-input
       v-model="contrib.study.name"
       filled
-      :label="$t('study.name')"
+      :label="$t('study.name') + ' *'"
       :hint="$t('study.name_hint')"
+      :rules="[val => !!val || $t('required')]"
       class="q-mb-md"
     />
     <q-input
@@ -30,6 +31,8 @@
           v-model.number="contrib.study.start_year"
           filled
           type="number"
+          :min="1900"
+          :max="new Date().getFullYear()"
           :label="$t('study.start_year')"
           :hint="$t('study.start_year_hint')"
         />
@@ -39,6 +42,8 @@
           v-model.number="contrib.study.end_year"
           filled
           type="number"
+          :min="1900"
+          :max="new Date().getFullYear()"
           :label="$t('study.end_year')"
           :hint="$t('study.end_year_hint')"
         />
@@ -48,6 +53,7 @@
           v-model.number="contrib.study.duration"
           filled
           type="number"
+          :min="0"
           :label="$t('study.duration')"
           :hint="$t('study.duration_hint')"
         />
@@ -55,45 +61,29 @@
     </div>
     <div class="row q-col-gutter-md q-mb-md">
       <div class="col">
-        <q-input
-          v-model.number="contrib.study.building_count"
-          filled
-          type="number"
-          :label="$t('study.building_count')"
-          :hint="$t('study.building_count_hint')"
-        />
-      </div>
-      <div class="col">
-        <q-input
-          v-model.number="contrib.study.space_count"
-          filled
-          type="number"
-          :label="$t('study.space_count')"
-          :hint="$t('study.space_count_hint')"
-        />
-      </div>
-    </div>
-    <div class="row q-col-gutter-md q-mb-md">
-      <div class="col">
         <q-select
-          v-model="contrib.study.occupant_impact"
+          v-model="occupant_impacts"
           :options="occupantImpactOptions"
           filled
+          multiple
           emit-value
           map-options
           :label="$t('study.occupant_impact')"
           :hint="$t('study.occupant_impact_hint')"
+          @update:model-value="contrib.study.occupant_impact = $event.join(',')"
         />
       </div>
       <div class="col">
         <q-select
-          v-model="contrib.study.other_indoor_param"
+          v-model="other_indoor_params"
           :options="otherIndoorParamOptions"
           filled
+          multiple
           emit-value
           map-options
           :label="$t('study.other_indoor_param')"
           :hint="$t('study.other_indoor_param_hint')"
+          @update:model-value="contrib.study.other_indoor_param = $event.join(',')"
         />
       </div>
     </div>
@@ -186,26 +176,25 @@
         />
       </div>
       <div class="col">
-        <q-select
-          v-model="contrib.study.license"
-          :options="licenseOptions"
+        <q-input
+          v-model="contrib.study.data_processing"
           filled
-          emit-value
-          map-options
-          :label="$t('study.license')"
-          :hint="$t('study.license_hint')"
-        >
-          <template v-slot:option="scope">
-            <q-item v-bind="scope.itemProps">
-              <q-item-section>
-                <q-item-label>{{ scope.opt.label }}</q-item-label>
-                <q-item-label caption style="max-width: 500px">{{
-                  scope.opt.description
-                }}</q-item-label>
-              </q-item-section>
-            </q-item>
-          </template>
-        </q-select>
+          type="textarea"
+          :label="$t('study.data_processing')"
+          :hint="$t('study.data_processing_hint')"
+          class="q-mb-md"
+        />
+      </div>
+    </div>
+    <div class="row q-col-gutter-md q-mb-md">
+      <div class="col">
+        <q-checkbox
+          v-model="license_accepted"
+          dense
+          :label="$t('study.license_accept')"
+          @update:model-value="onToggleLicenseAccepted"
+        />
+        <q-markdown class="text-hint q-mt-sm" :src="$t('study.license_accept_hint')" />
       </div>
     </div>
   </div>
@@ -221,10 +210,44 @@ import PersonForm from './PersonFom.vue';
 import {
   occupantImpactOptions,
   otherIndoorParamOptions,
-  licenseOptions,
 } from 'src/utils/options';
 
 const contrib = useContributeStore();
+
+const occupant_impacts = ref<string[]>([]);
+const other_indoor_params = ref<string[]>([]);
+const license_accepted = ref(false);
+
+onMounted(
+  () => {
+    if (contrib.study.occupant_impact) {
+      occupant_impacts.value = contrib.study.occupant_impact.split(',');
+    } else {
+      occupant_impacts.value = [];
+    }
+    if (contrib.study.other_indoor_param) {
+      other_indoor_params.value = contrib.study.other_indoor_param.split(',');
+    } else {
+      other_indoor_params.value = [];
+    }
+    license_accepted.value = contrib.study.license === 'CC BY-NC';
+  },
+);
+
+watch(
+  () => contrib.study,
+  (study) => {
+    license_accepted.value = study.license === 'CC BY-NC';
+  },
+);
+
+function onToggleLicenseAccepted() {
+  if (license_accepted.value) {
+    contrib.study.license = 'CC BY-NC';
+  } else {
+    contrib.study.license = '';
+  }
+}
 
 function onAddContributor() {
   contrib.addContributor();

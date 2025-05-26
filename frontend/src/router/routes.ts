@@ -18,10 +18,6 @@ const routes: RouteRecordRaw[] = [
         path: '/admin',
         component: () => import('pages/AdminPage.vue'),
       },
-      {
-        path: '/profile',
-        component: () => import('pages/ProfilePage.vue'),
-      },
     ],
   },
   {
@@ -31,6 +27,7 @@ const routes: RouteRecordRaw[] = [
       { path: '/map', component: () => import('src/pages/MapPage.vue') },
       {
         path: '/catalog',
+        name: 'catalog',
         component: () => import('src/pages/CatalogPage.vue'),
       },
       { path: '/search', component: () => import('src/pages/SearchPage.vue') },

@@ -32,11 +32,15 @@ export interface Building extends DBModel {
   green_certified?: string;
   construction_year?: number;
   renovation?: string;
+  renovation_details?: string;
   renovation_year?: number;
   mechanical_ventilation?: string;
+  particle_filtration_system?: string; 
+  particle_filtration_rating?: number;
   operable_windows?: string;
-  special_population?: string;
-  other_special_population?: string;
+  airtightness?: number;  
+  age_group?: string;
+  socioeconomic_status?: string;
   smoking?: string;
   spaces?: Space[];
   certifications?: Certification[];
@@ -60,15 +64,14 @@ export interface Study extends DBModel {
   start_year?: number;
   end_year?: number;
   duration?: number;
-  building_count?: number;
-  space_count?: number;
-  occupant_impact?: string;
-  other_indoor_param?: string;
+  occupant_impact?: string[];
+  other_indoor_param?: string[];
   citation?: string;
   doi?: string;
   funding?: string;
   ethics?: string;
   license?: string;
+  data_processing?: string;
   contributors?: Person[];
   buildings?: Building[];
   instruments?: Instrument[];
@@ -82,17 +85,15 @@ export interface StudiesResult extends ListResult {
 export interface Space extends DBModel {
   identifier: string;
   type: string;
+  floor_area?: number;
+  space_volume?: number;
+  occupancy_density?: number;
+  occupancy_number?: number;
   occupancy?: string;
-  mechanical_ventilation_status?: string;
   mechanical_ventilation_type?: string;
-  windows_status?: string;
-  ventilation_rate?: number;
-  air_change_rate?: number;
-  particle_filtration_rating?: number;
-  cooling_status?: string;
+  other_mechanical_ventilation_type?: string;
   cooling_type?: string;
   other_cooling_type?: string;
-  heating_status?: string;
   heating_type?: string;
   other_heating_type?: string;
   air_filtration?: string;
@@ -124,6 +125,7 @@ export interface InstrumentParameter extends DBModel {
   physical_parameter: string;
   analysis_method?: string;
   measurement_uncertainty?: string;
+  note?: string;
 }
 
 export interface InstrumentsResult extends ListResult {

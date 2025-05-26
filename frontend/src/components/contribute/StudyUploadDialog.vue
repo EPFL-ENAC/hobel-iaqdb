@@ -12,7 +12,7 @@
           size="25px"
           :value="progress"
           :buffer="buffer"
-          color="accent"
+          :color="color"
           stripe
         >
           <div class="absolute-full flex flex-center">
@@ -28,8 +28,11 @@
             <div class="q-mb-sm">
               Please copy this study ID and keep it for future reference:
             </div>
-            <q-chip color="secondary" icon-right="content_copy" :label="contrib.study.identifier" clickable @click="onCopy" text-color="white" />  
+            <q-chip color="secondary" icon-right="content_copy" :label="contrib.study.identifier" clickable @click="onCopy" text-color="white" />
           </div>
+        </div>
+        <div v-if="status === 'Error'" class="q-mt-md">
+          An error occurred while uploading the study. Please verify your data or try again later.
         </div>
       </q-card-section>
       <q-card-actions v-if="$q.screen.gt.xs" align="right">
@@ -52,7 +55,7 @@ export default defineComponent({
 </script>
 <script setup lang="ts">
 import { copyToClipboard } from 'quasar';
-import { notifySuccess } from 'src/utils/notify';
+import { notifyError, notifyInfo } from 'src/utils/notify';
 
 const contrib = useContributeStore();
 
@@ -66,6 +69,7 @@ const showDialog = ref(props.modelValue);
 const progress = ref(0);
 const buffer = ref(0);
 const status = ref('');
+const color = ref('accent');
 
 const progressLabel = computed(() => (progress.value * 100).toFixed(0) + '%');
 
@@ -87,20 +91,31 @@ function onHide() {
 }
 
 function onClose() {
-  emit('close');
+  if (progress.value < 1) {
+    emit('cancel');
+  } else {
+    emit('close');
+  }
 }
 
 async function doSave() {
   progress.value = 0;
+  color.value = 'accent';
   buffer.value = 0.25;
   status.value = 'Uploading study, buildings and instruments...';
-  await contrib.saveOrUpdateDraft();
-  progress.value = 1;
-  status.value = 'Done';
+  try {
+    await contrib.saveOrUpdateDraft();
+    progress.value = 1;
+    status.value = 'Done';
+  } catch (error) {
+    color.value = 'negative';
+    status.value = 'Error';
+    notifyError(error);
+  }
 }
 
 function onCopy() {
   copyToClipboard(contrib.study.identifier);
-  notifySuccess('Study ID copied to clipboard');
+  notifyInfo('Study ID copied to clipboard');
 }
 </script>

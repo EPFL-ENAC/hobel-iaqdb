@@ -70,8 +70,6 @@ const licenseDescription = computed(
 
 const items: FieldItem<Study>[] = [
   { field: 'website', label: 'Website' },
-  { field: 'building_count', label: 'Building count' },
-  { field: 'space_count', label: 'Space count' },
 ];
 
 const refItems: FieldItem<Study>[] = [
@@ -99,7 +97,7 @@ const contactItems: FieldItem<Study | Person>[] = [
   },
   {
     field: 'contact',
-    label: 'Institution',
+    label: 'Institution/Company',
     html: (val: Study) => val.institution,
   },
 ];

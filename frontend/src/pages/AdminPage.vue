@@ -3,7 +3,17 @@
     <div class="text-h4 q-pa-md bg-accent text-white text-weight-light">
       {{ $t('administration') }}
     </div>
-    <q-separator />
+    <q-toolbar v-if="authStore.isAuthenticated" class="bg-warning">
+      <span>{{ $t(authStore.isAdmin ? 'user.welcome_admin' : 'user.welcome', { name: authStore.profile?.firstName }) }}</span>
+      <q-btn
+        color="primary"
+        no-caps
+        :label="$t('user.logout')"
+        @click="authStore.logout" 
+        size="sm"
+        class="on-right"
+      />
+    </q-toolbar>
     <div class="q-pa-md">
       <div v-if="!authStore.isAuthenticated">
         <q-spinner-dots size="md" color="primary" />
