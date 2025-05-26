@@ -98,7 +98,8 @@ async def update_study_draft(
 @router.put("/study-draft/{identifier}/_publish", response_model=StudyRead)
 async def publish_study_draft(
     identifier: str,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(kc_service.require_admin()),
 ) -> Study:
     """Save the study draft in the database"""
     service = StudyDraftService()
@@ -110,7 +111,8 @@ async def publish_study_draft(
 @router.put("/study-draft/{identifier}/_reinstate", response_model=StudyRead)
 async def reinstate_study_draft(
     identifier: str,
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(kc_service.require_admin()),
 ) -> Response:
     """Get the study from the database and push it in draft"""
     study_service = StudyService(session)
@@ -131,6 +133,7 @@ async def reinstate_study_draft(
 @router.delete("/study-draft/{identifier}")
 async def delete_study_draft(
     identifier: str,
+    user: User = Depends(kc_service.require_admin()),
 ) -> None:
     """Delete a study draft"""
     service = StudyDraftService()

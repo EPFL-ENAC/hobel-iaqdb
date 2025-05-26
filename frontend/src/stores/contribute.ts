@@ -377,14 +377,33 @@ export const useContributeStore = defineStore(
     async function publishDraft(study: Study) {
       if (!authStore.isAuthenticated) return Promise.reject('Not authenticated');
       return authStore.updateToken().then(() => 
-        api.put(`/contribute/study-draft/${study.identifier}/_publish`)
+        api.put(`/contribute/study-draft/${study.identifier}/_publish`, {}, {
+          headers: {
+            Authorization: `Bearer ${authStore.accessToken}`,
+          },
+        })
+      );
+    }
+
+    async function reinstateDraft(study: Study) {
+      if (!authStore.isAuthenticated) return Promise.reject('Not authenticated');
+      return authStore.updateToken().then(() => 
+        api.put(`/contribute/study-draft/${study.identifier}/_reinstate`, {}, {
+          headers: {
+            Authorization: `Bearer ${authStore.accessToken}`,
+          },
+        })
       );
     }
     
     async function deleteDraft(study: Study) {
       if (!authStore.isAuthenticated) return Promise.reject('Not authenticated');
       return authStore.updateToken().then(() => 
-        api.delete(`/contribute/study-draft/${study.identifier}`)
+        api.delete(`/contribute/study-draft/${study.identifier}`, {
+          headers: {
+            Authorization: `Bearer ${authStore.accessToken}`,
+          },
+        })
       );
     }
 
@@ -432,6 +451,7 @@ export const useContributeStore = defineStore(
       readExcel,
       saveOrUpdateDraft,
       publishDraft,
+      reinstateDraft,
       deleteDraft,
       uploadTmpFiles,
       getDrafts,
