@@ -16,6 +16,7 @@ class BuildingProperties(BaseModel):
     climate_zone: str
     ventilations: str
     study_id: str
+    color: str
 
 
 class BuildingFeature(BaseModel):

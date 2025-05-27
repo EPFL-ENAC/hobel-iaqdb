@@ -80,7 +80,8 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
       source: 'buildings',
       filter: ['!', ['has', 'point_count']],
       paint: {
-        'circle-color': '#11b4da',
+        // get color from color property
+        'circle-color': ['get', 'color'],
         'circle-radius': 5,
         'circle-stroke-width': 1,
         'circle-stroke-color': '#fff',

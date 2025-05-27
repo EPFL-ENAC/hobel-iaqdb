@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, Query
 from api.db import get_session, AsyncSession
-from api.models.catalog import Building
 from api.models.geo import Geometry, BuildingFeature, BuildingFeatures, BuildingProperties, ClimateZone, Elevation, TimeZone
 from api.services.geo import GeoService
+from api.services.study import StudyService
 from api.services.building import BuildingService
 from timezonefinder import TimezoneFinder
+from api.utils.colors import string_to_color
 
 
 router = APIRouter()
@@ -13,8 +14,12 @@ tf = TimezoneFinder()
 
 @router.get("/buildings")
 async def getBuildings(session: AsyncSession = Depends(get_session)) -> BuildingFeatures:
+    studyResults = await StudyService(session).find({}, [], [])
     buildingsResult = await BuildingService(session).find({}, [], [])
 
+    # map study id to study identifier
+    studyColorsDict = {
+        study.id: string_to_color(study.identifier) for study in studyResults.data}
     # aggs = Room.aggregate({"$group": {"_id": {"building": "$building", "ventilation": "$ventilation"}, "count": {"$sum": 1}}})
 
     features = []
@@ -32,7 +37,8 @@ async def getBuildings(session: AsyncSession = Depends(get_session)) -> Building
                                         climate_zone=building.climate_zone,
                                         altitude=building.altitude,
                                         ventilations=ventilations,
-                                        study_id=str(building.study_id))
+                                        study_id=str(building.study_id),
+                                        color=studyColorsDict[building.study_id])
         feature = BuildingFeature(
             geometry=geometry, properties=properties, type="Feature")
         features.append(feature)
