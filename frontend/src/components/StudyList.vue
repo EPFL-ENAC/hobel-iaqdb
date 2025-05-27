@@ -11,12 +11,12 @@
       @request="onRequest"
     >
       <template v-slot:item="props">
-        <div class="col-12">
-          <q-card flat @click="onRowClick(props.row)" class="cursor-pointer">
+        <div class="col-3">
+          <q-card flat bordered @click="onRowClick(props.row)" class="cursor-pointer q-ma-md">
             <q-card-section>
               <div class="text-h6">{{ props.row.name }}</div>
-              <div class="text-subtitle1 text-grey-8">
-                {{ props.row.description }}
+              <div class="text-subtitle2 text-grey-8 q-mb-md">
+                {{ truncateText(props.row.description, 300) }}
               </div>
               <div>
                 <q-chip
@@ -36,7 +36,6 @@
               </div>
             </q-card-section>
           </q-card>
-          <q-separator />
         </div>
       </template>
     </q-table>
@@ -61,7 +60,7 @@ const pagination = ref({
   sortBy: 'id',
   descending: false,
   page: 1,
-  rowsPerPage: 5,
+  rowsPerPage: 20,
 });
 const loading = ref(false);
 
@@ -75,6 +74,11 @@ function getBuildingCount(study: Study) {
 
 function updateTable() {
   tableRef.value.requestServerInteraction();
+}
+
+function truncateText(text: string, maxLength: number) {
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength) + '...';
 }
 
 function onRequest(props) {

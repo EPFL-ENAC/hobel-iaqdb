@@ -81,7 +81,7 @@ class StudyDraft(StudyRead):
 # Buildings
 
 class CertificationBase(SQLModel):
-    program: str
+    program: Optional[str] = Field(default=None)
     level: Optional[str] = Field(default=None)
     building_id: Optional[int] = Field(
         default=None, foreign_key="building.id", ondelete="CASCADE")
