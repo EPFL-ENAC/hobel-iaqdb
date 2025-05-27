@@ -100,6 +100,6 @@ function onRequest(props) {
 }
 
 function onRowClick(val: Study) {
-  router.push(`/study/${val.id}`);
+  router.push(`/study?id=${val.identifier}`);
 }
 </script>

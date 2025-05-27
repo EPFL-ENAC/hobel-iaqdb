@@ -11,7 +11,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('pages/ContributePage.vue'),
       },
       {
-        path: '/study/:id',
+        path: '/study',
         component: () => import('src/pages/StudyPage.vue'),
       },
       {

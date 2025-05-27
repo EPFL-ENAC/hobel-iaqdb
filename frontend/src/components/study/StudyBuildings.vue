@@ -91,9 +91,9 @@ const columms = computed(() => {
 
 function onMapLoaded(map: Map) {
   mapStore.initLayers(map).then(() => {
-    if (catalogStore.study?.id) {
+    if (catalogStore.study?.identifier) {
       mapStore.applyFilters({
-        study_ids: [catalogStore.study?.id],
+        study_ids: [catalogStore.study?.identifier],
       });
     }
   });

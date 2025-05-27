@@ -132,7 +132,7 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
             })
             .join('');
 
-          return `<a href="/study/${feat.properties['study_id']}" class="epfl">Study</a></div><table>${rows}</table><div>`;
+          return `<a href="/study?id=${feat.properties['study_id']}" class="epfl">Study</a></div><table>${rows}</table><div>`;
         })
         .join('<hr class="q-separator q-separator--horizontal">');
       new Popup().setLngLat(coordinates).setHTML(tables).addTo(map);
@@ -209,7 +209,7 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
           feature.properties?.study_id !== undefined
         ) {
           filtered = filter.study_ids.includes(
-            parseInt(feature.properties.study_id),
+            feature.properties.study_id,
           );
         }
         return filtered;

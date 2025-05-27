@@ -59,18 +59,46 @@ class StudyService:
 
         return study
 
+    async def get_by_identifier(self, study_identifier: str) -> Study:
+        """Get a study by id"""
+        res = await self.session.exec(
+            select(Study).where(
+                Study.identifier == study_identifier).options(selectinload(Study.contributors), selectinload(Study.buildings), selectinload(Study.instruments), selectinload(Study.datasets))
+        )
+        study = res.one_or_none()
+        if not study:
+            raise HTTPException(
+                status_code=404, detail="Study not found")
+
+        return study
+
     async def delete(self, study_id: int) -> Study:
         """Delete a study by id"""
         res = await self.session.exec(
             select(Study).where(Study.id == study_id)
         )
         study = res.one_or_none()
+        return self.delete_study(study)
+
+    async def delete_by_identifier(self, study_identifier: int) -> Study:
+        """Delete a study by id"""
+        res = await self.session.exec(
+            select(Study).where(Study.identifier == study_identifier)
+        )
+        study = res.one_or_none()
+        return self.delete_study(study)
+
+    async def delete_study(self, study: Study) -> Study:
+        """Delete a study and all its related data"""
         if not study:
             raise HTTPException(
                 status_code=404, detail="Study not found")
+
+        # Delete the study
         await self.session.delete(study)
         await self.session.commit()
 
+        # Delete the public folder in S3
         pub_folder = f"pub/{study.identifier}"
         await s3_client.delete_files(pub_folder)
 

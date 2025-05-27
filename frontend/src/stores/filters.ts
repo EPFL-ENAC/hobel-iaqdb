@@ -10,7 +10,7 @@ export type FilterParams = {
   outdoor_envs?: string[] | null;
   mechanical_ventilation?: string | null;
   mechanical_ventilation_types?: string[] | null;
-  study_ids: number[] | null;
+  study_ids: string[] | null;
 };
 
 export const DEFAULT_CONSTRUCTION_YEARS = { min: 1800, max: new Date().getFullYear() };

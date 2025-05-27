@@ -57,15 +57,17 @@ const router = useRouter();
 const showDelete = ref(false);
 const showDraft = ref(false);
 
+const studyId = computed(() => route.query.id as string);
+
 watch(
-  () => route.params.id,
+  () => route.query.id,
   () => updateStudy,
 );
 
 onMounted(updateStudy);
 
 function updateStudy() {
-  catalogStore.loadStudy(route.params.id as string);
+  catalogStore.loadStudy(studyId.value);
 }
 
 function onShowDelete() {
@@ -73,7 +75,7 @@ function onShowDelete() {
 }
 
 function onDelete() {
-  catalogStore.deleteStudy(route.params.id as string).then(() => {
+  catalogStore.deleteStudy(studyId.value).then(() => {
     router.push({ name: 'catalog' });
   });
 }
@@ -83,6 +85,9 @@ function onShowDraft() {
 }
 
 function onDraft() {
+  if (!catalogStore.study) {
+    return;
+  }
   contributeStore.reinstateDraft(catalogStore.study);
 }
 </script>

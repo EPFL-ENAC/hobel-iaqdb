@@ -29,23 +29,29 @@ async def get_studies(
 async def get_study(
     session: AsyncSession = Depends(get_session),
     *,
-    id: int,
+    id: str,
 ) -> Study:
-    """Get a study by id"""
+    """Get a study by id or identifier"""
     service = StudyService(session)
-    res = await service.get(id)
+    if id.isdigit():
+        res = await service.get(int(id))
+    else:
+        res = await service.get_by_identifier(id)
     return res
 
 
 @router.delete("/study/{id}")
 async def delete_study(
-    id: int,
+    id: str,
     session: AsyncSession = Depends(get_session),
     user: User = Depends(kc_service.require_admin()),
 ) -> None:
-    """Delete study by id"""
+    """Delete study by id or identifier"""
     service = StudyService(session)
-    await service.delete(id)
+    if id.isdigit():
+        await service.delete(int(id))
+    else:
+        await service.delete_by_identifier(id)
 
 
 @router.get("/study/{id}/buildings", response_model=BuildingsResult)
