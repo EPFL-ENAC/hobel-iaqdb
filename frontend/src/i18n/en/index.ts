@@ -249,8 +249,6 @@ export default {
   spaces: 'Spaces',
   studies: 'Studies',
   study_draft_approval_success: 'The study was successfully saved in the database, you can safely remove the draft.',
-  timeframe_help: 'Start/end dates of the studies are in the time frame.',
-  timeframe: 'Time frame',
   update: 'Update',
   ventilations_hint: 'The space ventilation system.',
   ventilations: 'Ventilations',

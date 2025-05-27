@@ -18,20 +18,21 @@
     </q-item-label>
     <q-item>
       <q-item-section>
-        <div class="text-grey-8">{{ $t('timeframe') }}</div>
+        <div class="text-grey-8">{{ $t('study.building.construction_year') }}</div>
         <q-range
-          v-model="timeframe"
-          :min="2000"
-          :max="2025"
+          v-model="filtersStore.construction_years"
+          :min="DEFAULT_CONSTRUCTION_YEARS.min"
+          :max="DEFAULT_CONSTRUCTION_YEARS.max"
           :step="1"
           label
           snap
           color="primary"
           class="q-pr-sm"
+          @change="onUpdatedFilter"
         />
-        <div class="text-hint">{{ $t('timeframe_help') }}</div>
+        <div class="text-hint">{{ $t('study.building.construction_year_hint') }}</div>
         <q-select
-          v-model="buildingTypes"
+          v-model="filtersStore.building_types"
           :options="buildingTypeOptions"
           :label="$t('study.building.type')"
           :hint="$t('study.building.type_hint')"
@@ -44,7 +45,7 @@
           @update:model-value="onUpdatedFilter"
         />
         <q-select
-          v-model="ageGroup"
+          v-model="filtersStore.age_groups"
           :options="ageGroupOptions"
           :label="$t('study.building.age_group')"
           :hint="$t('study.building.age_group_hint')"
@@ -57,7 +58,7 @@
           @update:model-value="onUpdatedFilter"
         />
         <q-select
-          v-model="outdoorEnvs"
+          v-model="filtersStore.outdoor_envs"
           :options="outdoorEnvOptions"
           :label="$t('study.building.outdoor_env')"
           :hint="$t('study.building.outdoor_env_hint')"
@@ -70,7 +71,7 @@
           @update:model-value="onUpdatedFilter"
         />
         <q-select
-          v-model="filtersStore.climateZones"
+          v-model="filtersStore.climate_zones"
           :options="climateOptions"
           :label="$t('climate_zones')"
           :hint="$t('climate_zones_hint')"
@@ -84,18 +85,18 @@
         <div class="q-mt-md text-grey-8">{{ $t('altitudes') }}</div>
         <q-range
           v-model="filtersStore.altitudes"
-          :min="0"
-          :max="2500"
+          :min="DEFAULT_ALTITUDES.min"
+          :max="DEFAULT_ALTITUDES.max"
           :step="100"
           label
           snap
           color="primary"
-          @change="onUpdatedFilter"
           class="q-pr-sm"
+          @change="onUpdatedFilter"
         />
         <div class="text-hint">{{ $t('altitudes_help') }}</div>
         <q-select
-          v-model="filtersStore.ventilations"
+          v-model="filtersStore.mechanical_ventilation_types"
           :options="mechanicalVentilationTypeOptions"
           :label="$t('ventilations')"
           :hint="$t('ventilations_hint')"
@@ -189,6 +190,7 @@ export default defineComponent({
 });
 </script>
 <script setup lang="ts">
+import { DEFAULT_CONSTRUCTION_YEARS, DEFAULT_ALTITUDES } from 'src/stores/filters';
 import {
   climateOptions,
   mechanicalVentilationTypeOptions,
@@ -203,14 +205,6 @@ const helpStore = useHelpStore();
 const filtersStore = useFiltersStore();
 const route = useRoute();
 
-// mock filters
-const timeframe = ref({
-  min: 2000,
-  max: 2025,
-});
-const buildingTypes = ref([]);
-const ageGroup = ref([]);
-const outdoorEnvs = ref([]);
 const vocs = ref([]);
 
 const isMapPage = computed(() => route.path === '/map');
@@ -318,14 +312,6 @@ function onToggleLayer(layerId: string) {
 
 function onResetFilters() {
   filtersStore.reset();
-  // mock filters
-  timeframe.value = {
-    min: 2000,
-    max: 2025,
-  };
-  buildingTypes.value = [];
-  ageGroup.value = [];
-  outdoorEnvs.value = [];
   vocs.value = [];
   onUpdatedFilter();
 }

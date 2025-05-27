@@ -98,6 +98,7 @@
     "useCatalogStore": true,
     "DEFAULT_ALTITUDES": true,
     "useContributeStore": true,
-    "useAuthStore": true
+    "useAuthStore": true,
+    "DEFAULT_CONSTRUCTION_YEARS": true
   }
 }

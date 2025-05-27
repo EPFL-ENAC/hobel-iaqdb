@@ -13,6 +13,7 @@ declare global {
   const $shallowRef: typeof import('vue/macros')['$shallowRef']
   const $toRef: typeof import('vue/macros')['$toRef']
   const DEFAULT_ALTITUDES: typeof import('./stores/filters')['DEFAULT_ALTITUDES']
+  const DEFAULT_CONSTRUCTION_YEARS: typeof import('./stores/filters')['DEFAULT_CONSTRUCTION_YEARS']
   const EffectScope: typeof import('vue')['EffectScope']
   const acceptHMRUpdate: typeof import('pinia')['acceptHMRUpdate']
   const computed: typeof import('vue')['computed']
@@ -113,6 +114,7 @@ declare module 'vue' {
     readonly $shallowRef: UnwrapRef<typeof import('vue/macros')['$shallowRef']>
     readonly $toRef: UnwrapRef<typeof import('vue/macros')['$toRef']>
     readonly DEFAULT_ALTITUDES: UnwrapRef<typeof import('./stores/filters')['DEFAULT_ALTITUDES']>
+    readonly DEFAULT_CONSTRUCTION_YEARS: UnwrapRef<typeof import('./stores/filters')['DEFAULT_CONSTRUCTION_YEARS']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
@@ -204,6 +206,7 @@ declare module '@vue/runtime-core' {
     readonly $shallowRef: UnwrapRef<typeof import('vue/macros')['$shallowRef']>
     readonly $toRef: UnwrapRef<typeof import('vue/macros')['$toRef']>
     readonly DEFAULT_ALTITUDES: UnwrapRef<typeof import('./stores/filters')['DEFAULT_ALTITUDES']>
+    readonly DEFAULT_CONSTRUCTION_YEARS: UnwrapRef<typeof import('./stores/filters')['DEFAULT_CONSTRUCTION_YEARS']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>

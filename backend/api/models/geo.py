@@ -13,8 +13,13 @@ class BuildingProperties(BaseModel):
     country: str
     city: str
     altitude: int
-    climate_zone: str
-    ventilations: str
+    climate_zone: str | None = None
+    age_group: str | None = None
+    building_type: str | None = None
+    construction_year: int | None = None
+    outdoor_env: str | None = None
+    mechanical_ventilation: str | None = None
+    mechanical_ventilation_types: str | None = None
     study_id: str
     color: str
 

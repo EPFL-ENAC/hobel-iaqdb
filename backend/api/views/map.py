@@ -26,17 +26,21 @@ async def getBuildings(session: AsyncSession = Depends(get_session)) -> Building
     for building in buildingsResult.data:
         # roomAggs = await Room.find(Room.building.id == building.id).aggregate([{"$group": {"_id": "$ventilation", "count": {"$sum": 1}}}]).to_list()
         # "|".join(map(lambda agg: agg["_id"], filter(lambda agg: agg["count"] > 0, roomAggs)))
-        ventilations = "|".join(
+        mechanical_ventilation_types = "|".join(
             set([space.mechanical_ventilation_type for space in building.spaces if space.mechanical_ventilation_type is not None]))
         geometry = Geometry(
             coordinates=[building.long, building.lat], type="Point")
         properties = BuildingProperties(id=str(building.id),
-                                        # building.identifier,
-                                        identifier=str(building.id),
+                                        identifier=str(building.identifier),
                                         country=building.country, city=building.city,
                                         climate_zone=building.climate_zone,
                                         altitude=building.altitude,
-                                        ventilations=ventilations,
+                                        age_group=building.age_group,
+                                        building_type=building.type,
+                                        construction_year=building.construction_year,
+                                        outdoor_env=building.outdoor_env,
+                                        mechanical_ventilation=building.mechanical_ventilation,
+                                        mechanical_ventilation_types=mechanical_ventilation_types,
                                         study_id=str(building.study_id),
                                         color=studyColorsDict[building.study_id])
         feature = BuildingFeature(

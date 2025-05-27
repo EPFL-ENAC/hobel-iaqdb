@@ -163,20 +163,43 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
     const filteredFeatures = this.buildingsData.features.filter(
       (feature: Feature<Geometry, GeoJsonProperties>) => {
         let filtered = true;
-        if (filter.altitudes) {
+        if (filter.construction_years) {
+          filtered =
+            feature.properties?.construction_year >= filter.construction_years[0] &&
+            feature.properties?.construction_year <= filter.construction_years[1];
+        }
+        if (filtered && filter.altitudes) {
           filtered =
             feature.properties?.altitude >= filter.altitudes[0] &&
             feature.properties?.altitude <= filter.altitudes[1];
         }
-        if (filtered && filter.climateZones && filter.climateZones.length) {
-          filtered = filter.climateZones.includes(
+        if (filtered && filter.climate_zones && filter.climate_zones.length) {
+          filtered = filter.climate_zones.includes(
             feature.properties?.climate_zone,
           );
         }
-        if (filtered && filter.ventilations && filter.ventilations.length) {
+        if (filtered && filter.building_types && filter.building_types.length) {
+          filtered = filter.building_types.includes(
+            feature.properties?.building_type,
+          );
+        }
+        if (filtered && filter.age_groups && filter.age_groups.length) {
+          filtered = filter.age_groups.includes(
+            feature.properties?.age_group,
+          );
+        }
+        if (filtered && filter.outdoor_envs && filter.outdoor_envs.length) {
+          filtered = filter.outdoor_envs.includes(
+            feature.properties?.outdoor_env,
+          );
+        }
+        if (filtered && filter.mechanical_ventilation) {
+          filtered = filter.mechanical_ventilation === feature.properties?.mechanical_ventilation;
+        }
+        if (filtered && filter.mechanical_ventilation_types && filter.mechanical_ventilation_types.length) {
           filtered =
-            filter.ventilations.filter((vent) =>
-              feature.properties?.ventilations.includes(vent),
+            filter.mechanical_ventilation_types.filter((vent) =>
+              feature.properties?.mechanical_ventilation_types.includes(vent),
             ).length > 0;
         }
         if (
