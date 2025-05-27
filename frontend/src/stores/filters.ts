@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { withRange } from 'src/utils/numbers';
 
 export type FilterParams = {
   construction_years?: [number, number];
@@ -12,7 +13,7 @@ export type FilterParams = {
   study_ids: number[] | null;
 };
 
-export const DEFAULT_CONSTRUCTION_YEARS = { min: 1900, max: new Date().getFullYear() };
+export const DEFAULT_CONSTRUCTION_YEARS = { min: 1800, max: new Date().getFullYear() };
 export const DEFAULT_ALTITUDES = { min: 0, max: 2500 };
 
 export const useFiltersStore = defineStore(
@@ -45,12 +46,11 @@ export const useFiltersStore = defineStore(
     }
 
     function asParams(): FilterParams {
+      const constructionsRange: [number, number] = [construction_years.value.min, construction_years.value.max];
+      const altitudesRange: [number, number] = [altitudes.value.min, altitudes.value.max];
       return {
-        construction_years: [
-          construction_years.value.min,
-          construction_years.value.max,
-        ],
-        altitudes: [altitudes.value.min, altitudes.value.max],
+        construction_years: withRange(constructionsRange, [DEFAULT_CONSTRUCTION_YEARS.min, DEFAULT_CONSTRUCTION_YEARS.max]) ? constructionsRange : undefined,
+        altitudes: withRange(altitudesRange, [DEFAULT_ALTITUDES.min, DEFAULT_ALTITUDES.max]) ? altitudesRange : undefined,
         climate_zones: climate_zones.value ? [...climate_zones.value] : [],
         building_types: building_types.value ? [...building_types.value] : [],
         age_groups: age_groups.value ? [...age_groups.value] : [],

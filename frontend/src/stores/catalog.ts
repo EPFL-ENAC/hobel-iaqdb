@@ -8,6 +8,8 @@ import {
   BuildingsResult,
   SpacesResult,
 } from 'src/models';
+import { DEFAULT_ALTITUDES, DEFAULT_CONSTRUCTION_YEARS } from './filters';
+import { withRange } from 'src/utils/numbers';
 
 export const useCatalogStore = defineStore('catalog', () => {
   const authStore = useAuthStore();
@@ -69,22 +71,47 @@ export const useCatalogStore = defineStore('catalog', () => {
   }
 
   function getFilterParams() {
-    const altitudes = filterStore.altitudes;
+    const construction_years = withRange(
+      [filterStore.construction_years.min, filterStore.construction_years.max], 
+      [DEFAULT_CONSTRUCTION_YEARS.min, DEFAULT_CONSTRUCTION_YEARS.max]) ? [
+      { construction_year: { $gte: filterStore.construction_years.min } },
+      { construction_year: { $lte: filterStore.construction_years.max } },
+    ] : [];
+    const altitudes = withRange(
+      [filterStore.altitudes.min, filterStore.altitudes.max], 
+      [DEFAULT_ALTITUDES.min, DEFAULT_ALTITUDES.max]) ? [
+      { altitude: { $gte: filterStore.altitudes.min } },
+      { altitude: { $lte: filterStore.altitudes.max } },
+    ] : [];
     return {
       $building: {
         $and: [
-          { altitude: { $gte: altitudes.min } },
-          { altitude: { $lte: altitudes.max } },
+          ...construction_years,
+          ...altitudes,
         ],
+        type:
+          filterStore.building_types && filterStore.building_types.length
+            ? filterStore.building_types
+            : undefined,
+        age_group:
+          filterStore.age_groups && filterStore.age_groups.length
+            ? filterStore.age_groups
+            : undefined,
+        outdoor_env:
+          filterStore.outdoor_envs && filterStore.outdoor_envs.length
+            ? filterStore.outdoor_envs
+            : undefined,
+        mechanical_ventilation:
+          filterStore.mechanical_ventilation || undefined,
         climate_zone:
-          filterStore.climateZones && filterStore.climateZones.length
-            ? filterStore.climateZones
+          filterStore.climate_zones && filterStore.climate_zones.length
+            ? filterStore.climate_zones
             : undefined,
       },
       $space: {
         mechanical_ventilation_type:
-          filterStore.ventilations && filterStore.ventilations.length
-            ? filterStore.ventilations
+          filterStore.mechanical_ventilation_types && filterStore.mechanical_ventilation_types.length
+            ? filterStore.mechanical_ventilation_types
             : undefined,
       },
     };

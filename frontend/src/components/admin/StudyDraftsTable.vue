@@ -59,8 +59,8 @@
     </q-table>
     <study-draft-dialog v-model="showDialog" @save="onSave"/>
     <study-upload-dialog v-model="showUpload" @close="onUploadClose"/>
-    <confirm-dialog v-model="showDelete" :text="$t('confirm_study_draft_delete', { identifier: selected?.identifier })" @confirm="onDelete"/>
-    <confirm-dialog v-model="showApprove" :text="$t('confirm_study_draft_approval', { identifier: selected?.identifier })" @confirm="onApprove"/>
+    <confirm-dialog v-model="showDelete" :text="$t('confirm_study_draft_delete', { identifier: selected?.name })" @confirm="onDelete"/>
+    <confirm-dialog v-model="showApprove" :text="$t('confirm_study_draft_approval', { identifier: selected?.name })" @confirm="onApprove"/>
   </div>
 </template>
 

@@ -35,3 +35,7 @@ export function getSizeLabel(size: number | undefined) {
   }
   return `${(size / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
+
+export function withRange(range: [number, number], defaultRange: [number, number]) {
+  return range[0] !== defaultRange[0] || range[1] !== defaultRange[1];
+}

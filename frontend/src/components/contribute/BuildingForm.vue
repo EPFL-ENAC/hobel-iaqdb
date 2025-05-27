@@ -141,6 +141,7 @@
         />
       </div>
     </div>
+
     <div v-if="hasCityCountry" class="row q-col-gutter-md q-mb-md">
       <div class="col">
         <q-input
@@ -152,6 +153,7 @@
           :label="$t('study.building.longitude')"
           :hint="$t('study.building.longitude_hint')"
           :disable="loadingGeo"
+          :loading="loadingGeo"
           @update:model-value="onLongLatUpdated"
         />
       </div>
@@ -165,6 +167,7 @@
           :label="$t('study.building.latitude')"
           :hint="$t('study.building.latitude_hint')"
           :disable="loadingGeo"
+          :loading="loadingGeo"
           @update:model-value="onLongLatUpdated"
         />
       </div>
@@ -179,7 +182,8 @@
           filled
           :label="$t('study.building.altitude')"
           :hint="$t('study.building.altitude_hint')"
-          :disable="loadingAlt"
+          :disable="loadingGeo || loadingAlt"
+          :loading="loadingGeo || loadingAlt"
         />
       </div>
       <div class="col">
@@ -191,7 +195,8 @@
           map-options
           :label="$t('study.building.climate_zone')"
           :hint="$t('study.building.climate_zone_hint')"
-          :disable="loadingAlt"
+          :disable="loadingGeo || loadingAlt"
+          :loading="loadingGeo || loadingAlt"
         />
       </div>
     </div>
@@ -415,7 +420,6 @@ import { geocoderApi } from 'src/utils/geocoder';
 import { Building, Certification } from 'src/models';
 import SpaceForm from 'src/components/contribute/SpaceForm.vue';
 import { notifyInfo } from 'src/utils/notify';
-import { on } from 'events';
 
 const contrib = useContributeStore();
 
@@ -456,8 +460,15 @@ async function onInitLocation() {
     building.value.lat = undefined;
     onLongLatUpdated();
     return;
-  } else if (!isNumber(building.value.long) || !isNumber(building.value.lat)) {
-    onLocationUpdated();
+  } else {
+    // check if country is an option label instead of value
+    const countryOpt = countryOptions.find((c) => c.label === building.value.country);
+    if (countryOpt) {
+      building.value.country = countryOpt.value;
+      onLocationUpdated();
+    } else if (!isNumber(building.value.long) || !isNumber(building.value.lat)) {
+      onLocationUpdated();
+    }
   }
 }
 
@@ -469,6 +480,7 @@ async function onLocationUpdated() {
     return;
   }
   try {
+    loadingGeo.value = true;
     const res = await geocoderApi.forwardGeocode({
       query: building.value.city,
       limit: 1,
@@ -485,6 +497,8 @@ async function onLocationUpdated() {
     console.error(err);
     building.value.long = undefined;
     building.value.lat = undefined;
+  } finally {
+    loadingGeo.value = false;
   }
   onLongLatUpdated();
 }
