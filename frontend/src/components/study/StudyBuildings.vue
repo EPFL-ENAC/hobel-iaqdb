@@ -41,6 +41,8 @@ export default defineComponent({
 <script setup lang="ts">
 import MaplibreMap from 'src/components/MaplibreMap.vue';
 import { Map } from 'maplibre-gl';
+import type { Building } from 'src/models';
+import { outdoorEnvOptions } from 'src/utils/options';
 
 const catalogStore = useCatalogStore();
 const mapStore = useMapStore();
@@ -49,7 +51,7 @@ const pagination = ref({
   sortBy: 'identifier',
   descending: false,
   page: 1,
-  rowsPerPage: 10,
+  rowsPerPage: 25,
 });
 
 const buildings = computed(() => catalogStore.study?.buildings || []);
@@ -79,12 +81,17 @@ const columms = computed(() => {
       label: 'Outdoor env.',
       align: 'left',
       field: 'outdoor_env',
+      format: (v: string) => {
+        return outdoorEnvOptions.find((option) => option.value === v)?.label || v;
+      },
     },
     {
-      name: 'renovation_year',
-      label: 'Renovation year',
+      name: 'construction_renovation_years',
+      label: 'Construction/Renovation year',
       align: 'left',
-      field: 'renovation_year',
+      field: (row: Building) => {
+        return `${row.construction_year || '?'} ${row.renovation_year ? ' / ' + row.renovation_year : ''}`;
+      },
     },
   ];
 });

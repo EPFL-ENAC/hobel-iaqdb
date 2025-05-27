@@ -60,7 +60,7 @@ const pagination = ref({
   sortBy: 'id',
   descending: false,
   page: 1,
-  rowsPerPage: 20,
+  rowsPerPage: 25,
 });
 const loading = ref(false);
 
