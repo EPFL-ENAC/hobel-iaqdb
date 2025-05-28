@@ -2,7 +2,7 @@
 
 The rapid growth of smart building technologies is revolutionizing how we monitor and improve indoor air quality (IAQ). To support this transformation, we are building the first open-source **Global IAQ Database**—a curated, standardized repository of IAQ data from decades of field measurements around the world.
 
-Led by the **[Human-Oriented Built Environment Lab](https://www.epfl.ch/labs/hobel/home-2/facilities/environmental-chamber/) at EPFL**, and supported by **[Swissuniversities – Programme Open Science](https://www.swissuniversities.ch/en/topics/open-science/open-science-programme)**, this initiative is part of the **[ISIAQ Innovation Network](https://www.isiaq.org/developing_a_global_iaq_databa.php)**. Our goal is to make high-quality, harmonized IAQ data openly available to researchers, policymakers, and practitioners globally.
+Led by the **[Human-Oriented Built Environment Lab](https://www.epfl.ch/labs/hobel/) at EPFL**, and supported by **[Swissuniversities – Programme Open Science](https://www.swissuniversities.ch/en/topics/open-science/open-science-programme)**, this initiative is part of the **[ISIAQ Innovation Network](https://www.isiaq.org/developing_a_global_iaq_databa.php)**. Our goal is to make high-quality, harmonized IAQ data openly available to researchers, policymakers, and practitioners globally.
 
 We invite contributors to share datasets from past and ongoing field campaigns. In return, contributors gain visibility and contribute to a global effort shaping future IAQ standards, health guidelines, and building policies.
 
