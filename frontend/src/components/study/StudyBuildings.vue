@@ -41,11 +41,12 @@ export default defineComponent({
 <script setup lang="ts">
 import MaplibreMap from 'src/components/MaplibreMap.vue';
 import { Map } from 'maplibre-gl';
-import type { Building } from 'src/models';
+import type { Building, Space } from 'src/models';
 import { outdoorEnvOptions } from 'src/utils/options';
 
 const catalogStore = useCatalogStore();
 const mapStore = useMapStore();
+const { t } = useI18n();
 
 const pagination = ref({
   sortBy: 'identifier',
@@ -54,7 +55,7 @@ const pagination = ref({
   rowsPerPage: 25,
 });
 
-const buildings = computed(() => catalogStore.study?.buildings || []);
+const buildings = computed(() => catalogStore.buildings || []);
 
 const columms = computed(() => {
   return [
@@ -62,24 +63,28 @@ const columms = computed(() => {
       name: 'identifier',
       label: 'ID',
       align: 'left',
+      sortable: true,
       field: 'identifier',
     },
     {
       name: 'city',
-      label: 'City',
+      label: t('study.building.city'),
       align: 'left',
+      sortable: true,
       field: 'city',
     },
     {
       name: 'climate_zone',
-      label: 'Climate zone',
+      label: t('study.building.climate_zone'),
       align: 'left',
+      sortable: true,
       field: 'climate_zone',
     },
     {
       name: 'outdoor_env',
-      label: 'Outdoor env.',
+      label: t('study.building.outdoor_env'),
       align: 'left',
+      sortable: true,
       field: 'outdoor_env',
       format: (v: string) => {
         return outdoorEnvOptions.find((option) => option.value === v)?.label || v;
@@ -87,10 +92,21 @@ const columms = computed(() => {
     },
     {
       name: 'construction_renovation_years',
-      label: 'Construction/Renovation year',
+      label: t('study.building.construction_renovation_years'),
       align: 'left',
+      sortable: true,
       field: (row: Building) => {
         return `${row.construction_year || '?'} ${row.renovation_year ? ' / ' + row.renovation_year : ''}`;
+      },
+    },
+    {
+      name: 'spaces',
+      label: t('spaces'),
+      align: 'left',
+      sortable: true,
+      field: 'spaces',
+      format: (v: Space[]) => {
+        return v?.length || 0;
       },
     },
   ];

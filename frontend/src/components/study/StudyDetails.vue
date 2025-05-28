@@ -5,7 +5,7 @@
         <div class="float-left text-bold">{{ study?.start_year }}</div>
         <div class="float-right text-bold">{{ study?.end_year }}</div>
       </div>
-      <q-linear-progress stripe size="30px" color="secondary" :value="progress">
+      <q-linear-progress animation-speed="0" size="30px" color="secondary" :value="progress">
         <div class="absolute-full flex flex-center">
           <q-badge color="white" text-color="accent" :label="progressLabel" />
         </div>
@@ -22,7 +22,7 @@
     <div class="text-bold q-mt-md">{{ $t('Marker paper') }}</div>
     <fields-list :dbobject="study" :items="refItems" />
     <div class="q-mt-md">
-      <div class="text-bold">License</div>
+      <div class="text-bold">{{ $t('study.license') }}</div>
       <div class="on-right q-mt-sm">
         <div class="text-caption">{{ licenseLabel }}</div>
         <div class="text-help q-mt-xs">{{ licenseDescription }}</div>
@@ -48,11 +48,16 @@ import { Study, Person } from 'src/models';
 const catalogStore = useCatalogStore();
 const { t } = useI18n();
 
+const currentYear = new Date().getFullYear();
+
 const study = computed(() => catalogStore.study);
 
-const progress = computed(() =>
-  study.value?.start_year > 2024 ? 0 : study.value?.end_year > 2024 ? 0.5 : 1,
-);
+const progress = computed(() => {
+  if (!study.value) return 0;
+  if (!study.value.end_year) return 0.5;
+  if (!study.value.start_year) return study.value.end_year > currentYear ? 0.5 : 1;
+  return study.value.start_year > currentYear ? 0 : study.value.end_year > currentYear ? 0.5 : 1;
+});
 const progressLabel = computed(() =>
   progress.value <= 0
     ? t('not_started')

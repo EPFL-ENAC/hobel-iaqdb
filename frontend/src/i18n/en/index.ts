@@ -96,6 +96,7 @@ export default {
         'Name of the green building certification program.',
       certification_level: 'Green certification level',
       certification_level_hint: 'Level of building certification.',
+      construction_renovation_years: 'Construction/Renovation years',
       construction_year: 'Construction year',
       construction_year_hint: '',
       renovation: 'Renovation',

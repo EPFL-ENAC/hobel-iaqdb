@@ -139,7 +139,7 @@ export const useCatalogStore = defineStore('catalog', () => {
     return api
       .get(`/catalog/study/${study.value?.id}/buildings`)
       .then((response) => {
-        buildings.value = response.data;
+        buildings.value = response.data?.data || [];
       });
   }
 
@@ -148,7 +148,7 @@ export const useCatalogStore = defineStore('catalog', () => {
     return api
       .get(`/catalog/study/${study.value?.id}/spaces`)
       .then((response) => {
-        spaces.value = response.data;
+        spaces.value = response.data?.data || [];
       });
   }
 
