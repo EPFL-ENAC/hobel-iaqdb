@@ -304,7 +304,6 @@ import {
 } from 'src/utils/options';
 import type { StudySummary } from 'src/models';
 import { truncateString } from 'src/utils/strings';
-import { fileURLToPath } from 'url';
 
 const mapStore = useMapStore();
 const catalogStore = useCatalogStore();

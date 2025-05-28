@@ -6,11 +6,11 @@
 
     <q-drawer
       v-model="leftDrawerOpen"
-      :mini="!leftDrawerOpen || miniState"
+      :mini="!leftDrawerOpen || miniStateLeft"
       show-if-above
       bordered
     >
-      <div v-if="!miniState">
+      <div v-if="!miniStateLeft">
         <layers-drawer />
       </div>
       <div
@@ -22,22 +22,43 @@
           dense
           round
           unelevated
-          :icon="miniState ? 'chevron_right' : 'chevron_left'"
-          @click="miniState = !miniState"
+          :icon="miniStateLeft ? 'chevron_right' : 'chevron_left'"
+          @click="miniStateLeft = !miniStateLeft"
         />
       </div>
     </q-drawer>
 
     <q-drawer
-      v-model="helpStore.show"
+      v-model="rightDrawerOpen"
+      :mini="!rightDrawerOpen || miniStateRight"
+      :width="$q.screen.lt.md ? 300 : (helpStore.show ? 500 : 300)"
       side="right"
-      :width="$q.screen.lt.md ? 300 : 500"
-      overlay
-      elevated
+      show-if-above
+      bordered
     >
-      <help-drawer />
-      <div class="absolute" style="top: 10px; right: 10px">
-        <q-btn dense round unelevated icon="close" @click="toggleRightDrawer" />
+      <div v-show="!miniStateRight" class="q-mt-xl">
+        <div v-show="helpStore.show">
+          <help-drawer />
+          <div class="absolute" style="top: 10px; right: 20px">
+            <q-btn dense round unelevated icon="close" @click="toggleShowHelp" />
+          </div>
+        </div>
+        <div v-show="!helpStore.show">
+          <plots-drawer />
+        </div>
+      </div>
+      <div
+        v-if="!$q.screen.lt.md"
+        class="absolute"
+        style="top: 10px; left: 10px"
+      >
+        <q-btn
+          dense
+          round
+          unelevated
+          :icon="miniStateRight ? 'chevron_left' : 'chevron_right'"
+          @click="miniStateRight = !miniStateRight"
+        />
       </div>
     </q-drawer>
 
@@ -50,18 +71,21 @@
 <script setup lang="ts">
 import AppToolbar from 'src/components/AppToolbar.vue';
 import LayersDrawer from 'src/components/LayersDrawer.vue';
+import PlotsDrawer from 'src/components/PlotsDrawer.vue';
 import HelpDrawer from 'src/components/HelpDrawer.vue';
 
 const helpStore = useHelpStore();
 
 const leftDrawerOpen = ref(false);
-const miniState = ref(false);
+const rightDrawerOpen = ref(true);
+const miniStateLeft = ref(false);
+const miniStateRight = ref(false);
 
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value;
 }
 
-function toggleRightDrawer() {
+function toggleShowHelp() {
   helpStore.show = !helpStore.show;
 }
 </script>

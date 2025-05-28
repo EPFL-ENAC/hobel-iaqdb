@@ -17,6 +17,7 @@ const GEOJSON_URL = `${baseUrl}/map/buildings`;
 
 export class BuildingsLayerManager extends LayerManager<FilterParams> {
   buildingsData: FeatureCollection | null = null;
+  filteredData: FeatureCollection | null = null;
 
   getId(): string {
     return 'buildings';
@@ -300,27 +301,10 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
         return filtered;
       },
     );
-    const filteredData = {
+    this.filteredData = {
       ...this.buildingsData,
       features: filteredFeatures,
     } as GeoJSON;
-    (map.getSource('buildings') as GeoJSONSource).setData(filteredData);
-  }
-
-  spiderfyFeatures(features: Feature[], center: number[], radius = 20) {
-    const angleStep = (2 * Math.PI) / features.length;
-    return features.map((feature, i) => {
-      const angle = i * angleStep;
-      const xOffset = radius * Math.cos(angle);
-      const yOffset = radius * Math.sin(angle);
-
-      return {
-        ...feature,
-        geometry: {
-          ...feature.geometry,
-          coordinates: [center[0] + xOffset, center[1] + yOffset],
-        },
-      };
-    });
+    (map.getSource('buildings') as GeoJSONSource).setData(this.filteredData);
   }
 }

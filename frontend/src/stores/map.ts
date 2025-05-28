@@ -11,6 +11,7 @@ export type LayerSelection = {
 
 export const useMapStore = defineStore('map', () => {
   const map = ref<Map>();
+  const filtersApplied = ref<number>(0);
 
   const layerManagers = [
     new BuildingsLayerManager(),
@@ -58,6 +59,7 @@ export const useMapStore = defineStore('map', () => {
         }
       }
     });
+    filtersApplied.value++;
   }
 
   /**
@@ -90,8 +92,10 @@ export const useMapStore = defineStore('map', () => {
   return {
     map,
     layerSelections,
+    filtersApplied,
     applyFilters,
     applyLayerVisibility,
     initLayers,
+    getLayerManager,
   };
 });
