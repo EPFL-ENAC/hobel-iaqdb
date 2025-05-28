@@ -68,6 +68,28 @@
               dense
               @update:model-value="onUpdatedFilter"
             />
+            <q-select
+              v-model="biocontaminants"
+              :options="biocontaminantsOptions"
+              :label="$t('biocontaminants')"
+              multiple
+              use-chips
+              emit-value
+              map-options
+              dense
+              @update:model-value="onUpdatedFilter"
+            />
+            <q-select
+              v-model="otherPollutants"
+              :options="otherPollutantsOptions"
+              :label="$t('other_pollutants')"
+              multiple
+              use-chips
+              emit-value
+              map-options
+              dense
+              @update:model-value="onUpdatedFilter"
+            />
           </q-tab-panel>
           <q-tab-panel name="geography" class="q-pa-none">
             <q-select
@@ -265,6 +287,8 @@ import {
   vocOptions,
   particleOptions,
   inorganicGasesOptions,
+  biocontaminantsOptions,
+  otherPollutantsOptions,
   countryOptions,
 } from 'src/utils/options';
 import type { StudySummary } from 'src/models';
@@ -279,6 +303,8 @@ const route = useRoute();
 const tab = ref('geography');
 const particles = ref([]);
 const inorganicGases = ref([]);
+const biocontaminants = ref([]);
+const otherPollutants = ref([]);
 const vocs = ref([]);
 const studySummaries = ref<StudySummary[]>([]);
 
@@ -400,6 +426,10 @@ function onToggleLayer(layerId: string) {
 function onResetFilters() {
   filtersStore.reset();
   vocs.value = [];
+  particles.value = [];
+  inorganicGases.value = [];
+  biocontaminants.value = [];
+  otherPollutants.value = [];
   onUpdatedFilter();
 }
 

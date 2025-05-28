@@ -647,12 +647,30 @@ export const particleOptions = [
 ];
 
 export const inorganicGasesOptions = [
-  { value: 'CO2', label: 'CO2' },
+  { value: 'CO2', label: 'CO₂' },
   { value: 'CO', label: 'CO' },
-  { value: 'O3', label: 'O3' },
-  { value: 'SO2', label: 'SO2' },
-  { value: 'NO2', label: 'NO2' },
+  { value: 'O3', label: 'CO₃' },
+  { value: 'SO2', label: 'SO₂' },
+  { value: 'NO2', label: 'NO₂' },
   { value: 'Radon', label: 'Radon' },
+];
+
+export const biocontaminantsOptions = [
+  { value: 'mold', label: 'Mold' },
+  { value: 'dust mites', label: 'Dust mites' },
+  { value: 'pet dander', label: 'Pet dander' },
+  { value: 'droppings', label: 'Droppings' },
+  { value: 'Virus', label: 'Virus' },
+  { value: 'bacteria', label: 'Bacteria' },
+  { value: 'fungi', label: 'Fungi' },
+  { value: 'others', label: 'Body parts from cockroaches, rodents and other pests or insects' },
+];
+
+export const otherPollutantsOptions = [
+  { value: 'lead', label: 'Lead' },
+  { value: 'black carbon', label: 'Black carbon' },
+  { value: 'air temperature', label: 'Air temperature' },
+  { value: 'relative humidity', label: 'Relative humidity' },
 ];
 
 export const vocOptions = sortByLabel([

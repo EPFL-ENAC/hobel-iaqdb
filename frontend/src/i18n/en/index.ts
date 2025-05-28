@@ -1,3 +1,5 @@
+import { biocontaminantsOptions } from "src/utils/options";
+
 export default {
   layer: {
     buildings: 'Buildings',
@@ -214,6 +216,7 @@ export default {
   app_title: 'iAQ DB',
   approve_contribution: 'Approve contribution',
   approve: 'Approve',
+  biocontaminants: 'Biocontaminants',
   buildings: 'Buildings',
   buildings_count: 'No buildings | building | buildings',
   catalog: 'Catalog',
@@ -246,6 +249,7 @@ export default {
   natural: 'Natural',
   next: 'Next',
   number_of_buildings: 'Number of buildings',
+  other_pollutants: 'Other pollutants',
   particles: 'Particles',
   pollutants: 'Pollutants',
   previous: 'Previous',
