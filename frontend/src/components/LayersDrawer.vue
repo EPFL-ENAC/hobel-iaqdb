@@ -36,10 +36,31 @@
         <q-tab-panels v-model="tab" animated>
           <q-tab-panel name="pollutants" class="q-pa-none">
             <q-select
+              v-model="particles"
+              :options="particleOptions"
+              :label="$t('particles')"
+              multiple
+              use-chips
+              emit-value
+              map-options
+              dense
+              @update:model-value="onUpdatedFilter"
+            />
+            <q-select
               v-model="vocs"
               :options="vocOptions"
               :label="$t('voc')"
-              :hint="$t('voc_hint')"
+              multiple
+              use-chips
+              emit-value
+              map-options
+              dense
+              @update:model-value="onUpdatedFilter"
+            />
+            <q-select
+              v-model="inorganicGases"
+              :options="inorganicGasesOptions"
+              :label="$t('inorganic_gases')"
               multiple
               use-chips
               emit-value
@@ -223,11 +244,6 @@
           </div>
         </div>
       </q-item>
-      <q-item-label header class="text-h6">
-        <q-icon name="layers" class="q-pb-xs" />
-        <span class="q-ml-sm">{{ $t('layers') }}</span>
-      </q-item-label>
-      
     </template>
   </q-list>
 </template>
@@ -247,6 +263,8 @@ import {
   socioeconomicStatusOptions,
   outdoorEnvOptions,
   vocOptions,
+  particleOptions,
+  inorganicGasesOptions,
   countryOptions,
 } from 'src/utils/options';
 import type { StudySummary } from 'src/models';
@@ -259,6 +277,8 @@ const filtersStore = useFiltersStore();
 const route = useRoute();
 
 const tab = ref('geography');
+const particles = ref([]);
+const inorganicGases = ref([]);
 const vocs = ref([]);
 const studySummaries = ref<StudySummary[]>([]);
 

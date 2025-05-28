@@ -637,6 +637,24 @@ export const licenseOptions = [
   },
 ];
 
+export const particleOptions = [
+  { value: 'PM1', label: 'PM1' },
+  { value: 'PM2.5', label: 'PM2.5' },
+  { value: 'PM10', label: 'PM10' },
+  { value: 'PN1', label: 'PN1' },
+  { value: 'PN2.5', label: 'PN2.5' },
+  { value: 'PN10', label: 'PN10' },
+];
+
+export const inorganicGasesOptions = [
+  { value: 'CO2', label: 'CO2' },
+  { value: 'CO', label: 'CO' },
+  { value: 'O3', label: 'O3' },
+  { value: 'SO2', label: 'SO2' },
+  { value: 'NO2', label: 'NO2' },
+  { value: 'Radon', label: 'Radon' },
+];
+
 export const vocOptions = sortByLabel([
   { value: '100-41-4', label: 'Ethyl Benzene' },
   { value: '100-42-5', label: 'Styrene' },
