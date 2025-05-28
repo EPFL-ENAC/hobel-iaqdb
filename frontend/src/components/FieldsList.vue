@@ -51,6 +51,7 @@
 
 <script lang="ts">
 import { toMaxDecimals } from 'src/utils/numbers';
+import { truncateString } from 'src/utils/strings';
 export default defineComponent({
   name: 'FieldsList',
 });
@@ -88,11 +89,4 @@ const visibleItems = computed(() => {
     return true;
   });
 });
-
-function truncateString(str: string, num: number) {
-  if (str.length <= num) {
-    return str;
-  }
-  return str.slice(0, num) + '...';
-}
 </script>

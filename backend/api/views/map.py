@@ -19,7 +19,7 @@ async def getBuildings(session: AsyncSession = Depends(get_session)) -> Building
 
     # map study id to study identifier
     studyColorsDict = {
-        study.id: {"identifier": study.identifier, "color": string_to_color(study.identifier)} for study in studyResults.data}
+        study.id: {"study": study, "color": string_to_color(study.identifier)} for study in studyResults.data}
     # aggs = Room.aggregate({"$group": {"_id": {"building": "$building", "ventilation": "$ventilation"}, "count": {"$sum": 1}}})
 
     features = []
@@ -41,7 +41,9 @@ async def getBuildings(session: AsyncSession = Depends(get_session)) -> Building
                                         outdoor_env=building.outdoor_env,
                                         mechanical_ventilation=building.mechanical_ventilation,
                                         mechanical_ventilation_types=mechanical_ventilation_types,
-                                        study_id=studyColorsDict[building.study_id]["identifier"],
+                                        spaces_count=len(building.spaces),
+                                        study_id=studyColorsDict[building.study_id]["study"].identifier,
+                                        study_name=studyColorsDict[building.study_id]["study"].name,
                                         color=studyColorsDict[building.study_id]["color"],)
         feature = BuildingFeature(
             geometry=geometry, properties=properties, type="Feature")

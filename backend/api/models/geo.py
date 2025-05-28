@@ -20,7 +20,9 @@ class BuildingProperties(BaseModel):
     outdoor_env: str | None = None
     mechanical_ventilation: str | None = None
     mechanical_ventilation_types: str | None = None
+    spaces_count: int
     study_id: str
+    study_name: str
     color: str
 
 

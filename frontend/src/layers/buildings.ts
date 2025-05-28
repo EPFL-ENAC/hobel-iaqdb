@@ -10,6 +10,8 @@ import {
 import { LayerManager } from 'src/layers/models';
 import { FilterParams } from 'src/stores/filters';
 import { baseUrl } from 'src/boot/api';
+import { truncateString } from 'src/utils/strings';
+import { t } from 'src/boot/i18n';
 
 const GEOJSON_URL = `${baseUrl}/map/buildings`;
 
@@ -123,19 +125,50 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
         coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
       }
 
-      const tables = e.features
-        .map((feat) => {
-          const rows = Object.keys(feat.properties)
-            .filter((key) => !['id', 'study_id'].includes(key))
+      // for each feature, group by study_id and create a table
+      // with the properties of the feature
+      // and a link to the study
+      const studyFeatures = {} as Record<string, Feature[]>;
+      e.features.forEach((feat) => {
+        const studyId = feat.properties['study_id'];
+        if (!studyFeatures[studyId]) {
+          studyFeatures[studyId] = [];
+        }
+        studyFeatures[studyId].push(feat);
+      });
+      const studyNames = {} as Record<string, string>;
+      e.features.forEach((feat) => {
+        studyNames[feat.properties['study_id']] = feat.properties['study_name'];
+      });
+      
+      const city = feature.properties['city'] ? `${feature.properties['city']}, ${feature.properties['country']}` : '';
+      const studies = Object.keys(studyFeatures)
             .map((key) => {
-              return `<tr><td>${key}</td><td>${feat.properties[key]}</td></tr>`;
+              const buildings_count = studyFeatures[key].length;
+              const spaces_count = studyFeatures[key].reduce(
+                (acc, feat) => acc + (feat.properties ? feat.properties['spaces_count'] : 0),
+                0,
+              );
+              return `
+                <div class="q-ma-sm">
+                  <div>
+                    <a href="/study?id=${key}" class="epfl">${truncateString(studyNames[key], 30)}</a>
+                  </div>
+                  <div>
+                    <span class="text-bold">${buildings_count}</span> ${t('buildings_count', buildings_count)}
+                  </div>
+                  <div>
+                    <span class="text-bold">${spaces_count}</span> ${t('spaces_count', spaces_count)}
+                  </div>
+                </div>`;
             })
-            .join('');
-
-          return `<a href="/study?id=${feat.properties['study_id']}" class="epfl">Study</a></div><table>${rows}</table><div>`;
-        })
         .join('<hr class="q-separator q-separator--horizontal">');
-      new Popup().setLngLat(coordinates).setHTML(tables).addTo(map);
+      const content = `
+          <div class="q-ma-sm text-bold" style="min-width: 100px;">
+            ${city}
+          </div>
+          ${studies}`
+      new Popup().setLngLat(coordinates).setHTML(content).addTo(map);
     });
 
     map.on('mouseenter', 'buildings-clusters', () => {
