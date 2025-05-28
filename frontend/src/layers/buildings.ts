@@ -26,7 +26,7 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
     return true;
   }
 
-  jitterCoordinates(lng: number, lat: number, index: number, total: number, radius = 0.00005) {
+  jitterCoordinates(lng: number, lat: number, index: number, total: number, radius = 0.0001): [number, number] {
     const angle = (2 * Math.PI / total) * index;
     const dx = radius * Math.cos(angle);
     const dy = radius * Math.sin(angle);
@@ -36,16 +36,25 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
   async append(map: Map): Promise<void> {
     const response = await fetch(GEOJSON_URL);
     const geoJson = (await response.json()) as FeatureCollection;
-    // Jitter coordinates to avoid overlapping points
+    // Jitter coordinates to avoid overlapping of points from different studies
+    const studyJitteredCoordinates: { [key: string]: [number, number] }  = {};
     geoJson.features = geoJson.features.map((feature, index) => {
       if (feature.geometry.type === 'Point') {
         const [lng, lat] = (feature.geometry as Point).coordinates;
-        const [jitteredLng, jitteredLat] = this.jitterCoordinates(
-          lng,
-          lat,
-          index,
-          geoJson.features.length,
-        );
+        const studyId = feature.properties ? feature.properties['study_id'] || '' : '';
+        const key = `${studyId}-${lng}-${lat}`;
+        let jitteredLng, jitteredLat;
+        if (!studyJitteredCoordinates[key]) {
+          [jitteredLng, jitteredLat] = this.jitterCoordinates(
+            lng,
+            lat,
+            index,
+            geoJson.features.length,
+          );
+          studyJitteredCoordinates[key] = [jitteredLng, jitteredLat];
+        } else {
+          [jitteredLng, jitteredLat] = studyJitteredCoordinates[key];
+        }
         return {
           ...feature,
           geometry: {
