@@ -36,6 +36,7 @@ async def getBuildings(session: AsyncSession = Depends(get_session)) -> Building
                                         climate_zone=building.climate_zone,
                                         altitude=building.altitude,
                                         age_group=building.age_group,
+                                        socioeconomic_status=building.socioeconomic_status,
                                         building_type=building.type,
                                         construction_year=building.construction_year,
                                         outdoor_env=building.outdoor_env,

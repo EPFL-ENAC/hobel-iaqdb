@@ -1,7 +1,9 @@
 export default {
   layer: {
     buildings: 'Buildings',
+    show_buildings: 'Show buildings',
     'climate-zones': 'Climate zones',
+    'show_climate-zones': 'Show climate zones',
   },
   user: {
     welcome: 'Welcome, {name}.',
@@ -232,6 +234,7 @@ export default {
   filters: 'Filters',
   fix_validation_errors: 'Please make sure mandatory fields have been provided with a valid value.',
   from_to: 'From {from} to {to}',
+  geography: 'Geography',
   home: 'Home',
   introduction: 'Introduction',
   it4r_contrib: 'UI/UX design, application development and deployment',
@@ -242,6 +245,7 @@ export default {
   natural: 'Natural',
   next: 'Next',
   number_of_buildings: 'Number of buildings',
+  pollutants: 'Pollutants',
   previous: 'Previous',
   profile: 'Profile',
   required: 'Required',

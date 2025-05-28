@@ -8,6 +8,7 @@ export type FilterParams = {
   climate_zones?: string[] | null;
   building_types?: string[] | null;
   age_groups?: string[] | null;
+  socioeconomic_status?: string[] | null;
   outdoor_envs?: string[] | null;
   mechanical_ventilation?: string | null;
   mechanical_ventilation_types?: string[] | null;
@@ -26,6 +27,7 @@ export const useFiltersStore = defineStore(
     const climate_zones = ref<string[]>([]);
     const building_types = ref<string[]>([]);
     const age_groups = ref<string[]>([]);
+    const socioeconomic_status = ref<string[]>([]);
     const outdoor_envs = ref<string[]>([]);
     const mechanical_ventilation = ref<string | null>(null);
     const mechanical_ventilation_types = ref<string[]>([]);
@@ -39,6 +41,7 @@ export const useFiltersStore = defineStore(
       climate_zones.value = [];
       building_types.value = [];
       age_groups.value = [];
+      socioeconomic_status.value = [];
       outdoor_envs.value = [];
       mechanical_ventilation.value = null;
       mechanical_ventilation_types.value = [];
@@ -58,6 +61,7 @@ export const useFiltersStore = defineStore(
         climate_zones: climate_zones.value ? [...climate_zones.value] : [],
         building_types: building_types.value ? [...building_types.value] : [],
         age_groups: age_groups.value ? [...age_groups.value] : [],
+        socioeconomic_status: socioeconomic_status.value ? [...socioeconomic_status.value] : [],
         outdoor_envs: outdoor_envs.value ? [...outdoor_envs.value] : [],
         mechanical_ventilation: mechanical_ventilation.value,
         mechanical_ventilation_types: mechanical_ventilation_types.value ? [...mechanical_ventilation_types.value] : [],
@@ -72,6 +76,7 @@ export const useFiltersStore = defineStore(
       climate_zones,
       building_types,
       age_groups,
+      socioeconomic_status,
       outdoor_envs,
       mechanical_ventilation,
       mechanical_ventilation_types,

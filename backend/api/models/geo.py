@@ -15,6 +15,7 @@ class BuildingProperties(BaseModel):
     altitude: int
     climate_zone: str | None = None
     age_group: str | None = None
+    socioeconomic_status: str | None = None
     building_type: str | None = None
     construction_year: int | None = None
     outdoor_env: str | None = None

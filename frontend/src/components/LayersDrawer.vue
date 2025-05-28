@@ -18,152 +18,151 @@
     </q-item-label>
     <q-item>
       <q-item-section>
-        <q-select
-          v-model="filtersStore.countries"
-          :options="studyCountries"
-          :label="$t('countries')"
-          :hint="$t('study.building.country_hint')"
-          multiple
-          use-chips
-          emit-value
-          map-options
-          clearable
+        <q-tabs
+          v-model="tab"
           dense
-          @update:model-value="onUpdatedFilter"
-        />
-        <div class="q-mt-md text-grey-8">{{ $t('study.building.construction_year') }}</div>
-        <q-range
-          v-model="filtersStore.construction_years"
-          :min="DEFAULT_CONSTRUCTION_YEARS.min"
-          :max="DEFAULT_CONSTRUCTION_YEARS.max"
-          :step="1"
-          label
-          snap
-          color="primary"
-          class="q-pr-sm"
-          @change="onUpdatedFilter"
-        />
-        <div class="text-hint">{{ $t('study.building.construction_year_hint') }}</div>
-        <q-select
-          v-model="filtersStore.building_types"
-          :options="buildingTypeOptions"
-          :label="$t('study.building.type')"
-          :hint="$t('study.building.type_hint')"
-          multiple
-          use-chips
-          emit-value
-          map-options
-          clearable
-          dense
-          @update:model-value="onUpdatedFilter"
-        />
-        <q-select
-          v-model="filtersStore.age_groups"
-          :options="ageGroupOptions"
-          :label="$t('study.building.age_group')"
-          :hint="$t('study.building.age_group_hint')"
-          multiple
-          use-chips
-          emit-value
-          map-options
-          clearable
-          dense
-          @update:model-value="onUpdatedFilter"
-        />
-        <q-select
-          v-model="filtersStore.outdoor_envs"
-          :options="outdoorEnvOptions"
-          :label="$t('study.building.outdoor_env')"
-          :hint="$t('study.building.outdoor_env_hint')"
-          multiple
-          use-chips
-          emit-value
-          map-options
-          clearable
-          dense
-          @update:model-value="onUpdatedFilter"
-        />
-        <q-select
-          v-model="filtersStore.climate_zones"
-          :options="climateOptions"
-          :label="$t('climate_zones')"
-          :hint="$t('climate_zones_hint')"
-          multiple
-          use-chips
-          emit-value
-          clearable
-          dense
-          @update:model-value="onUpdatedFilter"
-        />
-        <div class="q-mt-md text-grey-8">{{ $t('altitudes') }}</div>
-        <q-range
-          v-model="filtersStore.altitudes"
-          :min="DEFAULT_ALTITUDES.min"
-          :max="DEFAULT_ALTITUDES.max"
-          :step="100"
-          label
-          snap
-          color="primary"
-          class="q-pr-sm"
-          @change="onUpdatedFilter"
-        />
-        <div class="text-hint">{{ $t('altitudes_help') }}</div>
-        <q-select
-          v-model="filtersStore.mechanical_ventilation_types"
-          :options="mechanicalVentilationTypeOptions"
-          :label="$t('ventilations')"
-          :hint="$t('ventilations_hint')"
-          multiple
-          use-chips
-          emit-value
-          map-options
-          clearable
-          dense
-          @update:model-value="onUpdatedFilter"
-        />
-        <q-select
-          v-model="vocs"
-          :options="vocOptions"
-          :label="$t('voc')"
-          :hint="$t('voc_hint')"
-          multiple
-          use-chips
-          emit-value
-          map-options
-          clearable
-          dense
-          @update:model-value="onUpdatedFilter"
-        />
+          class="text-grey filters"
+          no-caps
+          active-color="secondary"
+          indicator-color="secondary"
+          align="justify"
+          narrow-indicator
+        >
+          <q-tab name="pollutants" :label="$t('pollutants')"/>
+          <q-tab name="geography" :label="$t('geography')" />
+          <q-tab name="buildings" :label="$t('buildings')" />
+        </q-tabs>
+        <q-separator />
+        <q-tab-panels v-model="tab" animated>
+          <q-tab-panel name="pollutants" class="q-pa-none">
+            <q-select
+              v-model="vocs"
+              :options="vocOptions"
+              :label="$t('voc')"
+              :hint="$t('voc_hint')"
+              multiple
+              use-chips
+              emit-value
+              map-options
+              dense
+              @update:model-value="onUpdatedFilter"
+            />
+          </q-tab-panel>
+          <q-tab-panel name="geography" class="q-pa-none">
+            <q-select
+              v-model="filtersStore.countries"
+              :options="studyCountries"
+              :label="$t('countries')"
+              multiple
+              use-chips
+              emit-value
+              map-options
+              dense
+              @update:model-value="onUpdatedFilter"
+            />
+            <div class="q-mt-md text-grey-8">{{ $t('altitudes') }}</div>
+            <div class="q-pl-md q-pr-md">
+              <q-range
+                v-model="filtersStore.altitudes"
+                :min="DEFAULT_ALTITUDES.min"
+                :max="DEFAULT_ALTITUDES.max"
+                :step="100"
+                label
+                snap
+                color="primary"
+                class="q-pr-sm"
+                @change="onUpdatedFilter"
+              />
+            </div>
+            <q-select
+              v-model="filtersStore.climate_zones"
+              :options="climateOptions"
+              :label="$t('climate_zones')"
+              :hint="$t('climate_zones_hint')"
+              multiple
+              use-chips
+              emit-value
+              dense
+              @update:model-value="onUpdatedFilter"
+            />
+            
+          </q-tab-panel>
+          <q-tab-panel name="buildings" class="q-pa-none">
+            <q-select
+              v-model="filtersStore.building_types"
+              :options="buildingTypeOptions"
+              :label="$t('study.building.type')"
+              multiple
+              use-chips
+              emit-value
+              map-options
+              dense
+              @update:model-value="onUpdatedFilter"
+            />
+            <div class="q-mt-md text-grey-8">{{ $t('study.building.construction_year') }}</div>
+            <div class="q-pl-md q-pr-md">
+              <q-range
+                v-model="filtersStore.construction_years"
+                :min="DEFAULT_CONSTRUCTION_YEARS.min"
+                :max="DEFAULT_CONSTRUCTION_YEARS.max"
+                :step="1"
+                label
+                snap
+                color="primary"
+                class="q-pr-sm"
+                @change="onUpdatedFilter"
+              />
+            </div>
+            <q-select
+              v-model="filtersStore.outdoor_envs"
+              :options="outdoorEnvOptions"
+              :label="$t('study.building.outdoor_env')"
+              multiple
+              use-chips
+              emit-value
+              map-options
+              dense
+              @update:model-value="onUpdatedFilter"
+            />
+            <q-select
+              v-model="filtersStore.age_groups"
+              :options="ageGroupOptions"
+              :label="$t('study.building.age_group')"
+              multiple
+              use-chips
+              emit-value
+              map-options
+              dense
+              @update:model-value="onUpdatedFilter"
+            />
+            <q-select
+              v-model="filtersStore.socioeconomic_status"
+              :options="socioeconomicStatusOptions"
+              :label="$t('study.building.socioeconomic_status')"
+              multiple
+              use-chips
+              emit-value
+              map-options
+              dense
+              @update:model-value="onUpdatedFilter"
+            />
+            <q-select
+              v-model="filtersStore.mechanical_ventilation_types"
+              :options="mechanicalVentilationTypeOptions"
+              :label="$t('ventilations')"
+              multiple
+              use-chips
+              emit-value
+              map-options
+              dense
+              @update:model-value="onUpdatedFilter"
+            />
+          </q-tab-panel>
+        </q-tab-panels>
       </q-item-section>
     </q-item>
 
     <template v-if="isMapPage">
-      <q-item-label header class="text-h6">
-        <q-icon name="layers" class="q-pb-xs" />
-        <span class="q-ml-sm">{{ $t('layers') }}</span>
-      </q-item-label>
-      <q-item
-        v-for="layer in mapStore.layerSelections"
-        :key="layer.id"
-        class="q-pl-sm q-pr-sm"
-      >
-        <q-item-section>
-          <q-checkbox
-            v-model="layer.visible"
-            :label="$t(`layer.${layer.id}`)"
-            @click="onToggleLayer(layer.id)"
-          />
-        </q-item-section>
-        <q-item-section avatar>
-          <q-btn
-            flat
-            round
-            icon="help_outline"
-            @click="helpStore.toggleHelp(layer.id)"
-          />
-        </q-item-section>
-      </q-item>
-
       <q-item-label header class="text-h6">
         <q-icon name="info" class="q-pb-xs" />
         <span class="q-ml-sm">{{ $t('legends') }}</span>
@@ -175,7 +174,7 @@
         <q-item-section avatar>
           <q-avatar size="xs" text-color="black" :style="`background-color: ${summary.color}`" />
         </q-item-section>
-        <q-item-section>{{ $t(summary.name) }}</q-item-section>
+        <q-item-section :title="summary.name">{{ truncateString(summary.name, 30) }}</q-item-section>
       </q-item>
       <q-item-label>
         <span class="q-ml-md">{{ $t('number_of_buildings') }}</span>
@@ -189,6 +188,28 @@
       <q-item-label class="q-mt-md">
         <span class="q-ml-md">{{ $t('climate_zones') }}</span>
       </q-item-label>
+      <template v-for="layer in mapStore.layerSelections" :key="layer.id">
+        <q-item
+          v-if="layer.id === 'climate-zones'"
+          class="q-pl-sm q-pr-sm"
+        >
+          <q-item-section>
+            <q-checkbox
+              v-model="layer.visible"
+              :label="$t(`layer.show_${layer.id}`)"
+              @click="onToggleLayer(layer.id)"
+            />
+          </q-item-section>
+          <q-item-section avatar>
+            <q-btn
+              flat
+              round
+              icon="help_outline"
+              @click="helpStore.toggleHelp(layer.id)"
+            />
+          </q-item-section>
+        </q-item>
+      </template>
       <q-item>
         <div class="row">
           <div
@@ -202,6 +223,11 @@
           </div>
         </div>
       </q-item>
+      <q-item-label header class="text-h6">
+        <q-icon name="layers" class="q-pb-xs" />
+        <span class="q-ml-sm">{{ $t('layers') }}</span>
+      </q-item-label>
+      
     </template>
   </q-list>
 </template>
@@ -218,11 +244,13 @@ import {
   mechanicalVentilationTypeOptions,
   buildingTypeOptions,
   ageGroupOptions,
+  socioeconomicStatusOptions,
   outdoorEnvOptions,
   vocOptions,
   countryOptions,
 } from 'src/utils/options';
 import type { StudySummary } from 'src/models';
+import { truncateString } from 'src/utils/strings';
 
 const mapStore = useMapStore();
 const catalogStore = useCatalogStore();
@@ -230,6 +258,7 @@ const helpStore = useHelpStore();
 const filtersStore = useFiltersStore();
 const route = useRoute();
 
+const tab = ref('geography');
 const vocs = ref([]);
 const studySummaries = ref<StudySummary[]>([]);
 

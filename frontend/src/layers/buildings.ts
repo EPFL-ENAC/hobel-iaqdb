@@ -254,6 +254,11 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
             feature.properties?.age_group,
           );
         }
+        if (filtered && filter.socioeconomic_status && filter.socioeconomic_status.length) {
+          filtered = filter.socioeconomic_status.includes(
+            feature.properties?.socioeconomic_status,
+          );
+        }
         if (filtered && filter.outdoor_envs && filter.outdoor_envs.length) {
           filtered = filter.outdoor_envs.includes(
             feature.properties?.outdoor_env,
