@@ -220,6 +220,7 @@ export default {
   buildings: 'Buildings',
   buildings_count: 'No buildings | building | buildings',
   catalog: 'Catalog',
+  cities: 'Cities',
   climate_zones_hint: 'The Köppen-Geiger climate classes (1991-2020).',
   climate_zones: 'Climate zones',
   confirm_study_delete: 'Are you sure you want to delete the study "{identifier}"? (without a draft, there is no way to restore it)',

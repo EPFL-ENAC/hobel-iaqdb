@@ -103,6 +103,17 @@
               dense
               @update:model-value="onUpdatedFilter"
             />
+            <q-select
+              v-model="filtersStore.cities"
+              :options="studyCities"
+              :label="$t('cities')"
+              multiple
+              use-chips
+              emit-value
+              map-options
+              dense
+              @update:model-value="onUpdatedFilter"
+            />
             <div class="q-mt-md text-grey-8">{{ $t('altitudes') }}</div>
             <div class="q-pl-md q-pr-md">
               <q-range
@@ -293,6 +304,7 @@ import {
 } from 'src/utils/options';
 import type { StudySummary } from 'src/models';
 import { truncateString } from 'src/utils/strings';
+import { fileURLToPath } from 'url';
 
 const mapStore = useMapStore();
 const catalogStore = useCatalogStore();
@@ -315,6 +327,19 @@ const studyCountries = computed(() => {
     return studySummaries.value.some((study) => study.countries.includes(country.value));
   });
 });
+
+const studyCities = computed(() => {
+  return studySummaries.value.reduce((cities, study) => {
+    // if some countries are selected, filter cities by those countries
+    study.cities.forEach((city) => {
+      if (!cities.includes(city) && (!filtersStore.countries?.length || filtersStore.countries.some((c) => city.endsWith(`, ${c}`)))) {
+        cities.push(city);
+      }
+    });
+    return cities;
+  }, [] as string[]).sort((a, b) => a.localeCompare(b));
+});
+
 
 const clusterColors = [
   {

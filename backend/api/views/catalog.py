@@ -33,6 +33,8 @@ async def get_study_summaries(
         description=study.description,
         countries=list(
             set([building.country for building in study.buildings])),
+        cities=list(
+            set([f"{building.city}, {building.country}" for building in study.buildings if building.city and building.country])),
         color=string_to_color(study.identifier),
     ) for study in res.data]
     return StudySummariesResult(data=summaries, total=res.total, skip=res.skip, limit=res.limit)

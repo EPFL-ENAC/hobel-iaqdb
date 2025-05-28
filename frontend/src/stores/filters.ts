@@ -3,6 +3,7 @@ import { withRange } from 'src/utils/numbers';
 
 export type FilterParams = {
   countries?: string[] | null;
+  cities?: string[] | null;
   construction_years?: [number, number];
   altitudes?: [number, number];
   climate_zones?: string[] | null;
@@ -22,6 +23,7 @@ export const useFiltersStore = defineStore(
   'filters',
   () => {
     const countries = ref([]);
+    const cities = ref([]);
     const construction_years = ref({ ...DEFAULT_CONSTRUCTION_YEARS });
     const altitudes = ref({ ...DEFAULT_ALTITUDES });
     const climate_zones = ref<string[]>([]);
@@ -36,6 +38,7 @@ export const useFiltersStore = defineStore(
 
     function reset() {
       countries.value = [];
+      cities.value = [];
       construction_years.value = { ...DEFAULT_CONSTRUCTION_YEARS };
       altitudes.value = { ...DEFAULT_ALTITUDES };
       climate_zones.value = [];
@@ -56,6 +59,7 @@ export const useFiltersStore = defineStore(
       const altitudesRange: [number, number] = [altitudes.value.min, altitudes.value.max];
       return {
         countries: countries.value.length > 0 ? [...countries.value] : null,
+        cities: cities.value.length > 0 ? [...cities.value] : null,
         construction_years: withRange(constructionsRange, [DEFAULT_CONSTRUCTION_YEARS.min, DEFAULT_CONSTRUCTION_YEARS.max]) ? constructionsRange : undefined,
         altitudes: withRange(altitudesRange, [DEFAULT_ALTITUDES.min, DEFAULT_ALTITUDES.max]) ? altitudesRange : undefined,
         climate_zones: climate_zones.value ? [...climate_zones.value] : [],
@@ -71,6 +75,7 @@ export const useFiltersStore = defineStore(
 
     return {
       countries,
+      cities,
       construction_years,
       altitudes,
       climate_zones,

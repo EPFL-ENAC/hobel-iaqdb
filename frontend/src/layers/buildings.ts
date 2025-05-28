@@ -248,6 +248,11 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
             feature.properties?.country,
           );
         }
+        if (filtered && filter.cities && filter.cities.length) {
+          filtered = filter.cities.includes(
+            `${feature.properties?.city}, ${feature.properties?.country}`,
+          );
+        }
         if (filtered && filter.climate_zones && filter.climate_zones.length) {
           filtered = filter.climate_zones.includes(
             feature.properties?.climate_zone,

@@ -86,6 +86,7 @@ class StudySummary(BaseModel):
     description: Optional[str] = Field(default=None)
     color: Optional[str] = Field(default=None)
     countries: List[str] = Field(default_factory=list)
+    cities: List[str] = Field(default_factory=list)
 
 # Buildings
 

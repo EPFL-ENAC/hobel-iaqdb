@@ -88,6 +88,7 @@ export interface StudySummary extends DBModel {
   description: string;
   color: string;
   countries: string[];
+  cities: string[];
 }
 export interface StudySummariesResult extends ListResult {
   data: StudySummary[];
