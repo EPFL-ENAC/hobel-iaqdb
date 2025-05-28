@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { withRange } from 'src/utils/numbers';
 
 export type FilterParams = {
+  countries?: string[] | null;
   construction_years?: [number, number];
   altitudes?: [number, number];
   climate_zones?: string[] | null;
@@ -19,6 +20,7 @@ export const DEFAULT_ALTITUDES = { min: 0, max: 2500 };
 export const useFiltersStore = defineStore(
   'filters',
   () => {
+    const countries = ref([]);
     const construction_years = ref({ ...DEFAULT_CONSTRUCTION_YEARS });
     const altitudes = ref({ ...DEFAULT_ALTITUDES });
     const climate_zones = ref<string[]>([]);
@@ -31,6 +33,7 @@ export const useFiltersStore = defineStore(
     const updates = ref(0);
 
     function reset() {
+      countries.value = [];
       construction_years.value = { ...DEFAULT_CONSTRUCTION_YEARS };
       altitudes.value = { ...DEFAULT_ALTITUDES };
       climate_zones.value = [];
@@ -49,6 +52,7 @@ export const useFiltersStore = defineStore(
       const constructionsRange: [number, number] = [construction_years.value.min, construction_years.value.max];
       const altitudesRange: [number, number] = [altitudes.value.min, altitudes.value.max];
       return {
+        countries: countries.value.length > 0 ? [...countries.value] : null,
         construction_years: withRange(constructionsRange, [DEFAULT_CONSTRUCTION_YEARS.min, DEFAULT_CONSTRUCTION_YEARS.max]) ? constructionsRange : undefined,
         altitudes: withRange(altitudesRange, [DEFAULT_ALTITUDES.min, DEFAULT_ALTITUDES.max]) ? altitudesRange : undefined,
         climate_zones: climate_zones.value ? [...climate_zones.value] : [],
@@ -62,6 +66,7 @@ export const useFiltersStore = defineStore(
     }
 
     return {
+      countries,
       construction_years,
       altitudes,
       climate_zones,

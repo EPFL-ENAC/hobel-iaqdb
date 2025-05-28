@@ -1,5 +1,5 @@
 from typing import List, Literal
-from pydantic import Field, BaseModel
+from pydantic import BaseModel
 
 
 class Geometry(BaseModel):

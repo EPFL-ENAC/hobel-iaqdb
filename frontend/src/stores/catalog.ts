@@ -7,6 +7,7 @@ import {
   StudiesResult,
   BuildingsResult,
   SpacesResult,
+  StudySummariesResult,
 } from 'src/models';
 import { DEFAULT_ALTITUDES, DEFAULT_CONSTRUCTION_YEARS } from './filters';
 import { withRange } from 'src/utils/numbers';
@@ -19,6 +20,23 @@ export const useCatalogStore = defineStore('catalog', () => {
   const buildings = ref<Building[]>([]);
   const spaces = ref<Space[]>([]);
   
+  async function loadStudySummaries(
+    skip: number,
+    limit: number,
+  ): Promise<StudySummariesResult> {
+    return api
+      .get('/catalog/study-summaries', {
+        params: {
+          range: JSON.stringify([skip, limit + skip - 1]),
+          filter: JSON.stringify(getFilterParams()),
+        },
+        paramsSerializer: {
+          indexes: null, // no brackets at all
+        },
+      })
+      .then((response) => response.data);
+  }
+
   async function loadStudies(
     skip: number,
     limit: number,
@@ -153,6 +171,7 @@ export const useCatalogStore = defineStore('catalog', () => {
   }
 
   return {
+    loadStudySummaries,
     deleteStudy,
     loadStudies,
     loadBuildings,

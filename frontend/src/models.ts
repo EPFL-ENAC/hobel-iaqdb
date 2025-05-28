@@ -82,6 +82,16 @@ export interface StudiesResult extends ListResult {
   data: Study[];
 }
 
+export interface StudySummary extends DBModel {
+  identifier: string;
+  name: string;
+  description: string;
+  color: string;
+  countries: string[];
+}
+export interface StudySummariesResult extends ListResult {
+  data: StudySummary[];
+}
 export interface Space extends DBModel {
   identifier: string;
   type: string;

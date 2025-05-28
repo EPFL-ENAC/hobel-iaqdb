@@ -18,7 +18,20 @@
     </q-item-label>
     <q-item>
       <q-item-section>
-        <div class="text-grey-8">{{ $t('study.building.construction_year') }}</div>
+        <q-select
+          v-model="filtersStore.countries"
+          :options="studyCountries"
+          :label="$t('countries')"
+          :hint="$t('study.building.country_hint')"
+          multiple
+          use-chips
+          emit-value
+          map-options
+          clearable
+          dense
+          @update:model-value="onUpdatedFilter"
+        />
+        <div class="q-mt-md text-grey-8">{{ $t('study.building.construction_year') }}</div>
         <q-range
           v-model="filtersStore.construction_years"
           :min="DEFAULT_CONSTRUCTION_YEARS.min"
@@ -156,11 +169,20 @@
         <span class="q-ml-sm">{{ $t('legends') }}</span>
       </q-item-label>
       <q-item-label>
+        <span class="q-ml-md">{{ $t('studies') }}</span>
+      </q-item-label>
+      <q-item v-for="summary in studySummaries" :key="summary.id">
+        <q-item-section avatar>
+          <q-avatar size="xs" text-color="black" :style="`background-color: ${summary.color}`" />
+        </q-item-section>
+        <q-item-section>{{ $t(summary.name) }}</q-item-section>
+      </q-item>
+      <q-item-label>
         <span class="q-ml-md">{{ $t('number_of_buildings') }}</span>
       </q-item-label>
       <q-item v-for="cluster in clusterColors" :key="cluster.color">
         <q-item-section avatar>
-          <q-avatar :color="cluster.color" text-color="black" />
+          <q-avatar size="sm" :color="cluster.color" text-color="black" />
         </q-item-section>
         <q-item-section>{{ $t(cluster.label) }}</q-item-section>
       </q-item>
@@ -198,16 +220,26 @@ import {
   ageGroupOptions,
   outdoorEnvOptions,
   vocOptions,
+  countryOptions,
 } from 'src/utils/options';
+import type { StudySummary } from 'src/models';
 
 const mapStore = useMapStore();
+const catalogStore = useCatalogStore();
 const helpStore = useHelpStore();
 const filtersStore = useFiltersStore();
 const route = useRoute();
 
 const vocs = ref([]);
+const studySummaries = ref<StudySummary[]>([]);
 
 const isMapPage = computed(() => route.path === '/map');
+
+const studyCountries = computed(() => {
+  return countryOptions.filter((country) => {
+    return studySummaries.value.some((study) => study.countries.includes(country.value));
+  });
+});
 
 const clusterColors = [
   {
@@ -304,6 +336,12 @@ const climateZonesColors = [
   { color: '#b3b3b3', label: 'ET', title: 'Polar, tundra' },
   { color: '#656565', label: 'EF', title: 'Polar, frost' },
 ];
+
+onMounted(() => {
+  catalogStore.loadStudySummaries(0, 1000).then((res) => {
+    studySummaries.value = res.data;
+  });
+});
 
 function onToggleLayer(layerId: string) {
   mapStore.applyLayerVisibility(layerId);

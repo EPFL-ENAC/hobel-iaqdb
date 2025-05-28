@@ -223,6 +223,7 @@ export default {
   confirm_study_draft_delete: 'Are you sure you want to delete the study draft "{identifier}"?',
   contribute_title: 'Contribute to the Indoor Air Quality Research Database',
   contribute: 'Contribute',
+  countries: 'Countries',
   delete: 'Delete',
   download: 'Download',
   duplicate: 'Duplicate',

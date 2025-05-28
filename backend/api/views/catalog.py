@@ -6,10 +6,36 @@ from api.services.building import BuildingService
 from api.services.space import SpaceService
 from api.services.instrument import InstrumentService
 from api.services.dataset import DatasetService
-from api.models.catalog import Study, StudyRead, StudiesResult, Building, BuildingRead, BuildingsResult, Space, SpacesResult, Instrument, InstrumentsResult, Dataset, DatasetsResult
+from api.models.catalog import Study, StudyRead, StudySummary, StudiesResult, StudySummariesResult, Building, BuildingRead, BuildingsResult, Space, SpacesResult, Instrument, InstrumentsResult, Dataset, DatasetsResult
 from enacit4r_sql.utils.query import paramAsArray, paramAsDict
+from api.utils.colors import string_to_color
 
 router = APIRouter()
+
+
+@router.get("/study-summaries", response_model=StudySummariesResult)
+async def get_study_summaries(
+    filter: str = Query(None),
+    sort: str = Query(None),
+    range: str = Query(None),
+    session: AsyncSession = Depends(get_session),
+) -> StudySummariesResult:
+    """Get all study summaries"""
+    service = StudyService(session)
+    res = await service.find(paramAsDict(filter), paramAsArray(sort), paramAsArray(range))
+    if res is None:
+        return StudySummariesResult(studies=[])
+    # Make study summary from study
+    summaries = [StudySummary(
+        id=study.id,
+        identifier=study.identifier,
+        name=study.name,
+        description=study.description,
+        countries=list(
+            set([building.country for building in study.buildings])),
+        color=string_to_color(study.identifier),
+    ) for study in res.data]
+    return StudySummariesResult(data=summaries, total=res.total, skip=res.skip, limit=res.limit)
 
 
 @router.get("/studies", response_model=StudiesResult)

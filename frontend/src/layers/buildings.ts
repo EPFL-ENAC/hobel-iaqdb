@@ -26,9 +26,37 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
     return true;
   }
 
+  jitterCoordinates(lng: number, lat: number, index: number, total: number, radius = 0.00005) {
+    const angle = (2 * Math.PI / total) * index;
+    const dx = radius * Math.cos(angle);
+    const dy = radius * Math.sin(angle);
+    return [lng + dx, lat + dy];
+  }
+
   async append(map: Map): Promise<void> {
     const response = await fetch(GEOJSON_URL);
-    this.buildingsData = (await response.json()) as FeatureCollection;
+    const geoJson = (await response.json()) as FeatureCollection;
+    // Jitter coordinates to avoid overlapping points
+    geoJson.features = geoJson.features.map((feature, index) => {
+      if (feature.geometry.type === 'Point') {
+        const [lng, lat] = (feature.geometry as Point).coordinates;
+        const [jitteredLng, jitteredLat] = this.jitterCoordinates(
+          lng,
+          lat,
+          index,
+          geoJson.features.length,
+        );
+        return {
+          ...feature,
+          geometry: {
+            ...feature.geometry,
+            coordinates: [jitteredLng, jitteredLat],
+          },
+        };
+      }
+      return feature;
+    });
+    this.buildingsData = geoJson;
 
     map.addSource('buildings', {
       type: 'geojson',
@@ -84,7 +112,7 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
       paint: {
         // get color from color property
         'circle-color': ['get', 'color'],
-        'circle-radius': 5,
+        'circle-radius': 10,
         'circle-stroke-width': 1,
         'circle-stroke-color': '#fff',
       },
@@ -205,6 +233,11 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
           filtered =
             feature.properties?.altitude >= filter.altitudes[0] &&
             feature.properties?.altitude <= filter.altitudes[1];
+        }
+        if (filtered && filter.countries && filter.countries.length) {
+          filtered = filter.countries.includes(
+            feature.properties?.country,
+          );
         }
         if (filtered && filter.climate_zones && filter.climate_zones.length) {
           filtered = filter.climate_zones.includes(

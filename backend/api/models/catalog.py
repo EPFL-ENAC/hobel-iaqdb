@@ -1,6 +1,7 @@
 from typing import List, Dict, Optional
 from sqlmodel import SQLModel, Field, Relationship, UniqueConstraint, Column, JSON
 from enacit4r_sql.models.query import ListResult
+from pydantic import BaseModel
 
 
 # Studies
@@ -78,7 +79,16 @@ class StudyDraft(StudyRead):
     datasets: List["DatasetDraft"] = []
 
 
+class StudySummary(BaseModel):
+    id: int
+    identifier: str
+    name: Optional[str] = Field(default=None)
+    description: Optional[str] = Field(default=None)
+    color: Optional[str] = Field(default=None)
+    countries: List[str] = Field(default_factory=list)
+
 # Buildings
+
 
 class CertificationBase(SQLModel):
     program: Optional[str] = Field(default=None)
@@ -332,6 +342,10 @@ class DatasetDraft(DatasetRead):
 
 class StudiesResult(ListResult):
     data: List[StudyRead]
+
+
+class StudySummariesResult(ListResult):
+    data: List[StudySummary]
 
 
 class BuildingsResult(ListResult):
