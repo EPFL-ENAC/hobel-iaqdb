@@ -1,13 +1,64 @@
 <template>
   <q-page>
-    <div class="text-h4 q-pa-md bg-accent text-white text-weight-light">
-      {{ $t('studies') }}
-    </div>
-    <q-separator />
-    <study-list />
+      <q-tabs
+        v-model="tab"
+        inline-label
+        dense
+        class="text-grey"
+        active-color="secondary"
+        indicator-color="secondary"
+        align="justify"
+        @update:model-value="onTabChange"
+      >
+        <q-tab name="map" icon="map" :label="$t('buildings')" />
+        <q-tab name="list" icon="list" :label="$t('studies')" />
+      </q-tabs>
+      <q-separator />
+      <maplibre-map
+        v-show="mapStore.showMap"
+        position
+        geocoder
+        :zoom="2"
+        @map:loaded="onMapLoaded"
+        style="
+          position: absolute;
+          top: 37px;
+          bottom: 0;
+          height: 95%;
+          width: 100%;
+          z-index: 0;
+        "
+      />
+      <study-list v-show="!mapStore.showMap" />
   </q-page>
 </template>
 
 <script setup lang="ts">
+import MaplibreMap from 'components/MaplibreMap.vue';
 import StudyList from 'src/components/StudyList.vue';
+import { Map } from 'maplibre-gl';
+
+const tab = ref('map');
+const mapStore = useMapStore();
+const filtersStore = useFiltersStore();
+
+watch(
+  () => filtersStore.updates,
+  () => {
+    mapStore.applyFilters(filtersStore.asParams());
+  },
+);
+
+function onMapLoaded(map: Map) {
+  mapStore.initLayers(map).then(() => {
+    mapStore.applyFilters(filtersStore.asParams());
+  });
+}
+
+function onTabChange(newTab: string) {
+  mapStore.showMap = newTab === 'map';
+  //if (showMap.value) {
+  //  mapStore.applyFilters(filtersStore.asParams());
+  //}
+}
 </script>

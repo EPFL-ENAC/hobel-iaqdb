@@ -17,7 +17,9 @@
           align="justify"
           narrow-indicator
         >
-          <q-tab name="buildings" :label="$t('buildings')" />
+        <q-tab name="buildings" :label="$t('buildings')" />
+        <q-tab name="instruments" :label="$t('instruments')" />
+        <q-tab name="datasets" :label="$t('datasets')" />
           <q-tab name="files" :label="$t('files')" />
         </q-tabs>
 
@@ -26,6 +28,12 @@
         <q-tab-panels v-model="tab">
           <q-tab-panel name="buildings" class="q-pl-none q-pr-none">
             <study-buildings />
+          </q-tab-panel>
+          <q-tab-panel name="instruments" class="q-pl-none q-pr-none">
+            <pre>{{ study?.instruments }}</pre>
+          </q-tab-panel>
+          <q-tab-panel name="datasets" class="q-pl-none q-pr-none">
+            <pre>{{ study?.datasets }}</pre>
           </q-tab-panel>
           <q-tab-panel name="files" class="q-pl-none q-pr-none">
             <study-files />

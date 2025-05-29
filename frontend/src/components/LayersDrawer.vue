@@ -216,7 +216,7 @@
       </q-item-section>
     </q-item>
 
-    <template v-if="isMapPage">
+    <template v-if="mapStore.showMap">
       <q-item-label header class="text-h6">
         <q-icon name="info" class="q-pb-xs" />
         <span class="q-ml-sm">{{ $t('legends') }}</span>
@@ -318,8 +318,6 @@ const biocontaminants = ref([]);
 const otherPollutants = ref([]);
 const vocs = ref([]);
 const studySummaries = ref<StudySummary[]>([]);
-
-const isMapPage = computed(() => route.path === '/map');
 
 const studyCountries = computed(() => {
   return countryOptions.filter((country) => {

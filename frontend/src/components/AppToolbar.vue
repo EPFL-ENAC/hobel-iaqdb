@@ -35,8 +35,8 @@
       class="q-ml-md"
     >
       <q-route-tab to="/" :label="$t('home')" exact />
-      <q-route-tab :label="$t('map')" to="/map" exact />
       <q-route-tab :label="$t('catalog')" to="/catalog" exact />
+      <q-route-tab :label="$t('data_hub')" to="/data-hub" exact />
       <q-route-tab :label="$t('contribute')" to="/contribute" exact />
     </q-tabs>
     <q-space />
