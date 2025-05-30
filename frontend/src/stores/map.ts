@@ -27,8 +27,11 @@ export const useMapStore = defineStore('map', () => {
   }));
 
   function onStudySelected(id: string) {
-    console.log('onStudySelected', id);
-    catalogStore.loadStudy(id).then(() => catalogStore.showStudyDetails = true);
+    if (catalogStore.showStudyDetails && catalogStore.study?.identifier === id) {
+      catalogStore.showStudyDetails = false;
+    } else {
+      catalogStore.loadStudy(id).then(() => catalogStore.showStudyDetails = true);
+    }
   }
 
   /**

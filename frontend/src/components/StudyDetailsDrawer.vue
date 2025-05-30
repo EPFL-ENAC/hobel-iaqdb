@@ -1,11 +1,16 @@
 <template>
   <div class="q-pa-md">
-    <q-toolbar class="q-pa-none">
-      <q-toolbar-title>{{ catalogStore.study?.name }}</q-toolbar-title>
-      <q-btn no-caps icon-right="arrow_forward" color="primary" size="sm" :label="$t('more_details')" @click="onMoreDetails"/>
-    </q-toolbar>
-    <q-separator class="q-mb-md" />
-    <study-details />
+    <div v-if="!catalogStore.study" class="q-gutter-md">
+      <q-spinner-dots color="primary" size="30px" />
+    </div>
+    <div v-else>
+      <q-toolbar class="q-pa-none">
+        <q-toolbar-title>{{ catalogStore.study?.name }}</q-toolbar-title>
+        <q-btn no-caps icon-right="arrow_forward" color="primary" size="sm" :label="$t('more_details')" @click="onMoreDetails"/>
+      </q-toolbar>
+      <q-separator class="q-mb-md" />
+      <study-details />
+    </div>
   </div>
 </template>
 

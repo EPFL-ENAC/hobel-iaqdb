@@ -151,6 +151,7 @@ export const useCatalogStore = defineStore('catalog', () => {
   }
 
   async function loadStudy(id: string) {
+    study.value = undefined;
     return api.get(`/catalog/study/${id}`).then((response) => {
       study.value = response.data;
       return Promise.all([loadStudyBuildings(), loadStudySpaces(), loadStudyInstruments(), loadStudyDatasets()]);
