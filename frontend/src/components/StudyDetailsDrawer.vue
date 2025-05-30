@@ -21,6 +21,9 @@ const catalogStore = useCatalogStore();
 const router = useRouter();
 
 function onMoreDetails() {
-  router.push('/study?id=' + catalogStore.study?.id);
+  if (!catalogStore.study) {
+    return;
+  }
+  router.push('/study?id=' + catalogStore.study?.identifier);
 }
 </script>

@@ -4,6 +4,8 @@ import {
   Study,
   Building,
   Space,
+  Instrument,
+  Dataset,
   StudiesResult,
   BuildingsResult,
   SpacesResult,
@@ -19,6 +21,8 @@ export const useCatalogStore = defineStore('catalog', () => {
   const study = ref<Study>();
   const buildings = ref<Building[]>([]);
   const spaces = ref<Space[]>([]);
+  const instruments = ref<Instrument[]>([]);
+  const datasets = ref<Dataset[]>([]);
   const showStudyDetails = ref(false);
   
   async function loadStudySummaries(
@@ -149,7 +153,7 @@ export const useCatalogStore = defineStore('catalog', () => {
   async function loadStudy(id: string) {
     return api.get(`/catalog/study/${id}`).then((response) => {
       study.value = response.data;
-      return Promise.all([loadStudyBuildings(), loadStudySpaces()]);
+      return Promise.all([loadStudyBuildings(), loadStudySpaces(), loadStudyInstruments(), loadStudyDatasets()]);
     });
   }
 
@@ -171,6 +175,24 @@ export const useCatalogStore = defineStore('catalog', () => {
       });
   }
 
+  async function loadStudyInstruments() {
+    instruments.value = [];
+    return api
+      .get(`/catalog/study/${study.value?.id}/instruments`)
+      .then((response) => {
+        instruments.value = response.data?.data || [];
+      });
+  }
+
+  async function loadStudyDatasets() {
+    datasets.value = [];
+    return api
+      .get(`/catalog/study/${study.value?.id}/datasets`)
+      .then((response) => {
+        datasets.value = response.data?.data || [];
+      });
+  }
+
   return {
     loadStudySummaries,
     deleteStudy,
@@ -181,6 +203,8 @@ export const useCatalogStore = defineStore('catalog', () => {
     study,
     buildings,
     spaces,
+    instruments,
+    datasets,
     showStudyDetails,
   };
 });

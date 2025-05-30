@@ -1,5 +1,6 @@
 from typing import List, Dict, Optional
-from sqlmodel import SQLModel, Field, Relationship, UniqueConstraint, Column, JSON
+from sqlmodel import SQLModel, Field, Relationship, UniqueConstraint, Column
+from sqlalchemy.dialects.postgresql import JSONB as JSON
 from enacit4r_sql.models.query import ListResult
 from pydantic import BaseModel
 
