@@ -15,9 +15,20 @@ import { t } from 'src/boot/i18n';
 
 const GEOJSON_URL = `${baseUrl}/map/buildings`;
 
+
 export class BuildingsLayerManager extends LayerManager<FilterParams> {
   buildingsData: FeatureCollection | null = null;
   filteredData: FeatureCollection | null = null;
+  
+  /**
+   * Creates an instance of BuildingsLayerManager.
+   * @param onStudySelected Callback function to handle study selection.
+   */
+  constructor(private onStudySelected: (id: string) => void) {
+    super();
+    this.buildingsData = null;
+    this.filteredData = null;
+  }
 
   getId(): string {
     return 'buildings';
@@ -180,33 +191,53 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
       });
       
       const city = feature.properties['city'] ? `${feature.properties['city']}, ${feature.properties['country']}` : '';
-      const studies = Object.keys(studyFeatures)
+      const studyElements = Object.keys(studyFeatures)
             .map((key) => {
               const buildings_count = studyFeatures[key].length;
               const spaces_count = studyFeatures[key].reduce(
                 (acc, feat) => acc + (feat.properties ? feat.properties['spaces_count'] : 0),
                 0,
               );
-              return `
-                <div class="q-ma-sm">
-                  <div>
-                    <a href="/study?id=${key}" class="epfl">${truncateString(studyNames[key], 30)}</a>
-                  </div>
-                  <div>
-                    <span class="text-bold">${buildings_count}</span> ${t('buildings_count', buildings_count)}
-                  </div>
-                  <div>
-                    <span class="text-bold">${spaces_count}</span> ${t('spaces_count', spaces_count)}
-                  </div>
-                </div>`;
-            })
-        .join('<hr class="q-separator q-separator--horizontal">');
-      const content = `
-          <div class="q-ma-sm text-bold" style="min-width: 100px;">
-            ${city}
-          </div>
-          ${studies}`
-      new Popup().setLngLat(coordinates).setHTML(content).addTo(map);
+              const divContainer = document.createElement('div');
+              divContainer.className = 'q-ma-sm';
+              
+              const studyContainer = document.createElement('div');
+              const aContainer = document.createElement('a');
+              aContainer.href = 'javascript:void(0)';
+              aContainer.classList.add('epfl');
+              aContainer.onclick = () => this.onStudySelected(key);
+              aContainer.innerText = truncateString(studyNames[key], 30) + ' ';
+              studyContainer.appendChild(aContainer);
+              divContainer.appendChild(studyContainer);
+
+              const buildingsContainer = document.createElement('div');
+              buildingsContainer.innerHTML = `
+                <span class="text-bold">${buildings_count}</span> ${t('buildings_count', buildings_count)}`;
+              divContainer.appendChild(buildingsContainer);
+
+              const spacesContainer = document.createElement('div');
+              spacesContainer.innerHTML = `
+                <span class="text-bold">${spaces_count}</span> ${t('spaces_count', spaces_count)}`;
+              divContainer.appendChild(spacesContainer);
+              
+              return divContainer;
+            });
+      const contentContainer = document.createElement('div');
+      const cityContainer = document.createElement('div');
+      cityContainer.classList.add('q-pa-sm', 'text-bold');
+      cityContainer.style.minWidth = '100px';
+      cityContainer.innerText = city;
+      contentContainer.appendChild(cityContainer);
+      studyElements.forEach((el, index) => {
+        contentContainer.appendChild(el);
+        if (index < studyElements.length - 1) {
+          const separator = document.createElement('hr');
+          separator.classList.add('q-my-sm');
+          contentContainer.appendChild(separator);
+        }
+      });
+
+      new Popup().setLngLat(coordinates).setDOMContent(contentContainer).addTo(map);
     });
 
     map.on('mouseenter', 'buildings-clusters', () => {

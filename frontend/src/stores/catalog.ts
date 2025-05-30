@@ -19,6 +19,7 @@ export const useCatalogStore = defineStore('catalog', () => {
   const study = ref<Study>();
   const buildings = ref<Building[]>([]);
   const spaces = ref<Space[]>([]);
+  const showStudyDetails = ref(false);
   
   async function loadStudySummaries(
     skip: number,
@@ -180,5 +181,6 @@ export const useCatalogStore = defineStore('catalog', () => {
     study,
     buildings,
     spaces,
+    showStudyDetails,
   };
 });

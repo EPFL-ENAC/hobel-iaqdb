@@ -31,7 +31,7 @@
     <q-drawer
       v-model="rightDrawerOpen"
       :mini="!rightDrawerOpen || miniStateRight"
-      :width="$q.screen.lt.md ? 300 : (helpStore.show ? 500 : 300)"
+      :width="$q.screen.lt.md ? 300 : (showPlots ? 300 : 500)"
       side="right"
       show-if-above
       bordered
@@ -43,7 +43,13 @@
             <q-btn dense round unelevated icon="close" @click="toggleShowHelp" />
           </div>
         </div>
-        <div v-show="!helpStore.show">
+        <div v-show="catalogStore.showStudyDetails">
+          <study-details-drawer />
+          <div class="absolute" style="top: 10px; right: 20px">
+            <q-btn dense round unelevated icon="close" @click="toggleShowStudyDetails" />
+          </div>
+        </div>
+        <div v-show="showPlots">
           <plots-drawer />
         </div>
       </div>
@@ -73,13 +79,19 @@ import AppToolbar from 'src/components/AppToolbar.vue';
 import LayersDrawer from 'src/components/LayersDrawer.vue';
 import PlotsDrawer from 'src/components/PlotsDrawer.vue';
 import HelpDrawer from 'src/components/HelpDrawer.vue';
+import StudyDetailsDrawer from 'src/components/StudyDetailsDrawer.vue';
 
 const helpStore = useHelpStore();
+const catalogStore = useCatalogStore();
 
 const leftDrawerOpen = ref(false);
 const rightDrawerOpen = ref(true);
 const miniStateLeft = ref(false);
 const miniStateRight = ref(false);
+
+const showPlots = computed(() => {
+  return !helpStore.show && !catalogStore.showStudyDetails;
+});
 
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value;
@@ -87,5 +99,9 @@ function toggleLeftDrawer() {
 
 function toggleShowHelp() {
   helpStore.show = !helpStore.show;
+}
+
+function toggleShowStudyDetails() {
+  catalogStore.showStudyDetails = !catalogStore.showStudyDetails;
 }
 </script>

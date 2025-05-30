@@ -249,6 +249,7 @@ export default {
   layers: 'Layers',
   legends: 'Legends',
   mechanical: 'Mechanical',
+  more_details: 'More details',
   must_be_integer: 'Must be an integer',
   natural: 'Natural',
   next: 'Next',

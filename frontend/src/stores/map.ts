@@ -10,13 +10,14 @@ export type LayerSelection = {
 };
 
 export const useMapStore = defineStore('map', () => {
+  const catalogStore = useCatalogStore();
+  
   const map = ref<Map>();
   const filtersApplied = ref<number>(0);
   const showMap = ref(true);
 
-
   const layerManagers = [
-    new BuildingsLayerManager(),
+    new BuildingsLayerManager(onStudySelected),
     new ClimateZonesLayerManager(),
   ];
 
@@ -24,6 +25,11 @@ export const useMapStore = defineStore('map', () => {
     id: lm.getId(),
     visible: lm.isDefaultVisible(),
   }));
+
+  function onStudySelected(id: string) {
+    console.log('onStudySelected', id);
+    catalogStore.loadStudy(id).then(() => catalogStore.showStudyDetails = true);
+  }
 
   /**
    * Find a layer selection state by its identifier.

@@ -78,3 +78,15 @@ p:last-child {
   padding-left: 0;
   padding-right: 0;
 }
+
+.circle-letter {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1px solid black;
+  color: black;
+  background-color: white;
+}
