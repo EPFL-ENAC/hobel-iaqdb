@@ -21,11 +21,15 @@
               <div>
                 <q-chip
                   color="secondary"
-                  class="text-white"
-                  :label="`${getBuildingCount(props.row)} buildings`"
+                  class="text-white on-left"
+                  :label="$t('buildings_with_count', getBuildingsCount(props.row))"
                 />
                 <q-chip
-                  class="on-right"
+                  color="secondary"
+                  class="text-white on-left"
+                  :label="$t('datasets_with_count', getDatasetsCount(props.row))"
+                />
+                <q-chip
                   :label="
                     $t('from_to', {
                       from: props.row.start_year,
@@ -68,8 +72,12 @@ onMounted(updateTable);
 
 watch(() => filtersStore.updates, updateTable);
 
-function getBuildingCount(study: Study) {
+function getBuildingsCount(study: Study) {
   return study.buildings?.length || 0;
+}
+
+function getDatasetsCount(study: Study) {
+  return study.datasets?.length || 0;
 }
 
 function updateTable() {
