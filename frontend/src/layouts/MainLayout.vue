@@ -1,7 +1,7 @@
 <template>
   <q-layout view="hHh lpR fFf">
     <q-header bordered class="bg-white text-grey-10">
-      <app-toolbar @toggle="toggleLeftDrawer" />
+      <app-toolbar @toggle-left="toggleLeftDrawer" @toggle-right="toggleRightDrawer" />
     </q-header>
 
     <q-drawer
@@ -95,6 +95,10 @@ const showPlots = computed(() => {
 
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value;
+}
+
+function toggleRightDrawer() {
+  rightDrawerOpen.value = !rightDrawerOpen.value;
 }
 
 function toggleShowHelp() {

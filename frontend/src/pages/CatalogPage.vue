@@ -42,6 +42,19 @@ const tab = ref('map');
 const mapStore = useMapStore();
 const filtersStore = useFiltersStore();
 
+onMounted(() => {
+  if (!mapStore.showMap) {
+    tab.value = 'list';
+  } else {
+    tab.value = 'map';
+    // delay showing the map until the map store is initialized
+    // this is necessary to avoid flickering when the map is loaded
+    setTimeout(() => {
+        mapStore.showMap = true;
+    }, 100);
+  }
+});
+
 watch(
   () => filtersStore.updates,
   () => {

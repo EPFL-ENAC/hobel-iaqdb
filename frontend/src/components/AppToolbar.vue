@@ -109,6 +109,15 @@
     <a href="https://www.epfl.ch/labs/hobel/" target="_blank" class="q-mt-xs">
       <span class="text-logo q-mb-xs">HOBEL</span>
     </a>
+    <q-btn
+      v-if="$q.screen.lt.md && !noMenu"
+      flat
+      dense
+      round
+      icon="menu"
+      class="on-right"
+      @click="toggleRightDrawer"
+    />
   </q-toolbar>
 
   <simple-dialog
@@ -148,7 +157,7 @@ interface Props {
 withDefaults(defineProps<Props>(), {
   noMenu: false,
 });
-const emit = defineEmits(['toggle']);
+const emit = defineEmits(['toggle-left', 'toggle-right']);
 
 const settingsStore = useSettingsStore();
 
@@ -163,6 +172,10 @@ onMounted(() => {
 });
 
 function toggleLeftDrawer() {
-  emit('toggle');
+  emit('toggle-left');
+}
+
+function toggleRightDrawer() {
+  emit('toggle-right');
 }
 </script>
