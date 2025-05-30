@@ -102,7 +102,7 @@ const contactItems: FieldItem<Study | Person>[] = [
   },
   {
     field: 'contact',
-    label: 'Institution/Company',
+    label: 'Institution / Company',
     html: (val: Study) => val.institution,
   },
 ];

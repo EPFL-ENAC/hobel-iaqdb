@@ -24,9 +24,9 @@
       @click="toggleLeftDrawer"
     />
     <a href="https://epfl.ch" target="_blank" class="q-mt-sm">
-      <img src="/EPFL_logo.png" style="height: 25px" />
+      <img src="/EPFL_logo.png" :style="`height: ${$q.screen.lt.md ? '15px' : '25px'}`" />
     </a>
-    <span class="q-ml-md text-h6">{{ $t('app_title') }}</span>
+    <span class="q-ml-md text-bold q-mt-xs" :style="`font-size: ${$q.screen.lt.md ? '1.3em' : '1.5em'}`">{{ $t('app_title') }}</span>
     <q-tabs
       v-if="!$q.screen.lt.sm"
       shrink
@@ -107,7 +107,7 @@
       </q-popup-proxy>
     </q-btn>
     <a href="https://www.epfl.ch/labs/hobel/" target="_blank" class="q-mt-xs">
-      <span class="text-logo q-mb-xs">HOBEL</span>
+      <span class="text-logo q-mb-xs" :style="`font-size: ${$q.screen.lt.md ? '1.3em' : '2.3em'}`">HOBEL</span>
     </a>
     <q-btn
       v-if="$q.screen.lt.md && !noMenu"

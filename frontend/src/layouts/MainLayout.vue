@@ -85,13 +85,33 @@ const helpStore = useHelpStore();
 const catalogStore = useCatalogStore();
 
 const leftDrawerOpen = ref(false);
-const rightDrawerOpen = ref(true);
+const rightDrawerOpen = ref(false);
 const miniStateLeft = ref(false);
 const miniStateRight = ref(false);
 
 const showPlots = computed(() => {
   return !helpStore.show && !catalogStore.showStudyDetails;
 });
+
+watch(
+  () => helpStore.show,
+  (newValue) => {
+    if (newValue) {
+      rightDrawerOpen.value = true;
+      miniStateRight.value = false;
+    }
+  },
+);
+
+watch(
+  () => catalogStore.showStudyDetails,
+  (newValue) => {
+    if (newValue) {
+      rightDrawerOpen.value = true;
+      miniStateRight.value = false;
+    }
+  },
+);
 
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value;

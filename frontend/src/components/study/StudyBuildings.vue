@@ -12,6 +12,7 @@
     </div>
     <q-table
       flat
+      responsive
       :rows="buildings"
       :columns="columms"
       v-model:pagination="pagination"

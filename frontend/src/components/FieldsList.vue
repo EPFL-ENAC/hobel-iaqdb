@@ -1,5 +1,5 @@
 <template>
-  <q-list v-if="dbobject" separator>
+  <q-list v-if="dbobject" dense separator>
     <q-item v-for="item in visibleItems" :key="item.field">
       <q-item-section>
         <q-item-label overline>

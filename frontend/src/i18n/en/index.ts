@@ -53,7 +53,7 @@ export default {
     person_email: 'Email',
     person_email_hint: "The contact person's email.",
     person_email_public: 'Would you like to make your contact information publicly visible to database end users?',
-    person_institution: 'Institution/Company',
+    person_institution: 'Institution / Company',
     person_institution_hint: "The contact person's institution.",
     citation: 'Citation',
     citation_hint: 'How to cite the reference publication.',

@@ -11,12 +11,12 @@
       @request="onRequest"
     >
       <template v-slot:item="props">
-        <div class="col-3">
+        <div class="col-sm-12 col-md-12 col-lg-4">
           <q-card flat bordered @click="onRowClick(props.row)" class="cursor-pointer q-ma-md">
             <q-card-section>
               <div class="text-h6">{{ props.row.name }}</div>
               <div class="text-subtitle2 text-grey-8 q-mb-md">
-                {{ truncateText(props.row.description, 300) }}
+                {{ truncateText(props.row.description, 200) }}
               </div>
               <div>
                 <q-chip
