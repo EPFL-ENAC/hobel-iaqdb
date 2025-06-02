@@ -1,4 +1,3 @@
-import os
 from fastapi import FastAPI, Depends, status, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from api.config import config
@@ -6,8 +5,8 @@ from api.db import get_session, AsyncSession
 from logging import basicConfig, INFO
 from pydantic import BaseModel
 from sqlalchemy.sql import text
-from api.views.seed import router as seed_router
 from api.views.catalog import router as catalog_router
+from api.views.stats import router as stats_router
 from api.views.contribute import router as contribute_router
 from api.views.map import router as map_router
 from api.views.files import router as files_router
@@ -55,11 +54,11 @@ async def get_health(
 
     return HealthCheck(status="OK")
 
-# app.include_router(
-#     seed_router,
-#     prefix="/seed",
-#     tags=["Seed"],
-# )
+app.include_router(
+    stats_router,
+    prefix="/stats",
+    tags=["Statistics"],
+)
 
 app.include_router(
     contribute_router,

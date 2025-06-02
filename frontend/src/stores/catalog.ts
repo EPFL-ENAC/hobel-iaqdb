@@ -10,6 +10,7 @@ import {
   BuildingsResult,
   SpacesResult,
   StudySummariesResult,
+  GroupByResult,
 } from 'src/models';
 import { DEFAULT_ALTITUDES, DEFAULT_CONSTRUCTION_YEARS } from './filters';
 import { withRange } from 'src/utils/numbers';
@@ -113,10 +114,10 @@ export const useCatalogStore = defineStore('catalog', () => {
         : undefined
       ,
       $building: {
-        $and: [
+        $and: construction_years.length || altitudes.length ? [
           ...construction_years,
           ...altitudes,
-        ],
+        ] : undefined,
         type:
           filterStore.building_types && filterStore.building_types.length
             ? filterStore.building_types
@@ -199,6 +200,57 @@ export const useCatalogStore = defineStore('catalog', () => {
       });
   }
 
+  async function countStudies(
+    by: string,
+    filtered = true
+  ): Promise<GroupByResult> {
+    return api
+      .get('/stats/frequencies/studies', {
+        params: {
+          by,
+          filter: filtered ? JSON.stringify(getFilterParams()) : undefined,
+        },
+        paramsSerializer: {
+          indexes: null, // no brackets at all
+        },
+      })
+      .then((response) => response.data);
+  }
+  
+  async function countBuildings(
+    by: string,
+    filtered = true
+  ): Promise<GroupByResult> {
+    return api
+      .get('/stats/frequencies/buildings', {
+        params: {
+          by,
+          filter: filtered ? JSON.stringify(getFilterParams()) : undefined,
+        },
+        paramsSerializer: {
+          indexes: null, // no brackets at all
+        },
+      })
+      .then((response) => response.data);
+  }
+  
+  async function countSpaces(
+    by: string,
+    filtered = true
+  ): Promise<GroupByResult> {
+    return api
+      .get('/stats/frequencies/spaces', {
+        params: {
+          by,
+          filter: filtered ? JSON.stringify(getFilterParams()) : undefined,
+        },
+        paramsSerializer: {
+          indexes: null, // no brackets at all
+        },
+      })
+      .then((response) => response.data);
+  }
+
   return {
     loadStudySummaries,
     deleteStudy,
@@ -206,6 +258,9 @@ export const useCatalogStore = defineStore('catalog', () => {
     loadBuildings,
     loadSpaces,
     loadStudy,
+    countStudies,
+    countBuildings,
+    countSpaces,
     study,
     buildings,
     spaces,

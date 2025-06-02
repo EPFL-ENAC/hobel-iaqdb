@@ -172,3 +172,13 @@ export interface FileNode {
 export interface UploadResult {
   files: FileNode[];
 }
+
+export interface GroupByCount {
+    value: string | null;
+    count: number;
+}
+
+export interface GroupByResult {
+    field: string;
+    counts: GroupByCount[];
+}

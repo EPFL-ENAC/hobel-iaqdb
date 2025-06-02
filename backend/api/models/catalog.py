@@ -368,3 +368,13 @@ class DatasetsResult(ListResult):
 
 class StudyDraftsResult(ListResult):
     data: List[StudyDraft]
+
+
+class GroupByCount(BaseModel):
+    value: str | None
+    count: int
+
+
+class GroupByResult(BaseModel):
+    field: str
+    counts: List[GroupByCount]

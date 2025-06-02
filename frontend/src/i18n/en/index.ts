@@ -211,9 +211,10 @@ export default {
   },
   plots: {
     buildings_overview: 'Buildings overview',
-    building_types: 'Building Types',
-    building_countries: 'Building Countries',
-    building_ventilations: 'Building with Mechanical Ventilations',
+    building_type: 'Building Type',
+    building_country: 'Building Country',
+    building_ventilation: 'Building with Mechanical Ventilation',
+    space_ventilation_type: 'Space Mechanical Ventilation Type',
     spaces_overview: 'Spaces overview',
   },
   add: 'Add',
