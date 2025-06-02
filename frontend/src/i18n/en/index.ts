@@ -211,6 +211,9 @@ export default {
   },
   plots: {
     buildings_overview: 'Buildings overview',
+    building_types: 'Building Types',
+    building_countries: 'Building Countries',
+    building_ventilations: 'Building with Mechanical Ventilations',
     spaces_overview: 'Spaces overview',
   },
   add: 'Add',

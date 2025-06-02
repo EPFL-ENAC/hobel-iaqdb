@@ -1,12 +1,12 @@
 <template>
-  <div v-if="option.series" :style="`height: ${(height || 0) + 150}px;`">
+  <div v-if="option.series" :style="`height: ${(height || 0) + 50}px;`">
     <e-charts
       ref="chart"
       autoresize
       :init-options="initOptions"
       :option="option"
       :update-options="updateOptions"
-      class="q-ma-sm"
+      class="q-mr-sm"
       :loading="loading"
     />
   </div>
@@ -30,7 +30,6 @@ import { TreemapChart } from 'echarts/charts';
 import { SVGRenderer } from 'echarts/renderers';
 import { initOptions, updateOptions } from 'src/components/plots/charts';
 import {
-  TitleComponent,
   TooltipComponent,
 } from 'echarts/components';
 import { buildingTypeOptions } from 'src/utils/options';
@@ -38,7 +37,6 @@ import { buildingTypeOptions } from 'src/utils/options';
 use([
   SVGRenderer,
   TreemapChart,
-  TitleComponent,
   TooltipComponent,
 ]);
 
@@ -77,20 +75,14 @@ function buildOptions() {
   loading.value = true;
   // make treemap
   const newOption: EChartsOption = {
-    title: {
-      text: 'Building Types',
-      left: 'center',
-      textStyle: {
-        fontSize: 12,
-      },
-    },
     tooltip: {
       trigger: 'item',
     },
     series: [
       {
         type: 'treemap',
-        height: '60%',
+        height: '90%',
+        width: '90%',
         data: Object.entries(counts.value).map(([name, value]) => ({
           name: buildingTypeOptions.find((opt) => opt.value === name)?.label || name,
           value,
@@ -99,10 +91,12 @@ function buildOptions() {
           show: true,
           formatter: '{b}: {c}',
         },
+        breadcrumb: {
+          show: false
+        }
       },
     ],
   };
-  console.log(newOption);
   option.value = newOption;
   loading.value = false;
 }

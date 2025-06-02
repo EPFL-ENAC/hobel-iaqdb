@@ -14,7 +14,7 @@
 
 <script lang="ts">
 export default defineComponent({
-  name: 'BuildingCountriesChart',
+  name: 'BuildingMechanicalVentilationsChart',
 });
 </script>
 <script setup lang="ts">
@@ -32,7 +32,7 @@ import { initOptions, updateOptions } from 'src/components/plots/charts';
 import {
   TooltipComponent,
 } from 'echarts/components';
-import { countryOptions } from 'src/utils/options';
+import { yesNoOptions } from 'src/utils/options';
 
 use([
   SVGRenderer,
@@ -53,7 +53,7 @@ const loading = ref(false);
 
 const counts = computed(() => {
   return props.features?.reduce((acc, feature) => {
-    const type = feature.properties?.country;
+    const type = feature.properties?.mechanical_ventilation;
     acc[type] = (acc[type] || 0) + 1;
     return acc;
   }, {} as { [key: string]: number }) || {};
@@ -84,7 +84,7 @@ function buildOptions() {
         height: '90%',
         width: '90%',
         data: Object.entries(counts.value).map(([name, value]) => ({
-          name: countryOptions.find((opt) => opt.value === name)?.label || name,
+          name: yesNoOptions.find((opt) => opt.value === name)?.label || name,
           value,
         })),
         label: {

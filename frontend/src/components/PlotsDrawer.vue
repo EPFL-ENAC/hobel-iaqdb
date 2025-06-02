@@ -1,19 +1,23 @@
 <template>
   <div>
     <q-list>
-      <q-item-label header class="q-pt-none q-pb-none">
+      <q-item-label header class="q-pt-none">
         <span class="text-h6">
           <q-icon name="domain" class="q-pb-xs" />
           <span class="q-ml-sm">{{ $t('plots.buildings_overview') }}</span>
         </span>
       </q-item-label>
     </q-list>
-    <BuildingTypesChart :features="features" class="q-mb-md"/>
+    <div class="text-caption text-bold q-ml-md">{{ $t('plots.building_types') }}</div>
+    <BuildingTypesChart :features="features" />
+    <div class="text-caption text-bold q-ml-md q-mt-sm">{{ $t('plots.building_countries') }}</div>
     <BuildingCountriesChart :features="features" />
+    <div class="text-caption text-bold q-ml-md q-mt-sm">{{ $t('plots.building_ventilations') }}</div>
+    <BuildingMechanicalVentilationsChart :features="features" />
     <q-list>
       <q-item-label header>
         <span class="text-h6">
-          <q-icon name="domain" class="q-pb-xs" />
+          <q-icon name="living" class="q-pb-xs" />
           <span class="q-ml-sm">{{ $t('plots.spaces_overview') }}</span>
         </span>
       </q-item-label>
@@ -35,6 +39,7 @@ import {
 } from 'geojson';
 import BuildingTypesChart from 'src/components/plots/BuildingTypesChart.vue';
 import BuildingCountriesChart from 'src/components/plots/BuildingCountriesChart.vue';
+import BuildingMechanicalVentilationsChart from './plots/BuildingMechanicalVentilationsChart.vue';
 import type { BuildingsLayerManager } from 'src/layers/buildings';
 
 const mapStore = useMapStore();
