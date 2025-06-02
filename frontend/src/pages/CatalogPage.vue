@@ -14,22 +14,24 @@
         <q-tab name="list" icon="list" :label="$t('studies')" />
       </q-tabs>
       <q-separator />
-      <maplibre-map
-        v-show="mapStore.showMap"
-        position
-        geocoder
-        :zoom="2"
-        @map:loaded="onMapLoaded"
-        style="
-          position: absolute;
-          top: 37px;
-          bottom: 0;
-          height: 95%;
-          width: 100%;
-          z-index: 0;
-        "
-      />
-      <study-list v-show="!mapStore.showMap" />
+      <div>
+        <maplibre-map
+          v-show="mapStore.showMap"
+          position
+          geocoder
+          :zoom="2"
+          @map:loaded="onMapLoaded"
+          style="
+            position: absolute;
+            top: 37px;
+            bottom: 0;
+            height: 95%;
+            width: 100%;
+            z-index: 0;
+          "
+        />
+        <study-list v-show="!mapStore.showMap" />
+      </div>
   </q-page>
 </template>
 

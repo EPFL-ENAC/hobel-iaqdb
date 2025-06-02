@@ -46,11 +46,15 @@ const study = computed(() => catalogStore.study);
 }
 
 /* Medium and up: 2 columns */
-@media (min-width: 800px) {
+@media (min-width: 1024px) {
   .grid {
     grid-template-columns: 2fr 1fr;
     grid-template-areas: "item1 item2";
   }
+}
+
+.item {
+  min-width: 0;
 }
 
 .item1 {
