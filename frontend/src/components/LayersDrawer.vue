@@ -159,7 +159,7 @@
                     <q-icon name="circle" :style="`color: ${scope.opt.study.color}`"/>
                   </q-item-section>
                   <q-item-section>
-                    <q-item-label>{{ scope.opt.label }}</q-item-label>
+                    <q-item-label :title="scope.opt.label === scope.opt.study.name ? '' : scope.opt.study.name">{{ scope.opt.label }}</q-item-label>
                   </q-item-section>
                 </q-item>
               </template>
@@ -316,14 +316,13 @@ import {
   countryOptions,
 } from 'src/utils/options';
 import type { StudySummary } from 'src/models';
+import { truncateString } from 'src/utils/strings';
 
 const mapStore = useMapStore();
 const catalogStore = useCatalogStore();
 const helpStore = useHelpStore();
 const filtersStore = useFiltersStore();
 const route = useRoute();
-
-
 
 const tab = ref('geography');
 const particles = ref([]);
@@ -334,7 +333,7 @@ const vocs = ref([]);
 const studySummaries = ref<StudySummary[]>([]);
 
 const studyOptions = computed(() => {
-  return studySummaries.value.map((std) => ({ value: std.identifier, label: std.name, study: std }))
+  return studySummaries.value.map((std) => ({ value: std.identifier, label: truncateString(std.name, 25), study: std }))
 })
 
 const studyCountries = computed(() => {
