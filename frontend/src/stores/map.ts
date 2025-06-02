@@ -109,5 +109,6 @@ export const useMapStore = defineStore('map', () => {
     applyLayerVisibility,
     initLayers,
     getLayerManager,
+    findLayer,
   };
 });

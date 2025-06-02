@@ -243,32 +243,29 @@
         <q-icon name="info" class="q-pb-xs" />
         <span class="q-ml-sm">{{ $t('legends') }}</span>
       </q-item-label>
-      <q-item-label class="q-mt-md">
+      <q-item
+        class="q-pl-sm q-pr-sm"
+      >
+        <q-item-section>
+          <q-checkbox
+            v-model="climateZoneLayerVisible"
+            :label="$t('layer.show_climate-zones')"
+            @update:model-value="onToggleClimateZonesLayer"
+          />
+        </q-item-section>
+        <q-item-section avatar>
+          <q-btn
+            flat
+            round
+            icon="help_outline"
+            @click="helpStore.toggleHelp('climate-zones')"
+          />
+        </q-item-section>
+      </q-item>
+      <q-item-label v-if="climateZoneLayerVisible" class="q-mt-md">
         <span class="q-ml-md">{{ $t('climate_zones') }}</span>
       </q-item-label>
-      <template v-for="layer in mapStore.layerSelections" :key="layer.id">
-        <q-item
-          v-if="layer.id === 'climate-zones'"
-          class="q-pl-sm q-pr-sm"
-        >
-          <q-item-section>
-            <q-checkbox
-              v-model="layer.visible"
-              :label="$t(`layer.show_${layer.id}`)"
-              @click="onToggleLayer(layer.id)"
-            />
-          </q-item-section>
-          <q-item-section avatar>
-            <q-btn
-              flat
-              round
-              icon="help_outline"
-              @click="helpStore.toggleHelp(layer.id)"
-            />
-          </q-item-section>
-        </q-item>
-      </template>
-      <q-item>
+      <q-item v-if="climateZoneLayerVisible">
         <div class="row">
           <div
             v-for="zone in climateZonesColors"
@@ -322,6 +319,7 @@ const biocontaminants = ref([]);
 const otherPollutants = ref([]);
 const vocs = ref([]);
 const studySummaries = ref<StudySummary[]>([]);
+const climateZoneLayerVisible = ref(false);
 
 const studyOptions = computed(() => {
   return studySummaries.value.map((std) => ({ value: std.identifier, label: truncateString(std.name, 25), study: std }))
@@ -432,8 +430,11 @@ onMounted(() => {
   });
 });
 
-function onToggleLayer(layerId: string) {
-  mapStore.applyLayerVisibility(layerId);
+function onToggleClimateZonesLayer() {
+  const layer = mapStore.findLayer('climate-zones');
+  if (!layer) return;
+  layer.visible = climateZoneLayerVisible.value;
+  mapStore.applyLayerVisibility('climate-zones');
   onUpdatedFilter();
 }
 
