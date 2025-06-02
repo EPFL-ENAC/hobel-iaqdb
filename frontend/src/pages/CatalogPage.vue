@@ -1,19 +1,22 @@
 <template>
   <q-page>
-      <q-tabs
-        v-model="tab"
-        inline-label
-        dense
-        class="text-grey"
-        active-color="secondary"
-        indicator-color="secondary"
-        align="justify"
-        @update:model-value="onTabChange"
-      >
-        <q-tab name="map" icon="map" :label="$t('buildings')" />
-        <q-tab name="list" icon="list" :label="$t('studies')" />
-      </q-tabs>
-      <q-separator />
+    <div class="grid">
+      <div>
+        <q-tabs
+          v-model="tab"
+          inline-label
+          dense
+          class="text-grey"
+          active-color="secondary"
+          indicator-color="secondary"
+          align="justify"
+          @update:model-value="onTabChange"
+        >
+          <q-tab name="map" icon="map" :label="$t('buildings')" />
+          <q-tab name="list" icon="list" :label="$t('studies')" />
+        </q-tabs>
+        <q-separator />
+      </div>
       <div>
         <maplibre-map
           v-show="mapStore.showMap"
@@ -25,13 +28,13 @@
             position: absolute;
             top: 37px;
             bottom: 0;
-            height: 95%;
             width: 100%;
             z-index: 0;
           "
         />
         <study-list v-show="!mapStore.showMap" />
       </div>
+    </div>
   </q-page>
 </template>
 
@@ -77,3 +80,11 @@ function onTabChange(newTab: string) {
   //}
 }
 </script>
+
+<style scoped>
+.grid {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+}
+</style>
