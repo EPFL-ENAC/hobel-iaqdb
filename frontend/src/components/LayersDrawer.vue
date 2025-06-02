@@ -243,15 +243,6 @@
         <q-icon name="info" class="q-pb-xs" />
         <span class="q-ml-sm">{{ $t('legends') }}</span>
       </q-item-label>
-      <q-item-label>
-        <span class="q-ml-md">{{ $t('number_of_buildings') }}</span>
-      </q-item-label>
-      <q-item v-for="cluster in clusterColors" :key="cluster.color">
-        <q-item-section avatar>
-          <q-avatar size="sm" :color="cluster.color" text-color="black" />
-        </q-item-section>
-        <q-item-section>{{ $t(cluster.label) }}</q-item-section>
-      </q-item>
       <q-item-label class="q-mt-md">
         <span class="q-ml-md">{{ $t('climate_zones') }}</span>
       </q-item-label>
@@ -353,21 +344,6 @@ const studyCities = computed(() => {
     return cities;
   }, [] as string[]).sort((a, b) => a.localeCompare(b));
 });
-
-const clusterColors = [
-  {
-    color: 'cyan-5',
-    label: '< 10',
-  },
-  {
-    color: 'yellow-6',
-    label: '1 - 20',
-  },
-  {
-    color: 'pink-3',
-    label: '> 20',
-  },
-];
 
 const climateZonesColors = [
   { color: '#0000fe', label: 'Af', title: 'Tropical, rainforest' },
