@@ -265,7 +265,7 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
     const filteredFeatures = this.buildingsData.features.filter(
       (feature: Feature<Geometry, GeoJsonProperties>) => {
         let filtered = true;
-        if (filter.construction_years) {
+        if (filtered && filter.construction_years) {
           filtered =
             feature.properties?.construction_year >= filter.construction_years[0] &&
             feature.properties?.construction_year <= filter.construction_years[1];
@@ -288,6 +288,11 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
         if (filtered && filter.climate_zones && filter.climate_zones.length) {
           filtered = filter.climate_zones.includes(
             feature.properties?.climate_zone,
+          );
+        }
+        if (filtered && filter.study_ids && filter.study_ids.length) {
+          filtered = filter.study_ids.includes(
+            feature.properties?.study_id,
           );
         }
         if (filtered && filter.building_types && filter.building_types.length) {

@@ -29,7 +29,11 @@ const routes: RouteRecordRaw[] = [
         name: 'catalog',
         component: () => import('src/pages/CatalogPage.vue'),
       },
-      { path: '/search', component: () => import('src/pages/SearchPage.vue') },
+      {
+        path: '/data-hub',
+        name: 'data-hub',
+        component: () => import('src/pages/DataHubPage.vue'),
+      },
     ],
   },
 

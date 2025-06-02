@@ -46,6 +46,7 @@
 
 <script setup lang="ts">
 import StudyView from 'src/components/study/StudyView.vue';
+import StudyView2 from 'src/components/study/StudyView2.vue';
 import ConfirmDialog from 'src/components/ConfirmDialog.vue';
 
 const authStore = useAuthStore();

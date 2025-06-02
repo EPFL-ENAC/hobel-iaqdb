@@ -28,12 +28,13 @@ export const useCatalogStore = defineStore('catalog', () => {
   async function loadStudySummaries(
     skip: number,
     limit: number,
+    filtered = true
   ): Promise<StudySummariesResult> {
     return api
       .get('/catalog/study-summaries', {
         params: {
           range: JSON.stringify([skip, limit + skip - 1]),
-          filter: JSON.stringify(getFilterParams()),
+          filter: filtered ? JSON.stringify(getFilterParams()) : undefined,
         },
         paramsSerializer: {
           indexes: null, // no brackets at all
@@ -107,6 +108,10 @@ export const useCatalogStore = defineStore('catalog', () => {
       { altitude: { $lte: filterStore.altitudes.max } },
     ] : [];
     return {
+      identifier: filterStore.study_ids && filterStore.study_ids.length
+        ? filterStore.study_ids
+        : undefined
+      ,
       $building: {
         $and: [
           ...construction_years,

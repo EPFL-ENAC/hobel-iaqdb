@@ -27,6 +27,7 @@ export const useFiltersStore = defineStore(
     const construction_years = ref({ ...DEFAULT_CONSTRUCTION_YEARS });
     const altitudes = ref({ ...DEFAULT_ALTITUDES });
     const climate_zones = ref<string[]>([]);
+    const study_ids = ref<string[]>([]);
     const building_types = ref<string[]>([]);
     const age_groups = ref<string[]>([]);
     const socioeconomic_status = ref<string[]>([]);
@@ -42,6 +43,7 @@ export const useFiltersStore = defineStore(
       construction_years.value = { ...DEFAULT_CONSTRUCTION_YEARS };
       altitudes.value = { ...DEFAULT_ALTITUDES };
       climate_zones.value = [];
+      study_ids.value = [];
       building_types.value = [];
       age_groups.value = [];
       socioeconomic_status.value = [];
@@ -69,7 +71,7 @@ export const useFiltersStore = defineStore(
         outdoor_envs: outdoor_envs.value ? [...outdoor_envs.value] : [],
         mechanical_ventilation: mechanical_ventilation.value,
         mechanical_ventilation_types: mechanical_ventilation_types.value ? [...mechanical_ventilation_types.value] : [],
-        study_ids: [],
+        study_ids: study_ids.value ? [...study_ids.value] : [],
       };
     }
 
@@ -79,6 +81,7 @@ export const useFiltersStore = defineStore(
       construction_years,
       altitudes,
       climate_zones,
+      study_ids,
       building_types,
       age_groups,
       socioeconomic_status,

@@ -143,6 +143,28 @@
           </q-tab-panel>
           <q-tab-panel name="buildings" class="q-pa-none">
             <q-select
+              v-model="filtersStore.study_ids"
+              :options="studyOptions"
+              :label="$t('study.label')"
+              multiple
+              use-chips
+              emit-value
+              map-options
+              dense
+              @update:model-value="onUpdatedFilter"
+            >
+              <template v-slot:option="scope">
+                <q-item v-bind="scope.itemProps">
+                  <q-item-section avatar>
+                    <q-icon name="circle" :style="`color: ${scope.opt.study.color}`"/>
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label>{{ scope.opt.label }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </template>
+            </q-select>
+            <q-select
               v-model="filtersStore.building_types"
               :options="buildingTypeOptions"
               :label="$t('study.building.type')"
@@ -216,20 +238,11 @@
       </q-item-section>
     </q-item>
 
-    <template v-if="mapStore.showMap">
+    <template v-if="mapStore.showMap && route.path === '/catalog'">
       <q-item-label header class="text-h6">
         <q-icon name="info" class="q-pb-xs" />
         <span class="q-ml-sm">{{ $t('legends') }}</span>
       </q-item-label>
-      <q-item-label>
-        <span class="q-ml-md">{{ $t('studies') }}</span>
-      </q-item-label>
-      <q-item v-for="summary in studySummaries" :key="summary.id">
-        <q-item-section avatar>
-          <q-avatar size="xs" text-color="black" :style="`background-color: ${summary.color}`" />
-        </q-item-section>
-        <q-item-section :title="summary.name">{{ truncateString(summary.name, 30) }}</q-item-section>
-      </q-item>
       <q-item-label>
         <span class="q-ml-md">{{ $t('number_of_buildings') }}</span>
       </q-item-label>
@@ -303,13 +316,14 @@ import {
   countryOptions,
 } from 'src/utils/options';
 import type { StudySummary } from 'src/models';
-import { truncateString } from 'src/utils/strings';
 
 const mapStore = useMapStore();
 const catalogStore = useCatalogStore();
 const helpStore = useHelpStore();
 const filtersStore = useFiltersStore();
 const route = useRoute();
+
+
 
 const tab = ref('geography');
 const particles = ref([]);
@@ -318,6 +332,10 @@ const biocontaminants = ref([]);
 const otherPollutants = ref([]);
 const vocs = ref([]);
 const studySummaries = ref<StudySummary[]>([]);
+
+const studyOptions = computed(() => {
+  return studySummaries.value.map((std) => ({ value: std.identifier, label: std.name, study: std }))
+})
 
 const studyCountries = computed(() => {
   return countryOptions.filter((country) => {
@@ -336,7 +354,6 @@ const studyCities = computed(() => {
     return cities;
   }, [] as string[]).sort((a, b) => a.localeCompare(b));
 });
-
 
 const clusterColors = [
   {
@@ -435,7 +452,7 @@ const climateZonesColors = [
 ];
 
 onMounted(() => {
-  catalogStore.loadStudySummaries(0, 1000).then((res) => {
+  catalogStore.loadStudySummaries(0, 1000, false).then((res) => {
     studySummaries.value = res.data;
   });
 });

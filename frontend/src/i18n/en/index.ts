@@ -19,6 +19,7 @@ export default {
     contributions_info: 'List of contributions to the database. You can approve or reject them.',
   },
   study: {
+    label: 'Study',
     identifier: 'Identifier',
     identifier_hint: 'Unique identifier of the study draft.',
     name: 'Name',
