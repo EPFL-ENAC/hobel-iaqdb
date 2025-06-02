@@ -1,7 +1,24 @@
 <template>
   <div>
+    <q-list>
+      <q-item-label header class="q-pt-none q-pb-none">
+        <span class="text-h6">
+          <q-icon name="domain" class="q-pb-xs" />
+          <span class="q-ml-sm">{{ $t('plots.buildings_overview') }}</span>
+        </span>
+      </q-item-label>
+    </q-list>
     <BuildingTypesChart :features="features" class="q-mb-md"/>
     <BuildingCountriesChart :features="features" />
+    <q-list>
+      <q-item-label header>
+        <span class="text-h6">
+          <q-icon name="domain" class="q-pb-xs" />
+          <span class="q-ml-sm">{{ $t('plots.spaces_overview') }}</span>
+        </span>
+      </q-item-label>
+    </q-list>
+    <div class="q-pl-md">TODO</div>
   </div>
 </template>
 

@@ -209,6 +209,10 @@ export default {
       dictionary_hint: 'The dataset dictionary, following the IAQ reference dictionary.',
     },
   },
+  plots: {
+    buildings_overview: 'Buildings overview',
+    spaces_overview: 'Spaces overview',
+  },
   add: 'Add',
   administration: 'Administration',
   altitudes_help: 'Altitude of the building',
