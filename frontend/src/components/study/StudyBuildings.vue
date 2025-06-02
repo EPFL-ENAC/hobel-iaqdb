@@ -58,9 +58,6 @@ const pagination = ref({
 
 const buildings = computed(() => catalogStore.buildings || []);
 
-const center = computed(() => getCenter(buildings.value
-  .map((bld) => [bld.long, bld.lat])));
-
 const columms = computed(() => {
   return [
     {
@@ -126,13 +123,4 @@ function onMapLoaded(map: Map) {
   });
 }
 
-function getCenter(coords: [number | undefined, number | undefined][]) {
-  let x = 0, y = 0;
-  for (const [lon, lat] of coords) {
-    if (lon === undefined || lat === undefined) continue; // Skip undefined coordinates
-    x += lon;
-    y += lat;
-  }
-  return [x / coords.length, y / coords.length]; // [longitude, latitude]
-}
 </script>
