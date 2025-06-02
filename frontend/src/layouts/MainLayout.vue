@@ -29,6 +29,7 @@
     </q-drawer>
 
     <q-drawer
+      v-if="route.path === '/catalog'"
       v-model="rightDrawerOpen"
       :mini="!rightDrawerOpen || miniStateRight"
       :width="$q.screen.lt.md ? 300 : (showPlots ? 300 : 500)"
@@ -83,6 +84,7 @@ import StudyDetailsDrawer from 'src/components/StudyDetailsDrawer.vue';
 
 const helpStore = useHelpStore();
 const catalogStore = useCatalogStore();
+const route = useRoute();
 
 const leftDrawerOpen = ref(false);
 const rightDrawerOpen = ref(false);

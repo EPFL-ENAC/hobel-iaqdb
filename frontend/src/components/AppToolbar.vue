@@ -41,7 +41,6 @@
     </q-tabs>
     <q-space />
     <span v-if="!$q.screen.lt.md">
-      
       <q-btn
         flat
         round
@@ -110,7 +109,7 @@
       <span class="text-logo q-mb-xs" :style="`font-size: ${$q.screen.lt.md ? '1.3em' : '2.3em'}`">HOBEL</span>
     </a>
     <q-btn
-      v-if="$q.screen.lt.md && !noMenu"
+      v-if="$q.screen.lt.md && !noMenu && route.path === '/catalog'"
       flat
       dense
       round
@@ -160,6 +159,7 @@ withDefaults(defineProps<Props>(), {
 const emit = defineEmits(['toggle-left', 'toggle-right']);
 
 const settingsStore = useSettingsStore();
+const route = useRoute();
 
 const showIntro = ref(false);
 const showResources = ref(false);
