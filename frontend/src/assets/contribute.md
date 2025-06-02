@@ -1,26 +1,21 @@
-> Indoor air quality is a fundamental aspect of public health, affecting the well-being, productivity, and comfort of individuals across various indoor environments, including homes, schools, offices, and hospitals. Despite its importance, there is still much to learn about the factors influencing IAQ and the best strategies for mitigating indoor pollutants. As a researcher in this critical field, your contributions are invaluable in helping to build a robust repository of data that can drive meaningful insights and innovations.
+## How to Contribute
 
-Our database aims to be a central resource for researchers, policymakers, and industry professionals focused on improving indoor air quality. By contributing your data, you will be part of a collaborative effort to enhance our collective knowledge and develop effective solutions for healthier indoor environments.
+Contributing to our database is straightforward and secure. Please follow these steps:
 
-**Why Contribute?**
+1. **Prepare Your Metadata**: Please prepare notes, reports, or publications that contain information about your study, buildings, their mechanical systems (if applicable), and instrumentation. Such data will be collected to help end users explore relevant research questions.
 
-1. **Amplify Impact**: Sharing your data ensures that your research has a broader reach and impact. It allows others to build upon your findings, fostering new discoveries and advancements in IAQ research.
-2. **Collaborative Opportunities**: Joining this initiative connects you with a network of fellow researchers and experts in the field, opening doors to potential collaborations and interdisciplinary projects.
+2. **Organize Your IAQ Data**: We strongly encourage that IAQ data are stored in the true long format, including four columns of data (Timestamp, Parameter, Value, and Unit) and three columns of identifiers (Building_ID, Space_ID, and Instrument_ID, with the first two being mandatory). We will accept other data formats as long as such information is complete and easily identifiable. 
 
-3. **Data Diversity**: A diverse and comprehensive dataset enhances the reliability and validity of research outcomes. Your unique data can fill critical gaps and provide a more complete picture of indoor air quality across different settings and regions.
+3. **Licensing**: We kindly ask you to agree to CC BY-NC 4.0 (Creative Commons Attribution Non-Commercial), which is a type of Creative Commons license that allows others to share, adapt, and build upon your work, but only for non-commercial purposes. They must also give you credit for your work.
 
-4. **Accelerate Innovation**: By pooling resources and knowledge, we can accelerate the development of innovative technologies and policies that promote healthier indoor environments, benefiting society as a whole.
+## Recognition and Benefits for Contributors
 
-**How to Contribute**
+We value your contribution and aim to recognize it meaningfully:
 
-Contributing to our database is straightforward and secure. We have implemented rigorous data management protocols to ensure the confidentiality and integrity of your data. Simply follow these steps:
+* **Early Access**: Contributors will receive **exclusive access to the full database prior to public release**. The level of early access may vary based on the size of your contribution.
 
-1. **Prepare Your Data**: Organize your data according to our submission guidelines, ensuring it includes relevant metadata and documentation for proper context.
+* **Visibility and Impact**: Your data will be clearly attributed and made visible through a globally accessible platform. This increases the **reuse and citation** of your work and fosters further collaboration.
 
-2. **Submit Your Data**: Use our secure online portal to upload your data. Our team is available to assist you with any questions or technical issues you may encounter.
+* **Authorship Opportunities**: Major contributors may be invited to **co-author the flagship publication** describing the database, its structure, and key findings. During subsequent data exploration phases, some contributors may receive invitations to **collaboratively explore compelling research questions** that emerge from the shared data. This enables co-authorship opportunities on follow-up scientific publications and ensures mutual benefit from joint intellectual input.
 
-3. **Engage with the Community**: Once your data is submitted, take advantage of the platform to explore existing datasets, participate in discussions, and collaborate with other researchers.
-
-We are committed to supporting you throughout the submission process and ensuring that your contributions are recognized and valued. Together, we can make significant strides in improving indoor air quality and protecting public health.
-
-Thank you for considering this opportunity to contribute to our IAQ research database. Your expertise and data are crucial to the success of this initiative and the advancement of our collective goals.
+* **Contribution to the Field**: By contributing, you help advance indoor air quality science and support evidence-based policy, design, and research across sectors.
