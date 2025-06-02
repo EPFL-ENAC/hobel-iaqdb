@@ -221,7 +221,7 @@ export default {
   buildings: 'Buildings',
   buildings_count: 'No buildings | building | buildings',
   buildings_with_count: 'No buildings | 1 building | {count} buildings',
-  explore: 'Exlore',
+  explore: 'Explore',
   explore_info: 'Visualize, analyze, and download data interactively',
   cities: 'Cities',
   climate_zones_hint: 'The Köppen-Geiger climate classes (1991-2020).',
