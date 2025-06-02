@@ -29,7 +29,7 @@
     </q-drawer>
 
     <q-drawer
-      v-if="route.path === '/catalog'"
+      v-if="route.path === '/data-hub'"
       v-model="rightDrawerOpen"
       :mini="!rightDrawerOpen || miniStateRight"
       :width="$q.screen.lt.md ? 300 : (showPlots ? 300 : 500)"

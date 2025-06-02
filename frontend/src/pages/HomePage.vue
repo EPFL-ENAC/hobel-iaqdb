@@ -9,7 +9,7 @@
             <q-markdown no-heading-anchor-links :src="IntroductionMd" />
           </q-card-section>
         </q-card>
-        <q-btn flat color="primary" :label="$t('search_catalog')" to="/catalog" />
+        <q-btn flat color="primary" :label="$t('search_catalog')" to="/data-hub" />
       </div>
       <div class="col"></div>
     </div>

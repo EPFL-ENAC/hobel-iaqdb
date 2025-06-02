@@ -76,7 +76,7 @@ function onShowDelete() {
 
 function onDelete() {
   catalogStore.deleteStudy(studyId.value).then(() => {
-    router.push({ name: 'catalog' });
+    router.push({ name: 'data-hub' });
   });
 }
 

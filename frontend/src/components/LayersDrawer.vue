@@ -238,7 +238,7 @@
       </q-item-section>
     </q-item>
 
-    <template v-if="mapStore.showMap && route.path === '/catalog'">
+    <template v-if="mapStore.showMap && route.path === '/data-hub'">
       <q-item-label header class="text-h6">
         <q-icon name="info" class="q-pb-xs" />
         <span class="q-ml-sm">{{ $t('legends') }}</span>

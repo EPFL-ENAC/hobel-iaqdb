@@ -34,10 +34,10 @@
       active-color="primary"
       class="q-ml-md"
     >
-      <q-route-tab to="/" :label="$t('home')" exact />
-      <q-route-tab :label="$t('catalog')" to="/catalog" exact />
-      <q-route-tab :label="$t('data_hub')" to="/data-hub" exact />
-      <q-route-tab :label="$t('contribute')" to="/contribute" exact />
+      <q-route-tab :label="$t('home')" :title="$t('home_info')" to="/" exact />
+      <q-route-tab :label="$t('data_hub')" :title="$t('data_hub_info')" to="/data-hub" exact />
+      <q-route-tab :label="$t('explore')" :title="$t('explore_info')" to="/explore" exact />
+      <q-route-tab :label="$t('contribute')" :title="$t('contribute_info')" to="/contribute" exact />
     </q-tabs>
     <q-space />
     <span v-if="!$q.screen.lt.md">
@@ -71,9 +71,14 @@
               <q-item-label>{{ $t('home') }}</q-item-label>
             </q-item-section>
           </q-item>
-          <q-item v-if="$q.screen.lt.sm" clickable v-close-popup to="/catalog">
+          <q-item v-if="$q.screen.lt.sm" clickable v-close-popup to="/data-hub">
             <q-item-section>
-              <q-item-label>{{ $t('catalog') }}</q-item-label>
+              <q-item-label>{{ $t('data_hub') }}</q-item-label>
+            </q-item-section>
+          </q-item>
+          <q-item v-if="$q.screen.lt.sm" clickable v-close-popup to="/explore">
+            <q-item-section>
+              <q-item-label>{{ $t('explore') }}</q-item-label>
             </q-item-section>
           </q-item>
           <q-item
@@ -109,7 +114,7 @@
       <span class="text-logo q-mb-xs" :style="`font-size: ${$q.screen.lt.md ? '1.3em' : '2.3em'}`">HOBEL</span>
     </a>
     <q-btn
-      v-if="$q.screen.lt.md && !noMenu && route.path === '/catalog'"
+      v-if="$q.screen.lt.md && !noMenu && route.path === '/data-hub'"
       flat
       dense
       round

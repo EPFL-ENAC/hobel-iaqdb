@@ -25,9 +25,9 @@ const routes: RouteRecordRaw[] = [
     component: () => import('layouts/MainLayout.vue'),
     children: [
       {
-        path: '/catalog',
-        name: 'catalog',
-        component: () => import('src/pages/CatalogPage.vue'),
+        path: '/explore',
+        name: 'explore',
+        component: () => import('src/pages/ExplorePage.vue'),
       },
       {
         path: '/data-hub',
