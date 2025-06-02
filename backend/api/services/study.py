@@ -78,15 +78,15 @@ class StudyService:
             select(Study).where(Study.id == study_id)
         )
         study = res.one_or_none()
-        return self.delete_study(study)
+        return await self.delete_study(study)
 
-    async def delete_by_identifier(self, study_identifier: int) -> Study:
-        """Delete a study by id"""
+    async def delete_by_identifier(self, study_identifier: str) -> Study:
+        """Delete a study by identifier"""
         res = await self.session.exec(
             select(Study).where(Study.identifier == study_identifier)
         )
         study = res.one_or_none()
-        return self.delete_study(study)
+        return await self.delete_study(study)
 
     async def delete_study(self, study: Study) -> Study:
         """Delete a study and all its related data"""
