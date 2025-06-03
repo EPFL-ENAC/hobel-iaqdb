@@ -74,7 +74,12 @@ const licenseDescription = computed(
 );
 
 const items: FieldItem<Study>[] = [
-  { field: 'website', label: 'Website' },
+  {
+    field: 'website',
+    label: 'Website',
+    html: (val: Study) =>
+      val.website ? `<a href="${val.website}" class="epfl">${val.website}</a>` : '-',
+  },
 ];
 
 const refItems: FieldItem<Study>[] = [
@@ -88,22 +93,16 @@ const refItems: FieldItem<Study>[] = [
   },
 ];
 
-const contactItems: FieldItem<Study | Person>[] = [
+const contactItems: FieldItem<Person>[] = [
   {
     field: 'contact',
     label: 'Name',
-    html: (val: Study) => val.name,
-  },
-  {
-    field: 'contact',
-    label: 'Email',
-    html: (val: Study) =>
-      `&lt;<a href="mailto:${val.email}">${val.email}</a>&gt;`,
+    html: (val: Person) => val.name + (val.email_public ? ` &lt;<a href="mailto:${val.email}" class="epfl">${val.email}</a>&gt;` : ''),
   },
   {
     field: 'contact',
     label: 'Institution / Company',
-    html: (val: Study) => val.institution,
+    html: (val: Person) => val.institution,
   },
 ];
 </script>
