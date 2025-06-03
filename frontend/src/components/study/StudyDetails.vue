@@ -78,7 +78,7 @@ const items: FieldItem<Study>[] = [
     field: 'website',
     label: 'Website',
     html: (val: Study) =>
-      val.website ? `<a href="${val.website}" class="epfl">${val.website}</a>` : '-',
+      val.website ? `<a href="${val.website}" target="_blank" class="epfl">${val.website}</a>` : '-',
   },
 ];
 
@@ -90,6 +90,8 @@ const refItems: FieldItem<Study>[] = [
   {
     field: 'doi',
     label: 'DOI',
+    html: (val: Study) =>
+      val.doi ? `<a href="${val.doi.startsWith('http') ? val.doi : 'https://doi.org/' + val.doi}" target="_blank" class="epfl">${val.doi}</a>` : '-',
   },
 ];
 
