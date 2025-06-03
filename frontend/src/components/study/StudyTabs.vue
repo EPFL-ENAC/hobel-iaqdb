@@ -19,7 +19,7 @@
 
     <q-tab-panels v-model="tab">
       <q-tab-panel name="buildings" class="q-pl-none q-pr-none">
-        <study-buildings />
+        <study-buildings :show-map="props.showMap" />
       </q-tab-panel>
       <q-tab-panel name="instruments" class="q-pl-none q-pr-none">
         <study-instruments />
@@ -45,7 +45,12 @@ import StudyInstruments from 'src/components/study/StudyInstruments.vue';
 import StudyDatasets from 'src/components/study/StudyDatasets.vue';
 import StudyFiles from 'src/components/study/StudyFiles.vue';
 
-const catalogStore = useCatalogStore();
+interface Props {
+  showMap?: boolean;
+}
+const props = withDefaults(defineProps<Props>(), {
+  showMap: false,
+});
 
 const tab = ref('buildings');
 </script>

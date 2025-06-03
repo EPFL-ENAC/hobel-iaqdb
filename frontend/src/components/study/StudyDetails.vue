@@ -30,7 +30,7 @@
     </div>
     <div class="q-mt-md">
       <div class="text-bold">IAQ ID</div>
-      <div class="on-right q-mt-sm text-caption">{{ study?.identifier }}</div>
+      <q-btn flat class="q-mt-sm text-caption" icon-right="link" no-caps :to="`/study?id=${study?.identifier}`" :label="study?.identifier"> </q-btn>
     </div>
   </div>
 </template>

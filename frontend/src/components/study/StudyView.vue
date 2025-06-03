@@ -1,14 +1,13 @@
 <template>
   <div>
-    <q-card flat bordered class="q-mt-md bg-light-blue-1 q-mb-md">
+    <q-card flat bordered class="q-mt-md bg-grey-3 q-mb-md">
       <q-card-section>
         <q-markdown :src="study?.description" />
       </q-card-section>
     </q-card>
-
     <div class="grid">
       <div class="item item1">
-        <study-tabs />
+        <study-tabs :show-map="true" />
       </div>
       <div class="item item2">
         <study-details />

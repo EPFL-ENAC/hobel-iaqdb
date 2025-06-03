@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div v-if="catalogStore.study">
+    <div v-if="catalogStore.study && props.showMap">
       <maplibre-map
         position
         :zoom="2"
@@ -18,6 +18,39 @@
       v-model:pagination="pagination"
       row-key="id"
     >
+      <template v-slot:header="props">
+        <q-tr :props="props">
+          <q-th auto-width />
+          <q-th
+            v-for="col in props.cols"
+            :key="col.name"
+            :props="props"
+          >
+            {{ col.label }}
+          </q-th>
+        </q-tr>
+      </template>
+
+      <template v-slot:body="props">
+        <q-tr :props="props">
+          <q-td auto-width>
+            <q-btn flat size="sm" color="accent" round dense @click="props.expand = !props.expand" :icon="props.expand ? 'remove' : 'add'" />
+          </q-td>
+          <q-td
+            v-for="col in props.cols"
+            :key="col.name"
+            :props="props"
+          >
+            {{ col.value }}
+          </q-td>
+        </q-tr>
+        <q-tr v-show="props.expand" :props="props">
+          <q-td colspan="100%">
+            <pre class="text-left">{{ props.row.spaces }}</pre>
+          </q-td>
+        </q-tr>
+      </template>
+
       <template v-slot:body-cell-city="props">
         <q-td :props="props">
           <span :title="`${props.row.long}, ${props.row.lat}`">
@@ -44,6 +77,13 @@ import MaplibreMap from 'src/components/MaplibreMap.vue';
 import { Map } from 'maplibre-gl';
 import type { Building, Space } from 'src/models';
 import { outdoorEnvOptions } from 'src/utils/options';
+
+interface Props {
+  showMap?: boolean;
+}
+const props = withDefaults(defineProps<Props>(), {
+  showMap: false,
+});
 
 const catalogStore = useCatalogStore();
 const mapStore = useMapStore();
