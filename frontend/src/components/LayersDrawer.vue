@@ -43,7 +43,6 @@
               use-chips
               emit-value
               map-options
-              dense
               @update:model-value="onUpdatedFilter"
             />
             <q-select
@@ -54,7 +53,6 @@
               use-chips
               emit-value
               map-options
-              dense
               @update:model-value="onUpdatedFilter"
             />
             <q-select
@@ -65,7 +63,6 @@
               use-chips
               emit-value
               map-options
-              dense
               @update:model-value="onUpdatedFilter"
             />
             <q-select
@@ -76,7 +73,6 @@
               use-chips
               emit-value
               map-options
-              dense
               @update:model-value="onUpdatedFilter"
             />
             <q-select
@@ -87,7 +83,6 @@
               use-chips
               emit-value
               map-options
-              dense
               @update:model-value="onUpdatedFilter"
             />
           </q-tab-panel>
@@ -100,7 +95,6 @@
               use-chips
               emit-value
               map-options
-              dense
               @update:model-value="onUpdatedFilter"
             />
             <q-select
@@ -111,7 +105,6 @@
               use-chips
               emit-value
               map-options
-              dense
               @update:model-value="onUpdatedFilter"
             />
             <div class="q-mt-md text-grey-8">{{ $t('altitudes') }}</div>
@@ -136,7 +129,6 @@
               multiple
               use-chips
               emit-value
-              dense
               @update:model-value="onUpdatedFilter"
             />
             <div v-if="showClimateZoneOption" class="row q-mt-sm">
@@ -166,7 +158,6 @@
               use-chips
               emit-value
               map-options
-              dense
               @update:model-value="onUpdatedFilter"
             >
               <template v-slot:option="scope">
@@ -188,7 +179,6 @@
               use-chips
               emit-value
               map-options
-              dense
               @update:model-value="onUpdatedFilter"
             />
             <div class="q-mt-md text-grey-8">{{ $t('study.building.construction_year') }}</div>
@@ -206,6 +196,16 @@
               />
             </div>
             <q-select
+              v-model="filtersStore.mechanical_ventilation_types"
+              :options="mechanicalVentilationTypeOptions"
+              :label="$t('study.space.mechanical_ventilation_type')"
+              multiple
+              use-chips
+              emit-value
+              map-options
+              @update:model-value="onUpdatedFilter"
+            />
+            <q-select
               v-model="filtersStore.outdoor_envs"
               :options="outdoorEnvOptions"
               :label="$t('study.building.outdoor_env')"
@@ -213,7 +213,6 @@
               use-chips
               emit-value
               map-options
-              dense
               @update:model-value="onUpdatedFilter"
             />
             <q-select
@@ -224,7 +223,6 @@
               use-chips
               emit-value
               map-options
-              dense
               @update:model-value="onUpdatedFilter"
             />
             <q-select
@@ -235,18 +233,6 @@
               use-chips
               emit-value
               map-options
-              dense
-              @update:model-value="onUpdatedFilter"
-            />
-            <q-select
-              v-model="filtersStore.mechanical_ventilation_types"
-              :options="mechanicalVentilationTypeOptions"
-              :label="$t('ventilations')"
-              multiple
-              use-chips
-              emit-value
-              map-options
-              dense
               @update:model-value="onUpdatedFilter"
             />
           </q-tab-panel>
