@@ -22,14 +22,10 @@
         <study-buildings />
       </q-tab-panel>
       <q-tab-panel name="instruments" class="q-pl-none q-pr-none">
-        <q-scroll-area style="height: 500px; max-width: 100%;">
-          <pre>{{ catalogStore.instruments }}</pre>
-        </q-scroll-area>
+        <study-instruments />
       </q-tab-panel>
       <q-tab-panel name="datasets" class="q-pl-none q-pr-none">
-        <q-scroll-area style="height: 500px; max-width: 100%;">
-          <pre>{{ catalogStore.datasets }}</pre>
-        </q-scroll-area>
+        <study-datasets />
       </q-tab-panel>
       <q-tab-panel name="files" class="q-pl-none q-pr-none">
         <study-files />
@@ -45,6 +41,8 @@ export default defineComponent({
 </script>
 <script setup lang="ts">
 import StudyBuildings from 'src/components/study/StudyBuildings.vue';
+import StudyInstruments from 'src/components/study/StudyInstruments.vue';
+import StudyDatasets from 'src/components/study/StudyDatasets.vue';
 import StudyFiles from 'src/components/study/StudyFiles.vue';
 
 const catalogStore = useCatalogStore();

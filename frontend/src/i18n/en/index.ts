@@ -186,6 +186,7 @@ export default {
       equipment_grade_hint: 'Instrument grade rating.',
       placement: 'Placement',
       placement_hint: 'Instrument placement.',
+      parameters: 'Parameters',
     },
     parameter: {
       physical_parameter: 'Physical parameter',
@@ -207,6 +208,7 @@ export default {
       file_hint: 'The dataset file.',
       dictionary: 'Dictionary',
       dictionary_hint: 'The dataset dictionary, following the IAQ reference dictionary.',
+      variables: 'Variables',
     },
   },
   plots: {
