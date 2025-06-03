@@ -17,3 +17,6 @@ Join us in this global effort to unlock the full potential of IAQ data for healt
 **Contact information**
 Dr. Bowen Du, [bowen.du@epfl.ch](mailto:bowen.du@epfl.ch)
 Prof. Dusan Licina, [dusan.licina@epfl.ch](mailto:dusan.licina@epfl.ch)
+
+**Acknowledgments**
+The Global Indoor Air Quality (IAQ) Database is an ongoing effort, led by [Prof. Dusan Licina](https://people.epfl.ch/dusan.licina) at [HOBEL, EPFL](https://www.epfl.ch/labs/hobel), and [Dr. Bowen Du](https://people.epfl.ch/bowen.du), [Charlotte Weil](https://people.epfl.ch/charlotte.weil) and [Yannick Marcon](https://people.epfl.ch/yannick.marcon) from [ENAC-IT4R, EPFL](https://www.epfl.ch/schools/enac/about/data-at-enac/enac-it4research/) on the implementation side.
