@@ -139,7 +139,23 @@
               dense
               @update:model-value="onUpdatedFilter"
             />
-            
+            <div v-if="showClimateZoneOption" class="row q-mt-sm">
+              <q-checkbox
+                dense
+                v-model="climateZoneLayerVisible"
+                :label="$t('layer.show_climate-zones')"
+                @update:model-value="onToggleClimateZonesLayer"
+              />
+              <q-space />
+              <q-btn
+                flat
+                round
+                dense
+                icon="help_outline"
+                @click="helpStore.toggleHelp('climate-zones')"
+                class="q-ml-sm"
+              />
+            </div>
           </q-tab-panel>
           <q-tab-panel name="buildings" class="q-pa-none">
             <q-select
@@ -238,34 +254,15 @@
       </q-item-section>
     </q-item>
 
-    <template v-if="mapStore.showMap && route.path === '/data-hub'">
+    <template v-if="showClimateZoneOption && climateZoneLayerVisible">
       <q-item-label header class="text-h6">
         <q-icon name="info" class="q-pb-xs" />
         <span class="q-ml-sm">{{ $t('legends') }}</span>
       </q-item-label>
-      <q-item
-        class="q-pl-sm q-pr-sm"
-      >
-        <q-item-section>
-          <q-checkbox
-            v-model="climateZoneLayerVisible"
-            :label="$t('layer.show_climate-zones')"
-            @update:model-value="onToggleClimateZonesLayer"
-          />
-        </q-item-section>
-        <q-item-section avatar>
-          <q-btn
-            flat
-            round
-            icon="help_outline"
-            @click="helpStore.toggleHelp('climate-zones')"
-          />
-        </q-item-section>
-      </q-item>
-      <q-item-label v-if="climateZoneLayerVisible" class="q-mt-md">
+      <q-item-label cclass="q-mt-md">
         <span class="q-ml-md">{{ $t('climate_zones') }}</span>
       </q-item-label>
-      <q-item v-if="climateZoneLayerVisible">
+      <q-item>
         <div class="row">
           <div
             v-for="zone in climateZonesColors"
@@ -320,6 +317,10 @@ const otherPollutants = ref([]);
 const vocs = ref([]);
 const studySummaries = ref<StudySummary[]>([]);
 const climateZoneLayerVisible = ref(false);
+
+const showClimateZoneOption = computed(() => {
+  return mapStore.showMap && route.path === '/data-hub'
+});
 
 const studyOptions = computed(() => {
   return studySummaries.value.map((std) => ({ value: std.identifier, label: truncateString(std.name, 25), study: std }))
