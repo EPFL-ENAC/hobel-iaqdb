@@ -57,7 +57,7 @@ const catalogStore = useCatalogStore();
 const { t } = useI18n();
 
 const pagination = ref({
-  sortBy: 'identifier',
+  sortBy: 'id',
   descending: false,
   page: 1,
   rowsPerPage: 25,
@@ -67,13 +67,6 @@ const datasets = computed(() => catalogStore.datasets || []);
 
 const columms = computed(() => {
   return [
-    {
-      name: 'identifier',
-      label: 'ID',
-      align: 'left',
-      sortable: true,
-      field: 'identifier',
-    },
     {
       name: 'name',
       label: t('study.dataset.name'),
