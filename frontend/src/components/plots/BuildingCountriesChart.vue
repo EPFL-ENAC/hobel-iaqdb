@@ -89,7 +89,7 @@ function buildOptions() {
         })),
         label: {
           show: true,
-          formatter: '{b}: {c}',
+          formatter: '{b}',
         },
         breadcrumb: {
           show: false

@@ -14,7 +14,7 @@
 
 <script lang="ts">
 export default defineComponent({
-  name: 'BuildingMechanicalVentilationsChart',
+  name: 'SpaceMechanicalVentilationsChart',
 });
 </script>
 <script setup lang="ts">
@@ -93,7 +93,7 @@ function buildOptions() {
         })),
         label: {
           show: true,
-          formatter: '{b}: {c}',
+          formatter: '{b}',
         },
         breadcrumb: {
           show: false
