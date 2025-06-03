@@ -33,6 +33,7 @@ import {
   TooltipComponent,
 } from 'echarts/components';
 import { buildingTypeOptions } from 'src/utils/options';
+import Gradient from 'javascript-color-gradient'
 
 use([
   SVGRenderer,
@@ -58,6 +59,11 @@ const counts = computed(() => {
     return acc;
   }, {} as { [key: string]: number }) || {};
 });
+
+const gradientArray = new Gradient()
+  .setColorGradient('#00441b', '#b7e2b1')
+  .setMidpoint(buildingTypeOptions.length)
+  .getColors();
 
 watch(
   () => props.features,
@@ -96,6 +102,7 @@ function buildOptions() {
         }
       },
     ],
+    color: gradientArray,
   };
   option.value = newOption;
   loading.value = false;

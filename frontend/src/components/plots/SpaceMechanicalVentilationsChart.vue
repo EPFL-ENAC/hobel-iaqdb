@@ -29,6 +29,7 @@ import {
   TooltipComponent,
 } from 'echarts/components';
 import { mechanicalVentilationTypeOptions } from 'src/utils/options';
+import Gradient from 'javascript-color-gradient'
 
 use([
   SVGRenderer,
@@ -60,6 +61,11 @@ watch(
     initCounts();
   }
 );
+
+const gradientArray = new Gradient()
+  .setColorGradient('#3F2CAF', '#e9446a')
+  .setMidpoint(mechanicalVentilationTypeOptions.length)
+  .getColors();
 
 function initCounts() {
   catalogStore.countSpaces('mechanical_ventilation_type', true).then((results) => {
@@ -100,6 +106,7 @@ function buildOptions() {
         }
       },
     ],
+    color: gradientArray,
   };
   option.value = newOption;
   loading.value = false;
