@@ -140,7 +140,8 @@ export const useCatalogStore = defineStore('catalog', () => {
       { altitude: { $gte: filterStore.altitudes.min } },
       { altitude: { $lte: filterStore.altitudes.max } },
     ] : [];
-    
+    // strip out the country code
+    const cities = filterStore.cities ? filterStore.cities.map((city: string) => (city.substring(0, city.length - 4))) : [];
     return {
       $and: construction_years.length || altitudes.length ? [
         ...construction_years,
@@ -149,6 +150,18 @@ export const useCatalogStore = defineStore('catalog', () => {
       type:
         filterStore.building_types && filterStore.building_types.length
           ? filterStore.building_types
+          : undefined,
+      country:
+        filterStore.countries && filterStore.countries.length
+          ? filterStore.countries
+          : undefined,
+      city:
+        cities && cities.length
+          ? cities
+          : undefined,
+      socioeconomic_status:
+        filterStore.socioeconomic_status && filterStore.socioeconomic_status.length
+          ? filterStore.socioeconomic_status
           : undefined,
       age_group:
         filterStore.age_groups && filterStore.age_groups.length
