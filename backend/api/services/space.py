@@ -30,7 +30,7 @@ class SpaceQueryBuilder(QueryBuilder):
         if "$study" in filter:
             query = query.join(Study, Study.id == Space.study_id)
         if "$building" in filter:
-            query = query.join(Space, Building.id == Space.building_id)
+            query = query.join(Building, Building.id == Space.building_id)
         query = query.distinct()
         return query
 

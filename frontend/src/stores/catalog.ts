@@ -35,7 +35,7 @@ export const useCatalogStore = defineStore('catalog', () => {
       .get('/catalog/study-summaries', {
         params: {
           range: JSON.stringify([skip, limit + skip - 1]),
-          filter: filtered ? JSON.stringify(getFilterParams()) : undefined,
+          filter: filtered ? JSON.stringify(getStudyFilter()) : undefined,
         },
         paramsSerializer: {
           indexes: null, // no brackets at all
@@ -52,7 +52,7 @@ export const useCatalogStore = defineStore('catalog', () => {
       .get('/catalog/studies', {
         params: {
           range: JSON.stringify([skip, limit + skip - 1]),
-          filter: JSON.stringify(getFilterParams()),
+          filter: JSON.stringify(getStudyFilter()),
         },
         paramsSerializer: {
           indexes: null, // no brackets at all
@@ -69,7 +69,7 @@ export const useCatalogStore = defineStore('catalog', () => {
       .get('/catalog/buildings', {
         params: {
           range: JSON.stringify([skip, limit + skip - 1]),
-          filter: JSON.stringify(getFilterParams()),
+          filter: JSON.stringify(getBuildingFilter()),
         },
         paramsSerializer: {
           indexes: null, // no brackets at all
@@ -86,7 +86,7 @@ export const useCatalogStore = defineStore('catalog', () => {
       .get('/catalog/spaces', {
         params: {
           range: JSON.stringify([skip, limit + skip - 1]),
-          filter: JSON.stringify(getFilterParams()),
+          filter: JSON.stringify(getSpaceFilter()),
         },
         paramsSerializer: {
           indexes: null, // no brackets at all
@@ -95,7 +95,39 @@ export const useCatalogStore = defineStore('catalog', () => {
       .then((response) => response.data);
   }
 
-  function getFilterParams() {
+  function getStudyFilter() {
+    return {
+      ...getStudyCriteria(),
+      $building: getBuildingCriteria(),
+      $space: getSpaceCriteria(),
+    };
+  }
+  
+  function getBuildingFilter() {
+    return {
+      ...getBuildingCriteria(),
+      $study: getStudyCriteria(),
+      $space: getSpaceCriteria(),
+    };
+  }
+
+  function getSpaceFilter() {
+    return {
+      ...getSpaceCriteria(),
+      $study: getStudyCriteria(),
+      $building: getBuildingCriteria(),
+    };
+  }
+
+  function getStudyCriteria() {
+    return {
+      identifier: filterStore.study_ids && filterStore.study_ids.length
+        ? filterStore.study_ids
+        : undefined
+    };
+  }
+
+  function getBuildingCriteria() {
     const construction_years = withRange(
       [filterStore.construction_years.min, filterStore.construction_years.max], 
       [DEFAULT_CONSTRUCTION_YEARS.min, DEFAULT_CONSTRUCTION_YEARS.max]) ? [
@@ -108,41 +140,39 @@ export const useCatalogStore = defineStore('catalog', () => {
       { altitude: { $gte: filterStore.altitudes.min } },
       { altitude: { $lte: filterStore.altitudes.max } },
     ] : [];
+    
     return {
-      identifier: filterStore.study_ids && filterStore.study_ids.length
-        ? filterStore.study_ids
-        : undefined
-      ,
-      $building: {
-        $and: construction_years.length || altitudes.length ? [
-          ...construction_years,
-          ...altitudes,
-        ] : undefined,
-        type:
-          filterStore.building_types && filterStore.building_types.length
-            ? filterStore.building_types
-            : undefined,
-        age_group:
-          filterStore.age_groups && filterStore.age_groups.length
-            ? filterStore.age_groups
-            : undefined,
-        outdoor_env:
-          filterStore.outdoor_envs && filterStore.outdoor_envs.length
-            ? filterStore.outdoor_envs
-            : undefined,
-        mechanical_ventilation:
-          filterStore.mechanical_ventilation || undefined,
-        climate_zone:
-          filterStore.climate_zones && filterStore.climate_zones.length
-            ? filterStore.climate_zones
-            : undefined,
-      },
-      $space: {
-        mechanical_ventilation_type:
-          filterStore.mechanical_ventilation_types && filterStore.mechanical_ventilation_types.length
-            ? filterStore.mechanical_ventilation_types
-            : undefined,
-      },
+      $and: construction_years.length || altitudes.length ? [
+        ...construction_years,
+        ...altitudes,
+      ] : undefined,
+      type:
+        filterStore.building_types && filterStore.building_types.length
+          ? filterStore.building_types
+          : undefined,
+      age_group:
+        filterStore.age_groups && filterStore.age_groups.length
+          ? filterStore.age_groups
+          : undefined,
+      outdoor_env:
+        filterStore.outdoor_envs && filterStore.outdoor_envs.length
+          ? filterStore.outdoor_envs
+          : undefined,
+      mechanical_ventilation:
+        filterStore.mechanical_ventilation || undefined,
+      climate_zone:
+        filterStore.climate_zones && filterStore.climate_zones.length
+          ? filterStore.climate_zones
+          : undefined,
+    };
+  }
+
+  function getSpaceCriteria() {
+    return {
+      mechanical_ventilation_type:
+        filterStore.mechanical_ventilation_types && filterStore.mechanical_ventilation_types.length
+          ? filterStore.mechanical_ventilation_types
+          : undefined,
     };
   }
 
@@ -208,7 +238,7 @@ export const useCatalogStore = defineStore('catalog', () => {
       .get('/stats/frequencies/studies', {
         params: {
           by,
-          filter: filtered ? JSON.stringify(getFilterParams()) : undefined,
+          filter: filtered ? JSON.stringify(getStudyFilter()) : undefined,
         },
         paramsSerializer: {
           indexes: null, // no brackets at all
@@ -225,7 +255,7 @@ export const useCatalogStore = defineStore('catalog', () => {
       .get('/stats/frequencies/buildings', {
         params: {
           by,
-          filter: filtered ? JSON.stringify(getFilterParams()) : undefined,
+          filter: filtered ? JSON.stringify(getBuildingFilter()) : undefined,
         },
         paramsSerializer: {
           indexes: null, // no brackets at all
@@ -242,7 +272,7 @@ export const useCatalogStore = defineStore('catalog', () => {
       .get('/stats/frequencies/spaces', {
         params: {
           by,
-          filter: filtered ? JSON.stringify(getFilterParams()) : undefined,
+          filter: filtered ? JSON.stringify(getSpaceFilter()) : undefined,
         },
         paramsSerializer: {
           indexes: null, // no brackets at all

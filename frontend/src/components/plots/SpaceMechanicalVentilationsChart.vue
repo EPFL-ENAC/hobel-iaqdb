@@ -62,7 +62,7 @@ watch(
 );
 
 function initCounts() {
-  catalogStore.countSpaces('mechanical_ventilation_type', false).then((results) => {
+  catalogStore.countSpaces('mechanical_ventilation_type', true).then((results) => {
     counts.value = results.counts || [];
     initChartOptions();
   }).catch((error) => {
