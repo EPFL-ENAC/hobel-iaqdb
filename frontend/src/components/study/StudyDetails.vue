@@ -67,10 +67,10 @@ const progressLabel = computed(() =>
 );
 
 const licenseLabel = computed(
-  () => licenseOptions.find((lic) => lic.value === study.value.license)?.label,
+  () => licenseOptions.find((lic) => lic.value === study.value?.license)?.label,
 );
 const licenseDescription = computed(
-  () => licenseOptions.find((lic) => lic.value === study.value.license)?.description,
+  () => licenseOptions.find((lic) => lic.value === study.value?.license)?.description,
 );
 
 const items: FieldItem<Study>[] = [

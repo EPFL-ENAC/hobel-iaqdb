@@ -73,8 +73,8 @@ export const geocoderApi = {
       });
       const geojson = await response.json();
       features = handleNominatimResponse(geojson);
-    } catch (e: any) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (e: any) {
       if (e.name !== 'AbortError')
         console.error(`Failed to forwardGeocode with error: ${e}`);
     }
@@ -93,8 +93,8 @@ export const geocoderApi = {
       });
       const geojson = await response.json();
       features = handleNominatimResponse(geojson);
-    } catch (e: any) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (e: any) {
       if (e.name !== 'AbortError')
         console.error(`Failed to reverseGeocode with error: ${e}`);
     }

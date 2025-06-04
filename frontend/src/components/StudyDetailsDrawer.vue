@@ -25,7 +25,6 @@ import StudyDetails from 'src/components/study/StudyDetails.vue';
 import StudyDialog from 'src/components/study/StudyDialog.vue';
 
 const catalogStore = useCatalogStore();
-const router = useRouter();
 
 const showDialog = ref(false);
 

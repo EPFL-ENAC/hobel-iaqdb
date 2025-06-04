@@ -450,6 +450,7 @@ const hasLongLat = computed(
   () => building.value.long && building.value.lat,
 );
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isNumber(value: any): boolean {
   return typeof value === 'number' && !isNaN(value);
 }

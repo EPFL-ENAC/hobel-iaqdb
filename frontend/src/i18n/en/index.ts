@@ -1,5 +1,3 @@
-import { biocontaminantsOptions } from "src/utils/options";
-
 export default {
   layer: {
     buildings: 'Buildings',
