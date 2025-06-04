@@ -184,12 +184,15 @@ class StudyService:
 
         # Contributors
         study_dict['contributors'] = []
+        contributors = []
         for contributor_draft in contributor_drafts:
             person = Person(**contributor_draft.model_dump())
             person.id = None
             person.study_id = study.id
             self.session.add(person)
-            await self.session.commit()
+            contributors.append(person)
+        await self.session.commit()
+        for person in contributors:
             await self.session.refresh(person)
             study_dict['contributors'].append(person.model_dump())
 
@@ -211,25 +214,31 @@ class StudyService:
 
             # Spaces
             building_dict['spaces'] = []
+            spaces = []
             for space_draft in space_drafts:
                 space = Space(**space_draft.model_dump())
                 space.id = None
                 space.study_id = study.id
                 space.building_id = building.id
                 self.session.add(space)
-                await self.session.commit()
+                spaces.append(space)
+            await self.session.commit()
+            for space in spaces:
                 await self.session.refresh(space)
                 building_dict['spaces'].append(space.model_dump())
 
             # Certifications
             building_dict['certifications'] = []
+            certifications = []
             for certification_draft in certification_drafts:
                 certification = Certification(
                     **certification_draft.model_dump())
                 certification.id = None
                 certification.building_id = building.id
                 self.session.add(certification)
-                await self.session.commit()
+                certifications.append(certification)
+            await self.session.commit()
+            for certification in certifications:
                 await self.session.refresh(certification)
                 building_dict['certifications'].append(
                     certification.model_dump())
@@ -291,12 +300,15 @@ class StudyService:
 
             # Variables
             dataset_dict['variables'] = []
+            variables = []
             for variable_draft in variable_drafts:
                 variable_draft.dataset_id = dataset.id
                 variable = Variable(**variable_draft.model_dump())
                 variable.id = None
                 self.session.add(variable)
-                await self.session.commit()
+                variables.append(variable)
+            await self.session.commit()
+            for variable in variables:
                 await self.session.refresh(variable)
                 dataset_dict['variables'].append(variable.model_dump())
             study_dict['datasets'].append(dataset_dict)
