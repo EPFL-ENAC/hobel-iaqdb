@@ -22,6 +22,8 @@
         </span>
       </q-item-label>
     </q-list>
+    <div class="text-caption text-bold q-ml-md q-mt-sm">{{ $t('plots.space_type') }}</div>
+    <SpaceTypesChart />
     <div class="text-caption text-bold q-ml-md q-mt-sm">{{ $t('plots.space_ventilation_type') }}</div>
     <SpaceMechanicalVentilationsChart />
   </div>
@@ -41,6 +43,7 @@ import {
 import BuildingTypesChart from 'src/components/plots/BuildingTypesChart.vue';
 import BuildingCountriesChart from 'src/components/plots/BuildingCountriesChart.vue';
 import BuildingMechanicalVentilationsChart from 'src/components/plots/BuildingMechanicalVentilationsChart.vue';
+import SpaceTypesChart from 'src/components/plots/SpaceTypesChart.vue';
 import SpaceMechanicalVentilationsChart from 'src/components/plots/SpaceMechanicalVentilationsChart.vue';
 import type { BuildingsLayerManager } from 'src/layers/buildings';
 

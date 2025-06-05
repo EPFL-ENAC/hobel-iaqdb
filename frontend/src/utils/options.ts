@@ -219,6 +219,16 @@ export const otherSpaceTypeOptions = [
   { value: 'other', label: 'Other' },
 ];
 
+export const spaceTypeOptions = [
+  ...residentialSpaceTypeOptions,
+  ...officSpaceTypeOptions,
+  ...schoolSpaceTypeOptions,
+  ...seniorSpaceTypeOptions,
+  ...hospitalSpaceTypeOptions,
+  ...commercialSpaceTypeOptions,
+  ...otherSpaceTypeOptions,
+];
+
 export const buildingSpaceTypeOptions: { [key: string]: OptionItem[] } = {
   'multifamily residential': residentialSpaceTypeOptions,
   'singlefamily residential': residentialSpaceTypeOptions,

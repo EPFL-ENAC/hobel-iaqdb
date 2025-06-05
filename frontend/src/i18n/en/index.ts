@@ -214,6 +214,7 @@ export default {
     building_type: 'Building Type',
     building_country: 'Building Country',
     building_ventilation: 'Building with Mechanical Ventilation',
+    space_type: 'Space Type',
     space_ventilation_type: 'Space Mechanical Ventilation Type',
     spaces_overview: 'Spaces overview',
   },
