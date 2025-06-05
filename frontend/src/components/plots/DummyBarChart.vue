@@ -61,12 +61,17 @@ function initChartOptions() {
 }
 
 function buildOptions() {
+  const months = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  ];
+
   loading.value = true;
   const xAxisData = [];
   const data1 = [];
   const data2 = [];
-  for (var i = 0; i < 100; i++) {
-    xAxisData.push('A' + i);
+  for (var i = 0; i < 12; i++) {
+    xAxisData.push(months[i]);
     data1.push((Math.sin(i / 5) * (i / 5 - 10) + i / 6) * 5);
     data2.push((Math.cos(i / 5) * (i / 5 - 10) + i / 6) * 5);
   }
@@ -96,7 +101,9 @@ function buildOptions() {
         show: false
       }
     },
-    yAxis: {},
+    yAxis: [{
+      name: 'Concentration'
+    }],
     series: [
       {
         name: 'bar',

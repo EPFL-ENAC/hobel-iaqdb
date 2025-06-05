@@ -68,9 +68,11 @@ function buildOptions() {
       text: 'Candlestick Chart Example',
     },
     xAxis: {
-      data: ['2017-10-24', '2017-10-25', '2017-10-26', '2017-10-27']
+      data: ['Switzerland', 'Canada', 'U.S.', 'France']
     },
-    yAxis: {},
+    yAxis: [{
+      name: 'Concentration'
+    }],
     series: [
       {
         type: 'candlestick',
