@@ -6,7 +6,7 @@ Contributing to our database is straightforward and secure. Please follow these 
 
 2. **Organize Your IAQ Data**: We strongly encourage that IAQ data are stored in the true long format, including four columns of data (Timestamp, Parameter, Value, and Unit) and three columns of identifiers (Building_ID, Space_ID, and Instrument_ID, with the first two being mandatory). We will accept other data formats as long as such information is complete and easily identifiable. 
 
-3. **Licensing**: We kindly ask you to agree to the Public Domain Dedication and License (PDDL). The PDDL dedicates a database to the public domain, allowing anyone to use, modify, and share the data without any restrictions - including for commercial and AI training purposes. It is similar in spirit to Creative Commons CC0, but tailored for structured databases.
+3. **Licensing**: We kindly ask you to agree to the [Open Data Commons Public Domain Dedication and License (PDDL)](https://opendatacommons.org/licenses/pddl/1-0/). The PDDL dedicates a database to the public domain, allowing anyone to use, modify, and share the data without any restrictions - including for commercial and AI training purposes. It is similar in spirit to Creative Commons CC0, but tailored for structured databases.
 
 ## Recognition and Benefits for Contributors
 
