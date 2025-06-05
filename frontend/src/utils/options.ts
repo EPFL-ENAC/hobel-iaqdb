@@ -573,7 +573,7 @@ export const licenseOptions = [
     value: 'PDDL',
     label: 'Public Domain Dedication and License (PDDL)',
     description:
-      'Similar to CC0, it allows data to be freely used by anyone for any purpose.',
+      'The Open Data Commons PDDL dedicates a database to the public domain, allowing anyone to use, modify, and share the data without any restrictions - including for commercial and AI training purposes.',
   },
   {
     value: 'ODC-By',

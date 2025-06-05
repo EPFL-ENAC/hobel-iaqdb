@@ -267,7 +267,7 @@ async function onNextStep() {
       valid = false;
       notifyError('Please add at least one data contributor');
     }
-    if (contrib.study.license !== 'CC BY-NC') {
+    if (contrib.study.license !== 'PDDL') {
       valid = false;
       notifyError('study.license_error');
     }

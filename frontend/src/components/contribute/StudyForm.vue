@@ -230,20 +230,20 @@ onMounted(
     } else {
       other_indoor_params.value = [];
     }
-    license_accepted.value = contrib.study.license === 'CC BY-NC';
+    license_accepted.value = contrib.study.license === 'PDDL';
   },
 );
 
 watch(
   () => contrib.study,
   (study) => {
-    license_accepted.value = study.license === 'CC BY-NC';
+    license_accepted.value = study.license === 'PDDL';
   },
 );
 
 function onToggleLicenseAccepted() {
   if (license_accepted.value) {
-    contrib.study.license = 'CC BY-NC';
+    contrib.study.license = 'PDDL';
   } else {
     contrib.study.license = '';
   }
