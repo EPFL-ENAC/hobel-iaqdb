@@ -8,6 +8,8 @@ Contributing to our database is straightforward and secure. Please follow these 
 
 3. **Licensing**: We kindly ask you to agree to the [Open Data Commons Public Domain Dedication and License (PDDL)](https://opendatacommons.org/licenses/pddl/1-0/). The PDDL dedicates a database to the public domain, allowing anyone to use, modify, and share the data without any restrictions - including for commercial and AI training purposes. It is similar in spirit to Creative Commons CC0, but tailored for structured databases.
 
+See detailed [guidelines for contributing data](/Data_preperation_and_contribution_instructions_20250605.pdf) to ensure your data is formatted correctly and meets our requirements.
+
 ## Recognition and Benefits for Contributors
 
 We value your contribution and aim to recognize it meaningfully:
