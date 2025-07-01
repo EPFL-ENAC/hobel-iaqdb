@@ -13,7 +13,7 @@
             class="on-right q-mb-sm"
             color="grey-8"
             icon="edit"
-            :title="$t('edit')"
+            :title="t('edit')"
             @click="onShowDraft"
           />
           <q-btn
@@ -24,7 +24,7 @@
             class="q-mb-sm"
             color="negative"
             icon="delete"
-            :title="$t('delete')"
+            :title="t('delete')"
             @click="onShowDelete"
           />
         </div>
@@ -39,8 +39,8 @@
       </div>
       <div class="col"></div>
     </div>
-    <confirm-dialog v-model="showDelete" :text="$t('confirm_study_delete', { identifier: catalogStore.study?.name })" @confirm="onDelete"/>
-    <confirm-dialog v-model="showDraft" :text="$t('confirm_study_draft', { identifier: catalogStore.study?.name })" @confirm="onDraft"/>
+    <confirm-dialog v-model="showDelete" :text="t('confirm_study_delete', { identifier: catalogStore.study?.name })" @confirm="onDelete"/>
+    <confirm-dialog v-model="showDraft" :text="t('confirm_study_draft', { identifier: catalogStore.study?.name })" @confirm="onDraft"/>
   </q-page>
 </template>
 
@@ -48,6 +48,7 @@
 import StudyView from 'src/components/study/StudyView.vue';
 import ConfirmDialog from 'src/components/ConfirmDialog.vue';
 
+const { t } = useI18n();
 const authStore = useAuthStore();
 const catalogStore = useCatalogStore();
 const contributeStore = useContributeStore();

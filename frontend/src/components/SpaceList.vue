@@ -12,11 +12,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'SpaceList',
-});
-</script>
 <script setup lang="ts">
 import { Space, SpacesResult } from 'src/models';
 

@@ -12,11 +12,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'DummyLineChart',
-});
-</script>
 <script setup lang="ts">
 import ECharts from 'vue-echarts';
 import type { EChartsOption, LineSeriesOption } from 'echarts';

@@ -3,24 +3,24 @@
     <q-input
       v-model="contrib.study.name"
       filled
-      :label="$t('study.name') + ' *'"
-      :hint="$t('study.name_hint')"
-      :rules="[val => !!val || $t('required')]"
+      :label="t('study.name') + ' *'"
+      :hint="t('study.name_hint')"
+      :rules="[val => !!val || t('required')]"
       class="q-mb-md"
     />
     <q-input
       v-model="contrib.study.description"
       filled
       type="textarea"
-      :label="$t('study.description')"
-      :hint="$t('study.description_hint')"
+      :label="t('study.description')"
+      :hint="t('study.description_hint')"
       class="q-mb-md"
     />
     <q-input
       v-model="contrib.study.website"
       filled
-      :label="$t('study.url')"
-      :hint="$t('study.url_hint')"
+      :label="t('study.url')"
+      :hint="t('study.url_hint')"
       class="q-mb-md"
     />
 
@@ -33,8 +33,8 @@
           type="number"
           :min="1900"
           :max="new Date().getFullYear()"
-          :label="$t('study.start_year')"
-          :hint="$t('study.start_year_hint')"
+          :label="t('study.start_year')"
+          :hint="t('study.start_year_hint')"
         />
       </div>
       <div class="col">
@@ -44,8 +44,8 @@
           type="number"
           :min="1900"
           :max="new Date().getFullYear()"
-          :label="$t('study.end_year')"
-          :hint="$t('study.end_year_hint')"
+          :label="t('study.end_year')"
+          :hint="t('study.end_year_hint')"
         />
       </div>
       <div class="col">
@@ -54,8 +54,8 @@
           filled
           type="number"
           :min="0"
-          :label="$t('study.duration')"
-          :hint="$t('study.duration_hint')"
+          :label="t('study.duration')"
+          :hint="t('study.duration_hint')"
         />
       </div>
     </div>
@@ -68,8 +68,8 @@
           multiple
           emit-value
           map-options
-          :label="$t('study.occupant_impact')"
-          :hint="$t('study.occupant_impact_hint')"
+          :label="t('study.occupant_impact')"
+          :hint="t('study.occupant_impact_hint')"
           @update:model-value="contrib.study.occupant_impact = $event.join(',')"
         />
       </div>
@@ -81,8 +81,8 @@
           multiple
           emit-value
           map-options
-          :label="$t('study.other_indoor_param')"
-          :hint="$t('study.other_indoor_param_hint')"
+          :label="t('study.other_indoor_param')"
+          :hint="t('study.other_indoor_param_hint')"
           @update:model-value="contrib.study.other_indoor_param = $event.join(',')"
         />
       </div>
@@ -113,7 +113,7 @@
                 dense
                 flat
                 color="negative"
-                :title="$t('delete')"
+                :title="t('delete')"
                 icon="delete"
                 class="q-ml-xs"
                 @click="onDeleteContributor(i)"
@@ -139,16 +139,16 @@
           v-model="contrib.study.citation"
           filled
           type="textarea"
-          :label="$t('study.citation')"
-          :hint="$t('study.citation_hint')"
+          :label="t('study.citation')"
+          :hint="t('study.citation_hint')"
         />
       </div>
       <div class="col">
         <q-input
           v-model="contrib.study.doi"
           filled
-          :label="$t('study.doi')"
-          :hint="$t('study.doi_hint')"
+          :label="t('study.doi')"
+          :hint="t('study.doi_hint')"
         />
       </div>
     </div>
@@ -160,8 +160,8 @@
           v-model="contrib.study.funding"
           filled
           type="textarea"
-          :label="$t('study.funding')"
-          :hint="$t('study.funding_hint')"
+          :label="t('study.funding')"
+          :hint="t('study.funding_hint')"
           class="q-mb-md"
         />
       </div>
@@ -170,8 +170,8 @@
           v-model="contrib.study.ethics"
           filled
           type="textarea"
-          :label="$t('study.ethics')"
-          :hint="$t('study.ethics_hint')"
+          :label="t('study.ethics')"
+          :hint="t('study.ethics_hint')"
           class="q-mb-md"
         />
       </div>
@@ -180,8 +180,8 @@
           v-model="contrib.study.data_processing"
           filled
           type="textarea"
-          :label="$t('study.data_processing')"
-          :hint="$t('study.data_processing_hint')"
+          :label="t('study.data_processing')"
+          :hint="t('study.data_processing_hint')"
           class="q-mb-md"
         />
       </div>
@@ -191,20 +191,15 @@
         <q-checkbox
           v-model="license_accepted"
           dense
-          :label="$t('study.license_accept')"
+          :label="t('study.license_accept')"
           @update:model-value="onToggleLicenseAccepted"
         />
-        <q-markdown class="text-hint q-mt-sm" :src="$t('study.license_accept_hint')" />
+        <q-markdown class="text-hint q-mt-sm" :src="t('study.license_accept_hint')" />
       </div>
     </div>
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'StudyForm',
-});
-</script>
 <script setup lang="ts">
 import PersonForm from './PersonFom.vue';
 import {
@@ -212,6 +207,7 @@ import {
   otherIndoorParamOptions,
 } from 'src/utils/options';
 
+const { t } = useI18n();
 const contrib = useContributeStore();
 
 const occupant_impacts = ref<string[]>([]);

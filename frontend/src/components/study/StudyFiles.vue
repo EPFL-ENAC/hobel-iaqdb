@@ -6,7 +6,7 @@
         color="primary"
         icon="download"
         no-caps
-        :label="$t('download')"
+        :label="t('download')"
         class=""
       />
       <q-space />
@@ -41,14 +41,10 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'StudyFiles',
-});
-</script>
 <script setup lang="ts">
 import { getSizeLabel } from 'src/utils/numbers';
 
+const { t } = useI18n();
 const catalogStore = useCatalogStore();
 
 const filter = ref('');

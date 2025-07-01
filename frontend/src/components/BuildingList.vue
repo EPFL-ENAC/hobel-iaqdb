@@ -12,11 +12,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'BuildingList',
-});
-</script>
 <script setup lang="ts">
 import { Building, BuildingsResult } from 'src/models';
 

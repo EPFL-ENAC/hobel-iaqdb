@@ -9,10 +9,10 @@
       align="justify"
       narrow-indicator
     >
-    <q-tab name="buildings" :label="$t('buildings')" />
-    <q-tab name="instruments" :label="$t('instruments')" />
-    <q-tab name="datasets" :label="$t('datasets')" />
-      <q-tab name="files" :label="$t('files')" />
+    <q-tab name="buildings" :label="t('buildings')" />
+    <q-tab name="instruments" :label="t('instruments')" />
+    <q-tab name="datasets" :label="t('datasets')" />
+      <q-tab name="files" :label="t('files')" />
     </q-tabs>
 
     <q-separator />
@@ -34,11 +34,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'StudyTabs',
-});
-</script>
 <script setup lang="ts">
 import StudyBuildings from 'src/components/study/StudyBuildings.vue';
 import StudyInstruments from 'src/components/study/StudyInstruments.vue';
@@ -51,6 +46,8 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   showMap: false,
 });
+
+const { t } = useI18n();
 
 const tab = ref('buildings');
 </script>

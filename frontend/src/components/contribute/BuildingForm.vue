@@ -3,9 +3,9 @@
     <q-input
       v-model="building.identifier"
       filled
-      :label="$t('study.building.identifier') + ' *'"
-      :hint="$t('study.building.identifier_hint')"
-      :rules="[val => !!val || $t('required')]"
+      :label="t('study.building.identifier') + ' *'"
+      :hint="t('study.building.identifier_hint')"
+      :rules="[val => !!val || t('required')]"
       class="q-mb-md"
     />
 
@@ -17,9 +17,9 @@
           filled
           emit-value
           map-options
-          :label="$t('study.building.type') + ' *'"
-          :hint="$t('study.building.type_hint')"
-          :rules="[val => !!val || $t('required')]"
+          :label="t('study.building.type') + ' *'"
+          :hint="t('study.building.type_hint')"
+          :rules="[val => !!val || t('required')]"
           @update:model-value="onBuildingTypeChange"
         />
       </div>
@@ -27,8 +27,8 @@
         <q-input
           v-model="building.other_type"
           filled
-          :label="$t('study.building.other_type')"
-          :hint="$t('study.building.other_type_hint')"
+          :label="t('study.building.other_type')"
+          :hint="t('study.building.other_type_hint')"
         />
       </div>
       <div class="col">
@@ -38,8 +38,8 @@
           filled
           emit-value
           map-options
-          :label="$t('study.building.outdoor_env')"
-          :hint="$t('study.building.outdoor_env_hint')"
+          :label="t('study.building.outdoor_env')"
+          :hint="t('study.building.outdoor_env_hint')"
           @update:model-value="onOutdoorEnvChange"
         />
       </div>
@@ -47,8 +47,8 @@
         <q-input
           v-model="building.other_outdoor_env"
           filled
-          :label="$t('study.building.other_outdoor_env')"
-          :hint="$t('study.building.other_outdoor_env_hint')"
+          :label="t('study.building.other_outdoor_env')"
+          :hint="t('study.building.other_outdoor_env_hint')"
         />
       </div>
     </div>
@@ -61,8 +61,8 @@
           type="number"
           :min="0"
           :max="new Date().getFullYear()"
-          :label="$t('study.building.construction_year')"
-          :hint="$t('study.building.construction_year_hint')"
+          :label="t('study.building.construction_year')"
+          :hint="t('study.building.construction_year_hint')"
         />
       </div>
       <div class="col">
@@ -72,8 +72,8 @@
           filled
           emit-value
           map-options
-          :label="$t('study.building.renovation')"
-          :hint="$t('study.building.renovation_hint')"
+          :label="t('study.building.renovation')"
+          :hint="t('study.building.renovation_hint')"
           @update:model-value="onRenovationUpdated"
         />
       </div>
@@ -87,8 +87,8 @@
           type="number"
           :min="0"
           :max="new Date().getFullYear()"
-          :label="$t('study.building.renovation_year')"
-          :hint="$t('study.building.renovation_year_hint')"
+          :label="t('study.building.renovation_year')"
+          :hint="t('study.building.renovation_year_hint')"
           :disable="building.renovation !== 'yes'"
         />
       </div>
@@ -97,8 +97,8 @@
           v-model="building.renovation_details"
           filled
           type="textarea"
-          :label="$t('study.building.renovation_details')"
-          :hint="$t('study.building.renovation_details_hint')"
+          :label="t('study.building.renovation_details')"
+          :hint="t('study.building.renovation_details_hint')"
           :disable="building.renovation !== 'yes'"
         />
       </div>
@@ -110,9 +110,9 @@
         <q-input
           v-model="building.city"
           filled
-          :label="$t('study.building.city') + ' *'"
-          :hint="$t('study.building.city_hint')"
-          :rules="[val => !!val || $t('required')]"
+          :label="t('study.building.city') + ' *'"
+          :hint="t('study.building.city_hint')"
+          :rules="[val => !!val || t('required')]"
           :debounce="1000"
           @update:model-value="onLocationUpdated"
         />
@@ -124,9 +124,9 @@
           filled
           emit-value
           map-options
-          :label="$t('study.building.country') + ' *'"
-          :hint="$t('study.building.country_hint')"
-          :rules="[val => !!val || $t('required')]"
+          :label="t('study.building.country') + ' *'"
+          :hint="t('study.building.country_hint')"
+          :rules="[val => !!val || t('required')]"
           @update:model-value="onLocationUpdated"
         />
       </div>
@@ -140,8 +140,8 @@
           :min="-180"
           :max="180"
           filled
-          :label="$t('study.building.longitude')"
-          :hint="$t('study.building.longitude_hint')"
+          :label="t('study.building.longitude')"
+          :hint="t('study.building.longitude_hint')"
           :disable="loadingGeo"
           :loading="loadingGeo"
           @update:model-value="onLongLatUpdated"
@@ -154,8 +154,8 @@
           :min="-90"
           :max="90"
           filled
-          :label="$t('study.building.latitude')"
-          :hint="$t('study.building.latitude_hint')"
+          :label="t('study.building.latitude')"
+          :hint="t('study.building.latitude_hint')"
           :disable="loadingGeo"
           :loading="loadingGeo"
           @update:model-value="onLongLatUpdated"
@@ -170,8 +170,8 @@
           :min="-1000"
           :max="10000"
           filled
-          :label="$t('study.building.altitude')"
-          :hint="$t('study.building.altitude_hint')"
+          :label="t('study.building.altitude')"
+          :hint="t('study.building.altitude_hint')"
           :disable="loadingGeo || loadingAlt"
           :loading="loadingGeo || loadingAlt"
         />
@@ -183,8 +183,8 @@
           filled
           emit-value
           map-options
-          :label="$t('study.building.climate_zone')"
-          :hint="$t('study.building.climate_zone_hint')"
+          :label="t('study.building.climate_zone')"
+          :hint="t('study.building.climate_zone_hint')"
           :disable="loadingGeo || loadingAlt"
           :loading="loadingGeo || loadingAlt"
         />
@@ -203,16 +203,16 @@
           filled
           emit-value
           map-options
-          :label="$t('study.building.mechanical_ventilation')"
-          :hint="$t('study.building.mechanical_ventilation_hint')"
+          :label="t('study.building.mechanical_ventilation')"
+          :hint="t('study.building.mechanical_ventilation_hint')"
         />
       </div>
       <div class="col">
         <q-input
           v-model="building.particle_filtration_system"
           filled
-          :label="$t('study.building.particle_filtration_system')"
-          :hint="$t('study.building.particle_filtration_system_hint')"
+          :label="t('study.building.particle_filtration_system')"
+          :hint="t('study.building.particle_filtration_system_hint')"
         />
       </div>
       <div class="col">
@@ -221,8 +221,8 @@
           type="number"
           :min="0"
           filled
-          :label="$t('study.building.particle_filtration_rating')"
-          :hint="$t('study.building.particle_filtration_rating_hint')"
+          :label="t('study.building.particle_filtration_rating')"
+          :hint="t('study.building.particle_filtration_rating_hint')"
         />
       </div>
     </div>
@@ -235,8 +235,8 @@
           filled
           emit-value
           map-options
-          :label="$t('study.building.operable_windows')"
-          :hint="$t('study.building.operable_windows_hint')"
+          :label="t('study.building.operable_windows')"
+          :hint="t('study.building.operable_windows_hint')"
         />
       </div>
       <div class="col">
@@ -245,8 +245,8 @@
           type="number"
           :min="0"
           filled
-          :label="$t('study.building.airtightness')"
-          :hint="$t('study.building.airtightness_hint')"
+          :label="t('study.building.airtightness')"
+          :hint="t('study.building.airtightness_hint')"
         />
       </div>
       <div class="col">
@@ -256,8 +256,8 @@
           filled
           emit-value
           map-options
-          :label="$t('study.building.smoking')"
-          :hint="$t('study.building.smoking_hint')"
+          :label="t('study.building.smoking')"
+          :hint="t('study.building.smoking_hint')"
         />
       </div>
     </div>
@@ -271,8 +271,8 @@
           filled
           emit-value
           map-options
-          :label="$t('study.building.age_group')"
-          :hint="$t('study.building.age_group_hint')"
+          :label="t('study.building.age_group')"
+          :hint="t('study.building.age_group_hint')"
         />
       </div>
       <div class="col">
@@ -282,8 +282,8 @@
           filled
           emit-value
           map-options
-          :label="$t('study.building.socioeconomic_status')"
-          :hint="$t('study.building.socioeconomic_status_hint')"
+          :label="t('study.building.socioeconomic_status')"
+          :hint="t('study.building.socioeconomic_status_hint')"
         />
       </div>
     </div>
@@ -296,8 +296,8 @@
         filled
         emit-value
         map-options
-        :label="$t('study.building.green_certified')"
-        :hint="$t('study.building.green_certified_hint')"
+        :label="t('study.building.green_certified')"
+        :hint="t('study.building.green_certified_hint')"
         @update:model-value="onGreenCertifiedUpdated"
       />
     </div>
@@ -310,16 +310,16 @@
         <q-input
           v-model.number="building.certifications[0].program"
           filled
-          :label="$t('study.building.certification_program')"
-          :hint="$t('study.building.certification_program_hint')"
+          :label="t('study.building.certification_program')"
+          :hint="t('study.building.certification_program_hint')"
         />
       </div>
       <div class="col">
         <q-input
           v-model.number="building.certifications[0].level"
           filled
-          :label="$t('study.building.certification_level')"
-          :hint="$t('study.building.certification_level_hint')"
+          :label="t('study.building.certification_level')"
+          :hint="t('study.building.certification_level_hint')"
         />
       </div>
     </div>
@@ -357,7 +357,7 @@
                     rounded
                     dense
                     flat
-                    :title="$t('duplicate')"
+                    :title="t('duplicate')"
                     icon="content_copy"
                     size="sm"
                     @click="onDuplicateSpace(i)"
@@ -367,7 +367,7 @@
                     dense
                     flat
                     color="negative"
-                    :title="$t('delete')"
+                    :title="t('delete')"
                     icon="delete"
                     size="sm"
                     @click="onDeleteSpace(i)"
@@ -391,11 +391,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'BuildingForm',
-});
-</script>
 <script setup lang="ts">
 import {
   climateOptions,
@@ -411,6 +406,7 @@ import { Building, Certification } from 'src/models';
 import SpaceForm from 'src/components/contribute/SpaceForm.vue';
 import { notifyInfo } from 'src/utils/notify';
 
+const { t } = useI18n();
 const contrib = useContributeStore();
 const authStore = useAuthStore();
 

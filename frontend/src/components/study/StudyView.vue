@@ -16,11 +16,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'StudyView',
-});
-</script>
 <script setup lang="ts">
 import StudyDetails from 'src/components/study/StudyDetails.vue';
 import StudyTabs from 'src/components/study/StudyTabs.vue';

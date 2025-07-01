@@ -12,11 +12,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'BuildingMechanicalVentilationsChart',
-});
-</script>
 <script setup lang="ts">
 import {
   Feature,

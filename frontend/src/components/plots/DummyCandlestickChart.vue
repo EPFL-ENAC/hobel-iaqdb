@@ -12,11 +12,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'DummyCandlestickChart',
-});
-</script>
 <script setup lang="ts">
 import ECharts from 'vue-echarts';
 import type { EChartsOption } from 'echarts';

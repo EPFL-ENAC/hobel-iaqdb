@@ -8,9 +8,9 @@
           filled
           emit-value
           map-options
-          :label="$t('study.parameter.physical_parameter') + ' *'"
-          :hint="$t('study.parameter.physical_parameter_hint')"
-          :rules="[val => !!val || $t('required')]"
+          :label="t('study.parameter.physical_parameter') + ' *'"
+          :hint="t('study.parameter.physical_parameter_hint')"
+          :rules="[val => !!val || t('required')]"
           @update:model-value="onPhysicalParameterChange"
         />
       </div>
@@ -18,8 +18,8 @@
         <q-input
           v-model="parameter.analysis_method"
           filled
-          :label="$t('study.parameter.analysis_method')"
-          :hint="$t('study.parameter.analysis_method_hint')"
+          :label="t('study.parameter.analysis_method')"
+          :hint="t('study.parameter.analysis_method_hint')"
           :disable="knownPhysicalParameters"
         />
       </div>
@@ -27,8 +27,8 @@
         <q-input
           v-model="parameter.measurement_uncertainty"
           filled
-          :label="$t('study.parameter.measurement_uncertainty')"
-          :hint="$t('study.parameter.measurement_uncertainty_hint')"
+          :label="t('study.parameter.measurement_uncertainty')"
+          :hint="t('study.parameter.measurement_uncertainty_hint')"
           :disable="knownPhysicalParameters"
         />
       </div>
@@ -37,17 +37,12 @@
       v-model="parameter.note"
       filled
       type="textarea"
-      :label="$t('study.parameter.note')"
-      :hint="$t('study.parameter.note_hint')"
+      :label="t('study.parameter.note')"
+      :hint="t('study.parameter.note_hint')"
     />
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'InstrumentParameterForm',
-});
-</script>
 <script setup lang="ts">
 import { Instrument, InstrumentParameter } from 'src/models';
 import { physicalParameterOptions } from 'src/utils/options';
@@ -57,6 +52,8 @@ interface Props {
   instrument: Instrument;
 }
 const props = defineProps<Props>();
+
+const { t } = useI18n();
 
 const parameter = ref(props.modelValue);
 

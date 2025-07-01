@@ -37,7 +37,7 @@
                 rounded
                 dense
                 flat
-                :title="$t('duplicate')"
+                :title="t('duplicate')"
                 icon="content_copy"
                 @click="onDuplicate(selected)"
               />
@@ -47,7 +47,7 @@
                 dense
                 flat
                 color="negative"
-                :title="$t('delete')"
+                :title="t('delete')"
                 icon="delete"
                 class="q-ml-xs"
                 @click="onDelete(selected)"
@@ -58,7 +58,7 @@
                 dense
                 flat
                 size="sm"
-                :title="$t('previous')"
+                :title="t('previous')"
                 icon="arrow_back_ios"
                 class="on-right"
                 :disable="selected === 0"
@@ -70,7 +70,7 @@
                 dense
                 flat
                 size="sm"
-                :title="$t('next')"
+                :title="t('next')"
                 icon="arrow_forward_ios"
                 class="q-ml-xs"
                 :disable="selected === instrumentCount - 1"
@@ -89,15 +89,11 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  components: { InstrumentForm },
-  name: 'InstrumentsForm',
-});
-</script>
 <script setup lang="ts">
 import { notifyInfo } from 'src/utils/notify';
 import InstrumentForm from './InstrumentForm.vue';
+
+const { t } = useI18n();
 const contrib = useContributeStore();
 
 const selected = ref<number | null>(null);

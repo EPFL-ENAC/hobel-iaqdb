@@ -12,11 +12,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'SpaceTypesChart',
-});
-</script>
 <script setup lang="ts">
 import type { GroupByCount } from 'src/models';
 import ECharts from 'vue-echarts';

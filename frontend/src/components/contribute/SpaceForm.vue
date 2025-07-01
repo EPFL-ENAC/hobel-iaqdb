@@ -3,9 +3,9 @@
     <q-input
       v-model="space.identifier"
       filled
-      :label="$t('study.space.identifier') + ' *'"
-      :hint="$t('study.space.identifier_hint')"
-      :rules="[val => !!val || $t('required')]"
+      :label="t('study.space.identifier') + ' *'"
+      :hint="t('study.space.identifier_hint')"
+      :rules="[val => !!val || t('required')]"
       class="q-mb-md"
     />
 
@@ -17,9 +17,9 @@
           filled
           emit-value
           map-options
-          :label="$t('study.space.type') + ' *'"
-          :hint="$t('study.space.type_hint')"
-          :rules="[val => !!val || $t('required')]"
+          :label="t('study.space.type') + ' *'"
+          :hint="t('study.space.type_hint')"
+          :rules="[val => !!val || t('required')]"
         />
       </div>
       <div class="col">
@@ -28,8 +28,8 @@
           type="number"
           :min="0"
           filled
-          :label="$t('study.space.floor_area')"
-          :hint="$t('study.space.floor_area_hint')"
+          :label="t('study.space.floor_area')"
+          :hint="t('study.space.floor_area_hint')"
         />
       </div>
       <div class="col">
@@ -38,8 +38,8 @@
           type="number"
           :min="0"
           filled
-          :label="$t('study.space.space_volume')"
-          :hint="$t('study.space.space_volume_hint')"
+          :label="t('study.space.space_volume')"
+          :hint="t('study.space.space_volume_hint')"
         />
       </div>
     </div>
@@ -52,8 +52,8 @@
           filled
           emit-value
           map-options
-          :label="$t('study.space.occupancy')"
-          :hint="$t('study.space.occupancy_hint')"
+          :label="t('study.space.occupancy')"
+          :hint="t('study.space.occupancy_hint')"
           @update:model-value="onOccupancyChange"
         />
       </div>
@@ -63,8 +63,8 @@
           type="number"
           :min="0"
           filled
-          :label="$t('study.space.occupancy_density')"
-          :hint="$t('study.space.occupancy_density_hint')"
+          :label="t('study.space.occupancy_density')"
+          :hint="t('study.space.occupancy_density_hint')"
           :disable="space.occupancy === 'unknown'"
         />
       </div>
@@ -74,10 +74,10 @@
           type="number"
           :min="0"
           filled
-          :label="$t('study.space.occupancy_number')"
-          :hint="$t('study.space.occupancy_number_hint')"
+          :label="t('study.space.occupancy_number')"
+          :hint="t('study.space.occupancy_number_hint')"
           :disable="space.occupancy === 'unknown'"
-          :rules="[val => val === '' || val === undefined || val === null || Number.isInteger(val) || $t('must_be_integer')]"
+          :rules="[val => val === '' || val === undefined || val === null || Number.isInteger(val) || t('must_be_integer')]"
         />
       </div>
     </div>
@@ -91,8 +91,8 @@
           filled
           emit-value
           map-options
-          :label="$t('study.space.mechanical_ventilation_type')"
-          :hint="$t('study.space.mechanical_ventilation_type_hint')"
+          :label="t('study.space.mechanical_ventilation_type')"
+          :hint="t('study.space.mechanical_ventilation_type_hint')"
           @update:model-value="onMechanicalVentilationTypeChange"
         />
       </div>
@@ -100,8 +100,8 @@
         <q-input
           v-model="space.other_mechanical_ventilation_type"
           filled
-          :label="$t('study.space.other_mechanical_ventilation_type')"
-          :hint="$t('study.space.other_mechanical_ventilation_type_hint')"
+          :label="t('study.space.other_mechanical_ventilation_type')"
+          :hint="t('study.space.other_mechanical_ventilation_type_hint')"
         />
       </div>
     </div>
@@ -113,8 +113,8 @@
           filled
           emit-value
           map-options
-          :label="$t('study.space.cooling_type')"
-          :hint="$t('study.space.cooling_type_hint')"
+          :label="t('study.space.cooling_type')"
+          :hint="t('study.space.cooling_type_hint')"
           @update:model-value="onCoolingTypeChange"
         />
       </div>
@@ -122,8 +122,8 @@
         <q-input
           v-model="space.other_cooling_type"
           filled
-          :label="$t('study.space.other_cooling_type')"
-          :hint="$t('study.space.other_cooling_type_hint')"
+          :label="t('study.space.other_cooling_type')"
+          :hint="t('study.space.other_cooling_type_hint')"
         />
       </div>
       <div class="col">
@@ -133,8 +133,8 @@
           filled
           emit-value
           map-options
-          :label="$t('study.space.heating_type')"
-          :hint="$t('study.space.heating_type_hint')"
+          :label="t('study.space.heating_type')"
+          :hint="t('study.space.heating_type_hint')"
           @update:model-value="onHeatingTypeChange"
         />
       </div>
@@ -142,8 +142,8 @@
         <q-input
           v-model="space.other_heating_type"
           filled
-          :label="$t('study.space.other_heating_type')"
-          :hint="$t('study.space.other_heating_type_hint')"
+          :label="t('study.space.other_heating_type')"
+          :hint="t('study.space.other_heating_type_hint')"
         />
       </div>
     </div>
@@ -155,8 +155,8 @@
           filled
           emit-value
           map-options
-          :label="$t('study.space.air_filtration')"
-          :hint="$t('study.space.air_filtration_hint')"
+          :label="t('study.space.air_filtration')"
+          :hint="t('study.space.air_filtration_hint')"
         />
       </div>
       <div class="col">
@@ -172,8 +172,8 @@
           filled
           emit-value
           map-options
-          :label="$t('study.space.combustion_sources')"
-          :hint="$t('study.space.combustion_sources_hint')"
+          :label="t('study.space.combustion_sources')"
+          :hint="t('study.space.combustion_sources_hint')"
           @update:model-value="onCombustionSourcesChange"
         />
       </div>
@@ -184,8 +184,8 @@
           filled
           emit-value
           map-options
-          :label="$t('study.space.major_combustion_sources')"
-          :hint="$t('study.space.major_combustion_sources_hint')"
+          :label="t('study.space.major_combustion_sources')"
+          :hint="t('study.space.major_combustion_sources_hint')"
           :disable="space.combustion_sources !== 'yes'"
         />
       </div>
@@ -196,8 +196,8 @@
           filled
           emit-value
           map-options
-          :label="$t('study.space.minor_combustion_sources')"
-          :hint="$t('study.space.minor_combustion_sources_hint')"
+          :label="t('study.space.minor_combustion_sources')"
+          :hint="t('study.space.minor_combustion_sources_hint')"
           :disable="space.combustion_sources !== 'yes'"
         />
       </div>
@@ -212,8 +212,8 @@
           filled
           emit-value
           map-options
-          :label="$t('study.space.printers')"
-          :hint="$t('study.space.printers_hint')"
+          :label="t('study.space.printers')"
+          :hint="t('study.space.printers_hint')"
         />
       </div>
       <div class="col">
@@ -223,8 +223,8 @@
           filled
           emit-value
           map-options
-          :label="$t('study.space.carpets')"
-          :hint="$t('study.space.carpets_hint')"
+          :label="t('study.space.carpets')"
+          :hint="t('study.space.carpets_hint')"
         />
       </div>
       <div class="col">
@@ -234,8 +234,8 @@
           filled
           emit-value
           map-options
-          :label="$t('study.space.pets')"
-          :hint="$t('study.space.pets_hint')"
+          :label="t('study.space.pets')"
+          :hint="t('study.space.pets_hint')"
         />
       </div>
     </div>
@@ -247,8 +247,8 @@
           filled
           emit-value
           map-options
-          :label="$t('study.space.dampness')"
-          :hint="$t('study.space.dampness_hint')"
+          :label="t('study.space.dampness')"
+          :hint="t('study.space.dampness_hint')"
         />
       </div>
       <div class="col">
@@ -258,8 +258,8 @@
           filled
           emit-value
           map-options
-          :label="$t('study.space.mold')"
-          :hint="$t('study.space.mold_hint')"
+          :label="t('study.space.mold')"
+          :hint="t('study.space.mold_hint')"
         />
       </div>
       <div class="col">
@@ -269,19 +269,14 @@
           filled
           emit-value
           map-options
-          :label="$t('study.space.detergents')"
-          :hint="$t('study.space.detergents_hint')"
+          :label="t('study.space.detergents')"
+          :hint="t('study.space.detergents_hint')"
         />
       </div>
     </div>
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'SpaceForm',
-});
-</script>
 <script setup lang="ts">
 import {
   buildingSpaceTypeOptions,
@@ -300,6 +295,8 @@ interface Props {
   building: Building;
 }
 const props = defineProps<Props>();
+
+const { t } = useI18n();
 
 const space = ref(props.modelValue);
 

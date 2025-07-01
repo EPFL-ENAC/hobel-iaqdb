@@ -10,11 +10,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'MaplibreMap',
-});
-</script>
 <script setup lang="ts">
 import 'maplibre-gl/dist/maplibre-gl.css';
 import '@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css';

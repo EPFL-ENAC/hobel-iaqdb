@@ -6,7 +6,7 @@
       <div style="font-size: 30vh">404</div>
 
       <div class="text-h4" style="opacity: 0.4">
-        {{ $t('error_not_found') }}
+        {{ t('error_not_found') }}
       </div>
 
       <q-btn
@@ -15,11 +15,13 @@
         text-color="grey-10"
         unelevated
         to="/"
-        :label="$t('home')"
+        :label="t('home')"
         no-caps
       />
     </div>
   </div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+const { t } = useI18n();
+</script>

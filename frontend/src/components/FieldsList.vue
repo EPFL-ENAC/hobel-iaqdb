@@ -3,7 +3,7 @@
     <q-item v-for="item in visibleItems" :key="item.field">
       <q-item-section>
         <q-item-label overline>
-          {{ $t(item.label ? item.label : item.field) }}
+          {{ t(item.label ? item.label : item.field) }}
         </q-item-label>
       </q-item-section>
       <q-item-section>
@@ -49,14 +49,9 @@
   </q-list>
 </template>
 
-<script lang="ts">
+<script setup lang="ts">
 import { toMaxDecimals } from 'src/utils/numbers';
 import { truncateString } from 'src/utils/strings';
-export default defineComponent({
-  name: 'FieldsList',
-});
-</script>
-<script setup lang="ts">
 import { withDefaults } from 'vue';
 import { DBModel, Person, Study } from 'src/models';
 
@@ -80,6 +75,8 @@ const props = withDefaults(defineProps<FieldsListProps>(), {
   dbobject: undefined,
   items: undefined,
 });
+
+const { t } = useI18n();
 
 const visibleItems = computed(() => {
   return props.items.filter((item) => {

@@ -44,11 +44,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'StudyDatasets',
-});
-</script>
 <script setup lang="ts">
 import type { Variable } from 'src/models';
 import { truncateString } from 'src/utils/strings';

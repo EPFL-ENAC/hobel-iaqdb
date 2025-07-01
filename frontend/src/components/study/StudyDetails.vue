@@ -12,17 +12,17 @@
       </q-linear-progress>
     </div>
     <fields-list :dbobject="study" :items="items" />
-    <div class="text-bold q-mt-md">{{ $t('Contributors') }}</div>
+    <div class="text-bold q-mt-md">{{ t('Contributors') }}</div>
     <template
       v-for="contributor in study?.contributors"
       :key="contributor.email"
     >
       <fields-list :dbobject="contributor" :items="contactItems" />
     </template>
-    <div class="text-bold q-mt-md">{{ $t('Marker paper') }}</div>
+    <div class="text-bold q-mt-md">{{ t('Marker paper') }}</div>
     <fields-list :dbobject="study" :items="refItems" />
     <div class="q-mt-md">
-      <div class="text-bold">{{ $t('study.license') }}</div>
+      <div class="text-bold">{{ t('study.license') }}</div>
       <div class="on-right q-mt-sm">
         <div class="text-caption">{{ licenseLabel }}</div>
         <div class="text-help q-mt-xs">{{ licenseDescription }}</div>
@@ -35,11 +35,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'StudyDetails',
-});
-</script>
 <script setup lang="ts">
 import { licenseOptions } from 'src/utils/options';
 import FieldsList, { FieldItem } from 'src/components/FieldsList.vue';

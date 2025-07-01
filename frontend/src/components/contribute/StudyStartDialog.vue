@@ -14,14 +14,14 @@
           v-show="startMode === '_existing'"
           v-model="identifier"
           filled
-          :label="$t('study.identifier')"
-          :hint="$t('study.identifier_hint')"
+          :label="t('study.identifier')"
+          :hint="t('study.identifier_hint')"
         />
       </q-card-section>
       <q-card-actions v-if="$q.screen.gt.xs" align="right">
-        <q-btn flat :label="$t('cancel')" color="secondary" v-close-popup />
+        <q-btn flat :label="t('cancel')" color="secondary" v-close-popup />
         <q-btn
-          :label="$t('start')"
+          :label="t('start')"
           color="primary"
           :disable="startMode === '_existing' && !identifier"
           @click="doStart"
@@ -32,13 +32,8 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'StudyStartDialog',
-});
-</script>
 <script setup lang="ts">
-
+const { t } = useI18n();
 const contrib = useContributeStore();
 
 interface Props {

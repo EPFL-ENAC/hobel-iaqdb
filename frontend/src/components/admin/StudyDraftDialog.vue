@@ -14,12 +14,12 @@
       <q-card-actions v-if="$q.screen.gt.xs" align="right">
         <q-btn
           flat
-          :label="$t('cancel')"
+          :label="t('cancel')"
           color="secondary"
           v-close-popup
         />
         <q-btn
-          :label="$t('save')"
+          :label="t('save')"
           color="primary"
           :disable="!lastStep"
           v-close-popup
@@ -30,12 +30,6 @@
   </q-dialog>
 </template>
 
-
-<script lang="ts">
-export default defineComponent({
-  name: 'StudyDraftDialog',
-});
-</script>
 <script setup lang="ts">
 import StudyStepper from 'src/components/contribute/StudyStepper.vue';
 
@@ -44,6 +38,8 @@ interface Props {
 }
 const props = defineProps<Props>();
 const emit = defineEmits(['update:modelValue', 'save']);
+
+const { t } = useI18n();
 
 const showDialog = ref(props.modelValue);
 const lastStep = ref(false);

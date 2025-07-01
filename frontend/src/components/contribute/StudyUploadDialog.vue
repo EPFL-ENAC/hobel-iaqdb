@@ -38,7 +38,7 @@
       <q-card-actions v-if="$q.screen.gt.xs" align="right">
         <q-btn
           flat
-          :label="$t('close')"
+          :label="t('close')"
           color="primary"
           v-close-popup
           @click="onClose"
@@ -48,15 +48,11 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'StudyUploadDialog',
-});
-</script>
 <script setup lang="ts">
 import { copyToClipboard } from 'quasar';
 import { notifyError, notifyInfo } from 'src/utils/notify';
 
+const { t } = useI18n();
 const contrib = useContributeStore();
 
 interface Props {

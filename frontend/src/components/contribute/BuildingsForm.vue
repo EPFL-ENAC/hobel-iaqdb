@@ -9,8 +9,8 @@
     <div v-else>
       <div class="text-hint q-mb-md">
         <q-icon name="info" class="q-mr-xs" />
-        <span>{{ $t('study.building_count') }}: {{ buildingCount }}</span> /
-        <span>{{ $t('study.space_count') }}: {{ spaceCount }}</span>
+        <span>{{ t('study.building_count') }}: {{ buildingCount }}</span> /
+        <span>{{ t('study.space_count') }}: {{ spaceCount }}</span>
       </div>
       <div class="row q-gutter-md">
         <div class="col" style="max-width: 200px;">
@@ -42,7 +42,7 @@
                 rounded
                 dense
                 flat
-                :title="$t('duplicate')"
+                :title="t('duplicate')"
                 icon="content_copy"
                 @click="onDuplicate(selected)"
               />
@@ -52,7 +52,7 @@
                 dense
                 flat
                 color="negative"
-                :title="$t('delete')"
+                :title="t('delete')"
                 icon="delete"
                 class="on-right"
                 @click="onDelete(selected)"
@@ -63,7 +63,7 @@
                 dense
                 flat
                 size="sm"
-                :title="$t('previous')"
+                :title="t('previous')"
                 icon="arrow_back_ios"
                 class="on-right"
                 :disable="selected === 0"
@@ -75,7 +75,7 @@
                 dense
                 flat
                 size="sm"
-                :title="$t('next')"
+                :title="t('next')"
                 icon="arrow_forward_ios"
                 class="q-ml-xs"
                 :disable="selected === buildingCount - 1"
@@ -93,15 +93,11 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  components: { BuildingForm },
-  name: 'BuildingsForm',
-});
-</script>
 <script setup lang="ts">
 import { notifyInfo } from 'src/utils/notify';
 import BuildingForm from './BuildingForm.vue';
+
+const { t } = useI18n();
 const contrib = useContributeStore();
 
 const selected = ref<number | null>(null);

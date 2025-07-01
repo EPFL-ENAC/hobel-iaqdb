@@ -39,9 +39,9 @@
         </div>
       </q-card-section>
       <q-card-actions v-if="$q.screen.gt.xs" align="right">
-        <q-btn flat :label="$t('cancel')" color="secondary" v-close-popup />
+        <q-btn flat :label="t('cancel')" color="secondary" v-close-popup />
         <q-btn
-          :label="update ? $t('update') : $t('add')"
+          :label="update ? t('update') : t('add')"
           color="primary"
           @click="onAddDataFile"
           v-close-popup
@@ -52,11 +52,6 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'DataFileDialog',
-});
-</script>
 <script setup lang="ts">
 import { referenceOptions } from 'src/utils/options';
 import Papa from 'papaparse';
@@ -72,6 +67,8 @@ interface Props {
 }
 const props = defineProps<Props>();
 const emit = defineEmits(['update:modelValue', 'add', 'cancel']);
+
+const { t } = useI18n();
 
 const step = ref(1);
 const showDialog = ref(props.modelValue);

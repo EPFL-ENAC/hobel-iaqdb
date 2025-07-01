@@ -8,7 +8,6 @@
         height="400px"
         width="100%"
         @map:loaded="onMapLoaded"
-        @map:click="onMapClick"
       />
     </div>
     <q-table
@@ -68,11 +67,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'StudyBuildings',
-});
-</script>
 <script setup lang="ts">
 import MaplibreMap from 'src/components/MaplibreMap.vue';
 import { Map } from 'maplibre-gl';

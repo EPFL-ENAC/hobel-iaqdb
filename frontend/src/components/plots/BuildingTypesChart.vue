@@ -12,11 +12,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'BuildingTypesChart',
-});
-</script>
 <script setup lang="ts">
 import {
   Feature,

@@ -26,7 +26,7 @@
     <a href="https://epfl.ch" target="_blank" class="q-mt-sm">
       <img src="/EPFL_logo.png" :style="`height: ${$q.screen.lt.md ? '15px' : '25px'}`" />
     </a>
-    <span class="q-ml-md text-bold q-mt-xs" :style="`font-size: ${$q.screen.lt.md ? '1.3em' : '1.5em'}`">{{ $t('app_title') }}</span>
+    <span class="q-ml-md text-bold q-mt-xs" :style="`font-size: ${$q.screen.lt.md ? '1.3em' : '1.5em'}`">{{ t('app_title') }}</span>
     <q-tabs
       v-if="!$q.screen.lt.sm"
       shrink
@@ -34,10 +34,10 @@
       active-color="primary"
       class="q-ml-md"
     >
-      <q-route-tab :label="$t('home')" :title="$t('home_info')" to="/" exact />
-      <q-route-tab :label="$t('data_hub')" :title="$t('data_hub_info')" to="/data-hub" exact />
-      <q-route-tab :label="$t('explore')" :title="$t('explore_info')" to="/explore" exact />
-      <q-route-tab :label="$t('contribute')" :title="$t('contribute_info')" to="/contribute" exact />
+      <q-route-tab :label="t('home')" :title="t('home_info')" to="/" exact />
+      <q-route-tab :label="t('data_hub')" :title="t('data_hub_info')" to="/data-hub" exact />
+      <q-route-tab :label="t('explore')" :title="t('explore_info')" to="/explore" exact />
+      <q-route-tab :label="t('contribute')" :title="t('contribute_info')" to="/contribute" exact />
     </q-tabs>
     <q-space />
     <span v-if="!$q.screen.lt.md">
@@ -45,14 +45,14 @@
         flat
         round
         icon="menu_book"
-        :title="$t('resources')"
+        :title="t('resources')"
         @click="showResources = true"
       ></q-btn>
       <q-btn
         flat
         round
         icon="info"
-        :title="$t('introduction')"
+        :title="t('introduction')"
         @click="showIntro = true"
       ></q-btn>
       <q-btn
@@ -68,17 +68,17 @@
         <q-list class="bg-white">
           <q-item v-if="$q.screen.lt.sm" clickable v-close-popup to="/">
             <q-item-section>
-              <q-item-label>{{ $t('home') }}</q-item-label>
+              <q-item-label>{{ t('home') }}</q-item-label>
             </q-item-section>
           </q-item>
           <q-item v-if="$q.screen.lt.sm" clickable v-close-popup to="/data-hub">
             <q-item-section>
-              <q-item-label>{{ $t('data_hub') }}</q-item-label>
+              <q-item-label>{{ t('data_hub') }}</q-item-label>
             </q-item-section>
           </q-item>
           <q-item v-if="$q.screen.lt.sm" clickable v-close-popup to="/explore">
             <q-item-section>
-              <q-item-label>{{ $t('explore') }}</q-item-label>
+              <q-item-label>{{ t('explore') }}</q-item-label>
             </q-item-section>
           </q-item>
           <q-item
@@ -88,23 +88,23 @@
             to="/contribute"
           >
             <q-item-section>
-              <q-item-label>{{ $t('contribute') }}</q-item-label>
+              <q-item-label>{{ t('contribute') }}</q-item-label>
             </q-item-section>
           </q-item>
           <q-separator v-if="$q.screen.lt.sm" />
           <q-item clickable v-close-popup @click="showResources = true">
             <q-item-section>
-              <q-item-label>{{ $t('resources') }}</q-item-label>
+              <q-item-label>{{ t('resources') }}</q-item-label>
             </q-item-section>
           </q-item>
           <q-item clickable v-close-popup @click="showIntro = true">
             <q-item-section>
-              <q-item-label>{{ $t('introduction') }}</q-item-label>
+              <q-item-label>{{ t('introduction') }}</q-item-label>
             </q-item-section>
           </q-item>
           <q-item clickable v-close-popup :to="'/admin'">
             <q-item-section>
-              <q-item-label>{{ $t('administration') }}</q-item-label>
+              <q-item-label>{{ t('administration') }}</q-item-label>
             </q-item-section>
           </q-item>
         </q-list>
@@ -130,7 +130,7 @@
     :content="IntroductionMd"
   />
 
-  <simple-dialog v-model="showResources" :title="$t('resources')">
+  <simple-dialog v-model="showResources" :title="t('resources')">
     <q-list separator>
       <essential-link
         v-for="link in essentialLinks"
@@ -141,12 +141,6 @@
   </simple-dialog>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  components: { SimpleDialog },
-  name: 'AppToolbar',
-});
-</script>
 <script setup lang="ts">
 import IntroductionMd from 'src/assets/introduction.md';
 import essentialLinks from 'src/assets/links.json';
@@ -163,6 +157,7 @@ withDefaults(defineProps<Props>(), {
 });
 const emit = defineEmits(['toggle-left', 'toggle-right']);
 
+const { t } = useI18n();
 const settingsStore = useSettingsStore();
 const route = useRoute();
 

@@ -57,11 +57,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'DatasetVariablesForm',
-});
-</script>
 <script setup lang="ts">
 import { referenceOptions } from 'src/utils/options';
 import { Dataset, Variable } from 'src/models';

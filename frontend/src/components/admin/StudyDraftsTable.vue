@@ -19,7 +19,7 @@
               flat
               size="sm"
               color="grey-8"
-              :title="$t('approve')"
+              :title="t('approve')"
               icon="publish"
               class="q-ml-xs"
               @click="onShowApprove(props.row)"
@@ -30,7 +30,7 @@
               flat
               size="sm"
               color="grey-8"
-              :title="$t('edit')"
+              :title="t('edit')"
               icon="edit"
               class="q-ml-xs"
               @click="onShowEdit(props.row)"
@@ -41,7 +41,7 @@
               flat
               size="sm"
               color="grey-8"
-              :title="$t('delete')"
+              :title="t('delete')"
               icon="delete"
               class="q-ml-xs"
               @click="onShowDelete(props.row)"
@@ -59,16 +59,11 @@
     </q-table>
     <study-draft-dialog v-model="showDialog" @save="onSave"/>
     <study-upload-dialog v-model="showUpload" @close="onUploadClose"/>
-    <confirm-dialog v-model="showDelete" :text="$t('confirm_study_draft_delete', { identifier: selected?.name })" @confirm="onDelete"/>
-    <confirm-dialog v-model="showApprove" :text="$t('confirm_study_draft_approval', { identifier: selected?.name })" @confirm="onApprove"/>
+    <confirm-dialog v-model="showDelete" :text="t('confirm_study_draft_delete', { identifier: selected?.name })" @confirm="onDelete"/>
+    <confirm-dialog v-model="showApprove" :text="t('confirm_study_draft_approval', { identifier: selected?.name })" @confirm="onApprove"/>
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'StudyDraftsTable',
-});
-</script>
 <script setup lang="ts">  
 import { Study, Building, Instrument, Dataset } from 'src/models';
 import StudyDraftDialog from 'src/components/admin/StudyDraftDialog.vue';
@@ -76,6 +71,7 @@ import StudyUploadDialog from 'src/components/contribute/StudyUploadDialog.vue';
 import ConfirmDialog from 'src/components/ConfirmDialog.vue';
 import { notifyError, notifySuccess } from 'src/utils/notify';
 
+const { t } = useI18n();
 const authStore = useAuthStore();
 const contrib = useContributeStore();
 

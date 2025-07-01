@@ -3,7 +3,7 @@
     <q-item-label header>
       <span class="text-h6">
         <q-icon name="filter_alt" class="q-pb-xs" />
-        <span class="q-ml-sm">{{ $t('filters') }}</span>
+        <span class="q-ml-sm">{{ t('filters') }}</span>
       </span>
       <q-btn
         flat
@@ -11,7 +11,7 @@
         color="primary"
         size="12px"
         icon="restart_alt"
-        :label="$t('reset_filters')"
+        :label="t('reset_filters')"
         @click="onResetFilters"
         class="q-mt-none q-mr-lg q-pl-xs q-pr-xs float-right"
       />
@@ -28,9 +28,9 @@
           align="justify"
           narrow-indicator
         >
-          <q-tab name="pollutants" :label="$t('pollutants')"/>
-          <q-tab name="geography" :label="$t('geography')" />
-          <q-tab name="buildings" :label="$t('buildings')" />
+          <q-tab name="pollutants" :label="t('pollutants')"/>
+          <q-tab name="geography" :label="t('geography')" />
+          <q-tab name="buildings" :label="t('buildings')" />
         </q-tabs>
         <q-separator />
         <q-tab-panels v-model="tab" animated>
@@ -38,7 +38,7 @@
             <q-select
               v-model="particles"
               :options="particleOptions"
-              :label="$t('particles')"
+              :label="t('particles')"
               multiple
               use-chips
               emit-value
@@ -48,7 +48,7 @@
             <q-select
               v-model="vocs"
               :options="vocOptions"
-              :label="$t('voc')"
+              :label="t('voc')"
               multiple
               use-chips
               emit-value
@@ -58,7 +58,7 @@
             <q-select
               v-model="inorganicGases"
               :options="inorganicGasesOptions"
-              :label="$t('inorganic_gases')"
+              :label="t('inorganic_gases')"
               multiple
               use-chips
               emit-value
@@ -68,7 +68,7 @@
             <q-select
               v-model="biocontaminants"
               :options="biocontaminantsOptions"
-              :label="$t('biocontaminants')"
+              :label="t('biocontaminants')"
               multiple
               use-chips
               emit-value
@@ -78,7 +78,7 @@
             <q-select
               v-model="otherPollutants"
               :options="otherPollutantsOptions"
-              :label="$t('other_pollutants')"
+              :label="t('other_pollutants')"
               multiple
               use-chips
               emit-value
@@ -90,7 +90,7 @@
             <q-select
               v-model="filtersStore.countries"
               :options="studyCountries"
-              :label="$t('countries')"
+              :label="t('countries')"
               multiple
               use-chips
               emit-value
@@ -100,14 +100,14 @@
             <q-select
               v-model="filtersStore.cities"
               :options="studyCities"
-              :label="$t('cities')"
+              :label="t('cities')"
               multiple
               use-chips
               emit-value
               map-options
               @update:model-value="onUpdatedFilter"
             />
-            <div class="q-mt-md text-grey-8">{{ $t('altitudes') }}</div>
+            <div class="q-mt-md text-grey-8">{{ t('altitudes') }}</div>
             <div class="q-pl-md q-pr-md">
               <q-range
                 v-model="filtersStore.altitudes"
@@ -124,8 +124,8 @@
             <q-select
               v-model="filtersStore.climate_zones"
               :options="climateOptions"
-              :label="$t('climate_zones')"
-              :hint="$t('climate_zones_hint')"
+              :label="t('climate_zones')"
+              :hint="t('climate_zones_hint')"
               multiple
               use-chips
               emit-value
@@ -135,7 +135,7 @@
               <q-checkbox
                 dense
                 v-model="climateZoneLayerVisible"
-                :label="$t('layer.show_climate-zones')"
+                :label="t('layer.show_climate-zones')"
                 @update:model-value="onToggleClimateZonesLayer"
               />
               <q-space />
@@ -153,7 +153,7 @@
             <q-select
               v-model="filtersStore.study_ids"
               :options="studyOptions"
-              :label="$t('study.label')"
+              :label="t('study.label')"
               multiple
               use-chips
               emit-value
@@ -174,14 +174,14 @@
             <q-select
               v-model="filtersStore.building_types"
               :options="buildingTypeOptions"
-              :label="$t('study.building.type')"
+              :label="t('study.building.type')"
               multiple
               use-chips
               emit-value
               map-options
               @update:model-value="onUpdatedFilter"
             />
-            <div class="q-mt-md text-grey-8">{{ $t('study.building.construction_year') }}</div>
+            <div class="q-mt-md text-grey-8">{{ t('study.building.construction_year') }}</div>
             <div class="q-pl-md q-pr-md">
               <q-range
                 v-model="filtersStore.construction_years"
@@ -198,7 +198,7 @@
             <q-select
               v-model="filtersStore.mechanical_ventilation_types"
               :options="mechanicalVentilationTypeOptions"
-              :label="$t('study.space.mechanical_ventilation_type')"
+              :label="t('study.space.mechanical_ventilation_type')"
               multiple
               use-chips
               emit-value
@@ -208,7 +208,7 @@
             <q-select
               v-model="filtersStore.outdoor_envs"
               :options="outdoorEnvOptions"
-              :label="$t('study.building.outdoor_env')"
+              :label="t('study.building.outdoor_env')"
               multiple
               use-chips
               emit-value
@@ -218,7 +218,7 @@
             <q-select
               v-model="filtersStore.age_groups"
               :options="ageGroupOptions"
-              :label="$t('study.building.age_group')"
+              :label="t('study.building.age_group')"
               multiple
               use-chips
               emit-value
@@ -228,7 +228,7 @@
             <q-select
               v-model="filtersStore.socioeconomic_status"
               :options="socioeconomicStatusOptions"
-              :label="$t('study.building.socioeconomic_status')"
+              :label="t('study.building.socioeconomic_status')"
               multiple
               use-chips
               emit-value
@@ -243,10 +243,10 @@
     <template v-if="showClimateZoneOption && climateZoneLayerVisible">
       <q-item-label header class="text-h6">
         <q-icon name="info" class="q-pb-xs" />
-        <span class="q-ml-sm">{{ $t('legends') }}</span>
+        <span class="q-ml-sm">{{ t('legends') }}</span>
       </q-item-label>
       <q-item-label cclass="q-mt-md">
-        <span class="q-ml-md">{{ $t('climate_zones') }}</span>
+        <span class="q-ml-md">{{ t('climate_zones') }}</span>
       </q-item-label>
       <q-item>
         <div class="row">
@@ -265,11 +265,6 @@
   </q-list>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'LayersDrawer',
-});
-</script>
 <script setup lang="ts">
 import { DEFAULT_CONSTRUCTION_YEARS, DEFAULT_ALTITUDES } from 'src/stores/filters';
 import {
@@ -289,6 +284,7 @@ import {
 import type { StudySummary } from 'src/models';
 import { truncateString } from 'src/utils/strings';
 
+const { t } = useI18n();
 const mapStore = useMapStore();
 const catalogStore = useCatalogStore();
 const helpStore = useHelpStore();

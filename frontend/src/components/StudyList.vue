@@ -22,16 +22,16 @@
                 <q-chip
                   color="secondary"
                   class="text-white on-left"
-                  :label="$t('buildings_with_count', getBuildingsCount(props.row))"
+                  :label="t('buildings_with_count', getBuildingsCount(props.row))"
                 />
                 <q-chip
                   color="secondary"
                   class="text-white on-left"
-                  :label="$t('datasets_with_count', getDatasetsCount(props.row))"
+                  :label="t('datasets_with_count', getDatasetsCount(props.row))"
                 />
                 <q-chip
                   :label="
-                    $t('from_to', {
+                    t('from_to', {
                       from: props.row.start_year,
                       to: props.row.end_year,
                     })
@@ -46,14 +46,10 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'StudyList',
-});
-</script>
 <script setup lang="ts">
 import { Study, StudiesResult } from 'src/models';
 
+const { t } = useI18n();
 const catalogStore = useCatalogStore();
 const filtersStore = useFiltersStore();
 const router = useRouter();

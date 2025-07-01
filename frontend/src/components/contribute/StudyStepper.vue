@@ -129,7 +129,7 @@
           flat
           @click="onPreviousStep"
           color="secondary"
-          :label="$t('back')"
+          :label="t('back')"
           class="on-left"
         />
         <q-btn
@@ -137,7 +137,7 @@
           @click="onNextStep"
           :disable="!canNext"
           color="primary"
-          :label="$t('continue')"
+          :label="t('continue')"
         />
       </q-card-section>
     </q-card>
@@ -148,26 +148,26 @@
           flat
           @click="onPreviousStep"
           color="secondary"
-          :label="$t('back')"
+          :label="t('back')"
           class="on-left"
         />
         <q-btn
           v-if="step < 4"
           @click="onNextStep"
           color="primary"
-          :label="$t('continue')"
+          :label="t('continue')"
         />
         <q-btn
           v-if="step === 4"
           color="primary"
           @click="onSubmit"
-          :label="$t('submit')"
+          :label="t('submit')"
         />
         <q-btn
           @click="onPause"
           flat
           color="secondary"
-          :label="$t('pause')"
+          :label="t('pause')"
           class="on-right"
         />
       </q-card-section>
@@ -175,12 +175,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  components: { BuildingsForm, DatasetsForm },
-  name: 'StudyStepper',
-});
-</script>
 <script setup lang="ts">
 import StepStudyMd from 'src/assets/step-study.md';
 import StepBuildingsMd from 'src/assets/step-buildings.md';
@@ -200,6 +194,7 @@ interface Props {
 defineProps<Props>();
 const emit = defineEmits(['pause', 'submit', 'step']);
 
+const { t } = useI18n();
 const contrib = useContributeStore();
 
 const studyFormRef = ref();

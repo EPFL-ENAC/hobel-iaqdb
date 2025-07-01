@@ -44,11 +44,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'StudyInstruments',
-});
-</script>
 <script setup lang="ts">
 import type { InstrumentParameter } from 'src/models';
 import { equipmentGradeOptions, placementOptions } from 'src/utils/options';

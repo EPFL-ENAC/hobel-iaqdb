@@ -12,8 +12,8 @@
           align="justify"
           @update:model-value="onTabChange"
         >
-          <q-tab name="map" icon="map" :label="$t('buildings')" />
-          <q-tab name="list" icon="list" :label="$t('studies')" />
+          <q-tab name="map" icon="map" :label="t('buildings')" />
+          <q-tab name="list" icon="list" :label="t('studies')" />
         </q-tabs>
         <q-separator />
       </div>
@@ -45,6 +45,8 @@ import StudyList from 'src/components/StudyList.vue';
 import { Map } from 'maplibre-gl';
 
 const tab = ref('map');
+
+const { t } = useI18n();
 const mapStore = useMapStore();
 const filtersStore = useFiltersStore();
 
