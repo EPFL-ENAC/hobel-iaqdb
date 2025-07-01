@@ -130,19 +130,9 @@
           @update:model-value="onLocationUpdated"
         />
       </div>
-      <div class="col">
-        <q-input
-          v-model="building.postcode"
-          filled
-          :label="$t('study.building.postcode')"
-          :hint="$t('study.building.postcode_hint')"
-          :debounce="500"
-          @update:model-value="onLocationUpdated"
-        />
-      </div>
     </div>
 
-    <div v-if="hasCityCountry" class="row q-col-gutter-md q-mb-md">
+    <div v-if="authStore.isAdmin && hasCityCountry" class="row q-col-gutter-md q-mb-md">
       <div class="col">
         <q-input
           v-model.number="building.long"
@@ -172,7 +162,7 @@
         />
       </div>
     </div>
-    <div v-if="hasLongLat" class="row q-col-gutter-md q-mb-md">
+    <div v-if="authStore.isAdmin && hasLongLat" class="row q-col-gutter-md q-mb-md">
       <div class="col">
         <q-input
           v-model.number="building.altitude"
@@ -200,7 +190,7 @@
         />
       </div>
     </div>
-    <div v-if="loadingAlt">
+    <div v-if="authStore.isAdmin && loadingAlt">
       <q-spinner-dots />
     </div>
 
@@ -422,6 +412,7 @@ import SpaceForm from 'src/components/contribute/SpaceForm.vue';
 import { notifyInfo } from 'src/utils/notify';
 
 const contrib = useContributeStore();
+const authStore = useAuthStore();
 
 interface Props {
   modelValue: Building;
@@ -456,6 +447,7 @@ function isNumber(value: any): boolean {
 }
 
 async function onInitLocation() {
+  building.value.postcode = undefined; // Reset postcode as it is not used anymore
   if (!hasCityCountry.value) {
     building.value.long = undefined;
     building.value.lat = undefined;
