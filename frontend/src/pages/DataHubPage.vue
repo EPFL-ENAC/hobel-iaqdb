@@ -23,6 +23,7 @@
           position
           geocoder
           :zoom="2"
+          :max-zoom="16"
           @map:loaded="onMapLoaded"
           style="
             position: absolute;
