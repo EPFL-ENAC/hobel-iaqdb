@@ -33,6 +33,9 @@
 </template>
 
 <script setup lang="ts">
+import { useQuasar } from 'quasar';
+
+const $q = useQuasar();
 const { t } = useI18n();
 const contrib = useContributeStore();
 

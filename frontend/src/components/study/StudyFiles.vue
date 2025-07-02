@@ -55,7 +55,7 @@ const datasets = computed(() => catalogStore.study?.datasets || [])
 
 const simple = computed(() => [
   {
-    label: study.value?.name,
+    label: study.value?.name || '',
     children: [
       { label: 'README.md' },
       { label: 'LICENSE.md' },
@@ -64,12 +64,12 @@ const simple = computed(() => [
         label: 'datasets',
         children: datasets.value.map((ds) => {
           return {
-            label: ds.name,
+            label: ds.name || '',
             children: ds.folder?.children?.map((f) => {
               return { label: `${f.name} (${getSizeLabel(f.size)})` }
-            })
+            }) || [],
           }
-        })
+        }),
       },
     ],
   },

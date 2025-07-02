@@ -4,8 +4,8 @@ import { withRange } from 'src/utils/numbers';
 export type FilterParams = {
   countries?: string[] | null;
   cities?: string[] | null;
-  construction_years?: [number, number];
-  altitudes?: [number, number];
+  construction_years?: [number, number] | undefined;
+  altitudes?: [number, number] | undefined;
   climate_zones?: string[] | null;
   building_types?: string[] | null;
   age_groups?: string[] | null;
@@ -22,8 +22,8 @@ export const DEFAULT_ALTITUDES = { min: 0, max: 2500 };
 export const useFiltersStore = defineStore(
   'filters',
   () => {
-    const countries = ref([]);
-    const cities = ref([]);
+    const countries = ref<string[]>([]);
+    const cities = ref<string[]>([]);
     const construction_years = ref({ ...DEFAULT_CONSTRUCTION_YEARS });
     const altitudes = ref({ ...DEFAULT_ALTITUDES });
     const climate_zones = ref<string[]>([]);

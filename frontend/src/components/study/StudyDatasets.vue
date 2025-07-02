@@ -65,14 +65,14 @@ const columms = computed(() => {
     {
       name: 'name',
       label: t('study.dataset.name'),
-      align: 'left',
+      align: 'left' as const,
       sortable: true,
       field: 'name',
     },
     {
       name: 'description',
       label: t('study.dataset.description'),
-      align: 'left',
+      align: 'left' as const,
       sortable: true,
       field: 'description',
       format: (v: string) => {
@@ -82,7 +82,7 @@ const columms = computed(() => {
     {
       name: 'variables',
       label: t('study.dataset.variables'),
-      align: 'left',
+      align: 'left' as const,
       sortable: true,
       field: 'variables',
       format: (v: Variable[]) => {

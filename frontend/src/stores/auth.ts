@@ -1,17 +1,11 @@
 import { defineStore } from 'pinia';
 import { keycloak } from 'src/boot/api';
+import type { KeycloakProfile } from 'keycloak-js';
 
-export interface Profile {
-  id: string;
-  username: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-}
 
 export const useAuthStore = defineStore('auth', () => {
 
-  const profile = ref<Profile>();
+  const profile = ref<KeycloakProfile>();
   const realmRoles = ref<string[]>([]);
   const isAuthenticated = computed(() => profile.value !== undefined);
   const isAdmin = computed(() => realmRoles.value.includes('admin'));
@@ -23,13 +17,11 @@ export const useAuthStore = defineStore('auth', () => {
     realmRoles.value = [];
     return keycloak.init({
       onLoad: 'check-sso' // Optional: 'login-required' forces login right away, 'check-sso' checks if the user is already logged in.
-    }).then((authenticated: boolean) => {
+    }).then(async (authenticated: boolean) => {
       if (authenticated) {
-        realmRoles.value = keycloak.tokenParsed.realm_access.roles
-        return keycloak.loadUserProfile().then((prof: Profile) => {
-          profile.value = prof;
-          return authenticated;
-        });
+        realmRoles.value = keycloak.tokenParsed?.realm_access?.roles || [];
+        profile.value = await keycloak.loadUserProfile();
+        return authenticated;
       } else {
         return authenticated;
       }
@@ -39,12 +31,12 @@ export const useAuthStore = defineStore('auth', () => {
   async function login() {
     if (isAuthenticated.value) return;
     // redirects to keycloak login page
-    return keycloak.login();
+    return await keycloak.login();
   }
 
   async function logout() {
     if (!isAuthenticated.value) return;
-    return keycloak.logout({
+    return await keycloak.logout({
       redirectUri: window.location.origin,
     }).then(() => {
       profile.value = undefined;
@@ -53,10 +45,10 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function updateToken() {
-    return keycloak.updateToken(30)
+    return await keycloak.updateToken(30)
       .catch(() => {
         console.error('Failed to refresh token');
-        return logout().finally(() => Promise.reject('Failed to refresh token'));
+        return logout().finally(() => { throw new Error('Failed to refresh token'); });
       });
   }
 

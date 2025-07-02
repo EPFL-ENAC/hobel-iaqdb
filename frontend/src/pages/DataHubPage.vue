@@ -25,13 +25,7 @@
           :zoom="2"
           :max-zoom="16"
           @map:loaded="onMapLoaded"
-          style="
-            position: absolute;
-            top: 37px;
-            bottom: 0;
-            width: 100%;
-            z-index: 0;
-          "
+          class="map"
         />
         <study-list v-show="!mapStore.showMap" />
       </div>
@@ -42,7 +36,7 @@
 <script setup lang="ts">
 import MaplibreMap from 'components/MaplibreMap.vue';
 import StudyList from 'src/components/StudyList.vue';
-import { Map } from 'maplibre-gl';
+import type { Map } from 'maplibre-gl';
 
 const tab = ref('map');
 
@@ -71,7 +65,7 @@ watch(
 );
 
 function onMapLoaded(map: Map) {
-  mapStore.initLayers(map).then(() => {
+  void mapStore.initLayers(map).then(() => {
     mapStore.applyFilters(filtersStore.asParams());
   });
 }
@@ -89,5 +83,12 @@ function onTabChange(newTab: string) {
   display: grid;
   grid-template-rows: auto 1fr;
   height: 100%;
+}
+.map {
+  position: absolute;
+  top: 37px;
+  bottom: 0;
+  width: 100%;
+  z-index: 0;
 }
 </style>

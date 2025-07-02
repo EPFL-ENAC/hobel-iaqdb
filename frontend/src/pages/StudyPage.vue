@@ -68,7 +68,7 @@ watch(
 onMounted(updateStudy);
 
 function updateStudy() {
-  catalogStore.loadStudy(studyId.value);
+  void catalogStore.loadStudy(studyId.value);
 }
 
 function onShowDelete() {
@@ -76,8 +76,8 @@ function onShowDelete() {
 }
 
 function onDelete() {
-  catalogStore.deleteStudy(studyId.value).then(() => {
-    router.push({ name: 'data-hub' });
+  void catalogStore.deleteStudy(studyId.value).then(() => {
+    void router.push({ name: 'data-hub' });
   });
 }
 
@@ -89,6 +89,6 @@ function onDraft() {
   if (!catalogStore.study) {
     return;
   }
-  contributeStore.reinstateDraft(catalogStore.study);
+  void contributeStore.reinstateDraft(catalogStore.study);
 }
 </script>

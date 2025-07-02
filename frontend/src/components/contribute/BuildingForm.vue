@@ -308,6 +308,7 @@
     >
       <div class="col">
         <q-input
+          v-if="building.certifications[0]"
           v-model.number="building.certifications[0].program"
           filled
           :label="t('study.building.certification_program')"
@@ -316,6 +317,7 @@
       </div>
       <div class="col">
         <q-input
+          v-if="building.certifications[0]"
           v-model.number="building.certifications[0].level"
           filled
           :label="t('study.building.certification_level')"
@@ -341,10 +343,11 @@
                 >
                   <template v-slot:header>
                     {{
-                      `${building.spaces ? building.spaces[i].identifier : i}`
+                      `${building.spaces ? building.spaces[i]?.identifier : i}`
                     }}
                   </template>
                   <space-form
+                    v-if="building.spaces && building.spaces[i]"
                     v-model="building.spaces[i]"
                     :building="building"
                     class="q-mt-md"
@@ -402,7 +405,7 @@ import {
   yesNoOptions,
 } from 'src/utils/options';
 import { geocoderApi } from 'src/utils/geocoder';
-import { Building, Certification } from 'src/models';
+import type { Building, Certification } from 'src/models';
 import SpaceForm from 'src/components/contribute/SpaceForm.vue';
 import { notifyInfo } from 'src/utils/notify';
 
@@ -415,18 +418,18 @@ interface Props {
 }
 const props = defineProps<Props>();
 
-const building = ref(props.modelValue);
+const building = ref<Building>(props.modelValue);
 const loadingGeo = ref(false);
 const loadingAlt = ref(false);
 
 onMounted(() => {
-  onInitLocation();
+  void onInitLocation();
   onGreenCertifiedUpdated();
 });
 
 watch(() => props.modelValue, (val) => {
   building.value = val;
-  onInitLocation();
+  void onInitLocation();
   onGreenCertifiedUpdated();
 });
 
@@ -454,9 +457,9 @@ async function onInitLocation() {
     const countryOpt = countryOptions.find((c) => c.label === building.value.country);
     if (countryOpt) {
       building.value.country = countryOpt.value;
-      onLocationUpdated();
+      await onLocationUpdated();
     } else if (!isNumber(building.value.long) || !isNumber(building.value.lat)) {
-      onLocationUpdated();
+      await onLocationUpdated();
     }
   }
 }
@@ -473,11 +476,11 @@ async function onLocationUpdated() {
     const res = await geocoderApi.forwardGeocode({
       query: building.value.city,
       limit: 1,
-      countries: [building.value.country],
+      countries: building.value.country,
     });
-    if (res.features && res.features.length > 0 && res.features[0].center) {
-      building.value.long = res.features[0].center[0];
-      building.value.lat = res.features[0].center[1];
+    if (res.features && res.features.length > 0 && res.features[0]?.geometry.type === 'Point') {
+      building.value.long = res.features[0].geometry.coordinates[0];
+      building.value.lat = res.features[0].geometry.coordinates[1];
     } else {
       building.value.long = undefined;
       building.value.lat = undefined;
@@ -499,16 +502,22 @@ function onLongLatUpdated() {
     return;
   }
   loadingAlt.value = true;
-  Promise.all([
+  void Promise.all([
     contrib
       .fetchAltitude(building.value.long, building.value.lat)
       .then((res) => {
         building.value.altitude = res.altitude;
+      })
+      .catch(() => {
+        building.value.altitude = undefined;
       }),
     contrib
       .fetchClimateZone(building.value.long, building.value.lat)
       .then((res) => {
         building.value.climate_zone = res.name;
+      })
+      .catch(() => {
+        building.value.climate_zone = undefined;
       }),
   ]).finally(() => (loadingAlt.value = false));
 }

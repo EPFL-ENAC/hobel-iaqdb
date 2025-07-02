@@ -55,11 +55,14 @@
 </template>
 
 <script setup lang="ts">
+import { useQuasar } from 'quasar';
+
 interface AppHeaderProps {
   url: string;
 }
 
 defineProps<AppHeaderProps>();
 
+const $q = useQuasar();
 const { t } = useI18n();
 </script>

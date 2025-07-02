@@ -47,7 +47,8 @@
 </template>
 
 <script setup lang="ts">
-import { Study, StudiesResult } from 'src/models';
+import type { Study, StudiesResult } from 'src/models';
+import type { TableRequestProps } from 'src/components/models';
 
 const { t } = useI18n();
 const catalogStore = useCatalogStore();
@@ -61,6 +62,7 @@ const pagination = ref({
   descending: false,
   page: 1,
   rowsPerPage: 25,
+  rowsNumber: 0,
 });
 const loading = ref(false);
 
@@ -85,14 +87,14 @@ function truncateText(text: string, maxLength: number) {
   return text.slice(0, maxLength) + '...';
 }
 
-function onRequest(props) {
+function onRequest(props: TableRequestProps) {
   const { page, rowsPerPage, sortBy, descending } = props.pagination;
 
   const skip = (page - 1) * rowsPerPage;
   const limit = rowsPerPage;
   loading.value = true;
 
-  catalogStore.loadStudies(skip, limit).then((result: StudiesResult) => {
+  void catalogStore.loadStudies(skip, limit).then((result: StudiesResult) => {
     rows.value = result.data;
     pagination.value.rowsNumber = result.total;
 
@@ -108,6 +110,6 @@ function onRequest(props) {
 }
 
 function onRowClick(val: Study) {
-  router.push(`/study?id=${val.identifier}`);
+  void router.push(`/study?id=${val.identifier}`);
 }
 </script>

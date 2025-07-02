@@ -31,6 +31,7 @@
 </template>
 
 <script setup lang="ts">
+import { useQuasar } from 'quasar';
 import StudyStepper from 'src/components/contribute/StudyStepper.vue';
 
 interface Props {
@@ -39,6 +40,7 @@ interface Props {
 const props = defineProps<Props>();
 const emit = defineEmits(['update:modelValue', 'save']);
 
+const $q = useQuasar();
 const { t } = useI18n();
 
 const showDialog = ref(props.modelValue);

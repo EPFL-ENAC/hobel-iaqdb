@@ -22,6 +22,7 @@
 </template>
 
 <script setup lang="ts">
+import { useQuasar } from 'quasar';
 import StudyTabs from 'src/components/study/StudyTabs.vue';
 
 const catalogStore = useCatalogStore();
@@ -32,6 +33,7 @@ interface Props {
 const props = defineProps<Props>();
 const emit = defineEmits(['update:modelValue']);
 
+const $q = useQuasar();
 const { t } = useI18n();
 
 const showDialog = ref(props.modelValue);

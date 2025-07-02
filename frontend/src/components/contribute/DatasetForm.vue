@@ -63,8 +63,8 @@
 <script setup lang="ts">
 import DatasetVariablesForm from 'src/components/contribute/DatasetVariablesForm.vue';
 import DataFileDialog from 'src/components/contribute/DataFileDialog.vue';
-import { Dataset, FileNode } from 'src/models';
-import { DataFile } from 'src/components/models';
+import type { Dataset, FileNode } from 'src/models';
+import type { DataFile } from 'src/components/models';
 import { notifyError } from 'src/utils/notify';
 
 const contrib = useContributeStore();

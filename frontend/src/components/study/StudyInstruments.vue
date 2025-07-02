@@ -65,28 +65,28 @@ const columms = computed(() => {
     {
       name: 'identifier',
       label: 'ID',
-      align: 'left',
+      align: 'left' as const,
       sortable: true,
       field: 'identifier',
     },
     {
       name: 'manufacturer',
       label: t('study.instrument.manufacturer'),
-      align: 'left',
+      align: 'left' as const,
       sortable: true,
       field: 'manufacturer',
     },
     {
       name: 'model',
       label: t('study.instrument.model'),
-      align: 'left',
+      align: 'left' as const,
       sortable: true,
       field: 'model',
     },
     {
       name: 'equipment_grade_rating',
       label: t('study.instrument.equipment_grade'),
-      align: 'left',
+      align: 'left' as const,
       sortable: true,
       field: 'equipment_grade_rating',
       format: (val: string) => equipmentGradeOptions.find((opt) => opt.value === val)?.label || val,
@@ -94,7 +94,7 @@ const columms = computed(() => {
     {
       name: 'placement',
       label: t('study.instrument.placement'),
-      align: 'left',
+      align: 'left' as const,
       sortable: true,
       field: 'placement',
       format: (val: string) => placementOptions.find((opt) => opt.value === val)?.label || val,
@@ -102,7 +102,7 @@ const columms = computed(() => {
     {
       name: 'parameters',
       label: t('study.instrument.parameters'),
-      align: 'left',
+      align: 'left' as const,
       sortable: true,
       field: 'parameters',
       format: (v: InstrumentParameter[]) => {

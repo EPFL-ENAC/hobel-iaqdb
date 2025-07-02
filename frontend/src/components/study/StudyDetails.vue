@@ -37,8 +37,9 @@
 
 <script setup lang="ts">
 import { licenseOptions } from 'src/utils/options';
-import FieldsList, { FieldItem } from 'src/components/FieldsList.vue';
-import { Study, Person } from 'src/models';
+import FieldsList from 'src/components/FieldsList.vue';
+import type { FieldItem } from 'src/components/FieldsList.vue';
+import type { Study, Person } from 'src/models';
 
 const catalogStore = useCatalogStore();
 const { t } = useI18n();
@@ -68,7 +69,7 @@ const licenseDescription = computed(
   () => licenseOptions.find((lic) => lic.value === study.value?.license)?.description,
 );
 
-const items: FieldItem<Study>[] = [
+const items: FieldItem[] = [
   {
     field: 'website',
     label: 'Website',
@@ -77,7 +78,7 @@ const items: FieldItem<Study>[] = [
   },
 ];
 
-const refItems: FieldItem<Study>[] = [
+const refItems: FieldItem[] = [
   {
     field: 'citation',
     label: 'Citation',
@@ -90,7 +91,7 @@ const refItems: FieldItem<Study>[] = [
   },
 ];
 
-const contactItems: FieldItem<Person>[] = [
+const contactItems: FieldItem[] = [
   {
     field: 'contact',
     label: 'Name',

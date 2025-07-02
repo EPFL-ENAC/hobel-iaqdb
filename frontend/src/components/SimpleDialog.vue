@@ -21,6 +21,8 @@
 </template>
 
 <script setup lang="ts">
+import { useQuasar } from 'quasar';
+
 interface Props {
   modelValue: boolean;
   title?: string;
@@ -30,6 +32,7 @@ interface Props {
 const props = defineProps<Props>();
 const emit = defineEmits(['update:modelValue']);
 
+const $q = useQuasar();
 const { t } = useI18n();
 
 const showDialog = ref(props.modelValue);

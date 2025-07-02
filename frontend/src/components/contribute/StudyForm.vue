@@ -101,11 +101,11 @@
         <q-list v-if="contrib.study.contributors?.length" separator>
           <q-item
             v-for="(person, i) in contrib.study.contributors"
-            :key="person.id"
+            :key="i"
             class="q-pl-none q-pr-none"
           >
             <q-item-section>
-              <person-form v-model="contrib.study.contributors[i]" />
+              <person-form v-if="contrib.study.contributors[i]" v-model="contrib.study.contributors[i]" />
             </q-item-section>
             <q-item-section side>
               <q-btn
@@ -217,12 +217,16 @@ const license_accepted = ref(false);
 onMounted(
   () => {
     if (contrib.study.occupant_impact) {
-      occupant_impacts.value = contrib.study.occupant_impact.split(',');
+      if (typeof contrib.study.occupant_impact === 'string') {
+        occupant_impacts.value = (contrib.study.occupant_impact as string).split(',');
+      }
     } else {
       occupant_impacts.value = [];
     }
     if (contrib.study.other_indoor_param) {
-      other_indoor_params.value = contrib.study.other_indoor_param.split(',');
+      if (typeof contrib.study.other_indoor_param === 'string') {
+        other_indoor_params.value = (contrib.study.other_indoor_param as string).split(',');
+      }
     } else {
       other_indoor_params.value = [];
     }

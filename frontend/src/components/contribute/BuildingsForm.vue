@@ -16,7 +16,7 @@
         <div class="col" style="max-width: 200px;">
           <div class="q-mb-md q-mt-sm">
             <div v-for="(building, i) in contrib.study.buildings"
-            :key="building.id">
+            :key="i">
               <q-btn
                 flat
                 no-caps
@@ -36,7 +36,7 @@
           <div class="text-bold">
             <q-toolbar>
               <q-icon name="business" class="q-mr-xs" size="sm"/>
-              {{ contrib.study.buildings[selected].identifier }}
+              {{ contrib.study.buildings[selected]?.identifier }}
               <q-space />
               <q-btn
                 rounded
@@ -84,9 +84,7 @@
             </q-toolbar>
           </div>
           <q-separator class="q-mb-md"/>
-          <building-form
-            v-model="contrib.study.buildings[selected]"
-          />
+          <building-form v-model="selectedBuilding" />
         </div>
       </div>
     </div>
@@ -96,11 +94,40 @@
 <script setup lang="ts">
 import { notifyInfo } from 'src/utils/notify';
 import BuildingForm from './BuildingForm.vue';
+import type { Building } from 'src/models';
 
 const { t } = useI18n();
 const contrib = useContributeStore();
 
 const selected = ref<number | null>(null);
+
+const selectedBuilding = computed({
+  get() {
+    if (
+      selected.value !== null &&
+      contrib.study.buildings &&
+      contrib.study.buildings[selected.value]
+    ) {
+      return contrib.study.buildings[selected.value] as Building;
+    }
+    // Return a default Building object if undefined (adjust fields as needed)
+    return {
+      identifier: '',
+      country: '',
+      city: '',
+      spaces: [],
+    };
+  },
+  set(val: Building) {
+    if (
+      selected.value !== null &&
+      contrib.study.buildings &&
+      contrib.study.buildings[selected.value]
+    ) {
+      contrib.study.buildings[selected.value] = val;
+    }
+  },
+});
 
 const buildingCount = computed(() => contrib.study.buildings?.length || 0);
 const spaceCount = computed(

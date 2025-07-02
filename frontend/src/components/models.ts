@@ -1,13 +1,15 @@
-import { Variable } from 'src/models';
-
-export interface FileObject extends Blob {
-  readonly size: number;
-  readonly name: string;
-  readonly path: string;
-  readonly type: string;
-}
+import type { Variable } from 'src/models';
 
 export interface DataFile {
-  file: FileObject;
+  file: File;
   variables: Variable[];
+}
+
+export interface TableRequestProps {
+  pagination: {
+    page: number;
+    rowsPerPage: number;
+    sortBy: string;
+    descending: boolean;
+  };
 }

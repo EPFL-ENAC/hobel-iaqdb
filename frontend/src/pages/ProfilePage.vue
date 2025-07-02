@@ -28,9 +28,9 @@ const { t } = useI18n();
 const authStore = useAuthStore();
 
 onMounted(() => {
-   authStore.init().then(() => {
+   void authStore.init().then(() => {
      if (!authStore.isAuthenticated) {
-       authStore.login();
+       void authStore.login();
      }
    });
 })

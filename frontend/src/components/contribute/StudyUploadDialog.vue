@@ -49,9 +49,11 @@
 </template>
 
 <script setup lang="ts">
+import { useQuasar } from 'quasar';
 import { copyToClipboard } from 'quasar';
 import { notifyError, notifyInfo } from 'src/utils/notify';
 
+const $q = useQuasar();
 const { t } = useI18n();
 const contrib = useContributeStore();
 
@@ -77,7 +79,7 @@ watch(
     buffer.value = 0;
     status.value = '';
     if (value) {
-      doSave();
+      void doSave();
     }
   },
 );
@@ -111,7 +113,10 @@ async function doSave() {
 }
 
 function onCopy() {
-  copyToClipboard(contrib.study.identifier);
-  notifyInfo('Study ID copied to clipboard');
+  copyToClipboard(contrib.study.identifier).then(() => {
+    notifyInfo('Study ID copied to clipboard');
+  }).catch((error) => {
+    notifyError(error);
+  });
 }
 </script>

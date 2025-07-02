@@ -1,14 +1,13 @@
-import { Map, Popup, GeoJSONSource } from 'maplibre-gl';
-import {
+import { type Map, Popup, type GeoJSONSource } from 'maplibre-gl';
+import type {
   Feature,
   FeatureCollection,
-  GeoJSON,
   GeoJsonProperties,
   Geometry,
   Point,
 } from 'geojson';
 import { LayerManager } from 'src/layers/models';
-import { FilterParams } from 'src/stores/filters';
+import type { FilterParams } from 'src/stores/filters';
 import { baseUrl } from 'src/boot/api';
 import { truncateString } from 'src/utils/strings';
 import { t } from 'src/boot/i18n';
@@ -52,14 +51,14 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
     const studyJitteredCoordinates: { [key: string]: [number, number] }  = {};
     geoJson.features = geoJson.features.map((feature, index) => {
       if (feature.geometry.type === 'Point') {
-        const [lng, lat] = (feature.geometry as Point).coordinates;
+        const [lng, lat] = feature.geometry.coordinates;
         const studyId = feature.properties ? feature.properties['study_id'] || '' : '';
         const key = `${studyId}-${lng}-${lat}`;
         let jitteredLng, jitteredLat;
         if (!studyJitteredCoordinates[key]) {
           [jitteredLng, jitteredLat] = this.jitterCoordinates(
-            lng,
-            lat,
+            lng || 0,
+            lat || 0,
             index,
             geoJson.features.length,
           );
@@ -132,17 +131,22 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
     });
 
     // inspect a cluster on click
-    map.on('click', 'buildings-clusters', async (e) => {
+    map.on('click', 'buildings-clusters', (e) => {
       const features = map.queryRenderedFeatures(e.point, {
         layers: ['buildings-clusters'],
       });
+      if (!features || features.length === 0 || !features[0]) return;
       const clusterId = features[0].properties.cluster_id;
-      const zoom = await (
-        map.getSource('buildings') as GeoJSONSource
-      ).getClusterExpansionZoom(clusterId);
-      map.easeTo({
-        center: (features[0].geometry as Point).coordinates as [number, number],
-        zoom,
+      const geoSource = map.getSource<GeoJSONSource>('buildings');
+      if (!geoSource) return;
+      geoSource.getClusterExpansionZoom(clusterId).then((zoom: number) => {
+        if (zoom === undefined || !features[0]) return;
+        map.easeTo({
+          center: (features[0].geometry as Point).coordinates as [number, number],
+          zoom,
+        });
+      }).catch((err) => {
+        console.error('Error getting cluster expansion zoom:', err);
       });
     });
 
@@ -185,8 +189,8 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
       const city = feature.properties['city'] ? `${feature.properties['city']}, ${feature.properties['country']}` : '';
       const studyElements = Object.keys(studyFeatures)
             .map((key) => {
-              const buildings_count = studyFeatures[key].length;
-              const spaces_count = studyFeatures[key].reduce(
+              const buildings_count = studyFeatures[key]?.length;
+              const spaces_count = studyFeatures[key]?.reduce(
                 (acc, feat) => acc + (feat.properties ? feat.properties['spaces_count'] : 0),
                 0,
               );
@@ -198,18 +202,18 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
               aContainer.href = 'javascript:void(0)';
               aContainer.classList.add('epfl');
               aContainer.onclick = () => this.onStudySelected(key);
-              aContainer.innerText = truncateString(studyNames[key], 30) + ' ';
+              aContainer.innerText = truncateString(studyNames[key] || '', 30) + ' ';
               studyContainer.appendChild(aContainer);
               divContainer.appendChild(studyContainer);
 
               const buildingsContainer = document.createElement('div');
               buildingsContainer.innerHTML = `
-                <span class="text-bold">${buildings_count}</span> ${t('buildings_count', buildings_count)}`;
+                <span class="text-bold">${buildings_count}</span> ${t('buildings_count', buildings_count || 0)}`;
               divContainer.appendChild(buildingsContainer);
 
               const spacesContainer = document.createElement('div');
               spacesContainer.innerHTML = `
-                <span class="text-bold">${spaces_count}</span> ${t('spaces_count', spaces_count)}`;
+                <span class="text-bold">${spaces_count}</span> ${t('spaces_count', spaces_count || 0)}`;
               divContainer.appendChild(spacesContainer);
               
               return divContainer;
@@ -332,7 +336,7 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
     this.filteredData = {
       ...this.buildingsData,
       features: filteredFeatures,
-    } as GeoJSON;
-    (map.getSource('buildings') as GeoJSONSource).setData(this.filteredData);
+    };
+    map.getSource<GeoJSONSource>('buildings')?.setData(this.filteredData);
   }
 }
