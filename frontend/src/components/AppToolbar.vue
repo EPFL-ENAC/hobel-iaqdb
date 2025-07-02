@@ -142,11 +142,12 @@
 </template>
 
 <script setup lang="ts">
+import { useQuasar } from 'quasar';
 import IntroductionMd from 'src/assets/introduction.md';
 import essentialLinks from 'src/assets/links.json';
 import EssentialLink from 'src/components/EssentialLink.vue';
 import SimpleDialog from 'src/components/SimpleDialog.vue';
-import { Settings } from 'src/stores/settings';
+import type { Settings } from 'src/stores/settings';
 
 interface Props {
   noMenu?: boolean;
@@ -157,6 +158,7 @@ withDefaults(defineProps<Props>(), {
 });
 const emit = defineEmits(['toggle-left', 'toggle-right']);
 
+const $q = useQuasar();
 const { t } = useI18n();
 const settingsStore = useSettingsStore();
 const route = useRoute();

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { api } from 'src/boot/api';
-import {
+import type {
   Study,
   Building,
   Space,
@@ -190,7 +190,7 @@ export const useCatalogStore = defineStore('catalog', () => {
   }
 
   async function deleteStudy(id: string) {
-    if (!authStore.isAuthenticated) return Promise.reject('Not authenticated');
+    if (!authStore.isAuthenticated) return Promise.reject(new Error('Not authenticated'));
     return authStore.updateToken().then(() => 
       api.delete(`/catalog/study/${id}`, {
         headers: {

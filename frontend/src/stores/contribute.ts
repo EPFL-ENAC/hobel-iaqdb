@@ -7,7 +7,7 @@ import {
 } from 'src/utils/options';
 import { defineStore } from 'pinia';
 import { api, baseUrl } from 'src/boot/api';
-import {
+import type {
   Study,
   Building,
   Space,
@@ -18,7 +18,7 @@ import {
   FileNode,
 } from 'src/models';
 
-import { FileObject, DataFile } from 'src/components/models';
+import type { DataFile } from 'src/components/models';
 
 export const useContributeStore = defineStore(
   'contribute',
@@ -53,7 +53,8 @@ export const useContributeStore = defineStore(
     }
 
     async function load(identifier: string) {
-      return api.get(`/contribute/study-draft/${identifier}`).then((res) => study.value = res.data);
+      const res = await api.get(`/contribute/study-draft/${identifier}`);
+      return study.value = res.data;
     }
 
     const inProgress = computed(
@@ -102,7 +103,7 @@ export const useContributeStore = defineStore(
         let country = '';
         if (study.value.buildings && study.value.buildings.length > 0) {
           country =
-            study.value.buildings[study.value.buildings.length - 1].country;
+            study.value.buildings[study.value.buildings.length - 1]?.country || '';
         }
         study.value.buildings?.push({
           id: id,
@@ -118,16 +119,17 @@ export const useContributeStore = defineStore(
       }
     }
 
-    function getSpaceDefaults(type: string) {
-      let space = 'other';
-      if (buildingSpaceTypeOptions[type]) {
+    function getSpaceDefaults(type: string | undefined): Space {
+      let space = '';
+      if (type && buildingSpaceTypeOptions[type] && buildingSpaceTypeOptions[type][0]) {
         space = buildingSpaceTypeOptions[type][0].value;
       }
       return {
-        space,
-        occupancy: occupancyOptions[0].value,
-        mechanical_ventilation_type: mechanicalVentilationTypeOptions[0].value,
-        smoking: yesNoOptions[2].value,
+        identifier: '',
+        type: space,
+        occupancy: occupancyOptions[0]?.value || '',
+        mechanical_ventilation_type: mechanicalVentilationTypeOptions[0]?.value || '',
+        smoking: yesNoOptions[2]?.value || '',
         periods: [],
       };
     }
@@ -154,8 +156,8 @@ export const useContributeStore = defineStore(
       } else {
         building.spaces?.push({
           id: id,
-          identifier: `${id}`,
           ...getSpaceDefaults(building.type),
+          identifier: `${id}`,
         } as Space);
       }
     }
@@ -226,7 +228,7 @@ export const useContributeStore = defineStore(
       } else {
         instrument.parameters.push({
           id: id,
-          physical_parameter: physicalParameterOptions[0].value,
+          physical_parameter: physicalParameterOptions[0]?.value,
           analysis_method: '',
           measurement_uncertainty: '',
         } as InstrumentParameter);
@@ -297,16 +299,22 @@ export const useContributeStore = defineStore(
       study.value.datasets?.splice(i, 1);
     }
 
-    async function fetchAltitude(lon: number, lat: number) {
-      return api
-        .get('/map/elevation', { params: { lon, lat } })
-        .then((res) => res.data);
+    async function fetchAltitude(lon: number | undefined, lat: number | undefined) {
+      if (lon === undefined || lat === undefined) {
+        return Promise.reject(new Error('Longitude and latitude are required'));
+      }
+      const res = await api
+        .get('/map/elevation', { params: { lon, lat } });
+      return res.data;
     }
 
-    async function fetchClimateZone(lon: number, lat: number) {
-      return api
-        .get('/map/climate-zone', { params: { lon, lat } })
-        .then((res) => res.data);
+    async function fetchClimateZone(lon: number | undefined, lat: number | undefined) {
+      if (lon === undefined || lat === undefined) {
+        return Promise.reject(new Error('Longitude and latitude are required'));
+      }
+      const res = await api
+        .get('/map/climate-zone', { params: { lon, lat } });
+      return res.data;
     }
 
     async function readExcel(file: File) {
@@ -316,15 +324,14 @@ export const useContributeStore = defineStore(
       }
       const formData = new FormData();
       formData.append('files', file);
-      return api.post('/contribute/study-excel', formData).then((res) => {
-        console.log(res.data);
-        study.value = res.data;
-        study.value.identifier = identifier;
-      });
+      const res = await api.post('/contribute/study-excel', formData);
+      console.log(res.data);
+      study.value = res.data;
+      study.value.identifier = identifier;
     }
 
     async function getDrafts() {
-      if (!authStore.isAuthenticated) return Promise.reject('Not authenticated');
+      if (!authStore.isAuthenticated) return Promise.reject(new Error('Not authenticated'));
       return authStore.updateToken().then(() => 
         api.get('/contribute/study-drafts', {
           headers: {
@@ -375,7 +382,7 @@ export const useContributeStore = defineStore(
     }
 
     async function publishDraft(study: Study) {
-      if (!authStore.isAuthenticated) return Promise.reject('Not authenticated');
+      if (!authStore.isAuthenticated) return Promise.reject(new Error('Not authenticated'));
       return authStore.updateToken().then(() => 
         api.put(`/contribute/study-draft/${study.identifier}/_publish`, {}, {
           headers: {
@@ -386,7 +393,7 @@ export const useContributeStore = defineStore(
     }
 
     async function reinstateDraft(study: Study) {
-      if (!authStore.isAuthenticated) return Promise.reject('Not authenticated');
+      if (!authStore.isAuthenticated) return Promise.reject(new Error('Not authenticated'));
       return authStore.updateToken().then(() => 
         api.put(`/contribute/study-draft/${study.identifier}/_reinstate`, {}, {
           headers: {
@@ -397,7 +404,7 @@ export const useContributeStore = defineStore(
     }
     
     async function deleteDraft(study: Study) {
-      if (!authStore.isAuthenticated) return Promise.reject('Not authenticated');
+      if (!authStore.isAuthenticated) return Promise.reject(new Error('Not authenticated'));
       return authStore.updateToken().then(() => 
         api.delete(`/contribute/study-draft/${study.identifier}`, {
           headers: {
@@ -408,23 +415,24 @@ export const useContributeStore = defineStore(
     }
 
     async function deleteFile(file: FileNode) {
-      return api.delete(`/files/${file.path}`);
+      return await api.delete(`/files/${file.path}`);
     }
 
     function downloadFile(file: FileNode) {
       window.open(`${baseUrl}/files/${file.path}?d=true`);
     }
 
-    function uploadTmpFiles(files: FileObject[]): Promise<FileNode> {
+    async function uploadTmpFiles(files: File[]): Promise<FileNode> {
       const formData = new FormData();
       files.forEach((f) => {
         formData.append('files', f);
       });
-      return api.post('/files/tmp', formData, {
+      const res = await api.post('/files/tmp', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
-      }).then((res) => res.data);
+      });
+      return res.data;
     }
 
     return {

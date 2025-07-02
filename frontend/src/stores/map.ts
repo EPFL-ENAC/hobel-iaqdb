@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
 import { BuildingsLayerManager } from 'src/layers/buildings';
 import { ClimateZonesLayerManager } from 'src/layers/climate_zones';
-import { Map } from 'maplibre-gl';
-import { FilterParams } from 'src/stores/filters';
+import type { Map } from 'maplibre-gl';
+import type { FilterParams } from 'src/stores/filters';
 
 export type LayerSelection = {
   id: string;
@@ -30,7 +30,7 @@ export const useMapStore = defineStore('map', () => {
     if (catalogStore.showStudyDetails && catalogStore.study?.identifier === id) {
       catalogStore.showStudyDetails = false;
     } else {
-      catalogStore.loadStudy(id).then(() => catalogStore.showStudyDetails = true);
+      void catalogStore.loadStudy(id).then(() => catalogStore.showStudyDetails = true);
     }
   }
 

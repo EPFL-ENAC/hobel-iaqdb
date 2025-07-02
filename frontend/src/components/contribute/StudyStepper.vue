@@ -209,7 +209,7 @@ const isUpdate = computed(() => contrib.study.identifier && contrib.study.identi
 const canNext = computed(() => {
   if (step.value === 1) {
     // study form validation
-    const valid = studyFormRef.value?.validate();
+    studyFormRef.value?.validate();
     return contrib.inProgress;
   } else if (step.value === 2) {
     // buildings form validation
@@ -330,7 +330,10 @@ function onExcelFileUpdated() {
 }
 
 function onCopy() {
-  copyToClipboard(contrib.study.identifier);
-  notifyInfo('Study ID copied to clipboard');
+  copyToClipboard(contrib.study.identifier).then(() => {
+    notifyInfo('Study ID copied to clipboard');
+  }).catch(() => {
+    notifyError('Failed to copy Study ID to clipboard');
+  });
 }
 </script>

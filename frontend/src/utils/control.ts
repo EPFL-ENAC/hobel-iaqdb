@@ -4,7 +4,7 @@ import type { IControl } from 'maplibre-gl';
  * https://maplibre.org/maplibre-gl-js-docs/api/markers/#icontrol
  */
 export class DivControl implements IControl {
-  public container?: HTMLDivElement;
+  public container?: HTMLDivElement | undefined;
 
   constructor(
     private options: {

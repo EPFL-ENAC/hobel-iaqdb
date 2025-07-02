@@ -408,7 +408,7 @@ const climateZonesColors = [
 ];
 
 onMounted(() => {
-  catalogStore.loadStudySummaries(0, 1000, false).then((res) => {
+  void catalogStore.loadStudySummaries(0, 1000, false).then((res) => {
     studySummaries.value = res.data;
   });
   climateZoneLayerVisible.value = mapStore.findLayer('climate-zones')?.visible ?? false;

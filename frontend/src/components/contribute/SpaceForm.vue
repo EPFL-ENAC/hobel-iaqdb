@@ -288,7 +288,7 @@ import {
   majorCombustionSourcesOptions,
   yesNoOptions,
 } from 'src/utils/options';
-import { Building, Space } from 'src/models';
+import type { Building, Space } from 'src/models';
 
 interface Props {
   modelValue: Space;
@@ -311,8 +311,8 @@ watch(() => props.modelValue, (val) => {
   space.value = val;
 });
 
-watch(() => props.building.type, (val) => {
-  if (!spaceTypeOptions.value.map((o) => o.value).includes(space.value.type)) {
+watch(() => props.building.type, () => {
+  if (!spaceTypeOptions.value?.map((o) => o.value).includes(space.value.type)) {
     space.value.type = 'other';
   }
 });

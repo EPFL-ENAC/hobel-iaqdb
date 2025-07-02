@@ -73,6 +73,7 @@
                     {{ `${getInstrumentParameterLabel(i)}` }}
                   </template>
                   <instrument-parameter-form
+                    v-if="instrument.parameters && instrument.parameters[i]"
                     v-model="instrument.parameters[i]"
                     :instrument="instrument"
                     class="q-mt-md"
@@ -126,7 +127,7 @@ import {
   placementOptions,
   physicalParameterOptions,
 } from 'src/utils/options';
-import { Instrument } from 'src/models';
+import type { Instrument } from 'src/models';
 import { notifyInfo } from 'src/utils/notify';
 
 const { t } = useI18n();
@@ -145,7 +146,7 @@ watch(() => props.modelValue, (value) => {
 
 function getInstrumentParameterLabel(i: number) {
   if (!instrument.value.parameters) return i;
-  const val = instrument.value.parameters[i].physical_parameter;
+  const val = instrument.value.parameters[i]?.physical_parameter;
   return physicalParameterOptions.find((o) => o.value === val)?.label || val;
 }
 

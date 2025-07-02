@@ -1,6 +1,6 @@
-import { Map } from 'maplibre-gl';
+import type { Map } from 'maplibre-gl';
 import { LayerManager } from 'src/layers/models';
-import { FilterParams } from 'src/stores/filters';
+import type { FilterParams } from 'src/stores/filters';
 
 const VERSION = '2024-07-01T14:54';
 const CDN_URL = `https://enacit4r-cdn.epfl.ch/iaq/${VERSION}/koppen_geiger/1991_2020`;
@@ -15,7 +15,7 @@ export class ClimateZonesLayerManager extends LayerManager<FilterParams> {
     return false;
   }
 
-  async append(map: Map): Promise<void> {
+  append(map: Map): Promise<void> {
     // map.addSource('climate-zones', {
     //   type: 'vector',
     //   url: 'http://localhost:3000/koppen_geiger_0p1'
@@ -93,6 +93,7 @@ export class ClimateZonesLayerManager extends LayerManager<FilterParams> {
         visibility: 'none',
       },
     });
+    return Promise.resolve();
   }
 
   setVisible(map: Map, visible: boolean): void {

@@ -76,12 +76,14 @@
 </template>
 
 <script setup lang="ts">
+import { useQuasar } from 'quasar';
 import AppToolbar from 'src/components/AppToolbar.vue';
 import LayersDrawer from 'src/components/LayersDrawer.vue';
 import PlotsDrawer from 'src/components/PlotsDrawer.vue';
 import HelpDrawer from 'src/components/HelpDrawer.vue';
 import StudyDetailsDrawer from 'src/components/StudyDetailsDrawer.vue';
 
+const $q = useQuasar();
 const helpStore = useHelpStore();
 const catalogStore = useCatalogStore();
 const route = useRoute();

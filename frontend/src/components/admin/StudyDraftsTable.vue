@@ -65,7 +65,7 @@
 </template>
 
 <script setup lang="ts">  
-import { Study, Building, Instrument, Dataset } from 'src/models';
+import type { Study, Building, Instrument, Dataset } from 'src/models';
 import StudyDraftDialog from 'src/components/admin/StudyDraftDialog.vue';
 import StudyUploadDialog from 'src/components/contribute/StudyUploadDialog.vue';
 import ConfirmDialog from 'src/components/ConfirmDialog.vue';
@@ -88,15 +88,15 @@ const showDialog = ref(false);
 const showUpload = ref(false);
 const showDelete = ref(false);
 const showApprove = ref(false);
-const selected = ref<Study | null>(null);
+const selected = ref<Study>();
 
 onMounted(() => {
-  fetchStudyDrafts();
+  void fetchStudyDrafts();
 });
 
 watch(() => authStore.isAuthenticated, () => {
   if (authStore.isAuthenticated) {
-    fetchStudyDrafts();
+    void fetchStudyDrafts();
   } else {
     studyDrafts.value = [];
   }
@@ -105,12 +105,12 @@ watch(() => authStore.isAuthenticated, () => {
 const rows = computed(() => studyDrafts.value || []);
 
 const columns = computed(() => [
-  { name: 'identifier', label: 'Identifier', align: 'left', field: 'identifier' },
-  { name: 'name', label: 'Name', align: 'left', field: 'name' },
-  { name: 'contributors', label: 'Contributors', align: 'left', field: 'contributors' },
-  { name: 'buildings', label: 'Buildings', align: 'left', field: 'buildings', format: (v: Building[]) => v.length },
-  { name: 'instruments', label: 'Instruments', align: 'left', field: 'instruments', format: (v: Instrument[]) => v.length },
-  { name: 'datasets', label: 'Datasets', align: 'left', field: 'datasets', format: (v: Dataset[]) => v.length },
+  { name: 'identifier', label: 'Identifier', align: 'left' as const, field: 'identifier' },
+  { name: 'name', label: 'Name', align: 'left' as const, field: 'name' },
+  { name: 'contributors', label: 'Contributors', align: 'left' as const, field: 'contributors' },
+  { name: 'buildings', label: 'Buildings', align: 'left' as const, field: 'buildings', format: (v: Building[]) => v.length },
+  { name: 'instruments', label: 'Instruments', align: 'left' as const, field: 'instruments', format: (v: Instrument[]) => v.length },
+  { name: 'datasets', label: 'Datasets', align: 'left' as const, field: 'datasets', format: (v: Dataset[]) => v.length },
 ]);
 
 async function fetchStudyDrafts() {
@@ -127,7 +127,7 @@ async function fetchStudyDrafts() {
 }
 
 function onShowEdit(row: Study) {
-  contrib.load(row.identifier).then(() => {
+  void contrib.load(row.identifier).then(() => {
     showDialog.value = true;
   });
 }
@@ -140,7 +140,7 @@ function onShowApprove(row: Study) {
 function onApprove() {
   if (selected.value) {
     contrib.publishDraft(selected.value).then(() => {
-      fetchStudyDrafts();
+      void fetchStudyDrafts();
     })
     .then(() => {
       notifySuccess('study_draft_approval_success');
@@ -148,7 +148,7 @@ function onApprove() {
     .catch(notifyError)
     .finally(() => {
       showApprove.value = false;
-      selected.value = null;
+      selected.value = undefined;
     });
   }
 }
@@ -160,8 +160,8 @@ function onShowDelete(row: Study) {
 
 function onDelete() {
   if (selected.value) {
-    contrib.deleteDraft(selected.value).then(() => {
-      fetchStudyDrafts();
+    void contrib.deleteDraft(selected.value).then(() => {
+      void fetchStudyDrafts();
     });
   }
 }
@@ -171,6 +171,6 @@ function onSave() {
 }
 
 function onUploadClose() {
-  fetchStudyDrafts();
+  void fetchStudyDrafts();
 }
 </script>

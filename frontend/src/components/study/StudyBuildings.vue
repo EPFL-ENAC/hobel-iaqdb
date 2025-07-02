@@ -69,9 +69,9 @@
 
 <script setup lang="ts">
 import MaplibreMap from 'src/components/MaplibreMap.vue';
-import { Map } from 'maplibre-gl';
+import type { Map } from 'maplibre-gl';
 import type { Building, Space } from 'src/models';
-import { outdoorEnvOptions } from 'src/utils/options';
+import { outdoorEnvOptions, type OptionItem } from 'src/utils/options';
 
 interface Props {
   showMap?: boolean;
@@ -98,38 +98,38 @@ const columms = computed(() => {
     {
       name: 'identifier',
       label: 'ID',
-      align: 'left',
+      align: 'left' as const,
       sortable: true,
       field: 'identifier',
     },
     {
       name: 'city',
       label: t('study.building.city'),
-      align: 'left',
+      align: 'left' as const,
       sortable: true,
       field: 'city',
     },
     {
       name: 'climate_zone',
       label: t('study.building.climate_zone'),
-      align: 'left',
+      align: 'left' as const,
       sortable: true,
       field: 'climate_zone',
     },
     {
       name: 'outdoor_env',
       label: t('study.building.outdoor_env'),
-      align: 'left',
+      align: 'left' as const,
       sortable: true,
       field: 'outdoor_env',
       format: (v: string) => {
-        return outdoorEnvOptions.find((option) => option.value === v)?.label || v;
+        return outdoorEnvOptions.find((option: OptionItem) => option.value === v)?.label || v;
       },
     },
     {
       name: 'construction_renovation_years',
       label: t('study.building.construction_renovation_years'),
-      align: 'left',
+      align: 'left' as const,
       sortable: true,
       field: (row: Building) => {
         return `${row.construction_year || '?'} ${row.renovation_year ? ' / ' + row.renovation_year : ''}`;
@@ -138,7 +138,7 @@ const columms = computed(() => {
     {
       name: 'spaces',
       label: t('spaces'),
-      align: 'left',
+      align: 'left' as const,
       sortable: true,
       field: 'spaces',
       format: (v: Space[]) => {
@@ -149,7 +149,7 @@ const columms = computed(() => {
 });
 
 function onMapLoaded(map: Map) {
-  mapStore.initLayers(map).then(() => {
+  void mapStore.initLayers(map).then(() => {
     if (catalogStore.study?.identifier) {
       mapStore.applyFilters({
         study_ids: [catalogStore.study?.identifier],

@@ -85,6 +85,7 @@ const shuffle = (array: unknown[]) => {
 const generateRankingData = () => {
   const map = new Map();
   const defaultRanking = Array.from({ length: names.length }, (_, i) => i + 1);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   for (const _ of years) {
     const shuffleArray = shuffle(defaultRanking);
     names.forEach((name, i) => {

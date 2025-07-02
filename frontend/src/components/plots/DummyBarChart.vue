@@ -62,11 +62,11 @@ function buildOptions() {
   ];
 
   loading.value = true;
-  const xAxisData = [];
+  const xAxisData: string[] = [];
   const data1 = [];
   const data2 = [];
-  for (var i = 0; i < 12; i++) {
-    xAxisData.push(months[i]);
+  for (let i = 0; i < 12; i++) {
+    xAxisData.push(months[i] || `Month ${i + 1}`);
     data1.push((Math.sin(i / 5) * (i / 5 - 10) + i / 6) * 5);
     data2.push((Math.cos(i / 5) * (i / 5 - 10) + i / 6) * 5);
   }
