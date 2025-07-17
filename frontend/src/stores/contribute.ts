@@ -39,6 +39,8 @@ export const useContributeStore = defineStore(
 
     const dataFiles = ref<DataFile[]>([]);
 
+    const dataEmbargo = ref<string | undefined>('none');
+
     function reset() {
       study.value = {
         identifier: '',
@@ -50,6 +52,7 @@ export const useContributeStore = defineStore(
         datasets: [],
       } as Study;
       dataFiles.value = [];
+      dataEmbargo.value = 'none';
     }
 
     async function load(identifier: string) {
@@ -330,9 +333,20 @@ export const useContributeStore = defineStore(
       study.value.identifier = identifier;
     }
 
+    async function getBundles() {
+      if (!authStore.isAuthenticated) return Promise.reject(new Error('Not authenticated'));
+      return authStore.updateToken().then(() =>
+        api.get('/contribute/study-bundles', {
+          headers: {
+            Authorization: `Bearer ${authStore.accessToken}`,
+          },
+        })
+          .then((res) => res.data));
+    }
+
     async function getDrafts() {
       if (!authStore.isAuthenticated) return Promise.reject(new Error('Not authenticated'));
-      return authStore.updateToken().then(() => 
+      return authStore.updateToken().then(() =>
         api.get('/contribute/study-drafts', {
           headers: {
             Authorization: `Bearer ${authStore.accessToken}`,
@@ -368,22 +382,68 @@ export const useContributeStore = defineStore(
         // check if study exists
         return api.get(`/contribute/study-draft/${study.value.identifier}`).then(() => {
           // update existing study
-          return api.put(`/contribute/study-draft/${study.value.identifier}`, study.value)
-            .then((res) => study.value = res.data);
+          return updateDraft();
         }).catch(() => {
           // create new study, ensure identifier is empty
           study.value.identifier = '';
-          return api.post('/contribute/study-draft', study.value)
-            .then((res) => study.value = res.data);
+          return createDraft();
         });
       }
-      return api.post('/contribute/study-draft', study.value)
-        .then((res) => study.value = res.data);
+      return createDraft();
+    }
+
+    async function createDraft() {
+      if (!authStore.isAuthenticated) {
+        return api.post('/contribute/study-draft', study.value)
+          .then((res) => study.value = res.data)
+          .then(updateContribution);
+      } else {
+        return authStore.updateToken().then(() =>
+          api.post('/contribute/study-draft', study.value, {
+            headers: {
+              Authorization: `Bearer ${authStore.accessToken}`,
+            },
+          })
+          .then((res) => study.value = res.data)
+          .then(updateContribution));
+      }
+    }
+
+    async function updateDraft() {
+      if (!authStore.isAuthenticated) {
+        return api.put(`/contribute/study-draft/${study.value.identifier}`, study.value)
+          .then((res) => study.value = res.data)
+          .then(updateContribution);
+      }
+      return authStore.updateToken().then(() =>
+        api.put(`/contribute/study-draft/${study.value.identifier}`, study.value, {
+          headers: {
+            Authorization: `Bearer ${authStore.accessToken}`,
+          },
+        })
+        .then((res) => study.value = res.data))
+        .then(updateContribution);
+    }
+
+    async function updateContribution() {
+      if (!authStore.isAuthenticated) {
+        return api.put(`/contribute/contribution/${study.value.identifier}`, {
+          data_embargo: dataEmbargo.value,
+        });
+      }
+      return authStore.updateToken().then(() =>
+        api.put(`/contribute/contribution/${study.value.identifier}`, {
+          data_embargo: dataEmbargo.value,
+        },{
+          headers: {
+            Authorization: `Bearer ${authStore.accessToken}`,
+          },
+        }));
     }
 
     async function publishDraft(study: Study) {
       if (!authStore.isAuthenticated) return Promise.reject(new Error('Not authenticated'));
-      return authStore.updateToken().then(() => 
+      return authStore.updateToken().then(() =>
         api.put(`/contribute/study-draft/${study.identifier}/_publish`, {}, {
           headers: {
             Authorization: `Bearer ${authStore.accessToken}`,
@@ -394,7 +454,7 @@ export const useContributeStore = defineStore(
 
     async function reinstateDraft(study: Study) {
       if (!authStore.isAuthenticated) return Promise.reject(new Error('Not authenticated'));
-      return authStore.updateToken().then(() => 
+      return authStore.updateToken().then(() =>
         api.put(`/contribute/study-draft/${study.identifier}/_reinstate`, {}, {
           headers: {
             Authorization: `Bearer ${authStore.accessToken}`,
@@ -402,10 +462,10 @@ export const useContributeStore = defineStore(
         })
       );
     }
-    
+
     async function deleteDraft(study: Study) {
       if (!authStore.isAuthenticated) return Promise.reject(new Error('Not authenticated'));
-      return authStore.updateToken().then(() => 
+      return authStore.updateToken().then(() =>
         api.delete(`/contribute/study-draft/${study.identifier}`, {
           headers: {
             Authorization: `Bearer ${authStore.accessToken}`,
@@ -437,6 +497,7 @@ export const useContributeStore = defineStore(
 
     return {
       study,
+      dataEmbargo,
       inProgress,
       reset,
       load,
@@ -463,6 +524,7 @@ export const useContributeStore = defineStore(
       deleteDraft,
       uploadTmpFiles,
       getDrafts,
+      getBundles,
     };
   },
   { persist: true },

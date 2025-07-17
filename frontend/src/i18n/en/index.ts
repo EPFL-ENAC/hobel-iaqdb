@@ -207,6 +207,10 @@ export default {
       variables: 'Variables',
     },
   },
+  contribution: {
+    data_embargo: 'Data embargo',
+    data_embargo_hint: 'The period of time before the data is made publicly available.',
+  },
   plots: {
     buildings_overview: 'Buildings overview',
     building_type: 'Building Type',

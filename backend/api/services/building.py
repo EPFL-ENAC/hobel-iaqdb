@@ -61,7 +61,7 @@ class BuildingService:
 
         return building
 
-    async def delete(self, building_id: int) -> Study:
+    async def delete(self, building_id: int) -> Building:
         """Delete a building by id"""
         res = await self.session.exec(
             select(Building).where(Building.id == building_id)

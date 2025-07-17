@@ -58,7 +58,7 @@ class SpaceService:
 
         return space
 
-    async def delete(self, space_id: int) -> Study:
+    async def delete(self, space_id: int) -> Space:
         """Delete a space by id"""
         res = await self.session.exec(
             select(Space).where(Space.id == space_id)

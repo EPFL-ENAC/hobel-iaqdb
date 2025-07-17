@@ -7,7 +7,7 @@
       </div>
       <div v-else>
         <p class="text-bold">You are currently editing a new study.</p>
-        Note that the study information are automatically saved in your browser: you can pause/resume the form at any time. The study draft will be permanently saved on the iAQ DB server once submitted only. 
+        Note that the study information are automatically saved in your browser: you can pause/resume the form at any time. The study draft will be permanently saved on the iAQ DB server once submitted only.
       </div>
     </div>
     <q-stepper
@@ -118,6 +118,21 @@
           />
         </div>
 
+        <div class="row">
+          <div class="col-12 col-md-6">
+            <q-select
+              v-model="contrib.dataEmbargo"
+              :options="dataEmbargoOptions"
+              filled
+              emit-value
+              map-options
+              :label="t('contribution.data_embargo')"
+              :hint="t('contribution.data_embargo_hint')"
+              class="q-mt-md"
+            />
+          </div>
+        </div>
+
         <datasets-form class="q-mt-lg" />
       </q-step>
     </q-stepper>
@@ -187,6 +202,7 @@ import DatasetsForm from 'src/components/contribute/DatasetsForm.vue';
 import { baseUrl } from 'src/boot/api';
 import { copyToClipboard } from 'quasar';
 import { notifyError, notifyInfo } from 'src/utils/notify';
+import { dataEmbargoOptions } from 'src/utils/options';
 
 interface Props {
   dialog?: boolean;

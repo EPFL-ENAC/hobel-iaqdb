@@ -35,10 +35,10 @@ export interface Building extends DBModel {
   renovation_details?: string | undefined;
   renovation_year?: number | undefined;
   mechanical_ventilation?: string;
-  particle_filtration_system?: string; 
+  particle_filtration_system?: string;
   particle_filtration_rating?: number;
   operable_windows?: string;
-  airtightness?: number;  
+  airtightness?: number;
   age_group?: string;
   socioeconomic_status?: string;
   smoking?: string;
@@ -181,4 +181,19 @@ export interface GroupByCount {
 export interface GroupByResult {
     field: string;
     counts: GroupByCount[];
+}
+
+export interface Contribution extends DBModel {
+  created_at?: string;
+  created_by?: string;
+  updated_at?: string;
+  updated_by?: string;
+  published_at?: string;
+  published_by?: string;
+  data_embargo?: string;
+}
+
+export interface StudyBundle {
+  study: Study;
+  contribution?: Contribution;
 }

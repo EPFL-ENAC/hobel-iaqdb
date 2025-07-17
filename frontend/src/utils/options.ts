@@ -293,6 +293,13 @@ export const referenceOptions = [
   { value: 'other', label: 'Other' },
 ];
 
+export const dataEmbargoOptions = [
+  { value: '3m', label: '3 months' },
+  { value: '6m', label: '6 months' },
+  { value: '1y', label: '1 year' },
+  { value: 'none', label: 'None' },
+];
+
 export const countryOptions = sortByLabel([
   { value: 'AF', label: 'Afghanistan' },
   { value: 'AX', label: 'Åland Islands' },

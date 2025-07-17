@@ -1,5 +1,5 @@
 import pkg_resources
-from fastapi import APIRouter, Depends, Body, HTTPException
+from fastapi import APIRouter, Depends, Body, Query, HTTPException
 from fastapi.responses import FileResponse, Response
 from fastapi.datastructures import UploadFile
 from fastapi.param_functions import File
@@ -8,9 +8,12 @@ from api.db import get_session, AsyncSession
 from api.services.study_parser import StudyParser
 from api.services.study import StudyService
 from api.services.study_draft import StudyDraftService
-from api.models.catalog import StudyDraft, StudyDraftsResult, StudyRead, Study
+from api.services.contribution import ContributionService
+from api.models.catalog import StudyDraft, StudyDraftsResult, StudyBundlesResult, StudyBundle, StudyRead, Study, Contribution, ContributionsResult
 from api.utils.files import file_checker
 from api.auth import kc_service, User
+from enacit4r_sql.utils.query import paramAsArray, paramAsDict
+from datetime import datetime
 
 router = APIRouter()
 
@@ -44,6 +47,35 @@ async def read_study_from_excel(
         raise HTTPException(status_code=400, detail=str(e))
 
 
+@router.get("/study-bundles", response_model=StudyBundlesResult)
+async def get_study_bundles(
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(kc_service.require_admin()),
+) -> StudyBundlesResult:
+    """Get all study bundles"""
+    service = StudyDraftService()
+    studies = await service.list()
+    if not studies:
+        return StudyBundlesResult(total=0, skip=0, limit=None, data=[])
+    # Convert StudyDraft to StudyBundle
+    contribService = ContributionService(session)
+    bundles = []
+    contributions = await contribService.find(
+        filter={'study_identifier': [study.identifier for study in studies]},
+        sort=[],
+        range=[]
+    )
+    contributions_map = {
+        contribution.study_identifier: contribution for contribution in contributions.data}
+    for study in studies:
+        bundle = StudyBundle(
+            study=study,
+            contribution=contributions_map.get(study.identifier, None)
+        )
+        bundles.append(bundle)
+    return StudyBundlesResult(total=len(studies), skip=0, limit=None, data=bundles)
+
+
 @router.get("/study-drafts", response_model=StudyDraftsResult)
 async def get_study_drafts(
     user: User = Depends(kc_service.require_admin()),
@@ -57,6 +89,8 @@ async def get_study_drafts(
 @router.post("/study-draft", response_model=StudyDraft)
 async def create_study_draft(
     study: StudyDraft = Body(...),
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(kc_service.get_user_info(required=False)),
 ) -> StudyDraft:
     """Create a study draft"""
     service = StudyDraftService()
@@ -66,6 +100,7 @@ async def create_study_draft(
             raise Exception(
                 f"Study with identifier {study.identifier} already exists.")
     study = await service.createOrUpdate(StudyDraft.model_validate(study))
+    await ContributionService(session).touch_by_identifier(study.identifier, user)
     return study
 
 
@@ -86,12 +121,15 @@ async def get_study_draft(
 async def update_study_draft(
     identifier: str,
     study: StudyDraft = Body(...),
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(kc_service.get_user_info(required=False)),
 ) -> StudyDraft:
     """Update a study draft"""
     if identifier != study.identifier:
         raise Exception("Identifier in URL does not match identifier in body")
     service = StudyDraftService()
     study = await service.createOrUpdate(StudyDraft.model_validate(study))
+    await ContributionService(session).touch_by_identifier(study.identifier, user)
     return study
 
 
@@ -105,7 +143,9 @@ async def publish_study_draft(
     service = StudyDraftService()
     study_draft = await service.get(identifier)
     study_service = StudyService(session)
-    return await study_service.save(study_draft)
+    study = await study_service.save(study_draft)
+    await ContributionService(session).publish_by_identifier(study.identifier, user)
+    return study
 
 
 @router.put("/study-draft/{identifier}/_reinstate", response_model=StudyRead)
@@ -138,3 +178,66 @@ async def delete_study_draft(
     """Delete a study draft"""
     service = StudyDraftService()
     await service.delete(identifier)
+
+
+@router.get("/contributions", response_model=ContributionsResult)
+async def get_contributions(
+    filter: str = Query(None),
+    sort: str = Query(None),
+    range: str = Query(None),
+    session: AsyncSession = Depends(get_session),
+) -> ContributionsResult:
+    """Get all contributions"""
+    service = ContributionService(session)
+    res = await service.find(paramAsDict(filter), paramAsArray(sort), paramAsArray(range))
+    return res
+
+
+@router.get("/contribution/{id}", response_model=Contribution)
+async def get_contribution(
+    session: AsyncSession = Depends(get_session),
+    *,
+    id: str,
+) -> Contribution:
+    """Get a contribution by id or study identifier"""
+    service = ContributionService(session)
+    if id.isdigit():
+        res = await service.get(int(id))
+    else:
+        res = await service.get_by_identifier(id)
+    return res
+
+
+@router.delete("/contribution/{id}")
+async def delete_contribution(
+    id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(kc_service.require_admin()),
+) -> None:
+    """Delete contribution by id or study identifier"""
+    service = ContributionService(session)
+    if id.isdigit():
+        await service.delete(int(id))
+    else:
+        await service.delete_by_identifier(id)
+
+
+@router.post("/contribution/", response_model=Contribution, response_model_exclude_none=True)
+async def create_contribution(
+    contribution: Contribution,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(kc_service.get_user_info())
+) -> Contribution:
+    """Create a contribution"""
+    return await ContributionService(session).create(contribution, user)
+
+
+@router.put("/contribution/{id}", response_model=Contribution, response_model_exclude_none=True)
+async def update_contribution(
+    id: str,
+    contribution: Contribution,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(kc_service.get_user_info(required=False))
+) -> Contribution:
+    """Update a contribution by id"""
+    return await ContributionService(session).update(id, contribution, user)

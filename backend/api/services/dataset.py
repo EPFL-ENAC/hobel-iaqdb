@@ -53,7 +53,7 @@ class DatasetService:
 
         return dataset
 
-    async def delete(self, dataset_id: int) -> Study:
+    async def delete(self, dataset_id: int) -> Dataset:
         """Delete a dataset by id"""
         res = await self.session.exec(
             select(Dataset).where(Dataset.id == dataset_id)

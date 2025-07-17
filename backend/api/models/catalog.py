@@ -1,11 +1,13 @@
 from typing import List, Dict, Optional
 from sqlmodel import SQLModel, Field, Relationship, UniqueConstraint, Column
 from sqlalchemy.dialects.postgresql import JSONB as JSON
+from sqlalchemy import TIMESTAMP
 from enacit4r_sql.models.query import ListResult
 from pydantic import BaseModel
-
+from datetime import datetime
 
 # Studies
+
 
 class PersonBase(SQLModel):
     name: str
@@ -338,6 +340,39 @@ class DatasetDraft(DatasetRead):
     id: Optional[int] = Field(default=None)
 
 #
+# Contribution
+#
+
+
+class ContributionBase(SQLModel):
+    created_at: datetime = Field(
+        sa_column=TIMESTAMP(timezone=True), default=None)
+    updated_at: datetime = Field(
+        sa_column=TIMESTAMP(timezone=True), default=None)
+    published_at: Optional[datetime] = Field(
+        sa_column=TIMESTAMP(timezone=True), default=None)
+    created_by: Optional[str] = Field(default=None)
+    updated_by: Optional[str] = Field(default=None)
+    published_by: Optional[str] = Field(default=None)
+    data_embargo: Optional[str] = Field(default=None)
+    study_identifier: Optional[str] = Field(default=None)
+
+
+class Contribution(ContributionBase, table=True):
+    __table_args__ = (UniqueConstraint("id"),)
+    id: Optional[int] = Field(
+        default=None,
+        nullable=False,
+        primary_key=True,
+        index=True,
+    )
+
+
+class StudyBundle(BaseModel):
+    study: Optional[StudyDraft] = Field(default=None)
+    contribution: Optional[Contribution] = Field(default=None)
+
+#
 # Results
 #
 
@@ -378,3 +413,11 @@ class GroupByCount(BaseModel):
 class GroupByResult(BaseModel):
     field: str
     counts: List[GroupByCount]
+
+
+class ContributionsResult(ListResult):
+    data: List[Contribution]
+
+
+class StudyBundlesResult(ListResult):
+    data: List[StudyBundle]
