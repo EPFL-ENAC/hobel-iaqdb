@@ -262,6 +262,7 @@ export default {
   it4r_contrib: 'UI/UX design, application development and deployment',
   layers: 'Layers',
   legends: 'Legends',
+  measurement_year: 'Measurement year',
   mechanical: 'Mechanical',
   more_details: 'More details',
   must_be_integer: 'Must be an integer',

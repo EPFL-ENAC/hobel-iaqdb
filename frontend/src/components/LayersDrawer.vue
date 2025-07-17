@@ -35,6 +35,20 @@
         <q-separator />
         <q-tab-panels v-model="tab" animated>
           <q-tab-panel name="pollutants" class="q-pa-none">
+            <div class="q-mt-md text-grey-8">{{ t('measurement_year') }}</div>
+            <div class="q-pl-md q-pr-md">
+              <q-range
+                v-model="measurementYear"
+                :min="2000"
+                :max="new Date().getFullYear()"
+                :step="1"
+                label
+                snap
+                color="primary"
+                class="q-pr-sm"
+                @change="onUpdatedFilter"
+              />
+            </div>
             <q-select
               v-model="particles"
               :options="particleOptions"
@@ -292,6 +306,7 @@ const filtersStore = useFiltersStore();
 const route = useRoute();
 
 const tab = ref('geography');
+const measurementYear = ref({ min: 2000, max: new Date().getFullYear() });
 const particles = ref([]);
 const inorganicGases = ref([]);
 const biocontaminants = ref([]);
