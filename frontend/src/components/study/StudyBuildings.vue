@@ -4,7 +4,7 @@
       <maplibre-map
         position
         :zoom="2"
-        :max-zoom="16"
+        :max-zoom="8"
         height="400px"
         width="100%"
         @map:loaded="onMapLoaded"

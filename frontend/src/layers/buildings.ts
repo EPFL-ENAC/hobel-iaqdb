@@ -4,21 +4,30 @@ import type {
   FeatureCollection,
   GeoJsonProperties,
   Geometry,
-  Point,
+  // Point,
 } from 'geojson';
+import Spiderfy, { type SpiderfyOptions } from '@nazka/map-gl-js-spiderfy';
 import { LayerManager } from 'src/layers/models';
 import type { FilterParams } from 'src/stores/filters';
 import { baseUrl } from 'src/boot/api';
 import { truncateString } from 'src/utils/strings';
 import { t } from 'src/boot/i18n';
+import { buildingTypeOptions, outdoorEnvOptions, yesNoOptions, mechanicalVentilationTypeOptions, ageGroupOptions, socioeconomicStatusOptions } from 'src/utils/options';
 
 const GEOJSON_URL = `${baseUrl}/map/buildings`;
 
+interface MouseEventWithCoordinates extends MouseEvent {
+  lngLat?: {
+    lng: number;
+    lat: number;
+  };
+}
 
 export class BuildingsLayerManager extends LayerManager<FilterParams> {
   buildingsData: FeatureCollection | null = null;
   filteredData: FeatureCollection | null = null;
-  
+  spiderfy: Spiderfy | null = null;
+
   /**
    * Creates an instance of BuildingsLayerManager.
    * @param onStudySelected Callback function to handle study selection.
@@ -27,6 +36,7 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
     super();
     this.buildingsData = null;
     this.filteredData = null;
+    this.spiderfy = null;
   }
 
   getId(): string {
@@ -37,72 +47,65 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
     return true;
   }
 
-  jitterCoordinates(lng: number, lat: number, index: number, total: number, radius = 0.0001): [number, number] {
-    const angle = (2 * Math.PI / total) * index;
-    const dx = radius * Math.cos(angle);
-    const dy = radius * Math.sin(angle);
-    return [lng + dx, lat + dy];
-  }
-
   async append(map: Map): Promise<void> {
     const response = await fetch(GEOJSON_URL);
     const geoJson = (await response.json()) as FeatureCollection;
-    // Jitter coordinates to avoid overlapping of points from different studies
-    const studyJitteredCoordinates: { [key: string]: [number, number] }  = {};
-    geoJson.features = geoJson.features.map((feature, index) => {
-      if (feature.geometry.type === 'Point') {
-        const [lng, lat] = feature.geometry.coordinates;
-        const studyId = feature.properties ? feature.properties['study_id'] || '' : '';
-        const key = `${studyId}-${lng}-${lat}`;
-        let jitteredLng, jitteredLat;
-        if (!studyJitteredCoordinates[key]) {
-          [jitteredLng, jitteredLat] = this.jitterCoordinates(
-            lng || 0,
-            lat || 0,
-            index,
-            geoJson.features.length,
-          );
-          studyJitteredCoordinates[key] = [jitteredLng, jitteredLat];
-        } else {
-          [jitteredLng, jitteredLat] = studyJitteredCoordinates[key];
-        }
-        return {
-          ...feature,
-          geometry: {
-            ...feature.geometry,
-            coordinates: [jitteredLng, jitteredLat],
-          },
-        };
-      }
-      return feature;
-    });
     this.buildingsData = geoJson;
+
+    const { data: image } = await map.loadImage(
+      '/circle.png',
+    );
+    map.addImage('marker-icon', image,  { sdf: true });
 
     map.addSource('buildings', {
       type: 'geojson',
-      // Point to GeoJSON data. This example visualizes all M1.0+ buildings
-      // from 12/22/15 to 1/21/16 as logged by USGS' Earthquake hazards program.
       data: this.buildingsData,
       cluster: true,
-      clusterMaxZoom: 14, // Max zoom to cluster points on
-      clusterRadius: 50, // Radius of each cluster when clustering points (defaults to 50)
     });
 
-    map.addLayer({
+     map.addLayer({
       id: 'buildings-clusters',
-      type: 'circle',
+      type: 'symbol',
       source: 'buildings',
       filter: ['has', 'point_count'],
-      paint: {
-        // Use step expressions (https://maplibre.org/maplibre-style-spec/#expressions-step)
-        // with three steps to implement three types of circles:
-        //   * Blue, 20px circles when point count is less than 10
-        //   * Yellow, 30px circles when point count is between 10 and 20
-        //   * Pink, 40px circles when point count is greater than or equal to 10
-        'circle-color': '#00a79f',
-        'circle-radius': ['step', ['get', 'point_count'], 20, 10, 30, 20, 40],
+      layout: {
+        'icon-image': 'marker-icon',
+        'icon-allow-overlap': true,
+        'icon-size': 2,
       },
+      paint: {
+        'icon-color': '#f2c037',
+      }
     });
+
+    let popup: Popup | null = null;
+    this.spiderfy = new Spiderfy(map, {
+      onLeafHover: (feature: Feature, event: MouseEventWithCoordinates) => {
+        if (!feature || !feature.geometry || feature.geometry.type !== 'Point') return;
+        console.debug('Spiderfy onLeafHover', feature);
+        if (popup) {
+          popup.remove();
+          popup = null;
+        }
+        const popupContent = this.makeBuildingElement(feature);
+        // Show the popup with the content
+        const coordinates = (event.lngLat ? [event.lngLat.lng, event.lngLat.lat] : feature.geometry.coordinates.slice()) as [number, number];
+        popup = new Popup().setLngLat(coordinates).setDOMContent(popupContent).addTo(map);
+      },
+      minZoomLevel: 8,
+      zoomIncrement: 2,
+      circleSpiralSwitchover: 10,
+      animationSpeed: 100,
+      spiderLeavesLayout: {
+        'icon-image': 'marker-icon',
+        'icon-allow-overlap': true,
+        'icon-size': 1,
+      },
+      spiderLeavesPaint: {
+        'icon-color': ['get', 'color'],
+      },
+    } as SpiderfyOptions);
+    this.spiderfy?.applyTo('buildings-clusters');
 
     map.addLayer({
       id: 'buildings-cluster-count',
@@ -114,126 +117,6 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
         'text-font': ['Roboto Regular'],
         'text-size': 12,
       },
-    });
-
-    map.addLayer({
-      id: 'buildings-unclustered-point',
-      type: 'circle',
-      source: 'buildings',
-      filter: ['!', ['has', 'point_count']],
-      paint: {
-        // get color from color property
-        'circle-color': ['get', 'color'],
-        'circle-radius': 10,
-        'circle-stroke-width': 1,
-        'circle-stroke-color': '#fff',
-      },
-    });
-
-    // inspect a cluster on click
-    map.on('click', 'buildings-clusters', (e) => {
-      const features = map.queryRenderedFeatures(e.point, {
-        layers: ['buildings-clusters'],
-      });
-      if (!features || features.length === 0 || !features[0]) return;
-      const clusterId = features[0].properties.cluster_id;
-      const geoSource = map.getSource<GeoJSONSource>('buildings');
-      if (!geoSource) return;
-      geoSource.getClusterExpansionZoom(clusterId).then((zoom: number) => {
-        if (zoom === undefined || !features[0]) return;
-        map.easeTo({
-          center: (features[0].geometry as Point).coordinates as [number, number],
-          zoom,
-        });
-      }).catch((err) => {
-        console.error('Error getting cluster expansion zoom:', err);
-      });
-    });
-
-    // When a click event occurs on a feature in
-    // the unclustered-point layer, open a popup at
-    // the location of the feature, with
-    // description HTML from its properties.
-    map.on('click', 'buildings-unclustered-point', (e) => {
-      if (!e.features) return;
-      const feature = e.features[0];
-      if (!feature) return;
-
-      // Ensure that if the map is zoomed out such that
-      // multiple copies of the feature are visible, the
-      // popup appears over the copy being pointed to.
-      const coordinates = (feature.geometry as Point).coordinates.slice() as [
-        number,
-        number,
-      ];
-      while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-      }
-
-      // for each feature, group by study_id and create a table
-      // with the properties of the feature
-      // and a link to the study
-      const studyFeatures = {} as Record<string, Feature[]>;
-      e.features.forEach((feat) => {
-        const studyId = feat.properties['study_id'];
-        if (!studyFeatures[studyId]) {
-          studyFeatures[studyId] = [];
-        }
-        studyFeatures[studyId].push(feat);
-      });
-      const studyNames = {} as Record<string, string>;
-      e.features.forEach((feat) => {
-        studyNames[feat.properties['study_id']] = feat.properties['study_name'];
-      });
-      
-      const city = feature.properties['city'] ? `${feature.properties['city']}, ${feature.properties['country']}` : '';
-      const studyElements = Object.keys(studyFeatures)
-            .map((key) => {
-              const buildings_count = studyFeatures[key]?.length;
-              const spaces_count = studyFeatures[key]?.reduce(
-                (acc, feat) => acc + (feat.properties ? feat.properties['spaces_count'] : 0),
-                0,
-              );
-              const divContainer = document.createElement('div');
-              divContainer.className = 'q-ma-sm';
-              
-              const studyContainer = document.createElement('div');
-              const aContainer = document.createElement('a');
-              aContainer.href = 'javascript:void(0)';
-              aContainer.classList.add('epfl');
-              aContainer.onclick = () => this.onStudySelected(key);
-              aContainer.innerText = truncateString(studyNames[key] || '', 30) + ' ';
-              studyContainer.appendChild(aContainer);
-              divContainer.appendChild(studyContainer);
-
-              const buildingsContainer = document.createElement('div');
-              buildingsContainer.innerHTML = `
-                <span class="text-bold">${buildings_count}</span> ${t('buildings_count', buildings_count || 0)}`;
-              divContainer.appendChild(buildingsContainer);
-
-              const spacesContainer = document.createElement('div');
-              spacesContainer.innerHTML = `
-                <span class="text-bold">${spaces_count}</span> ${t('spaces_count', spaces_count || 0)}`;
-              divContainer.appendChild(spacesContainer);
-              
-              return divContainer;
-            });
-      const contentContainer = document.createElement('div');
-      const cityContainer = document.createElement('div');
-      cityContainer.classList.add('q-pa-sm', 'text-bold');
-      cityContainer.style.minWidth = '100px';
-      cityContainer.innerText = city;
-      contentContainer.appendChild(cityContainer);
-      studyElements.forEach((el, index) => {
-        contentContainer.appendChild(el);
-        if (index < studyElements.length - 1) {
-          const separator = document.createElement('hr');
-          separator.classList.add('q-my-sm');
-          contentContainer.appendChild(separator);
-        }
-      });
-
-      new Popup().setLngLat(coordinates).setDOMContent(contentContainer).addTo(map);
     });
 
     map.on('mouseenter', 'buildings-clusters', () => {
@@ -249,10 +132,73 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
     [
       'buildings-clusters',
       'buildings-cluster-count',
-      'buildings-unclustered-point',
     ].forEach((id) => {
       map.setLayoutProperty(id, 'visibility', visibility);
     });
+  }
+
+  makeBuildingElement = (feature: Feature): HTMLElement => {
+    if (!feature.properties) return document.createElement('div');
+    const city = feature.properties['city'] ? `${feature.properties['city']}, ${feature.properties['country']}` : '';
+
+    const divContainer = document.createElement('div');
+
+    const studyContainer = document.createElement('div');
+    const aContainer = document.createElement('a');
+    aContainer.href = 'javascript:void(0)';
+    aContainer.classList.add('epfl');
+    aContainer.onclick = () => {
+      if (!feature.properties || !feature.properties['study_id']) return;
+      this.onStudySelected(feature.properties['study_id']);
+    };
+    aContainer.innerText = truncateString(feature.properties['study_name'] || '', 30) + ' ';
+    studyContainer.appendChild(aContainer);
+    divContainer.appendChild(studyContainer);
+
+    const contentContainer = document.createElement('div');
+
+    const cityContainer = document.createElement('div');
+    cityContainer.classList.add('q-mb-sm');
+    cityContainer.innerText = city;
+    contentContainer.appendChild(cityContainer);
+
+    const propertiesContainer = document.createElement('table');
+    propertiesContainer.classList.add('grid-dl');
+    ['building_type', 'outdoor_env', 'age_group', 'socioeconomic_status', 'mechanical_ventilation', 'mechanical_ventilation_types', 'spaces_count'].forEach((property) => {
+      if (feature.properties && feature.properties[property]) {
+        const div = document.createElement('tr');
+        const dt = document.createElement('td');
+        dt.classList.add('text-bold');
+        dt.innerText = t(`feature.${property}`);
+        const dd = document.createElement('td');
+        dd.style.minWidth = '100px';
+        let value = feature.properties[property];
+        if (property === 'building_type') {
+          value = buildingTypeOptions.find((option) => option.value === value)?.label || value;
+        } else if (property === 'outdoor_env') {
+          value = outdoorEnvOptions.find((option) => option.value === value)?.label || value;
+        } else if (property === 'age_group') {
+          value = ageGroupOptions.find((option) => option.value === value)?.label || value;
+        } else if (property === 'socioeconomic_status') {
+          value = socioeconomicStatusOptions.find((option) => option.value === value)?.label || value;
+        } else if (property === 'mechanical_ventilation') {
+          value = yesNoOptions.find((option) => option.value === value)?.label || value;
+        } else if (property === 'mechanical_ventilation_types') {
+          value = value.split('|').map((item: string) => mechanicalVentilationTypeOptions.find((option) => option.value === item)?.label || item).join(', ');
+        } else if (property === 'spaces_count') {
+          value = feature.properties['spaces_count'] || 0;
+        }
+        dd.innerText = value;
+        div.appendChild(dt);
+        div.appendChild(dd);
+        propertiesContainer.appendChild(div);
+      }
+    });
+    contentContainer.appendChild(propertiesContainer);
+
+    divContainer.appendChild(contentContainer);
+
+    return divContainer;
   }
 
   filter(map: Map, filter: FilterParams): void {

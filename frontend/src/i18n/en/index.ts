@@ -220,6 +220,15 @@ export default {
     space_ventilation_type: 'Space Mechanical Ventilation Type',
     spaces_overview: 'Spaces overview',
   },
+  feature: {
+    building_type: 'Building Type',
+    outdoor_env: 'Outdoor Environment',
+    age_group: 'Age Group',
+    socioeconomic_status: 'Socioeconomic Status',
+    mechanical_ventilation: 'Mechanical Ventilation',
+    mechanical_ventilation_types: 'Mechanical Ventilation Types',
+    spaces_count: 'Spaces Count'
+  },
   add: 'Add',
   administration: 'Administration',
   altitudes_help: 'Altitude of the building',
