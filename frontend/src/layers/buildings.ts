@@ -71,18 +71,40 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
       layout: {
         'icon-image': 'marker-icon',
         'icon-allow-overlap': true,
-        'icon-size': 2,
+        'icon-size': 2, //['case', ['has', 'point_count'], 2, 1],
       },
       paint: {
         'icon-color': '#f2c037',
       }
     });
 
+    map.addLayer({
+      id: 'buildings-cluster-count',
+      type: 'symbol',
+      source: 'buildings',
+      layout: {
+        'text-field': '{point_count_abbreviated}',
+        'text-font': ['Roboto Regular'],
+        'text-size': 12,
+      },
+    });
+
+    map.addLayer({
+      id: 'buildings-unclustered-point',
+      type: 'circle',
+      source: 'buildings',
+      filter: ['!', ['has', 'point_count']],
+      paint: {
+        // get color from color property
+        'circle-color': ['get', 'color'],
+        'circle-radius': 10,
+      },
+    });
+
     let popup: Popup | null = null;
     this.spiderfy = new Spiderfy(map, {
       onLeafHover: (feature: Feature, event: MouseEventWithCoordinates) => {
         if (!feature || !feature.geometry || feature.geometry.type !== 'Point') return;
-        console.debug('Spiderfy onLeafHover', feature);
         if (popup) {
           popup.remove();
           popup = null;
@@ -107,16 +129,28 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
     } as SpiderfyOptions);
     this.spiderfy?.applyTo('buildings-clusters');
 
-    map.addLayer({
-      id: 'buildings-cluster-count',
-      type: 'symbol',
-      source: 'buildings',
-      filter: ['has', 'point_count'],
-      layout: {
-        'text-field': '{point_count_abbreviated}',
-        'text-font': ['Roboto Regular'],
-        'text-size': 12,
-      },
+    // When a click event occurs on a feature in
+    // the unclustered-point layer, open a popup at
+    // the location of the feature, with
+    // description HTML from its properties.
+    map.on('mouseenter', 'buildings-unclustered-point', (e) => {
+      const features = map.queryRenderedFeatures(e.point, {
+        layers: ['buildings-unclustered-point'],
+      });
+      if (!features.length) return;
+      if (popup) {
+        popup.remove();
+        popup = null;
+      }
+
+      const feature = features[0];
+      if (!feature || !feature.geometry || feature.geometry.type !== 'Point') return;
+      const popupContent = this.makeBuildingElement(feature);
+      const coordinates = feature.geometry.coordinates.slice() as [number, number];
+      popup = new Popup()
+        .setLngLat(coordinates)
+        .setDOMContent(popupContent)
+        .addTo(map);
     });
 
     map.on('mouseenter', 'buildings-clusters', () => {
@@ -132,6 +166,7 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
     [
       'buildings-clusters',
       'buildings-cluster-count',
+      'buildings-unclustered-point',
     ].forEach((id) => {
       map.setLayoutProperty(id, 'visibility', visibility);
     });
