@@ -185,13 +185,12 @@ class StudyService:
 
         # Contributors
         study_dict['contributors'] = []
-        contributors = []
-        for contributor_draft in contributor_drafts:
-            person = Person(**contributor_draft.model_dump())
-            person.id = None
-            person.study_id = study.id
-            self.session.add(person)
-            contributors.append(person)
+        contributors = contributors = [
+            Person(**contributor_draft.model_dump(),
+                   id=None, study_id=study.id)
+            for contributor_draft in contributor_drafts
+        ]
+        self.session.add_all(contributors)
         await self.session.commit()
         for person in contributors:
             await self.session.refresh(person)
