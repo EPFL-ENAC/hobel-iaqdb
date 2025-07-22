@@ -68,7 +68,7 @@ export default defineConfig((ctx) => {
 
       // extendViteConf (viteConf) {},
       // viteVuePluginOptions: {},
-      
+
       vitePlugins: [
         [
           'unplugin-auto-import/vite',
@@ -137,7 +137,7 @@ export default defineConfig((ctx) => {
       // directives: [],
 
       // Quasar plugins
-      plugins: ['Notify', 'LocalStorage', 'LoadingBar', 'Cookies'],
+      plugins: ['Notify', 'LocalStorage', 'LoadingBar', 'Cookies', 'Screen'],
     },
 
     // animations: 'all', // --- includes all animations
