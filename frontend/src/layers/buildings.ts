@@ -1,10 +1,9 @@
-import { type Map, Popup, type GeoJSONSource } from 'maplibre-gl';
+import { type Map, Popup, type GeoJSONSource, type MapMouseEvent } from 'maplibre-gl';
 import type {
   Feature,
   FeatureCollection,
   GeoJsonProperties,
   Geometry,
-  // Point,
 } from 'geojson';
 import Spiderfy, { type SpiderfyOptions } from '@nazka/map-gl-js-spiderfy';
 import { LayerManager } from 'src/layers/models';
@@ -13,16 +12,10 @@ import { baseUrl } from 'src/boot/api';
 import { truncateString } from 'src/utils/strings';
 import { t } from 'src/boot/i18n';
 import { buildingTypeOptions, outdoorEnvOptions, yesNoOptions, mechanicalVentilationTypeOptions, ageGroupOptions, socioeconomicStatusOptions } from 'src/utils/options';
+import { Screen } from 'quasar';
 
 const GEOJSON_URL = `${baseUrl}/map/buildings`;
-
-interface MouseEventWithCoordinates extends MouseEvent {
-  lngLat?: {
-    lng: number;
-    lat: number;
-  };
-}
-
+const isSmallScreen = Screen.lt.md;
 export class BuildingsLayerManager extends LayerManager<FilterParams> {
   buildingsData: FeatureCollection | null = null;
   filteredData: FeatureCollection | null = null;
@@ -102,18 +95,21 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
     });
 
     let popup: Popup | null = null;
-    this.spiderfy = new Spiderfy(map, {
-      onLeafHover: (feature: Feature, event: MouseEventWithCoordinates) => {
-        if (!feature || !feature.geometry || feature.geometry.type !== 'Point') return;
-        if (popup) {
-          popup.remove();
-          popup = null;
-        }
-        const popupContent = this.makeBuildingElement(feature);
-        // Show the popup with the content
-        const coordinates = (event.lngLat ? [event.lngLat.lng, event.lngLat.lat] : feature.geometry.coordinates.slice()) as [number, number];
-        popup = new Popup().setLngLat(coordinates).setDOMContent(popupContent).addTo(map);
-      },
+    const onLeafEvent = (feature: Feature, event: MapMouseEvent) => {
+      if (!feature || !feature.geometry || feature.geometry.type !== 'Point') return;
+      if (popup) {
+        popup.remove();
+        popup = null;
+      }
+      const popupContent = this.makeBuildingElement(feature);
+      // Show the popup with the content
+      const coordinates = (event.lngLat ? [event.lngLat.lng, event.lngLat.lat] : feature.geometry.coordinates.slice()) as [number, number];
+      popup = new Popup().setLngLat(coordinates).setDOMContent(popupContent).addTo(map);
+    }
+    const options: SpiderfyOptions = {
+      onLeafHover: isSmallScreen ? undefined : onLeafEvent,
+      onLeafClick: isSmallScreen ? onLeafEvent : undefined,
+      closeOnLeafClick: !isSmallScreen,
       minZoomLevel: 8,
       zoomIncrement: 2,
       circleSpiralSwitchover: 10,
@@ -126,14 +122,15 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
       spiderLeavesPaint: {
         'icon-color': ['get', 'color'],
       },
-    } as SpiderfyOptions);
+    } as SpiderfyOptions;
+    this.spiderfy = new Spiderfy(map, options);
     this.spiderfy?.applyTo('buildings-clusters');
 
     // When a click event occurs on a feature in
     // the unclustered-point layer, open a popup at
     // the location of the feature, with
     // description HTML from its properties.
-    map.on('mouseenter', 'buildings-unclustered-point', (e) => {
+    map.on(isSmallScreen ? 'click' : 'mouseenter', 'buildings-unclustered-point', (e) => {
       const features = map.queryRenderedFeatures(e.point, {
         layers: ['buildings-unclustered-point'],
       });
