@@ -10,7 +10,7 @@ router = APIRouter()
 
 
 @router.get("/frequencies/studies")
-async def count_spaces(
+async def count_studies(
     filter: str = Query(None),
     by: str = Query(None),
     session: AsyncSession = Depends(get_session),
@@ -22,7 +22,7 @@ async def count_spaces(
 
 
 @router.get("/frequencies/buildings")
-async def count_spaces(
+async def count_buildings(
     filter: str = Query(None),
     by: str = Query(None),
     session: AsyncSession = Depends(get_session),
