@@ -45,7 +45,6 @@ class StudyParser:
                 {'yes': 'CC BY-NC', 'true': 'CC BY-NC', '1': 'CC BY-NC'}).fillna('')
         # To explicitly convert NaN to None
         df = df.replace({np.nan: None})
-        # print(df)
 
         std_dict = df.iloc[0].to_dict()
         study = Study(**std_dict)
@@ -194,7 +193,6 @@ class StudyParser:
         if 'country' in df.columns:
             df['country'] = df['country'].apply(
                 lambda x: coco.convert(names=x, to='ISO2', not_found=None) if x is not None else None)
-        # print(df)
 
         buildings = []
         for index, row in df.iterrows():
@@ -264,7 +262,6 @@ class StudyParser:
             df[col] = self.mormalize_column(df, col)
         # To explicitly convert NaN to None
         df = df.replace({np.nan: None})
-        # print(df)
 
         spaces = {}
         for index, row in df.iterrows():

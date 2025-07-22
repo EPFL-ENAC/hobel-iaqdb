@@ -12,18 +12,13 @@
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn flat :label="$t('cancel')" color="secondary" @click="onCancel" v-close-popup />
-        <q-btn flat :label="$t('confirm')" color="primary" @click="onConfirm" v-close-popup />
+        <q-btn flat :label="t('cancel')" color="secondary" @click="onCancel" v-close-popup />
+        <q-btn flat :label="t('confirm')" color="primary" @click="onConfirm" v-close-popup />
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'ConfirmDialog',
-});
-</script>
 <script setup lang="ts">
 interface DialogProps {
   modelValue: boolean;
@@ -33,6 +28,8 @@ interface DialogProps {
 
 const props = defineProps<DialogProps>();
 const emit = defineEmits(['update:modelValue', 'confirm', 'cancel']);
+
+const { t } = useI18n();
 
 const showDialog = ref(props.modelValue);
 

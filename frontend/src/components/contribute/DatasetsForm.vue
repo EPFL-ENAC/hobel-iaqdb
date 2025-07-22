@@ -17,7 +17,7 @@
       <div class="row q-gutter-md">
         <div class="col" style="max-width: 200px;">
           <div class="q-mb-md q-mt-sm">
-            <div v-for="(dataset, i) in contrib.study.datasets" :key="dataset.id">
+            <div v-for="(dataset, i) in contrib.study.datasets" :key="i">
               <q-btn
                 flat
                 no-caps
@@ -49,7 +49,7 @@
             <div class="text-bold">
               <q-toolbar>
                 <q-icon name="description" class="q-mr-xs" size="sm"/>
-                {{ contrib.study.datasets[selected].name }}
+                {{ contrib.study.datasets[selected]?.name }}
                 <q-space />
                 <q-btn
                   v-if="selected !== null"
@@ -57,7 +57,7 @@
                   dense
                   flat
                   color="negative"
-                  :title="$t('delete')"
+                  :title="t('delete')"
                   icon="delete"
                   class="q-ml-xs"
                   @click="onDelete(selected)"
@@ -68,7 +68,7 @@
                   dense
                   flat
                   size="sm"
-                  :title="$t('previous')"
+                  :title="t('previous')"
                   icon="arrow_back_ios"
                   class="on-right"
                   :disable="selected === 0"
@@ -80,7 +80,7 @@
                   dense
                   flat
                   size="sm"
-                  :title="$t('next')"
+                  :title="t('next')"
                   icon="arrow_forward_ios"
                   class="q-ml-xs"
                   :disable="selected === datasetCount - 1"
@@ -89,7 +89,7 @@
               </q-toolbar>
             </div>
             <q-separator class="q-mb-md"/>
-            <dataset-form v-if="selected !== null" v-model="contrib.study.datasets[selected]"/>
+            <dataset-form v-model="selectedDataset" />
           </div>
         </div>
       </div>
@@ -99,18 +99,14 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  components: { DataFileDialog },
-  name: 'DatasetsForm',
-});
-</script>
 <script setup lang="ts">
 import DataFileDialog from 'src/components/contribute/DataFileDialog.vue';
 import DatasetForm from 'src/components/contribute/DatasetForm.vue';
-import { DataFile } from 'src/components/models';
+import type { DataFile } from 'src/components/models';
 import { notifyError } from 'src/utils/notify';
+import type { Dataset, FileNode } from 'src/models';
 
+const { t } = useI18n();
 const contrib = useContributeStore();
 
 const showDataFile = ref(false);
@@ -118,6 +114,34 @@ const selected = ref<number | null>(null);
 const uploading = ref(false);
 
 const datasetCount = computed(() => contrib.study.datasets?.length || 0);
+
+const selectedDataset = computed({
+  get() {
+    if (
+      selected.value !== null &&
+      contrib.study.datasets &&
+      contrib.study.datasets[selected.value]
+    ) {
+      return contrib.study.datasets[selected.value] as Dataset;
+    }
+    // Return a default Dataset object if undefined (adjust fields as needed)
+    return {
+      name: '',
+      description: '',
+      folder: {} as FileNode,
+      variables: [],
+    };
+  },
+  set(val: Dataset) {
+    if (
+      selected.value !== null &&
+      contrib.study.datasets &&
+      contrib.study.datasets[selected.value]
+    ) {
+      contrib.study.datasets[selected.value] = val;
+    }
+  },
+});
 
 onMounted(() => {
   if (contrib.study.datasets?.length) {
@@ -148,6 +172,6 @@ function onDelete(i: number) {
   } else if (selected.value === contrib.study.datasets.length - 1) {
     selected.value = selected.value ? selected.value - 1 : null;
   }
-  contrib.deleteDataset(i);
+  void contrib.deleteDataset(i);
 }
 </script>

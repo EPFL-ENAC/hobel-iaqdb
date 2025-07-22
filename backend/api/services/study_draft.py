@@ -3,6 +3,7 @@ import uuid
 import json
 import tempfile
 import urllib.parse
+import logging
 from api.services.s3 import s3_client
 from api.config import config
 from api.models.catalog import Study, StudyDraft
@@ -35,7 +36,7 @@ class StudyDraftService:
 
         # Create a temporary directory to dump JSON
         with tempfile.TemporaryDirectory() as temp_dir:
-            print(f"Temporary directory created at: {temp_dir}")
+            logging.debug(f"Temporary directory created at: {temp_dir}")
 
             # Use the temporary directory for file operations
             temp_file_path = os.path.join(temp_dir, "study.json")
@@ -82,3 +83,32 @@ class StudyDraftService:
             study_drafts.append(StudyDraft(**study_dict))
 
         return study_drafts
+
+    async def reinstate(self, identifier: str) -> None:
+        """Reinstate a study draft by checking if it exists."""
+
+        draft_folder = f"draft/{identifier}"
+        pub_folder = f"pub/{identifier}"
+
+        exists = await self.exists(identifier)
+        if exists:
+            await self.delete(identifier)
+
+        # Copy all study draft files to pub folder
+        study_files = [file for file in await s3_client.list_files(pub_folder)]
+        if study_files:
+            # Copy the study files to the draft folder
+            for file in study_files:
+                new_file = file.replace("/pub/", "/draft/")
+                await s3_client.copy_file(file, new_file)
+
+        # Rewrite the study.json file in the draft folder
+        study_draft = await self.get(identifier)
+        for dataset in study_draft.datasets:
+            dataset.folder["path"] = dataset.folder["path"].replace(
+                "/pub/", "/draft/")
+            if "children" in dataset.folder:
+                for i, file in enumerate(dataset.folder["children"]):
+                    file["path"] = file["path"].replace("/pub/", "/draft/")
+                    dataset.folder["children"][i] = file
+        await self.createOrUpdate(study_draft)

@@ -3,8 +3,8 @@
     <q-input
       v-model="instrument.identifier"
       filled
-      :label="$t('study.instrument.identifier')"
-      :hint="$t('study.instrument.identifier_hint')"
+      :label="t('study.instrument.identifier')"
+      :hint="t('study.instrument.identifier_hint')"
       class="q-mb-md"
     />
 
@@ -13,16 +13,16 @@
         <q-input
           v-model="instrument.manufacturer"
           filled
-          :label="$t('study.instrument.manufacturer')"
-          :hint="$t('study.instrument.manufacturer_hint')"
+          :label="t('study.instrument.manufacturer')"
+          :hint="t('study.instrument.manufacturer_hint')"
         />
       </div>
       <div class="col">
         <q-input
           v-model="instrument.model"
           filled
-          :label="$t('study.instrument.model')"
-          :hint="$t('study.instrument.model_hint')"
+          :label="t('study.instrument.model')"
+          :hint="t('study.instrument.model_hint')"
         />
       </div>
     </div>
@@ -35,8 +35,8 @@
           filled
           emit-value
           map-options
-          :label="$t('study.instrument.equipment_grade')"
-          :hint="$t('study.instrument.equipment_grade_hint')"
+          :label="t('study.instrument.equipment_grade')"
+          :hint="t('study.instrument.equipment_grade_hint')"
         />
       </div>
       <div class="col">
@@ -46,8 +46,8 @@
           filled
           emit-value
           map-options
-          :label="$t('study.instrument.placement')"
-          :hint="$t('study.instrument.placement_hint')"
+          :label="t('study.instrument.placement')"
+          :hint="t('study.instrument.placement_hint')"
         />
       </div>
     </div>
@@ -73,6 +73,7 @@
                     {{ `${getInstrumentParameterLabel(i)}` }}
                   </template>
                   <instrument-parameter-form
+                    v-if="instrument.parameters && instrument.parameters[i]"
                     v-model="instrument.parameters[i]"
                     :instrument="instrument"
                     class="q-mt-md"
@@ -85,7 +86,7 @@
                     rounded
                     dense
                     flat
-                    :title="$t('duplicate')"
+                    :title="t('duplicate')"
                     icon="content_copy"
                     size="sm"
                     @click="onDuplicateParameter(i)"
@@ -95,7 +96,7 @@
                     dense
                     flat
                     color="negative"
-                    :title="$t('delete')"
+                    :title="t('delete')"
                     icon="delete"
                     size="sm"
                     @click="onDeleteParameter(i)"
@@ -119,11 +120,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'InstrumentForm',
-});
-</script>
 <script setup lang="ts">
 import InstrumentParameterForm from './InstrumentParameterForm.vue';
 import {
@@ -131,9 +127,10 @@ import {
   placementOptions,
   physicalParameterOptions,
 } from 'src/utils/options';
-import { Instrument } from 'src/models';
+import type { Instrument } from 'src/models';
 import { notifyInfo } from 'src/utils/notify';
 
+const { t } = useI18n();
 const contrib = useContributeStore();
 
 interface Props {
@@ -149,7 +146,7 @@ watch(() => props.modelValue, (value) => {
 
 function getInstrumentParameterLabel(i: number) {
   if (!instrument.value.parameters) return i;
-  const val = instrument.value.parameters[i].physical_parameter;
+  const val = instrument.value.parameters[i]?.physical_parameter;
   return physicalParameterOptions.find((o) => o.value === val)?.label || val;
 }
 

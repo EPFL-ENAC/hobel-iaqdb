@@ -1,4 +1,4 @@
-import { RouteRecordRaw } from 'vue-router';
+import { type RouteRecordRaw } from 'vue-router';
 
 const routes: RouteRecordRaw[] = [
   {
@@ -11,7 +11,7 @@ const routes: RouteRecordRaw[] = [
         component: () => import('pages/ContributePage.vue'),
       },
       {
-        path: '/study/:id',
+        path: '/study',
         component: () => import('src/pages/StudyPage.vue'),
       },
       {
@@ -24,13 +24,16 @@ const routes: RouteRecordRaw[] = [
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
-      { path: '/map', component: () => import('src/pages/MapPage.vue') },
       {
-        path: '/catalog',
-        name: 'catalog',
-        component: () => import('src/pages/CatalogPage.vue'),
+        path: '/explore',
+        name: 'explore',
+        component: () => import('src/pages/ExplorePage.vue'),
       },
-      { path: '/search', component: () => import('src/pages/SearchPage.vue') },
+      {
+        path: '/data-hub',
+        name: 'data-hub',
+        component: () => import('src/pages/DataHubPage.vue'),
+      },
     ],
   },
 

@@ -1,57 +1,61 @@
 <template>
   <div>
-    <q-card flat bordered class="q-mt-md bg-light-blue-1">
+    <q-card flat bordered class="q-mt-md bg-grey-3 q-mb-md">
       <q-card-section>
         <q-markdown :src="study?.description" />
       </q-card-section>
     </q-card>
-
-    <div class="row q-col-gutter-md q-mt-md">
-      <div class="col-8">
-        <q-tabs
-          v-model="tab"
-          dense
-          class="text-grey"
-          active-color="secondary"
-          indicator-color="secondary"
-          align="justify"
-          narrow-indicator
-        >
-          <q-tab name="buildings" :label="$t('buildings')" />
-          <q-tab name="files" :label="$t('files')" />
-        </q-tabs>
-
-        <q-separator />
-
-        <q-tab-panels v-model="tab">
-          <q-tab-panel name="buildings" class="q-pl-none q-pr-none">
-            <study-buildings />
-          </q-tab-panel>
-          <q-tab-panel name="files" class="q-pl-none q-pr-none">
-            <study-files />
-          </q-tab-panel>
-        </q-tab-panels>
+    <div class="grid">
+      <div class="item item1">
+        <study-tabs :show-map="true" />
       </div>
-      <div class="col-4">
+      <div class="item item2">
         <study-details />
       </div>
     </div>
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'StudyView',
-});
-</script>
 <script setup lang="ts">
 import StudyDetails from 'src/components/study/StudyDetails.vue';
-import StudyBuildings from 'src/components/study/StudyBuildings.vue';
-import StudyFiles from 'src/components/study/StudyFiles.vue';
+import StudyTabs from 'src/components/study/StudyTabs.vue';
 
 const catalogStore = useCatalogStore();
 
-const tab = ref('buildings');
-
 const study = computed(() => catalogStore.study);
 </script>
+
+<style scoped>
+.grid {
+  display: grid;
+  gap: 1rem;
+  max-width: 100%;
+}
+
+/* Default: small screens — 2 rows */
+.grid {
+  grid-template-areas:
+    "item2"
+    "item1";
+}
+
+/* Medium and up: 2 columns */
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: 2fr 1fr;
+    grid-template-areas: "item1 item2";
+  }
+}
+
+.item {
+  min-width: 0;
+}
+
+.item1 {
+  grid-area: item1;
+}
+
+.item2 {
+  grid-area: item2;
+}
+</style>

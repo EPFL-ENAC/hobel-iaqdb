@@ -1,20 +1,43 @@
-import { Map, Popup, GeoJSONSource } from 'maplibre-gl';
-import {
+import { type Map, Popup, type GeoJSONSource } from 'maplibre-gl';
+import type {
   Feature,
   FeatureCollection,
-  GeoJSON,
   GeoJsonProperties,
   Geometry,
-  Point,
+  // Point,
 } from 'geojson';
+import Spiderfy, { type SpiderfyOptions } from '@nazka/map-gl-js-spiderfy';
 import { LayerManager } from 'src/layers/models';
-import { FilterParams } from 'src/stores/filters';
+import type { FilterParams } from 'src/stores/filters';
 import { baseUrl } from 'src/boot/api';
+import { truncateString } from 'src/utils/strings';
+import { t } from 'src/boot/i18n';
+import { buildingTypeOptions, outdoorEnvOptions, yesNoOptions, mechanicalVentilationTypeOptions, ageGroupOptions, socioeconomicStatusOptions } from 'src/utils/options';
 
 const GEOJSON_URL = `${baseUrl}/map/buildings`;
 
+interface MouseEventWithCoordinates extends MouseEvent {
+  lngLat?: {
+    lng: number;
+    lat: number;
+  };
+}
+
 export class BuildingsLayerManager extends LayerManager<FilterParams> {
   buildingsData: FeatureCollection | null = null;
+  filteredData: FeatureCollection | null = null;
+  spiderfy: Spiderfy | null = null;
+
+  /**
+   * Creates an instance of BuildingsLayerManager.
+   * @param onStudySelected Callback function to handle study selection.
+   */
+  constructor(private onStudySelected: (id: string) => void) {
+    super();
+    this.buildingsData = null;
+    this.filteredData = null;
+    this.spiderfy = null;
+  }
 
   getId(): string {
     return 'buildings';
@@ -26,47 +49,39 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
 
   async append(map: Map): Promise<void> {
     const response = await fetch(GEOJSON_URL);
-    this.buildingsData = (await response.json()) as FeatureCollection;
+    const geoJson = (await response.json()) as FeatureCollection;
+    this.buildingsData = geoJson;
+
+    const { data: image } = await map.loadImage(
+      '/circle.png',
+    );
+    map.addImage('marker-icon', image,  { sdf: true });
 
     map.addSource('buildings', {
       type: 'geojson',
-      // Point to GeoJSON data. This example visualizes all M1.0+ buildings
-      // from 12/22/15 to 1/21/16 as logged by USGS' Earthquake hazards program.
       data: this.buildingsData,
       cluster: true,
-      clusterMaxZoom: 14, // Max zoom to cluster points on
-      clusterRadius: 50, // Radius of each cluster when clustering points (defaults to 50)
     });
 
-    map.addLayer({
+     map.addLayer({
       id: 'buildings-clusters',
-      type: 'circle',
+      type: 'symbol',
       source: 'buildings',
       filter: ['has', 'point_count'],
-      paint: {
-        // Use step expressions (https://maplibre.org/maplibre-style-spec/#expressions-step)
-        // with three steps to implement three types of circles:
-        //   * Blue, 20px circles when point count is less than 10
-        //   * Yellow, 30px circles when point count is between 10 and 20
-        //   * Pink, 40px circles when point count is greater than or equal to 10
-        'circle-color': [
-          'step',
-          ['get', 'point_count'],
-          '#51bbd6',
-          10,
-          '#f1f075',
-          20,
-          '#f28cb1',
-        ],
-        'circle-radius': ['step', ['get', 'point_count'], 20, 10, 30, 20, 40],
+      layout: {
+        'icon-image': 'marker-icon',
+        'icon-allow-overlap': true,
+        'icon-size': 2, //['case', ['has', 'point_count'], 2, 1],
       },
+      paint: {
+        'icon-color': '#f2c037',
+      }
     });
 
     map.addLayer({
       id: 'buildings-cluster-count',
       type: 'symbol',
       source: 'buildings',
-      filter: ['has', 'point_count'],
       layout: {
         'text-field': '{point_count_abbreviated}',
         'text-font': ['Roboto Regular'],
@@ -80,61 +95,62 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
       source: 'buildings',
       filter: ['!', ['has', 'point_count']],
       paint: {
-        'circle-color': '#11b4da',
-        'circle-radius': 5,
-        'circle-stroke-width': 1,
-        'circle-stroke-color': '#fff',
+        // get color from color property
+        'circle-color': ['get', 'color'],
+        'circle-radius': 10,
       },
     });
 
-    // inspect a cluster on click
-    map.on('click', 'buildings-clusters', async (e) => {
-      const features = map.queryRenderedFeatures(e.point, {
-        layers: ['buildings-clusters'],
-      });
-      const clusterId = features[0].properties.cluster_id;
-      const zoom = await (
-        map.getSource('buildings') as GeoJSONSource
-      ).getClusterExpansionZoom(clusterId);
-      map.easeTo({
-        center: (features[0].geometry as Point).coordinates as [number, number],
-        zoom,
-      });
-    });
+    let popup: Popup | null = null;
+    this.spiderfy = new Spiderfy(map, {
+      onLeafHover: (feature: Feature, event: MouseEventWithCoordinates) => {
+        if (!feature || !feature.geometry || feature.geometry.type !== 'Point') return;
+        if (popup) {
+          popup.remove();
+          popup = null;
+        }
+        const popupContent = this.makeBuildingElement(feature);
+        // Show the popup with the content
+        const coordinates = (event.lngLat ? [event.lngLat.lng, event.lngLat.lat] : feature.geometry.coordinates.slice()) as [number, number];
+        popup = new Popup().setLngLat(coordinates).setDOMContent(popupContent).addTo(map);
+      },
+      minZoomLevel: 8,
+      zoomIncrement: 2,
+      circleSpiralSwitchover: 10,
+      animationSpeed: 100,
+      spiderLeavesLayout: {
+        'icon-image': 'marker-icon',
+        'icon-allow-overlap': true,
+        'icon-size': 1,
+      },
+      spiderLeavesPaint: {
+        'icon-color': ['get', 'color'],
+      },
+    } as SpiderfyOptions);
+    this.spiderfy?.applyTo('buildings-clusters');
 
     // When a click event occurs on a feature in
     // the unclustered-point layer, open a popup at
     // the location of the feature, with
     // description HTML from its properties.
-    map.on('click', 'buildings-unclustered-point', (e) => {
-      if (!e.features) return;
-      const feature = e.features[0];
-      if (!feature) return;
-
-      // Ensure that if the map is zoomed out such that
-      // multiple copies of the feature are visible, the
-      // popup appears over the copy being pointed to.
-      const coordinates = (feature.geometry as Point).coordinates.slice() as [
-        number,
-        number,
-      ];
-      while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-        coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+    map.on('mouseenter', 'buildings-unclustered-point', (e) => {
+      const features = map.queryRenderedFeatures(e.point, {
+        layers: ['buildings-unclustered-point'],
+      });
+      if (!features.length) return;
+      if (popup) {
+        popup.remove();
+        popup = null;
       }
 
-      const tables = e.features
-        .map((feat) => {
-          const rows = Object.keys(feat.properties)
-            .filter((key) => !['id', 'study_id'].includes(key))
-            .map((key) => {
-              return `<tr><td>${key}</td><td>${feat.properties[key]}</td></tr>`;
-            })
-            .join('');
-
-          return `<a href="/study/${feat.properties['study_id']}" class="epfl">Study</a></div><table>${rows}</table><div>`;
-        })
-        .join('<hr class="q-separator q-separator--horizontal">');
-      new Popup().setLngLat(coordinates).setHTML(tables).addTo(map);
+      const feature = features[0];
+      if (!feature || !feature.geometry || feature.geometry.type !== 'Point') return;
+      const popupContent = this.makeBuildingElement(feature);
+      const coordinates = feature.geometry.coordinates.slice() as [number, number];
+      popup = new Popup()
+        .setLngLat(coordinates)
+        .setDOMContent(popupContent)
+        .addTo(map);
     });
 
     map.on('mouseenter', 'buildings-clusters', () => {
@@ -156,26 +172,133 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
     });
   }
 
+  makeBuildingElement = (feature: Feature): HTMLElement => {
+    if (!feature.properties) return document.createElement('div');
+    const city = feature.properties['city'] ? `${feature.properties['city']}, ${feature.properties['country']}` : '';
+
+    const divContainer = document.createElement('div');
+
+    const studyContainer = document.createElement('div');
+    const aContainer = document.createElement('a');
+    aContainer.href = 'javascript:void(0)';
+    aContainer.classList.add('epfl');
+    aContainer.onclick = () => {
+      if (!feature.properties || !feature.properties['study_id']) return;
+      this.onStudySelected(feature.properties['study_id']);
+    };
+    aContainer.innerText = truncateString(feature.properties['study_name'] || '', 30) + ' ';
+    studyContainer.appendChild(aContainer);
+    divContainer.appendChild(studyContainer);
+
+    const contentContainer = document.createElement('div');
+
+    const cityContainer = document.createElement('div');
+    cityContainer.classList.add('q-mb-sm');
+    cityContainer.innerText = city;
+    contentContainer.appendChild(cityContainer);
+
+    const propertiesContainer = document.createElement('table');
+    propertiesContainer.classList.add('grid-dl');
+    ['building_type', 'outdoor_env', 'age_group', 'socioeconomic_status', 'mechanical_ventilation', 'mechanical_ventilation_types', 'spaces_count'].forEach((property) => {
+      if (feature.properties && feature.properties[property]) {
+        const div = document.createElement('tr');
+        const dt = document.createElement('td');
+        dt.classList.add('text-bold');
+        dt.innerText = t(`feature.${property}`);
+        const dd = document.createElement('td');
+        dd.style.minWidth = '100px';
+        let value = feature.properties[property];
+        if (property === 'building_type') {
+          value = buildingTypeOptions.find((option) => option.value === value)?.label || value;
+        } else if (property === 'outdoor_env') {
+          value = outdoorEnvOptions.find((option) => option.value === value)?.label || value;
+        } else if (property === 'age_group') {
+          value = ageGroupOptions.find((option) => option.value === value)?.label || value;
+        } else if (property === 'socioeconomic_status') {
+          value = socioeconomicStatusOptions.find((option) => option.value === value)?.label || value;
+        } else if (property === 'mechanical_ventilation') {
+          value = yesNoOptions.find((option) => option.value === value)?.label || value;
+        } else if (property === 'mechanical_ventilation_types') {
+          value = value.split('|').map((item: string) => mechanicalVentilationTypeOptions.find((option) => option.value === item)?.label || item).join(', ');
+        } else if (property === 'spaces_count') {
+          value = feature.properties['spaces_count'] || 0;
+        }
+        dd.innerText = value;
+        div.appendChild(dt);
+        div.appendChild(dd);
+        propertiesContainer.appendChild(div);
+      }
+    });
+    contentContainer.appendChild(propertiesContainer);
+
+    divContainer.appendChild(contentContainer);
+
+    return divContainer;
+  }
+
   filter(map: Map, filter: FilterParams): void {
     if (!this.buildingsData) return;
 
     const filteredFeatures = this.buildingsData.features.filter(
       (feature: Feature<Geometry, GeoJsonProperties>) => {
         let filtered = true;
-        if (filter.altitudes) {
+        if (filtered && filter.construction_years) {
+          filtered =
+            feature.properties?.construction_year >= filter.construction_years[0] &&
+            feature.properties?.construction_year <= filter.construction_years[1];
+        }
+        if (filtered && filter.altitudes) {
           filtered =
             feature.properties?.altitude >= filter.altitudes[0] &&
             feature.properties?.altitude <= filter.altitudes[1];
         }
-        if (filtered && filter.climateZones && filter.climateZones.length) {
-          filtered = filter.climateZones.includes(
+        if (filtered && filter.countries && filter.countries.length) {
+          filtered = filter.countries.includes(
+            feature.properties?.country,
+          );
+        }
+        if (filtered && filter.cities && filter.cities.length) {
+          filtered = filter.cities.includes(
+            `${feature.properties?.city}, ${feature.properties?.country}`,
+          );
+        }
+        if (filtered && filter.climate_zones && filter.climate_zones.length) {
+          filtered = filter.climate_zones.includes(
             feature.properties?.climate_zone,
           );
         }
-        if (filtered && filter.ventilations && filter.ventilations.length) {
+        if (filtered && filter.study_ids && filter.study_ids.length) {
+          filtered = filter.study_ids.includes(
+            feature.properties?.study_id,
+          );
+        }
+        if (filtered && filter.building_types && filter.building_types.length) {
+          filtered = filter.building_types.includes(
+            feature.properties?.building_type,
+          );
+        }
+        if (filtered && filter.age_groups && filter.age_groups.length) {
+          filtered = filter.age_groups.includes(
+            feature.properties?.age_group,
+          );
+        }
+        if (filtered && filter.socioeconomic_status && filter.socioeconomic_status.length) {
+          filtered = filter.socioeconomic_status.includes(
+            feature.properties?.socioeconomic_status,
+          );
+        }
+        if (filtered && filter.outdoor_envs && filter.outdoor_envs.length) {
+          filtered = filter.outdoor_envs.includes(
+            feature.properties?.outdoor_env,
+          );
+        }
+        if (filtered && filter.mechanical_ventilation) {
+          filtered = filter.mechanical_ventilation === feature.properties?.mechanical_ventilation;
+        }
+        if (filtered && filter.mechanical_ventilation_types && filter.mechanical_ventilation_types.length) {
           filtered =
-            filter.ventilations.filter((vent) =>
-              feature.properties?.ventilations.includes(vent),
+            filter.mechanical_ventilation_types.filter((vent) =>
+              feature.properties?.mechanical_ventilation_types.includes(vent),
             ).length > 0;
         }
         if (
@@ -185,33 +308,16 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
           feature.properties?.study_id !== undefined
         ) {
           filtered = filter.study_ids.includes(
-            parseInt(feature.properties.study_id),
+            feature.properties.study_id,
           );
         }
         return filtered;
       },
     );
-    const filteredData = {
+    this.filteredData = {
       ...this.buildingsData,
       features: filteredFeatures,
-    } as GeoJSON;
-    (map.getSource('buildings') as GeoJSONSource).setData(filteredData);
-  }
-
-  spiderfyFeatures(features: Feature[], center: number[], radius = 20) {
-    const angleStep = (2 * Math.PI) / features.length;
-    return features.map((feature, i) => {
-      const angle = i * angleStep;
-      const xOffset = radius * Math.cos(angle);
-      const yOffset = radius * Math.sin(angle);
-
-      return {
-        ...feature,
-        geometry: {
-          ...feature.geometry,
-          coordinates: [center[0] + xOffset, center[1] + yOffset],
-        },
-      };
-    });
+    };
+    map.getSource<GeoJSONSource>('buildings')?.setData(this.filteredData);
   }
 }

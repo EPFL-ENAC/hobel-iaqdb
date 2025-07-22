@@ -19,26 +19,26 @@ export interface Building extends DBModel {
   identifier: string;
   country: string;
   city: string;
-  postcode?: string;
+  postcode?: string | undefined;
   timezone?: string;
-  long?: number;
-  lat?: number;
-  altitude?: number;
-  climate_zone?: string;
+  long?: number | undefined;
+  lat?: number | undefined;
+  altitude?: number | undefined;
+  climate_zone?: string | undefined;
   type?: string;
-  other_type?: string;
+  other_type?: string | undefined;
   outdoor_env?: string;
-  other_outdoor_env?: string;
+  other_outdoor_env?: string | undefined;
   green_certified?: string;
   construction_year?: number;
   renovation?: string;
-  renovation_details?: string;
-  renovation_year?: number;
+  renovation_details?: string | undefined;
+  renovation_year?: number | undefined;
   mechanical_ventilation?: string;
-  particle_filtration_system?: string; 
+  particle_filtration_system?: string;
   particle_filtration_rating?: number;
   operable_windows?: string;
-  airtightness?: number;  
+  airtightness?: number;
   age_group?: string;
   socioeconomic_status?: string;
   smoking?: string;
@@ -82,26 +82,37 @@ export interface StudiesResult extends ListResult {
   data: Study[];
 }
 
+export interface StudySummary extends DBModel {
+  identifier: string;
+  name: string;
+  description: string;
+  color: string;
+  countries: string[];
+  cities: string[];
+}
+export interface StudySummariesResult extends ListResult {
+  data: StudySummary[];
+}
 export interface Space extends DBModel {
   identifier: string;
   type: string;
   floor_area?: number;
   space_volume?: number;
-  occupancy_density?: number;
-  occupancy_number?: number;
-  occupancy?: string;
+  occupancy_density?: number | undefined;
+  occupancy_number?: number | undefined;
+  occupancy?: string | undefined;
   mechanical_ventilation_type?: string;
-  other_mechanical_ventilation_type?: string;
-  cooling_type?: string;
-  other_cooling_type?: string;
-  heating_type?: string;
-  other_heating_type?: string;
+  other_mechanical_ventilation_type?: string | undefined;
+  cooling_type?: string | undefined;
+  other_cooling_type?: string | undefined;
+  heating_type?: string | undefined;
+  other_heating_type?: string | undefined;
   air_filtration?: string;
   printers?: string;
   carpets?: string;
   combustion_sources?: string;
-  major_combustion_sources?: string;
-  minor_combustion_sources?: string;
+  major_combustion_sources?: string | undefined;
+  minor_combustion_sources?: string | undefined;
   pets?: string;
   dampness?: string;
   mold?: string;
@@ -160,4 +171,29 @@ export interface FileNode {
 
 export interface UploadResult {
   files: FileNode[];
+}
+
+export interface GroupByCount {
+    value: string | null;
+    count: number;
+}
+
+export interface GroupByResult {
+    field: string;
+    counts: GroupByCount[];
+}
+
+export interface Contribution extends DBModel {
+  created_at?: string;
+  created_by?: string;
+  updated_at?: string;
+  updated_by?: string;
+  published_at?: string;
+  published_by?: string;
+  data_embargo?: string;
+}
+
+export interface StudyBundle {
+  study: Study;
+  contribution?: Contribution;
 }

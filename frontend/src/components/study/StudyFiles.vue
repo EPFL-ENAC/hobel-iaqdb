@@ -6,7 +6,7 @@
         color="primary"
         icon="download"
         no-caps
-        :label="$t('download')"
+        :label="t('download')"
         class=""
       />
       <q-space />
@@ -41,39 +41,34 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'StudyFiles',
-});
-</script>
 <script setup lang="ts">
+import { getSizeLabel } from 'src/utils/numbers';
+
+const { t } = useI18n();
 const catalogStore = useCatalogStore();
 
 const filter = ref('');
 const filterRef = ref(null);
 
 const study = computed(() => catalogStore.study);
+const datasets = computed(() => catalogStore.study?.datasets || [])
 
 const simple = computed(() => [
   {
-    label: study.value?.name,
+    label: study.value?.name || '',
     children: [
       { label: 'README.md' },
-      { label: 'License.md' },
+      { label: 'LICENSE.md' },
       { label: 'study.json' },
       {
         label: 'datasets',
-        children: [
-          'co2_atmotube',
-          'pm_atmotube',
-          'ufp_discmini',
-          'co2_rotronic',
-          'radon_radonscout',
-        ].map((ds) => {
+        children: datasets.value.map((ds) => {
           return {
-            label: ds,
-            children: [{ label: 'dictionary.json' }, { label: 'data.csv' }],
-          };
+            label: ds.name || '',
+            children: ds.folder?.children?.map((f) => {
+              return { label: `${f.name} (${getSizeLabel(f.size)})` }
+            }) || [],
+          }
         }),
       },
     ],

@@ -5,7 +5,7 @@
         <div class="col"></div>
         <div class="col-8">
           <span class="text-h4 text-weight-light">{{
-            $t('contribute_title')
+            t('contribute_title')
           }}</span>
         </div>
         <div class="col"></div>
@@ -23,14 +23,14 @@
           </q-card>
           <q-btn
             color="primary"
-            :label="$t('start')"
+            :label="t('start')"
             @click="onStart"
             class="q-mt-lg"
           />
           <q-btn
             color="secondary"
             :flat="!contrib.inProgress"
-            :label="$t('resume')"
+            :label="t('resume')"
             :disable="!contrib.inProgress"
             @click="onResume"
             class="q-mt-lg on-right"
@@ -57,6 +57,7 @@ import StudyStepper from 'src/components/contribute/StudyStepper.vue';
 import StudyUploadDialog from 'src/components/contribute/StudyUploadDialog.vue';
 import StudyStartDialog from 'src/components/contribute/StudyStartDialog.vue';
 
+const { t } = useI18n();
 const contrib = useContributeStore();
 
 const showIntro = ref(true);

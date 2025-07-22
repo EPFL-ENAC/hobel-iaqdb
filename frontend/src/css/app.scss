@@ -41,7 +41,6 @@ p:last-child {
   color: red;
   font-family: 'Helvetica';
   font-weight: bold;
-  font-size: 2.3em;
 }
 
 .app-md {
@@ -71,5 +70,38 @@ p:last-child {
 .q-popup-edit__buttons {
   button {
     font-size: smaller;
+  }
+}
+
+.filters .q-tab {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.circle-letter {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1px solid black;
+  color: black;
+  background-color: white;
+}
+
+.grid-dl {
+  tr:nth-child(odd) {
+    background-color: #eeeeee;
+  }
+
+  tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+
+  tr {
+    td {
+      padding: 5px;
+    }
   }
 }

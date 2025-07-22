@@ -1,5 +1,5 @@
 from typing import List, Literal
-from pydantic import Field, BaseModel
+from pydantic import BaseModel
 
 
 class Geometry(BaseModel):
@@ -13,9 +13,18 @@ class BuildingProperties(BaseModel):
     country: str
     city: str
     altitude: int
-    climate_zone: str
-    ventilations: str
+    climate_zone: str | None = None
+    age_group: str | None = None
+    socioeconomic_status: str | None = None
+    building_type: str | None = None
+    construction_year: int | None = None
+    outdoor_env: str | None = None
+    mechanical_ventilation: str | None = None
+    mechanical_ventilation_types: str | None = None
+    spaces_count: int
     study_id: str
+    study_name: str
+    color: str
 
 
 class BuildingFeature(BaseModel):

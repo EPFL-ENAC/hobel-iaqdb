@@ -57,14 +57,9 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'DatasetVariablesForm',
-});
-</script>
 <script setup lang="ts">
 import { referenceOptions } from 'src/utils/options';
-import { Dataset, Variable } from 'src/models';
+import type { Dataset, Variable } from 'src/models';
 
 //const contrib = useContributeStore();
 
@@ -83,10 +78,10 @@ const pagination = ref({
 });
 
 const columns = computed(() => [
-  { name: 'name', label: 'Name', field: 'name', align: 'left', sortable: true },
-  { name: 'unit', label: 'Unit', field: 'unit', align: 'left', sortable: true },
-  { name: 'format', label: 'Format', field: 'format', align: 'left', sortable: true },
-  { name: 'reference', label: 'Reference', field: 'reference', align: 'left', sortable: true },
+  { name: 'name', label: 'Name', field: 'name', align: 'left' as const, sortable: true },
+  { name: 'unit', label: 'Unit', field: 'unit', align: 'left' as const, sortable: true },
+  { name: 'format', label: 'Format', field: 'format', align: 'left' as const, sortable: true },
+  { name: 'reference', label: 'Reference', field: 'reference', align: 'left' as const, sortable: true },
 ]);
 
 const warnings = computed(() => {

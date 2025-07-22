@@ -1,9 +1,13 @@
 from typing import List, Dict, Optional
-from sqlmodel import SQLModel, Field, Relationship, UniqueConstraint, Column, JSON
+from sqlmodel import SQLModel, Field, Relationship, UniqueConstraint, Column
+from sqlalchemy.dialects.postgresql import JSONB as JSON
+from sqlalchemy import TIMESTAMP
 from enacit4r_sql.models.query import ListResult
-
+from pydantic import BaseModel
+from datetime import datetime
 
 # Studies
+
 
 class PersonBase(SQLModel):
     name: str
@@ -68,6 +72,7 @@ class StudyRead(StudyBase):
     contributors: List["Person"] = []
     buildings: List["Building"] = []
     instruments: List["Instrument"] = []
+    datasets: List["Dataset"] = []
 
 
 class StudyDraft(StudyRead):
@@ -77,10 +82,20 @@ class StudyDraft(StudyRead):
     datasets: List["DatasetDraft"] = []
 
 
+class StudySummary(BaseModel):
+    id: int
+    identifier: str
+    name: Optional[str] = Field(default=None)
+    description: Optional[str] = Field(default=None)
+    color: Optional[str] = Field(default=None)
+    countries: List[str] = Field(default_factory=list)
+    cities: List[str] = Field(default_factory=list)
+
 # Buildings
 
+
 class CertificationBase(SQLModel):
-    program: str
+    program: Optional[str] = Field(default=None)
     level: Optional[str] = Field(default=None)
     building_id: Optional[int] = Field(
         default=None, foreign_key="building.id", ondelete="CASCADE")
@@ -325,12 +340,49 @@ class DatasetDraft(DatasetRead):
     id: Optional[int] = Field(default=None)
 
 #
+# Contribution
+#
+
+
+class ContributionBase(SQLModel):
+    created_at: datetime = Field(
+        sa_column=TIMESTAMP(timezone=True), default=None)
+    updated_at: datetime = Field(
+        sa_column=TIMESTAMP(timezone=True), default=None)
+    published_at: Optional[datetime] = Field(
+        sa_column=TIMESTAMP(timezone=True), default=None)
+    created_by: Optional[str] = Field(default=None)
+    updated_by: Optional[str] = Field(default=None)
+    published_by: Optional[str] = Field(default=None)
+    data_embargo: Optional[str] = Field(default=None)
+    study_identifier: Optional[str] = Field(default=None)
+
+
+class Contribution(ContributionBase, table=True):
+    __table_args__ = (UniqueConstraint("id"),)
+    id: Optional[int] = Field(
+        default=None,
+        nullable=False,
+        primary_key=True,
+        index=True,
+    )
+
+
+class StudyBundle(BaseModel):
+    study: Optional[StudyDraft] = Field(default=None)
+    contribution: Optional[Contribution] = Field(default=None)
+
+#
 # Results
 #
 
 
 class StudiesResult(ListResult):
     data: List[StudyRead]
+
+
+class StudySummariesResult(ListResult):
+    data: List[StudySummary]
 
 
 class BuildingsResult(ListResult):
@@ -351,3 +403,21 @@ class DatasetsResult(ListResult):
 
 class StudyDraftsResult(ListResult):
     data: List[StudyDraft]
+
+
+class GroupByCount(BaseModel):
+    value: str | None
+    count: int
+
+
+class GroupByResult(BaseModel):
+    field: str
+    counts: List[GroupByCount]
+
+
+class ContributionsResult(ListResult):
+    data: List[Contribution]
+
+
+class StudyBundlesResult(ListResult):
+    data: List[StudyBundle]

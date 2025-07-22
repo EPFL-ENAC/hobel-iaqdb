@@ -10,39 +10,33 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'MaplibreMap',
-});
-</script>
 <script setup lang="ts">
 import 'maplibre-gl/dist/maplibre-gl.css';
 import '@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css';
 import 'maplibregl-theme-switcher/styles.css';
+import maplibregl from 'maplibre-gl';
 import MaplibreGeocoder from '@maplibre/maplibre-gl-geocoder';
 import {
   ThemeSwitcherControl,
-  ThemeDefinition,
+  type ThemeDefinition,
 } from 'maplibregl-theme-switcher';
 import {
   AttributionControl,
   FullscreenControl,
   GeolocateControl,
   Map,
-  MapMouseEvent,
-  Marker,
+  type MapMouseEvent,
   NavigationControl,
   ScaleControl,
-  type LngLatLike,
   type StyleSpecification,
 } from 'maplibre-gl';
 import { DivControl } from 'src/utils/control';
 import { geocoderApi } from 'src/utils/geocoder';
-import { Settings } from 'src/stores/settings';
+import type { Settings } from 'src/stores/settings';
 
 interface Props {
-  styleSpec: string | StyleSpecification | undefined;
-  center: LngLatLike;
+  styleSpec?: string | StyleSpecification | undefined;
+  center?: [number, number];
   zoom?: number;
   minZoom?: number;
   maxZoom?: number;
@@ -56,11 +50,10 @@ interface Props {
 }
 const props = withDefaults(defineProps<Props>(), {
   styleSpec: '/style.json',
-  center: [6.566547557495834, 46.521590682027536] as LngLatLike,
+  center: () => [6.5667, 46.5197], // Default to EPFL location
   zoom: 12,
-  aspectRatio: undefined,
   minZoom: 0,
-  maxZoom: undefined,
+  maxZoom: 22,
   position: false,
   geocoder: false,
   height: '100%',
@@ -105,7 +98,7 @@ onMounted(() => {
   const settings = settingsStore.settings;
   map.addControl(
     new ThemeSwitcherControl(THEMES, {
-      defaultStyle: settings ? settings.theme : DEFAULT_THEME,
+      defaultStyle: settings ? settings.theme || DEFAULT_THEME : DEFAULT_THEME,
       eventListeners: {
         onChange(event: MouseEvent, style) {
           // persist the last theme choice
@@ -126,7 +119,7 @@ onMounted(() => {
   if (props.geocoder === true || props.geocoder === 'true') {
     map.addControl(
       new MaplibreGeocoder(geocoderApi, {
-        maplibregl: { Marker },
+        maplibregl,
         showResultsWhileTyping: true,
         language: locale.value,
       }),
@@ -135,7 +128,7 @@ onMounted(() => {
   }
 
   map.on('click', (event: MapMouseEvent) => {
-    emit('map:click', event, map as Map);
+    emit('map:click', event, map);
   });
 
   if (props.position === true || props.position === 'true') {
@@ -153,15 +146,15 @@ onMounted(() => {
     });
   }
 
-  map.once('load', () => {
+  void map.once('load', () => {
     THEMES.map((th) => th.id).forEach((id) => {
       map?.setLayoutProperty(
         id,
         'visibility',
-        id === settings.theme ? 'visible' : 'none',
+        id === settings?.theme ? 'visible' : 'none',
       );
     });
-    emit('map:loaded', map as Map);
+    emit('map:loaded', map);
     loading.value = false;
   });
 });

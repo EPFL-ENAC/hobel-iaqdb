@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
 import { BuildingsLayerManager } from 'src/layers/buildings';
 import { ClimateZonesLayerManager } from 'src/layers/climate_zones';
-import { Map } from 'maplibre-gl';
-import { FilterParams } from 'src/stores/filters';
+import type { Map } from 'maplibre-gl';
+import type { FilterParams } from 'src/stores/filters';
 
 export type LayerSelection = {
   id: string;
@@ -10,10 +10,14 @@ export type LayerSelection = {
 };
 
 export const useMapStore = defineStore('map', () => {
+  const catalogStore = useCatalogStore();
+  
   const map = ref<Map>();
+  const filtersApplied = ref<number>(0);
+  const showMap = ref(true);
 
   const layerManagers = [
-    new BuildingsLayerManager(),
+    new BuildingsLayerManager(onStudySelected),
     new ClimateZonesLayerManager(),
   ];
 
@@ -21,6 +25,14 @@ export const useMapStore = defineStore('map', () => {
     id: lm.getId(),
     visible: lm.isDefaultVisible(),
   }));
+
+  function onStudySelected(id: string) {
+    if (catalogStore.showStudyDetails && catalogStore.study?.identifier === id) {
+      catalogStore.showStudyDetails = false;
+    } else {
+      void catalogStore.loadStudy(id).then(() => catalogStore.showStudyDetails = true);
+    }
+  }
 
   /**
    * Find a layer selection state by its identifier.
@@ -58,6 +70,7 @@ export const useMapStore = defineStore('map', () => {
         }
       }
     });
+    filtersApplied.value++;
   }
 
   /**
@@ -88,10 +101,14 @@ export const useMapStore = defineStore('map', () => {
   }
 
   return {
+    showMap,
     map,
     layerSelections,
+    filtersApplied,
     applyFilters,
     applyLayerVisibility,
     initLayers,
+    getLayerManager,
+    findLayer,
   };
 });

@@ -53,7 +53,7 @@ class InstrumentService:
 
         return instrument
 
-    async def delete(self, instrument_id: int) -> Study:
+    async def delete(self, instrument_id: int) -> Instrument:
         """Delete a instrument by id"""
         res = await self.session.exec(
             select(Instrument).where(Instrument.id == instrument_id)

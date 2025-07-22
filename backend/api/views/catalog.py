@@ -6,10 +6,38 @@ from api.services.building import BuildingService
 from api.services.space import SpaceService
 from api.services.instrument import InstrumentService
 from api.services.dataset import DatasetService
-from api.models.catalog import Study, StudyRead, StudiesResult, Building, BuildingRead, BuildingsResult, Space, SpacesResult, Instrument, InstrumentsResult, Dataset, DatasetsResult
+from api.models.catalog import Study, StudyRead, StudySummary, StudiesResult, StudySummariesResult, Building, BuildingRead, BuildingsResult, Space, SpacesResult, Instrument, InstrumentsResult, Dataset, DatasetsResult
 from enacit4r_sql.utils.query import paramAsArray, paramAsDict
+from api.utils.colors import string_to_color
 
 router = APIRouter()
+
+
+@router.get("/study-summaries", response_model=StudySummariesResult)
+async def get_study_summaries(
+    filter: str = Query(None),
+    sort: str = Query(None),
+    range: str = Query(None),
+    session: AsyncSession = Depends(get_session),
+) -> StudySummariesResult:
+    """Get all study summaries"""
+    service = StudyService(session)
+    res = await service.find(paramAsDict(filter), paramAsArray(sort), paramAsArray(range))
+    if res is None:
+        return StudySummariesResult(studies=[])
+    # Make study summary from study
+    summaries = [StudySummary(
+        id=study.id,
+        identifier=study.identifier,
+        name=study.name,
+        description=study.description,
+        countries=list(
+            set([building.country for building in study.buildings])),
+        cities=list(
+            set([f"{building.city}, {building.country}" for building in study.buildings if building.city and building.country])),
+        color=string_to_color(study.identifier),
+    ) for study in res.data]
+    return StudySummariesResult(data=summaries, total=res.total, skip=res.skip, limit=res.limit)
 
 
 @router.get("/studies", response_model=StudiesResult)
@@ -29,23 +57,29 @@ async def get_studies(
 async def get_study(
     session: AsyncSession = Depends(get_session),
     *,
-    id: int,
+    id: str,
 ) -> Study:
-    """Get a study by id"""
+    """Get a study by id or identifier"""
     service = StudyService(session)
-    res = await service.get(id)
+    if id.isdigit():
+        res = await service.get(int(id))
+    else:
+        res = await service.get_by_identifier(id)
     return res
 
 
 @router.delete("/study/{id}")
 async def delete_study(
-    id: int,
+    id: str,
     session: AsyncSession = Depends(get_session),
     user: User = Depends(kc_service.require_admin()),
 ) -> None:
-    """Delete study by id"""
+    """Delete study by id or identifier"""
     service = StudyService(session)
-    await service.delete(id)
+    if id.isdigit():
+        await service.delete(int(id))
+    else:
+        await service.delete_by_identifier(id)
 
 
 @router.get("/study/{id}/buildings", response_model=BuildingsResult)

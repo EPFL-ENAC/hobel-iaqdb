@@ -14,18 +14,15 @@
         <slot></slot>
       </q-card-section>
       <q-card-actions v-if="$q.screen.gt.xs" align="right">
-        <q-btn flat :label="$t('close')" color="primary" v-close-popup />
+        <q-btn flat :label="t('close')" color="primary" v-close-popup />
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'SimpleDialog',
-});
-</script>
 <script setup lang="ts">
+import { useQuasar } from 'quasar';
+
 interface Props {
   modelValue: boolean;
   title?: string;
@@ -34,6 +31,9 @@ interface Props {
 }
 const props = defineProps<Props>();
 const emit = defineEmits(['update:modelValue']);
+
+const $q = useQuasar();
+const { t } = useI18n();
 
 const showDialog = ref(props.modelValue);
 

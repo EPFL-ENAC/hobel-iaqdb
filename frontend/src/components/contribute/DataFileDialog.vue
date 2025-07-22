@@ -39,9 +39,9 @@
         </div>
       </q-card-section>
       <q-card-actions v-if="$q.screen.gt.xs" align="right">
-        <q-btn flat :label="$t('cancel')" color="secondary" v-close-popup />
+        <q-btn flat :label="t('cancel')" color="secondary" v-close-popup />
         <q-btn
-          :label="update ? $t('update') : $t('add')"
+          :label="update ? t('update') : t('add')"
           color="primary"
           @click="onAddDataFile"
           v-close-popup
@@ -52,30 +52,29 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'DataFileDialog',
-});
-</script>
 <script setup lang="ts">
+import { useQuasar } from 'quasar';
 import { referenceOptions } from 'src/utils/options';
 import Papa from 'papaparse';
 import { ZipReader, BlobReader } from '@zip.js/zip.js';
-import { FileObject, DataFile } from 'src/components/models';
-import { Variable } from 'src/models';
+import type { DataFile } from 'src/components/models';
+import type { Variable } from 'src/models';
 import { notifyError } from 'src/utils/notify';
 import { LimitedTransformStream } from 'src/utils/streams';
 
 interface Props {
   modelValue: boolean;
-  update: boolean | undefined;
+  update?: boolean | undefined;
 }
 const props = defineProps<Props>();
-const emit = defineEmits(['update:modelValue', 'add', 'cancel']);
+const emit = defineEmits(['update:modelValue', 'add']);
+
+const $q = useQuasar();
+const { t } = useI18n();
 
 const step = ref(1);
 const showDialog = ref(props.modelValue);
-const localFile = ref<FileObject>();
+const localFile = ref<File>();
 const fields = ref([]);
 const rows = ref([]);
 const dictionary = ref<{ [Key: string]: Variable }>({});
@@ -121,13 +120,13 @@ function onFileUpdated() {
   pagination.value.page = 1;
   loadingFile.value = true;
   if (localFile.value.type === 'application/zip') {
-    parseZipFile(localFile.value);
+    void parseZipFile(localFile.value);
   } else {
     parseDelimitedData(localFile.value);
   }
 }
 
-async function parseZipFile(file: FileObject) {
+async function parseZipFile(file: File) {
   // Create a FileReader to read the file
   const zipReader = new ZipReader(new BlobReader(file));
   try {
@@ -142,10 +141,15 @@ async function parseZipFile(file: FileObject) {
       // Creates a Promise object resolved to the content of the first entry returned
       // as text from `helloWorldStream.readable`.
       const csvTextPromise = new Response(csvStream.readable).text();
+      if (!csvEntry.getData) {
+        notifyError('ZIP entry does not support getData method.');
+        loadingFile.value = false;
+        return;
+      }
       await csvEntry.getData(csvStream.writable);
 
       // Read the content of the CSV file as a text stream
-      csvTextPromise.then((text: string) => {
+      await csvTextPromise.then((text: string) => {
         // Split the CSV content into lines
         const lines = text.split('\n');
         // Read the header + first 10 lines
@@ -154,14 +158,14 @@ async function parseZipFile(file: FileObject) {
       });
     }
   } catch (error) {
-    notifyError('Error reading ZIP file: ' + error.message);
+    notifyError(error);
     loadingFile.value = false;
   } finally {
-    zipReader.close();
+    void zipReader.close();
   }
 }
 
-function parseDelimitedData(csv: FileObject | string) {
+function parseDelimitedData(csv: File | string) {
   Papa.parse(csv, {
     preview: 10,
     skipEmptyLines: true,
@@ -172,7 +176,8 @@ function parseDelimitedData(csv: FileObject | string) {
   });
 }
 
-function onCSVParseCompleted(results) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function onCSVParseCompleted(results: any) {
   if (results.errors?.length) {
     notifyError(results.errors);
     loadingFile.value = false;
@@ -202,7 +207,7 @@ function guessFieldReference(field: string) {
       return field.match(optRe.re) != null ? optRe.value : null;
     })
     .filter((opt) => opt != null);
-  return matches.length ? matches[0] : 'other';
+  return matches.length ? matches[0] || 'other' : 'other';
 }
 
 function onAddDataFile() {

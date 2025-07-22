@@ -11,23 +11,27 @@
       @request="onRequest"
     >
       <template v-slot:item="props">
-        <div class="col-12">
-          <q-card flat @click="onRowClick(props.row)" class="cursor-pointer">
+        <div class="col-sm-12 col-md-12 col-lg-4">
+          <q-card flat bordered @click="onRowClick(props.row)" class="cursor-pointer q-ma-md">
             <q-card-section>
               <div class="text-h6">{{ props.row.name }}</div>
-              <div class="text-subtitle1 text-grey-8">
-                {{ props.row.description }}
+              <div class="text-subtitle2 text-grey-8 q-mb-md">
+                {{ truncateText(props.row.description, 200) }}
               </div>
               <div>
                 <q-chip
                   color="secondary"
-                  class="text-white"
-                  :label="`${getBuildingCount(props.row)} buildings`"
+                  class="text-white on-left"
+                  :label="t('buildings_with_count', getBuildingsCount(props.row))"
                 />
                 <q-chip
-                  class="on-right"
+                  color="secondary"
+                  class="text-white on-left"
+                  :label="t('datasets_with_count', getDatasetsCount(props.row))"
+                />
+                <q-chip
                   :label="
-                    $t('from_to', {
+                    t('from_to', {
                       from: props.row.start_year,
                       to: props.row.end_year,
                     })
@@ -36,21 +40,17 @@
               </div>
             </q-card-section>
           </q-card>
-          <q-separator />
         </div>
       </template>
     </q-table>
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'StudyList',
-});
-</script>
 <script setup lang="ts">
-import { Study, StudiesResult } from 'src/models';
+import type { Study, StudiesResult } from 'src/models';
+import type { TableRequestProps } from 'src/components/models';
 
+const { t } = useI18n();
 const catalogStore = useCatalogStore();
 const filtersStore = useFiltersStore();
 const router = useRouter();
@@ -61,7 +61,8 @@ const pagination = ref({
   sortBy: 'id',
   descending: false,
   page: 1,
-  rowsPerPage: 5,
+  rowsPerPage: 25,
+  rowsNumber: 0,
 });
 const loading = ref(false);
 
@@ -69,22 +70,31 @@ onMounted(updateTable);
 
 watch(() => filtersStore.updates, updateTable);
 
-function getBuildingCount(study: Study) {
+function getBuildingsCount(study: Study) {
   return study.buildings?.length || 0;
+}
+
+function getDatasetsCount(study: Study) {
+  return study.datasets?.length || 0;
 }
 
 function updateTable() {
   tableRef.value.requestServerInteraction();
 }
 
-function onRequest(props) {
+function truncateText(text: string, maxLength: number) {
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength) + '...';
+}
+
+function onRequest(props: TableRequestProps) {
   const { page, rowsPerPage, sortBy, descending } = props.pagination;
 
   const skip = (page - 1) * rowsPerPage;
   const limit = rowsPerPage;
   loading.value = true;
 
-  catalogStore.loadStudies(skip, limit).then((result: StudiesResult) => {
+  void catalogStore.loadStudies(skip, limit).then((result: StudiesResult) => {
     rows.value = result.data;
     pagination.value.rowsNumber = result.total;
 
@@ -100,6 +110,6 @@ function onRequest(props) {
 }
 
 function onRowClick(val: Study) {
-  router.push(`/study/${val.id}`);
+  void router.push(`/study?id=${val.identifier}`);
 }
 </script>

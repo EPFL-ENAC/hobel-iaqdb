@@ -12,13 +12,9 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'SpaceList',
-});
-</script>
 <script setup lang="ts">
-import { Space, SpacesResult } from 'src/models';
+import type { Space, SpacesResult } from 'src/models';
+import type { TableRequestProps } from 'src/components/models';
 
 const catalogStore = useCatalogStore();
 const filtersStore = useFiltersStore();
@@ -30,6 +26,7 @@ const pagination = ref({
   descending: false,
   page: 1,
   rowsPerPage: 10,
+  rowsNumber: 0,
 });
 const loading = ref(false);
 
@@ -41,14 +38,14 @@ function updateTable() {
   tableRef.value.requestServerInteraction();
 }
 
-function onRequest(props) {
+function onRequest(props: TableRequestProps) {
   const { page, rowsPerPage, sortBy, descending } = props.pagination;
 
   const skip = (page - 1) * rowsPerPage;
   const limit = rowsPerPage;
   loading.value = true;
 
-  catalogStore.loadSpaces(skip, limit).then((result: SpacesResult) => {
+  void catalogStore.loadSpaces(skip, limit).then((result: SpacesResult) => {
     rows.value = result.data;
     pagination.value.rowsNumber = result.total;
 

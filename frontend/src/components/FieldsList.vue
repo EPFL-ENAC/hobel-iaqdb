@@ -1,9 +1,9 @@
 <template>
-  <q-list v-if="dbobject" separator>
+  <q-list v-if="dbobject" dense separator>
     <q-item v-for="item in visibleItems" :key="item.field">
       <q-item-section>
         <q-item-label overline>
-          {{ $t(item.label ? item.label : item.field) }}
+          {{ t(item.label ? item.label : item.field) }}
         </q-item-label>
       </q-item-section>
       <q-item-section>
@@ -49,50 +49,42 @@
   </q-list>
 </template>
 
-<script lang="ts">
-import { toMaxDecimals } from 'src/utils/numbers';
-export default defineComponent({
-  name: 'FieldsList',
-});
-</script>
 <script setup lang="ts">
-import { withDefaults } from 'vue';
-import { DBModel, Person, Study } from 'src/models';
+import { toMaxDecimals } from 'src/utils/numbers';
+import { truncateString } from 'src/utils/strings';
 
-export interface FieldItem<T extends DBModel> {
+export interface FieldItem {
   field: string;
   label?: string;
   unit?: string;
-  format?: (val: T) => string;
-  links?: (val: T) => string[] | null; // href
-  html?: (val: T) => string;
-  visible?: (val: T) => boolean;
-  comment?: (val: T) => string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  format?: (val: any) => string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  links?: (val: any) => string[] | null; // href
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  html?: (val: any) => string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  visible?: (val: any) => boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  comment?: (val: any) => string;
 }
 
 export interface FieldsListProps {
-  dbobject: Study | Person;
-  items: FieldItem<Study | Person>[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  dbobject: any;
+  items?: FieldItem[];
 }
 
-const props = withDefaults(defineProps<FieldsListProps>(), {
-  dbobject: undefined,
-  items: undefined,
-});
+const props = defineProps<FieldsListProps>();
+
+const { t } = useI18n();
 
 const visibleItems = computed(() => {
-  return props.items.filter((item) => {
+  return props.items?.filter((item) => {
     if (item.visible) {
       return item.visible(props.dbobject);
     }
     return true;
-  });
+  }) || [];
 });
-
-function truncateString(str: string, num: number) {
-  if (str.length <= num) {
-    return str;
-  }
-  return str.slice(0, num) + '...';
-}
 </script>

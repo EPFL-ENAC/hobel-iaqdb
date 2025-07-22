@@ -6,11 +6,6 @@
   />
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'HelpDrawer',
-});
-</script>
 <script setup lang="ts">
 const helpStore = useHelpStore();
 </script>

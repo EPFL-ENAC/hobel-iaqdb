@@ -22,7 +22,8 @@ export function notifyWarning(message: string) {
   });
 }
 
-function getErrorMessage(error) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function getErrorMessage(error: any): string {
   let message = error.message;
   if (error.response?.data && error.response.data?.detail) {
     message = error.response.data?.detail;
@@ -33,7 +34,8 @@ function getErrorMessage(error) {
   return message || t('unknown_error');
 }
 
-export function notifyError(error) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function notifyError(error: any) {
   let message = t('unknown_error');
   if (typeof error === 'string') {
     message = t(error);

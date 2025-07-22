@@ -1,8 +1,8 @@
-import { Feature, FeatureCollection } from 'geojson';
+import type { Feature, FeatureCollection } from 'geojson';
+import type { MaplibreGeocoderApiConfig, MaplibreGeocoderFeatureResults, CarmenGeojsonFeature } from '@maplibre/maplibre-gl-geocoder';
 
 // restrict by country code and/or view box
 const countryCode = undefined; //'ch'
-const viewBox = undefined; // '5.80,46.40,6.25,46.10'
 
 function handleNominatimResponse(geojson: FeatureCollection): Feature[] {
   const features = [];
@@ -22,6 +22,7 @@ function handleNominatimResponse(geojson: FeatureCollection): Feature[] {
         feature.bbox[1] + (feature.bbox[3] - feature.bbox[1]) / 2,
       ];
       const point = {
+        id: feature.id,
         type: 'Feature',
         geometry: {
           type: 'Point',
@@ -32,7 +33,7 @@ function handleNominatimResponse(geojson: FeatureCollection): Feature[] {
         text: feature.properties.display_name,
         place_type: ['place'],
         center,
-      } as Feature;
+      } as CarmenGeojsonFeature;
       place_names.push(feature.properties.display_name);
       features.push(point);
     }
@@ -41,7 +42,6 @@ function handleNominatimResponse(geojson: FeatureCollection): Feature[] {
 }
 
 let searchController: AbortController;
-let reverseController: AbortController;
 
 /**
  * Example: https://maplibre.org/maplibre-gl-js-docs/example/geocoder/
@@ -49,22 +49,15 @@ let reverseController: AbortController;
  * Output format: https://web.archive.org/web/20210224184722/https://github.com/mapbox/carmen/blob/master/carmen-geojson.md
  */
 export const geocoderApi = {
-  forwardGeocode: async (config: {
-    query: string;
-    limit: number;
-    countries: string[];
-  }) => {
+  forwardGeocode: async (config: MaplibreGeocoderApiConfig) => {
     let features: Feature[] = [];
     try {
       let countrycodes: string | undefined = countryCode;
       if (config.countries && config.countries.length > 0)
-        countrycodes = config.countries.join(',');
-      let request = `https://nominatim.openstreetmap.org/search?q=${config.query}&limit=${config.limit}&format=geojson&polygon_geojson=1&addressdetails=1&bounded=1`;
+        countrycodes = config.countries;
+      let request = `https://nominatim.openstreetmap.org/search?q=${config.query as string}&limit=${config.limit}&format=geojson&polygon_geojson=1&addressdetails=1&bounded=1`;
       if (countrycodes) {
         request = `${request}&countrycodes=${countrycodes}`;
-      }
-      if (viewBox) {
-        request = `${request}&viewbox=${viewBox}`;
       }
       if (searchController) searchController.abort();
       searchController = new AbortController();
@@ -73,33 +66,14 @@ export const geocoderApi = {
       });
       const geojson = await response.json();
       features = handleNominatimResponse(geojson);
-    } catch (e: any) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (e: any) {
       if (e.name !== 'AbortError')
         console.error(`Failed to forwardGeocode with error: ${e}`);
     }
     return {
+      type: 'FeatureCollection' as const,
       features,
-    };
-  },
-  reverseGeocode: async (config: { query: { lat: number; long: number } }) => {
-    let features: Feature[] = [];
-    try {
-      if (reverseController) reverseController.abort();
-      reverseController = new AbortController();
-      const request = `https://nominatim.openstreetmap.org/reverse?lat=${config.query.lat}&lon=${config.query.lon}&format=geojson&polygon_geojson=1&addressdetails=1`;
-      const response = await fetch(request, {
-        signal: reverseController.signal,
-      });
-      const geojson = await response.json();
-      features = handleNominatimResponse(geojson);
-    } catch (e: any) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (e.name !== 'AbortError')
-        console.error(`Failed to reverseGeocode with error: ${e}`);
-    }
-    return {
-      features,
-    };
+    } as MaplibreGeocoderFeatureResults;
   },
 };

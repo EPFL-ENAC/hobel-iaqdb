@@ -11,7 +11,7 @@
         <div class="col" style="max-width: 200px;">
           <div class="q-mb-md q-mt-sm">
             <div v-for="(instrument, i) in contrib.study.instruments"
-            :key="instrument.id">
+            :key="i">
               <q-btn
                 flat
                 no-caps
@@ -31,13 +31,13 @@
           <div class="text-bold">
             <q-toolbar>
               <q-icon name="thermostat" class="q-mr-xs" size="sm"/>
-              {{ contrib.study.instruments[selected].identifier }}
+              {{ contrib.study.instruments[selected]?.identifier }}
               <q-space />
               <q-btn
                 rounded
                 dense
                 flat
-                :title="$t('duplicate')"
+                :title="t('duplicate')"
                 icon="content_copy"
                 @click="onDuplicate(selected)"
               />
@@ -47,7 +47,7 @@
                 dense
                 flat
                 color="negative"
-                :title="$t('delete')"
+                :title="t('delete')"
                 icon="delete"
                 class="q-ml-xs"
                 @click="onDelete(selected)"
@@ -58,7 +58,7 @@
                 dense
                 flat
                 size="sm"
-                :title="$t('previous')"
+                :title="t('previous')"
                 icon="arrow_back_ios"
                 class="on-right"
                 :disable="selected === 0"
@@ -70,7 +70,7 @@
                 dense
                 flat
                 size="sm"
-                :title="$t('next')"
+                :title="t('next')"
                 icon="arrow_forward_ios"
                 class="q-ml-xs"
                 :disable="selected === instrumentCount - 1"
@@ -79,34 +79,51 @@
             </q-toolbar>
           </div>
           <q-separator class="q-mb-md"/>
-          <instrument-form
-            v-model="contrib.study.instruments[selected]"
-            class="q-mt-md"
-          />
+          <instrument-form v-model="selectedInstrument" class="q-mt-md" />
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  components: { InstrumentForm },
-  name: 'InstrumentsForm',
-});
-</script>
 <script setup lang="ts">
 import { notifyInfo } from 'src/utils/notify';
 import InstrumentForm from './InstrumentForm.vue';
+import type { Instrument } from 'src/models';
+
+const { t } = useI18n();
 const contrib = useContributeStore();
 
 const selected = ref<number | null>(null);
 
 const instrumentCount = computed(() => contrib.study.instruments?.length || 0);
+const selectedInstrument = computed({
+  get() {
+    if (selected.value !== null && contrib.study.instruments && contrib.study.instruments[selected.value]) {
+      return contrib.study.instruments[selected.value] as Instrument;
+    }
+    return {
+      identifier: '',
+      manufacturer: '',
+      model: '',
+      equipment_grade_rating: '',
+      placement: '',
+      parameters: [],
+    };
+  },
+  set(value: Instrument) {
+    if (selected.value !== null && contrib.study.instruments) {
+      contrib.study.instruments[selected.value] = value;
+    }
+  },
+});
+
 
 onMounted(() => {
   if (contrib.study.instruments?.length) {
     selected.value = 0;
+  } else {
+    contrib.study.instruments = [];
   }
 });
 

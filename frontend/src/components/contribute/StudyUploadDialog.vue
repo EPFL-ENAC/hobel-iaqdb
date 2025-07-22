@@ -38,7 +38,7 @@
       <q-card-actions v-if="$q.screen.gt.xs" align="right">
         <q-btn
           flat
-          :label="$t('close')"
+          :label="t('close')"
           color="primary"
           v-close-popup
           @click="onClose"
@@ -48,15 +48,13 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'StudyUploadDialog',
-});
-</script>
 <script setup lang="ts">
+import { useQuasar } from 'quasar';
 import { copyToClipboard } from 'quasar';
 import { notifyError, notifyInfo } from 'src/utils/notify';
 
+const $q = useQuasar();
+const { t } = useI18n();
 const contrib = useContributeStore();
 
 interface Props {
@@ -81,7 +79,7 @@ watch(
     buffer.value = 0;
     status.value = '';
     if (value) {
-      doSave();
+      void doSave();
     }
   },
 );
@@ -115,7 +113,10 @@ async function doSave() {
 }
 
 function onCopy() {
-  copyToClipboard(contrib.study.identifier);
-  notifyInfo('Study ID copied to clipboard');
+  copyToClipboard(contrib.study.identifier).then(() => {
+    notifyInfo('Study ID copied to clipboard');
+  }).catch((error) => {
+    notifyError(error);
+  });
 }
 </script>

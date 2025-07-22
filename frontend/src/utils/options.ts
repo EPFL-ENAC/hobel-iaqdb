@@ -1,4 +1,4 @@
-interface OptionItem {
+export interface OptionItem {
   value: string;
   label: string;
 }
@@ -219,6 +219,16 @@ export const otherSpaceTypeOptions = [
   { value: 'other', label: 'Other' },
 ];
 
+export const spaceTypeOptions = [
+  ...residentialSpaceTypeOptions,
+  ...officSpaceTypeOptions,
+  ...schoolSpaceTypeOptions,
+  ...seniorSpaceTypeOptions,
+  ...hospitalSpaceTypeOptions,
+  ...commercialSpaceTypeOptions,
+  ...otherSpaceTypeOptions,
+];
+
 export const buildingSpaceTypeOptions: { [key: string]: OptionItem[] } = {
   'multifamily residential': residentialSpaceTypeOptions,
   'singlefamily residential': residentialSpaceTypeOptions,
@@ -281,6 +291,13 @@ export const referenceOptions = [
   { value: 'timestamp', label: 'Timestamp' },
   ...physicalParameterOptions,
   { value: 'other', label: 'Other' },
+];
+
+export const dataEmbargoOptions = [
+  { value: '3m', label: '3 months' },
+  { value: '6m', label: '6 months' },
+  { value: '1y', label: '1 year' },
+  { value: 'none', label: 'None' },
 ];
 
 export const countryOptions = sortByLabel([
@@ -573,7 +590,7 @@ export const licenseOptions = [
     value: 'PDDL',
     label: 'Public Domain Dedication and License (PDDL)',
     description:
-      'Similar to CC0, it allows data to be freely used by anyone for any purpose.',
+      'The Open Data Commons PDDL dedicates a database to the public domain, allowing anyone to use, modify, and share the data without any restrictions - including for commercial and AI training purposes.',
   },
   {
     value: 'ODC-By',
@@ -635,6 +652,42 @@ export const licenseOptions = [
     description:
       'A license that allows for the use, modification, and distribution of data, with the requirement that derivative works be shared under the same license.',
   },
+];
+
+export const particleOptions = [
+  { value: 'PM1', label: 'PM1' },
+  { value: 'PM2.5', label: 'PM2.5' },
+  { value: 'PM10', label: 'PM10' },
+  { value: 'PN1', label: 'PN1' },
+  { value: 'PN2.5', label: 'PN2.5' },
+  { value: 'PN10', label: 'PN10' },
+];
+
+export const inorganicGasesOptions = [
+  { value: 'CO2', label: 'CO₂' },
+  { value: 'CO', label: 'CO' },
+  { value: 'O3', label: 'CO₃' },
+  { value: 'SO2', label: 'SO₂' },
+  { value: 'NO2', label: 'NO₂' },
+  { value: 'Radon', label: 'Radon' },
+];
+
+export const biocontaminantsOptions = [
+  { value: 'mold', label: 'Mold' },
+  { value: 'dust mites', label: 'Dust mites' },
+  { value: 'pet dander', label: 'Pet dander' },
+  { value: 'droppings', label: 'Droppings' },
+  { value: 'Virus', label: 'Virus' },
+  { value: 'bacteria', label: 'Bacteria' },
+  { value: 'fungi', label: 'Fungi' },
+  { value: 'others', label: 'Body parts from cockroaches, rodents and other pests or insects' },
+];
+
+export const otherPollutantsOptions = [
+  { value: 'lead', label: 'Lead' },
+  { value: 'black carbon', label: 'Black carbon' },
+  { value: 'air temperature', label: 'Air temperature' },
+  { value: 'relative humidity', label: 'Relative humidity' },
 ];
 
 export const vocOptions = sortByLabel([

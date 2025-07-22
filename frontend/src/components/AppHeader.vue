@@ -33,7 +33,7 @@
             "
             class="text-weight-thin"
           >
-            {{ $t('app_title') }}
+            {{ t('app_title') }}
           </div>
           <div
             :class="
@@ -45,7 +45,7 @@
             "
             class="text-black"
           >
-            {{ $t('app_subtitle') }}
+            {{ t('app_subtitle') }}
           </div>
         </div>
         <div class="col"></div>
@@ -54,15 +54,15 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  name: 'AppHeader',
-});
-</script>
 <script setup lang="ts">
+import { useQuasar } from 'quasar';
+
 interface AppHeaderProps {
   url: string;
 }
 
 defineProps<AppHeaderProps>();
+
+const $q = useQuasar();
+const { t } = useI18n();
 </script>

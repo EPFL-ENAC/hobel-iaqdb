@@ -7,7 +7,7 @@
       </div>
       <div v-else>
         <p class="text-bold">You are currently editing a new study.</p>
-        Note that the study information are automatically saved in your browser: you can pause/resume the form at any time. The study draft will be permanently saved on the iAQ DB server once submitted only. 
+        Note that the study information are automatically saved in your browser: you can pause/resume the form at any time. The study draft will be permanently saved on the iAQ DB server once submitted only.
       </div>
     </div>
     <q-stepper
@@ -118,6 +118,21 @@
           />
         </div>
 
+        <div class="row">
+          <div class="col-12 col-md-6">
+            <q-select
+              v-model="contrib.dataEmbargo"
+              :options="dataEmbargoOptions"
+              filled
+              emit-value
+              map-options
+              :label="t('contribution.data_embargo')"
+              :hint="t('contribution.data_embargo_hint')"
+              class="q-mt-md"
+            />
+          </div>
+        </div>
+
         <datasets-form class="q-mt-lg" />
       </q-step>
     </q-stepper>
@@ -129,7 +144,7 @@
           flat
           @click="onPreviousStep"
           color="secondary"
-          :label="$t('back')"
+          :label="t('back')"
           class="on-left"
         />
         <q-btn
@@ -137,7 +152,7 @@
           @click="onNextStep"
           :disable="!canNext"
           color="primary"
-          :label="$t('continue')"
+          :label="t('continue')"
         />
       </q-card-section>
     </q-card>
@@ -148,26 +163,26 @@
           flat
           @click="onPreviousStep"
           color="secondary"
-          :label="$t('back')"
+          :label="t('back')"
           class="on-left"
         />
         <q-btn
           v-if="step < 4"
           @click="onNextStep"
           color="primary"
-          :label="$t('continue')"
+          :label="t('continue')"
         />
         <q-btn
           v-if="step === 4"
           color="primary"
           @click="onSubmit"
-          :label="$t('submit')"
+          :label="t('submit')"
         />
         <q-btn
           @click="onPause"
           flat
           color="secondary"
-          :label="$t('pause')"
+          :label="t('pause')"
           class="on-right"
         />
       </q-card-section>
@@ -175,12 +190,6 @@
   </div>
 </template>
 
-<script lang="ts">
-export default defineComponent({
-  components: { BuildingsForm, DatasetsForm },
-  name: 'StudyStepper',
-});
-</script>
 <script setup lang="ts">
 import StepStudyMd from 'src/assets/step-study.md';
 import StepBuildingsMd from 'src/assets/step-buildings.md';
@@ -193,6 +202,7 @@ import DatasetsForm from 'src/components/contribute/DatasetsForm.vue';
 import { baseUrl } from 'src/boot/api';
 import { copyToClipboard } from 'quasar';
 import { notifyError, notifyInfo } from 'src/utils/notify';
+import { dataEmbargoOptions } from 'src/utils/options';
 
 interface Props {
   dialog?: boolean;
@@ -200,6 +210,7 @@ interface Props {
 defineProps<Props>();
 const emit = defineEmits(['pause', 'submit', 'step']);
 
+const { t } = useI18n();
 const contrib = useContributeStore();
 
 const studyFormRef = ref();
@@ -214,7 +225,7 @@ const isUpdate = computed(() => contrib.study.identifier && contrib.study.identi
 const canNext = computed(() => {
   if (step.value === 1) {
     // study form validation
-    const valid = studyFormRef.value?.validate();
+    studyFormRef.value?.validate();
     return contrib.inProgress;
   } else if (step.value === 2) {
     // buildings form validation
@@ -267,7 +278,7 @@ async function onNextStep() {
       valid = false;
       notifyError('Please add at least one data contributor');
     }
-    if (contrib.study.license !== 'CC BY-NC') {
+    if (contrib.study.license !== 'PDDL') {
       valid = false;
       notifyError('study.license_error');
     }
@@ -335,7 +346,10 @@ function onExcelFileUpdated() {
 }
 
 function onCopy() {
-  copyToClipboard(contrib.study.identifier);
-  notifyInfo('Study ID copied to clipboard');
+  copyToClipboard(contrib.study.identifier).then(() => {
+    notifyInfo('Study ID copied to clipboard');
+  }).catch(() => {
+    notifyError('Failed to copy Study ID to clipboard');
+  });
 }
 </script>
