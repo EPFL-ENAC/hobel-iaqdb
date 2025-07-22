@@ -73,6 +73,5 @@ class GeoService:
         resp = requests.get(f"{config.ELEVATION_URL}",
                             params={"locations": f"{lat},{lon}"})
         content = resp.json()
-        print(content)
         place = content["results"][0]
         return Elevation(altitude=place["elevation"], lon=lon, lat=lat)

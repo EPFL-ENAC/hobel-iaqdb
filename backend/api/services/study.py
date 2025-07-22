@@ -1,6 +1,7 @@
 import os
 import json
 import tempfile
+import logging
 from api.db import AsyncSession
 from sqlalchemy.sql import text
 from sqlalchemy.orm import selectinload
@@ -315,7 +316,7 @@ class StudyService:
 
         # Dump full study in JSON format
         with tempfile.TemporaryDirectory() as temp_dir:
-            print(f"Temporary directory created at: {temp_dir}")
+            logging.debug(f"Temporary directory created at: {temp_dir}")
             temp_file_path = os.path.join(temp_dir, "study.json")
             with open(temp_file_path, "w") as temp_file:
                 json.dump(study_dict, temp_file, indent=2)

@@ -128,7 +128,6 @@ class ContributionService:
             raise HTTPException(
                 status_code=404, detail="Contribution not found")
         for key, value in payload.model_dump().items():
-            print(key, value)
             if key not in ["id", "study_identifier", "created_at", "updated_at", "created_by", "updated_by", "published_at", "published_by"]:
                 setattr(contribution, key, value)
         contribution.updated_at = datetime.now()

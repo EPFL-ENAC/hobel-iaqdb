@@ -3,6 +3,7 @@ import uuid
 import json
 import tempfile
 import urllib.parse
+import logging
 from api.services.s3 import s3_client
 from api.config import config
 from api.models.catalog import Study, StudyDraft
@@ -35,7 +36,7 @@ class StudyDraftService:
 
         # Create a temporary directory to dump JSON
         with tempfile.TemporaryDirectory() as temp_dir:
-            print(f"Temporary directory created at: {temp_dir}")
+            logging.debug(f"Temporary directory created at: {temp_dir}")
 
             # Use the temporary directory for file operations
             temp_file_path = os.path.join(temp_dir, "study.json")
