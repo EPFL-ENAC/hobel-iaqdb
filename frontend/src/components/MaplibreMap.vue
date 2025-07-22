@@ -14,6 +14,7 @@
 import 'maplibre-gl/dist/maplibre-gl.css';
 import '@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css';
 import 'maplibregl-theme-switcher/styles.css';
+import maplibregl from 'maplibre-gl';
 import MaplibreGeocoder from '@maplibre/maplibre-gl-geocoder';
 import {
   ThemeSwitcherControl,
@@ -118,6 +119,7 @@ onMounted(() => {
   if (props.geocoder === true || props.geocoder === 'true') {
     map.addControl(
       new MaplibreGeocoder(geocoderApi, {
+        maplibregl,
         showResultsWhileTyping: true,
         language: locale.value,
       }),
