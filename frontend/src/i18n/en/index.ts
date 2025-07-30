@@ -234,7 +234,7 @@ export default {
   altitudes_help: 'Altitude of the building',
   altitudes: 'Altitude',
   app_subtitle: 'The indoor air quality database',
-  app_title: 'iAQ DB',
+  app_title: 'IAQ DB',
   approve_contribution: 'Approve contribution',
   approve: 'Approve',
   biocontaminants: 'Biocontaminants',

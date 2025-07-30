@@ -7,7 +7,7 @@
       </div>
       <div v-else>
         <p class="text-bold">You are currently editing a new study.</p>
-        Note that the study information are automatically saved in your browser: you can pause/resume the form at any time. The study draft will be permanently saved on the iAQ DB server once submitted only.
+        Note that the study information are automatically saved in your browser: you can pause/resume the form at any time. The study draft will be permanently saved on the IAQ DB server once submitted only.
       </div>
     </div>
     <q-stepper
