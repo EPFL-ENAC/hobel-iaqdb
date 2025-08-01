@@ -185,8 +185,8 @@ class StudyService:
 
         # Contributors
         study_dict['contributors'] = []
-        contributors = contributors = [
-            Person(**contributor_draft.model_dump(),
+        contributors = [
+            Person(**contributor_draft.model_dump(exclude={"id", "study_id"}),
                    id=None, study_id=study.id)
             for contributor_draft in contributor_drafts
         ]
