@@ -156,7 +156,7 @@ class StudyParser:
             columns={
                 'building identifier': 'identifier',
                 'country': 'country',
-                'city': 'city',
+                'city/geographical area': 'city',
                 'postcode': 'postcode',
                 'building type': 'type',
                 'if other, specify building type': 'other_type',
@@ -295,5 +295,6 @@ class StudyParser:
         # column is in df.columns
         if column in df.columns:
             return df[column].str.lower().str.replace(
+                '-family', 'family').str.replace(  # legacy
                 r'[^\x20-\x7E]', ' ', regex=True).str.strip()
         return None

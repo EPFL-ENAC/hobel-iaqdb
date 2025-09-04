@@ -45,6 +45,7 @@ export const occupantImpactOptions = [
   { value: 'comfort', label: 'Comfort' },
   { value: 'performance', label: 'Performance' },
   { value: 'well-being', label: 'Well-being' },
+  { value: 'sleep quality', label: 'Sleep quality' },
   { value: 'na', label: 'Not applicable' },
 ];
 
@@ -157,6 +158,7 @@ export const residentialSpaceTypeOptions = [
   { value: 'garage', label: 'Garage' },
   { value: 'hallway', label: 'Hallway' },
   { value: 'outdoor', label: 'Outdoor' },
+  { value: 'personal', label: 'Personal' },
   { value: 'other', label: 'Other' },
 ];
 
@@ -170,6 +172,7 @@ export const officSpaceTypeOptions = [
   { value: 'hallway', label: 'Hallway' },
   { value: 'kitchen', label: 'Kitchen' },
   { value: 'outdoor', label: 'Outdoor' },
+  { value: 'personal', label: 'Personal' },
   { value: 'other', label: 'Other' },
 ];
 
@@ -181,6 +184,7 @@ export const schoolSpaceTypeOptions = [
   { value: 'hallway', label: 'Hallway' },
   { value: 'kitchen', label: 'Kitchen' },
   { value: 'outdoor', label: 'Outdoor' },
+  { value: 'personal', label: 'Personal' },
   { value: 'other', label: 'Other' },
 ];
 
@@ -192,6 +196,7 @@ export const seniorSpaceTypeOptions = [
   { value: 'hallway', label: 'Hallway' },
   { value: 'office', label: 'Office' },
   { value: 'outdoor', label: 'Outdoor' },
+  { value: 'personal', label: 'Personal' },
   { value: 'other', label: 'Other' },
 ];
 
@@ -202,6 +207,7 @@ export const hospitalSpaceTypeOptions = [
   { value: 'hallway', label: 'Hallway' },
   { value: 'office', label: 'Office' },
   { value: 'outdoor', label: 'Outdoor' },
+  { value: 'personal', label: 'Personal' },
   { value: 'other', label: 'Other' },
 ];
 
@@ -212,6 +218,7 @@ export const commercialSpaceTypeOptions = [
   { value: 'hallway', label: 'Hallway' },
   { value: 'office', label: 'Office' },
   { value: 'outdoor', label: 'Outdoor' },
+  { value: 'personal', label: 'Personal' },
   { value: 'other', label: 'Other' },
 ];
 

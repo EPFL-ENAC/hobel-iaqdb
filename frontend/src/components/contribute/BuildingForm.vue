@@ -103,7 +103,7 @@
         />
       </div>
     </div>
-    
+
     <div class="text-bold q-mb-md">Location</div>
     <div class="row q-col-gutter-md q-mb-md">
       <div class="col">

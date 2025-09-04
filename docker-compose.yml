@@ -63,7 +63,7 @@ services:
       - 5432
     ports:
       - '5432:5432'
-    restart: always
+    restart: "no"
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}

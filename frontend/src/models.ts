@@ -96,27 +96,27 @@ export interface StudySummariesResult extends ListResult {
 export interface Space extends DBModel {
   identifier: string;
   type: string;
-  floor_area?: number;
-  space_volume?: number;
+  floor_area?: number | undefined;
+  space_volume?: number | undefined;
   occupancy_density?: number | undefined;
   occupancy_number?: number | undefined;
   occupancy?: string | undefined;
-  mechanical_ventilation_type?: string;
+  mechanical_ventilation_type?: string | undefined;
   other_mechanical_ventilation_type?: string | undefined;
   cooling_type?: string | undefined;
   other_cooling_type?: string | undefined;
   heating_type?: string | undefined;
   other_heating_type?: string | undefined;
-  air_filtration?: string;
-  printers?: string;
-  carpets?: string;
-  combustion_sources?: string;
+  air_filtration?: string | undefined;
+  printers?: string | undefined;
+  carpets?: string | undefined;
+  combustion_sources?: string | undefined;
   major_combustion_sources?: string | undefined;
   minor_combustion_sources?: string | undefined;
-  pets?: string;
-  dampness?: string;
-  mold?: string;
-  detergents?: string;
+  pets?: string | undefined;
+  dampness?: string | undefined;
+  mold?: string | undefined;
+  detergents?: string | undefined;
 }
 
 export interface SpacesResult extends ListResult {
