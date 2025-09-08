@@ -269,6 +269,7 @@ export default {
   geography: 'Geography',
   home: 'Home',
   home_info: 'Project summary and highlights',
+  how_to_cite: 'How to cite',
   inorganic_gases: 'Inorganic gases',
   instruments: 'Instruments',
   introduction: 'Introduction',

@@ -51,9 +51,9 @@
       <q-btn
         flat
         round
-        icon="info"
-        :title="t('introduction')"
-        @click="showIntro = true"
+        icon="format_quote"
+        :title="t('how_to_cite')"
+        @click="showCite = true"
       ></q-btn>
       <q-btn
         flat
@@ -97,9 +97,9 @@
               <q-item-label>{{ t('resources') }}</q-item-label>
             </q-item-section>
           </q-item>
-          <q-item clickable v-close-popup @click="showIntro = true">
+          <q-item clickable v-close-popup @click="showCite = true">
             <q-item-section>
-              <q-item-label>{{ t('introduction') }}</q-item-label>
+              <q-item-label>{{ t('how_to_cite') }}</q-item-label>
             </q-item-section>
           </q-item>
           <q-item clickable v-close-popup :to="'/admin'">
@@ -139,10 +139,12 @@
       />
     </q-list>
   </simple-dialog>
+  <simple-dialog v-model="showCite" :title="t('how_to_cite')" :content="HowToCiteMd"/>
 </template>
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
+import HowToCiteMd from 'src/assets/how-to-cite.md';
 import IntroductionMd from 'src/assets/introduction.md';
 import essentialLinks from 'src/assets/links.json';
 import EssentialLink from 'src/components/EssentialLink.vue';
@@ -165,6 +167,7 @@ const route = useRoute();
 
 const showIntro = ref(false);
 const showResources = ref(false);
+const showCite = ref(false);
 
 onMounted(() => {
   if (!settingsStore.settings?.intro_shown) {
