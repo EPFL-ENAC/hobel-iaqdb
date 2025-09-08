@@ -20,11 +20,13 @@
           :label="t('study.space.type') + ' *'"
           :hint="t('study.space.type_hint')"
           :rules="[val => !!val || t('required')]"
+          @update:model-value="onSpaceTypeChange"
         />
       </div>
       <div class="col">
         <q-input
           v-model.number="space.floor_area"
+          :disable="isOutdoorOrPersonal"
           type="number"
           :min="0"
           filled
@@ -35,6 +37,7 @@
       <div class="col">
         <q-input
           v-model.number="space.space_volume"
+          :disable="isOutdoorOrPersonal"
           type="number"
           :min="0"
           filled
@@ -65,7 +68,7 @@
           filled
           :label="t('study.space.occupancy_density')"
           :hint="t('study.space.occupancy_density_hint')"
-          :disable="space.occupancy === 'unknown'"
+          :disable="space.occupancy === 'unknown' || space.occupancy === 'unoccupied' || isOutdoorOrPersonal"
         />
       </div>
       <div class="col">
@@ -76,7 +79,7 @@
           filled
           :label="t('study.space.occupancy_number')"
           :hint="t('study.space.occupancy_number_hint')"
-          :disable="space.occupancy === 'unknown'"
+          :disable="space.occupancy === 'unknown' || space.occupancy === 'unoccupied' || isOutdoorOrPersonal"
           :rules="[val => val === '' || val === undefined || val === null || Number.isInteger(val) || t('must_be_integer')]"
         />
       </div>
@@ -87,6 +90,7 @@
       <div class="col">
         <q-select
           v-model="space.mechanical_ventilation_type"
+          :disable="isOutdoorOrPersonal"
           :options="mechanicalVentilationTypeOptions"
           filled
           emit-value
@@ -99,6 +103,7 @@
       <div v-if="space.mechanical_ventilation_type === 'other'" class="col">
         <q-input
           v-model="space.other_mechanical_ventilation_type"
+          :disable="isOutdoorOrPersonal"
           filled
           :label="t('study.space.other_mechanical_ventilation_type')"
           :hint="t('study.space.other_mechanical_ventilation_type_hint')"
@@ -109,6 +114,7 @@
       <div class="col">
         <q-select
           v-model="space.cooling_type"
+          :disable="isOutdoorOrPersonal"
           :options="coolingTypeOptions"
           filled
           emit-value
@@ -121,6 +127,7 @@
       <div v-if="space.cooling_type === 'other'" class="col">
         <q-input
           v-model="space.other_cooling_type"
+          :disable="isOutdoorOrPersonal"
           filled
           :label="t('study.space.other_cooling_type')"
           :hint="t('study.space.other_cooling_type_hint')"
@@ -129,6 +136,7 @@
       <div class="col">
         <q-select
           v-model="space.heating_type"
+          :disable="isOutdoorOrPersonal"
           :options="heatingTypeOptions"
           filled
           emit-value
@@ -141,6 +149,7 @@
       <div v-if="space.heating_type === 'other'" class="col">
         <q-input
           v-model="space.other_heating_type"
+          :disable="isOutdoorOrPersonal"
           filled
           :label="t('study.space.other_heating_type')"
           :hint="t('study.space.other_heating_type_hint')"
@@ -151,6 +160,7 @@
       <div class="col">
         <q-select
           v-model="space.air_filtration"
+          :disable="isOutdoorOrPersonal"
           :options="yesNoOptions"
           filled
           emit-value
@@ -168,6 +178,7 @@
       <div class="col">
         <q-select
           v-model="space.combustion_sources"
+          :disable="isOutdoorOrPersonal"
           :options="yesNoOptions"
           filled
           emit-value
@@ -186,7 +197,7 @@
           map-options
           :label="t('study.space.major_combustion_sources')"
           :hint="t('study.space.major_combustion_sources_hint')"
-          :disable="space.combustion_sources !== 'yes'"
+          :disable="space.combustion_sources !== 'yes' || isOutdoorOrPersonal"
         />
       </div>
       <div class="col">
@@ -198,7 +209,7 @@
           map-options
           :label="t('study.space.minor_combustion_sources')"
           :hint="t('study.space.minor_combustion_sources_hint')"
-          :disable="space.combustion_sources !== 'yes'"
+          :disable="space.combustion_sources !== 'yes' || isOutdoorOrPersonal"
         />
       </div>
     </div>
@@ -208,6 +219,7 @@
       <div class="col">
         <q-select
           v-model="space.printers"
+          :disable="isOutdoorOrPersonal"
           :options="yesNoOptions"
           filled
           emit-value
@@ -219,6 +231,7 @@
       <div class="col">
         <q-select
           v-model="space.carpets"
+          :disable="isOutdoorOrPersonal"
           :options="yesNoOptions"
           filled
           emit-value
@@ -230,6 +243,7 @@
       <div class="col">
         <q-select
           v-model="space.pets"
+          :disable="isOutdoorOrPersonal"
           :options="yesNoOptions"
           filled
           emit-value
@@ -243,6 +257,7 @@
       <div class="col">
         <q-select
           v-model="space.dampness"
+          :disable="isOutdoorOrPersonal"
           :options="yesNoOptions"
           filled
           emit-value
@@ -254,6 +269,7 @@
       <div class="col">
         <q-select
           v-model="space.mold"
+          :disable="isOutdoorOrPersonal"
           :options="yesNoOptions"
           filled
           emit-value
@@ -265,6 +281,7 @@
       <div class="col">
         <q-select
           v-model="space.detergents"
+          :disable="isOutdoorOrPersonal"
           :options="yesNoOptions"
           filled
           emit-value
@@ -307,6 +324,8 @@ const spaceTypeOptions = computed(() => {
   return [];
 });
 
+const isOutdoorOrPersonal = computed(() => space.value.type === 'outdoor' || space.value.type === 'personal');
+
 watch(() => props.modelValue, (val) => {
   space.value = val;
 });
@@ -316,6 +335,35 @@ watch(() => props.building.type, () => {
     space.value.type = 'other';
   }
 });
+
+function onSpaceTypeChange() {
+  if (isOutdoorOrPersonal.value) {
+    space.value.floor_area = undefined;
+    space.value.space_volume = undefined;
+    space.value.occupancy = 'unknown';
+    space.value.occupancy_density = undefined;
+    space.value.occupancy_number = undefined;
+    space.value.mechanical_ventilation_type = undefined;
+    space.value.other_mechanical_ventilation_type = undefined;
+    space.value.cooling_type = undefined;
+    space.value.other_cooling_type = undefined;
+    space.value.heating_type = undefined;
+    space.value.other_heating_type = undefined;
+    space.value.air_filtration = undefined;
+    space.value.combustion_sources = undefined;
+    space.value.major_combustion_sources = undefined;
+    space.value.minor_combustion_sources = undefined;
+    space.value.printers = undefined;
+    space.value.carpets = undefined;
+    space.value.pets = undefined;
+    space.value.dampness = undefined;
+    space.value.mold = undefined;
+    space.value.detergents = undefined;
+  } else if (space.value.type === 'unknown' || space.value.type === 'unoccupied') {
+    space.value.occupancy_density = undefined;
+    space.value.occupancy_number = undefined;
+  }
+}
 
 function onCombustionSourcesChange() {
   if (space.value.combustion_sources !== 'yes') {

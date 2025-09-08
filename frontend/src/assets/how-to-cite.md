@@ -1,0 +1,1 @@
+We kindly invite you to cite the flagship overview paper that describes the database [in preparation]. We also suggest you cite the original studies of the corresponding datasets using the DOI or other identifier associated with the dataset on IAQ Database and Zenodo.

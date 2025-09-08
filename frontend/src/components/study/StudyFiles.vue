@@ -2,6 +2,7 @@
   <div>
     <div class="row">
       <q-btn
+        v-if="authStore.isAdmin"
         flat
         color="primary"
         icon="download"
@@ -46,6 +47,7 @@ import { getSizeLabel } from 'src/utils/numbers';
 
 const { t } = useI18n();
 const catalogStore = useCatalogStore();
+const authStore = useAuthStore();
 
 const filter = ref('');
 const filterRef = ref(null);
