@@ -54,7 +54,7 @@ services:
       - "traefik.http.services.backend.loadbalancer.server.port=8000"
       - "traefik.http.routers.backend.middlewares=backend-middleware"
       - "traefik.http.middlewares.backend-middleware.stripprefix.prefixes=/api"
-    restart: unless-stopped
+    restart: "no"
     links:
       - postgres
   postgres:

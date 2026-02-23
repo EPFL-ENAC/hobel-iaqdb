@@ -184,6 +184,10 @@ class StudyParser:
             if col in df.columns:
                 df[col] = pd.to_numeric(
                     df[col], downcast='integer', errors='coerce')
+        # Convert columns to string, invalid parsing will be set as NaN (None in case of conversion to object type)
+        for col in ['postcode']:
+            if col in df.columns:
+                df[col] = df[col].astype(str).replace('nan', None)
         # Lower case of categorical columns
         for col in ['type', 'outdoor_env', 'green_certified', 'renovation', 'mechanical_ventilation', 'operable_windows', 'age_group', 'socioeconomic_status', 'smoking']:
             if col in df.columns:
