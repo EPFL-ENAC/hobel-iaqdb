@@ -118,7 +118,7 @@ function onFileUpdated() {
   dictionary.value = {};
   pagination.value.page = 1;
   loadingFile.value = true;
-  if (localFile.value.type === 'application/zip') {
+  if (localFile.value.type === 'application/zip' || localFile.value.name.toLowerCase().endsWith('.zip')) {
     void parseZipFile(localFile.value);
   } else {
     parseDelimitedData(localFile.value);
@@ -157,7 +157,7 @@ function parseDelimitedData(csv: File | string) {
     skipEmptyLines: true,
     dynamicTyping: true,
     header: true,
-    delimiter: '', // try most common delimiters
+    delimiter: ',', // try most common delimiters
     complete: onCSVParseCompleted,
   });
 }
