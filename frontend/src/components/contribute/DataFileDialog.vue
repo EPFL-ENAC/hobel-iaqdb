@@ -140,10 +140,34 @@ async function parseZipFile(file: File) {
       notifyError('No CSV/TSV entries found in the ZIP archive.');
       loadingFile.value = false;
     } else {
-      const text = await csvFile.async('text');
-      const lines = text.split('\n');
-      const firstLines = lines.slice(0, 11);
-      parseDelimitedData(firstLines.join('\n'));
+      // `internalStream` is JSZip's chunked decompression engine. It is not
+      // in the public TypeScript typings (JSZipObject only exposes `async` /
+      // `nodeStream`), but it exists at runtime and its `pause()` method
+      // genuinely stops further decompression — so only the bytes needed to
+      // produce 11 lines are ever inflated.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const stream: JSZip.JSZipStreamHelper<string> = (csvFile as any).internalStream('string');
+      const lines: string[] = [];
+      let remainder = '';
+      await new Promise<void>((resolve, reject) => {
+        stream
+          .on('data', (chunk: string) => {
+            const parts = (remainder + chunk).split('\n');
+            remainder = parts.pop() ?? '';
+            lines.push(...parts);
+            if (lines.length >= 11) {
+              stream.pause();
+              resolve();
+            }
+          })
+          .on('error', reject)
+          .on('end', () => {
+            if (remainder) lines.push(remainder);
+            resolve();
+          })
+          .resume();
+      });
+      parseDelimitedData(lines.slice(0, 11).join('\n'));
     }
   } catch (error) {
     notifyError(error);
@@ -157,7 +181,7 @@ function parseDelimitedData(csv: File | string) {
     skipEmptyLines: true,
     dynamicTyping: true,
     header: true,
-    delimiter: ',', // try most common delimiters
+    delimiter: '', // try most common delimiters
     complete: onCSVParseCompleted,
   });
 }
