@@ -19,7 +19,7 @@
             @update:model-value="onFileUpdated"
           />
         </div>
-          
+
         <div v-if="loadingFile" class="q-mt-md">
           <q-spinner-dots size="md"/>
         </div>
@@ -56,11 +56,10 @@
 import { useQuasar } from 'quasar';
 import { referenceOptions } from 'src/utils/options';
 import Papa from 'papaparse';
-import { ZipReader, BlobReader } from '@zip.js/zip.js';
+import JSZip from 'jszip';
 import type { DataFile } from 'src/components/models';
 import type { Variable } from 'src/models';
 import { notifyError } from 'src/utils/notify';
-import { LimitedTransformStream } from 'src/utils/streams';
 
 interface Props {
   modelValue: boolean;
@@ -119,7 +118,7 @@ function onFileUpdated() {
   dictionary.value = {};
   pagination.value.page = 1;
   loadingFile.value = true;
-  if (localFile.value.type === 'application/zip') {
+  if (localFile.value.type === 'application/zip' || localFile.value.name.toLowerCase().endsWith('.zip')) {
     void parseZipFile(localFile.value);
   } else {
     parseDelimitedData(localFile.value);
@@ -127,41 +126,28 @@ function onFileUpdated() {
 }
 
 async function parseZipFile(file: File) {
-  // Create a FileReader to read the file
-  const zipReader = new ZipReader(new BlobReader(file));
   try {
-    const csvEntry = (await zipReader.getEntries()).find(entry => entry.filename.endsWith('.csv') || entry.filename.endsWith('.tsv'));
-    if (!csvEntry) {
+    const zip = await JSZip.loadAsync(file);
+    const csvFile = Object.values(zip.files).find((entry) => {
+      if (entry.dir) {
+        return false;
+      }
+      const name = entry.name.toLowerCase();
+      return name.endsWith('.csv') || name.endsWith('.tsv');
+    });
+
+    if (!csvFile) {
       notifyError('No CSV/TSV entries found in the ZIP archive.');
       loadingFile.value = false;
     } else {
-      // Creates a TransformStream object, the content of the first entry in the zip
-      // will be written in the `writable` property.
-      const csvStream = new LimitedTransformStream();
-      // Creates a Promise object resolved to the content of the first entry returned
-      // as text from `helloWorldStream.readable`.
-      const csvTextPromise = new Response(csvStream.readable).text();
-      if (!csvEntry.getData) {
-        notifyError('ZIP entry does not support getData method.');
-        loadingFile.value = false;
-        return;
-      }
-      await csvEntry.getData(csvStream.writable);
-
-      // Read the content of the CSV file as a text stream
-      await csvTextPromise.then((text: string) => {
-        // Split the CSV content into lines
-        const lines = text.split('\n');
-        // Read the header + first 10 lines
-        const firstLines = lines.slice(0, 11);
-        parseDelimitedData(firstLines.join('\n'));
-      });
+      const text = await csvFile.async('text');
+      const lines = text.split('\n');
+      const firstLines = lines.slice(0, 11);
+      parseDelimitedData(firstLines.join('\n'));
     }
   } catch (error) {
     notifyError(error);
     loadingFile.value = false;
-  } finally {
-    void zipReader.close();
   }
 }
 
@@ -171,7 +157,7 @@ function parseDelimitedData(csv: File | string) {
     skipEmptyLines: true,
     dynamicTyping: true,
     header: true,
-    delimiter: '', // try most common delimiters
+    delimiter: ',', // try most common delimiters
     complete: onCSVParseCompleted,
   });
 }
