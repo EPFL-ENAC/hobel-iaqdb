@@ -16,5 +16,6 @@ Join us in this global effort to unlock the full potential of IAQ data for healt
 
 **Contact information**
 
+* [Dr. Chenxi Liao](https://people.epfl.ch/chenxi.liao)
 * [Dr. Bowen Du](https://people.epfl.ch/bowen.du)
 * [Prof. Dusan Licina](https://people.epfl.ch/dusan.licina)
