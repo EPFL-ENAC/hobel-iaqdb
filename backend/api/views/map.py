@@ -28,6 +28,8 @@ async def getBuildings(session: AsyncSession = Depends(get_session)) -> Building
         # "|".join(map(lambda agg: agg["_id"], filter(lambda agg: agg["count"] > 0, roomAggs)))
         mechanical_ventilation_types = "|".join(
             set([space.mechanical_ventilation_type for space in building.spaces if space.mechanical_ventilation_type is not None]))
+        if building.long is None or building.lat is None:
+            continue
         geometry = Geometry(
             coordinates=[building.long, building.lat], type="Point")
         properties = BuildingProperties(id=str(building.id),
