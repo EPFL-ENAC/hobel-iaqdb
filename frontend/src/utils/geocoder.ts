@@ -43,6 +43,8 @@ function handleNominatimResponse(geojson: FeatureCollection): Feature[] {
 
 let searchController: AbortController;
 
+const geocoderCache = new Map<string, MaplibreGeocoderFeatureResults>();
+
 /**
  * Example: https://maplibre.org/maplibre-gl-js-docs/example/geocoder/
  * API: https://github.com/maplibre/maplibre-gl-geocoder/blob/main/API.md
@@ -59,6 +61,11 @@ export const geocoderApi = {
       if (countrycodes) {
         request = `${request}&countrycodes=${countrycodes}`;
       }
+      // Lookup cache if based on request URL, otherwise forward request to geocoding API
+      const cached = geocoderCache.get(request);
+      if (cached) {
+        return cached;
+      }
       if (searchController) searchController.abort();
       searchController = new AbortController();
       const response = await fetch(request, {
@@ -66,6 +73,11 @@ export const geocoderApi = {
       });
       const geojson = await response.json();
       features = handleNominatimResponse(geojson);
+      // Cache results based on request URL
+      geocoderCache.set(request, {
+        type: 'FeatureCollection',
+        features,
+      } as MaplibreGeocoderFeatureResults);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       if (e.name !== 'AbortError')
