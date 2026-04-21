@@ -149,7 +149,6 @@ import IntroductionMd from 'src/assets/introduction.md';
 import essentialLinks from 'src/assets/links.json';
 import EssentialLink from 'src/components/EssentialLink.vue';
 import SimpleDialog from 'src/components/SimpleDialog.vue';
-import type { Settings } from 'src/stores/settings';
 
 interface Props {
   noMenu?: boolean;
@@ -172,7 +171,7 @@ const showCite = ref(false);
 onMounted(() => {
   if (!settingsStore.settings?.intro_shown) {
     showIntro.value = true;
-    settingsStore.saveSettings({ intro_shown: true } as Settings);
+    settingsStore.saveSettings({ intro_shown: true });
   }
 });
 

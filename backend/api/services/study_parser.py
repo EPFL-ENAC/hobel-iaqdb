@@ -2,15 +2,25 @@ import pandas as pd
 import numpy as np
 import country_converter as coco
 from typing import List, Dict
-from api.models.catalog import Study, Building, Space, Certification, Person, Instrument, InstrumentParameter
+from pydantic import ValidationError
+from api.models.catalog import Study, Building, Space, Certification, Person, Instrument, InstrumentParameter, ParseError
 
 
 class StudyParser:
     """Parse a study from an Excel file.
     """
 
+    def __init__(self):
+        self.errors: List[ParseError] = []
+
     def parse(self, io) -> Study:
-        df = pd.read_excel(io, sheet_name="Study")
+        self.errors = []
+
+        try:
+            df = pd.read_excel(io, sheet_name="Study")
+        except Exception as e:
+            raise ValueError(f"Missing or unreadable 'Study' sheet: {e}")
+
         df = self.clean_header(df)
         df.rename(
             columns={
@@ -47,18 +57,65 @@ class StudyParser:
         df = df.replace({np.nan: None})
 
         std_dict = df.iloc[0].to_dict()
-        study = Study(**std_dict)
+        try:
+            study = Study(**std_dict)
+        except ValidationError as e:
+            for err in e.errors():
+                self.errors.append(ParseError(
+                    loc="study." + ".".join(str(l) for l in err["loc"]),
+                    msg=err["msg"],
+                    severity="error"
+                ))
+            study = Study(identifier=std_dict.get("identifier") or "_draft")
 
-        contributors = self.read_contributors(io)
+        # Domain checks
+        if study.start_year and study.end_year and study.start_year > study.end_year:
+            self.errors.append(ParseError(
+                loc="study.start_year",
+                msg=f"start_year ({study.start_year}) is after end_year ({study.end_year})",
+                severity="error"
+            ))
+
+        try:
+            contributors = self.read_contributors(io)
+        except Exception as e:
+            self.errors.append(ParseError(
+                loc="contributors", msg=f"Could not read Contributor sheet: {e}", severity="warning"))
+            contributors = []
         study.contributors = contributors
 
-        instruments = self.read_instruments(io)
+        try:
+            instruments = self.read_instruments(io)
+        except Exception as e:
+            self.errors.append(ParseError(
+                loc="instruments", msg=f"Could not read Instrument sheet: {e}", severity="warning"))
+            instruments = []
         study.instruments = instruments
 
-        spaces = self.read_spaces(io)
+        try:
+            spaces = self.read_spaces(io)
+        except Exception as e:
+            self.errors.append(ParseError(
+                loc="spaces", msg=f"Could not read Space sheet: {e}", severity="warning"))
+            spaces = {}
 
-        buildings = self.read_buildings(io, spaces)
+        try:
+            buildings = self.read_buildings(io, spaces)
+        except Exception as e:
+            self.errors.append(ParseError(
+                loc="buildings", msg=f"Could not read Building sheet: {e}", severity="warning"))
+            buildings = []
         study.buildings = buildings
+
+        # Check for orphan spaces (reference a building not in the Building sheet)
+        used_building_ids = {str(b.identifier) for b in buildings}
+        for bldg_id in spaces:
+            if bldg_id not in used_building_ids:
+                self.errors.append(ParseError(
+                    loc="space.building_identifier",
+                    msg=f"Spaces reference unknown building identifier '{bldg_id}' — they will be ignored",
+                    severity="warning"
+                ))
 
         if study.identifier is None:
             study.identifier = '_draft'
@@ -88,7 +145,17 @@ class StudyParser:
         persons = []
         for index, row in df.iterrows():
             prsn = row.to_dict()
-            person = Person(**prsn)
+            try:
+                person = Person(**prsn)
+            except ValidationError as e:
+                for err in e.errors():
+                    self.errors.append(ParseError(
+                        loc=f"contributor[{index}]." +
+                            ".".join(str(l) for l in err["loc"]),
+                        msg=err["msg"],
+                        severity="error"
+                    ))
+                continue
             person.id = index
             person.study_id = 0
             persons.append(person)
@@ -121,7 +188,17 @@ class StudyParser:
         id = 1
         for index, row in df.iterrows():
             inst = row.to_dict()
-            instrument = Instrument(**inst)
+            try:
+                instrument = Instrument(**inst)
+            except ValidationError as e:
+                for err in e.errors():
+                    self.errors.append(ParseError(
+                        loc=f"instrument[{index}]." +
+                            ".".join(str(l) for l in err["loc"]),
+                        msg=err["msg"],
+                        severity="error"
+                    ))
+                continue
             instrument.study_id = 0
             # ensure it is a string
             instrument.identifier = str(instrument.identifier)
@@ -136,16 +213,33 @@ class StudyParser:
                 id += 1
                 instruments.append(instrument)
 
+            physical_parameter = inst.get("physical_parameter")
+            if physical_parameter is None:
+                self.errors.append(ParseError(
+                    loc=f"instrument[{index}].physical_parameter",
+                    msg="physical_parameter is missing — parameter row skipped",
+                    severity="warning"
+                ))
+                continue
             param = {
                 "id": len(instrument.parameters) + 1,
-                "physical_parameter": inst["physical_parameter"] if "physical_parameter" in inst else None,
-                "analysis_method": inst["analysis_method"] if "analysis_method" in inst else None,
-                "measurement_uncertainty": inst["measurement_uncertainty"] if "measurement_uncertainty" in inst else None,
+                "physical_parameter": physical_parameter,
+                "analysis_method": inst.get("analysis_method"),
+                "measurement_uncertainty": inst.get("measurement_uncertainty"),
                 "note": None,
                 "study_id": 0,
                 "instrument_id": instrument.id,
             }
-            instrument.parameters.append(InstrumentParameter(**param))
+            try:
+                instrument.parameters.append(InstrumentParameter(**param))
+            except ValidationError as e:
+                for err in e.errors():
+                    self.errors.append(ParseError(
+                        loc=f"instrument[{index}].parameter." +
+                            ".".join(str(l) for l in err["loc"]),
+                        msg=err["msg"],
+                        severity="error"
+                    ))
 
         return instruments
 
@@ -184,6 +278,17 @@ class StudyParser:
             if col in df.columns:
                 df[col] = pd.to_numeric(
                     df[col], downcast='integer', errors='coerce')
+        for col in ['airtightness']:
+            if col in df.columns:
+                original = df[col].copy()
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+                for idx, orig, new in zip(df.index, original, df[col]):
+                    if orig is not None and not pd.isna(orig) and pd.isna(new):
+                        self.errors.append(ParseError(
+                            loc=f"building[{idx}].{col}",
+                            msg=f"'{orig}' is not a valid number, set to None",
+                            severity="warning"
+                        ))
         # Convert columns to string, invalid parsing will be set as NaN (None in case of conversion to object type)
         for col in ['postcode']:
             if col in df.columns:
@@ -195,13 +300,34 @@ class StudyParser:
         # To explicitly convert NaN to None
         df = df.replace({np.nan: None})
         if 'country' in df.columns:
-            df['country'] = df['country'].apply(
-                lambda x: coco.convert(names=x, to='ISO2', not_found=None) if x is not None else None)
+            def convert_country(x, row_index):
+                if x is None:
+                    return None
+                result = coco.convert(names=x, to='ISO2', not_found=None)
+                if result is None:
+                    self.errors.append(ParseError(
+                        loc=f"building[{row_index}].country",
+                        msg=f"Unrecognised country '{x}', set to None",
+                        severity="warning"
+                    ))
+                return result
+            df['country'] = [convert_country(v, i)
+                             for i, v in zip(df.index, df['country'])]
 
         buildings = []
         for index, row in df.iterrows():
             bldg = row.to_dict()
-            building = Building(**bldg)
+            try:
+                building = Building(**bldg)
+            except ValidationError as e:
+                for err in e.errors():
+                    self.errors.append(ParseError(
+                        loc=f"building[{index}]." +
+                            ".".join(str(l) for l in err["loc"]),
+                        msg=err["msg"],
+                        severity="error"
+                    ))
+                continue
             if building.identifier is None:
                 pass
             if bldg['green_certified'] is not None and bldg['green_certified'].lower() == 'yes' and bldg['green_certification_name'] is not None:
@@ -218,7 +344,6 @@ class StudyParser:
                 for space in building.spaces:
                     space.building_id = index
                     space.study_id = 0
-            # building.id = index
             buildings.append(building)
         return buildings
 
@@ -270,7 +395,17 @@ class StudyParser:
         spaces = {}
         for index, row in df.iterrows():
             spc = row.to_dict()
-            space = Space(**spc)
+            try:
+                space = Space(**spc)
+            except ValidationError as e:
+                for err in e.errors():
+                    self.errors.append(ParseError(
+                        loc=f"space[{index}]." +
+                            ".".join(str(l) for l in err["loc"]),
+                        msg=err["msg"],
+                        severity="error"
+                    ))
+                continue
             if space.identifier is None:
                 pass
             # ensure it is a string

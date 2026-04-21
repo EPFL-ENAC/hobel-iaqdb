@@ -9,7 +9,7 @@ from api.services.study_parser import StudyParser
 from api.services.study import StudyService
 from api.services.study_draft import StudyDraftService
 from api.services.contribution import ContributionService
-from api.models.catalog import StudyDraft, StudyDraftsResult, StudyBundlesResult, StudyBundle, StudyRead, Study, Contribution, ContributionsResult
+from api.models.catalog import StudyDraft, StudyDraftsResult, StudyBundlesResult, StudyBundle, StudyRead, Study, Contribution, ContributionsResult, StudyDraftParseResult
 from api.utils.files import file_checker
 from api.auth import kc_service, User
 from enacit4r_sql.utils.query import paramAsArray, paramAsDict
@@ -36,13 +36,14 @@ async def get_dataset_dictionary():
 @router.post("/study-excel",
              status_code=200,
              dependencies=[Depends(file_checker.check_size)],
-             response_model=StudyDraft)
+             response_model=StudyDraftParseResult)
 async def read_study_from_excel(
     files: UploadFile = File(
         description="Excel file containing study, building, space descriptions")):
     try:
-        study = StudyParser().parse(files.file._file)
-        return study
+        parser = StudyParser()
+        study = parser.parse(files.file._file)
+        return StudyDraftParseResult(study=study, errors=parser.errors)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

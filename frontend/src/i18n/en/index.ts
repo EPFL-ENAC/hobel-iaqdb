@@ -65,6 +65,10 @@ export default {
     license_error: 'You must accept the license to proceed.',
     data_processing: 'Data processing',
     data_processing_hint: 'Note for data cleaning and processing.',
+    parse: {
+      success: 'The study draft was successfully parsed from the Excel file, you can now review and edit the information before submitting the contribution.',
+      errors: 'The study draft has parsing errors. Please fix them before submitting.',
+    },
     building: {
       age_group: 'Age group',
       age_group_hint: 'Age group of the building occupants.',

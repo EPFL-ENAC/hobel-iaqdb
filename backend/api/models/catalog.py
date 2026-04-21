@@ -1,4 +1,4 @@
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Literal
 from sqlmodel import SQLModel, Field, Relationship, UniqueConstraint, Column
 from sqlalchemy.dialects.postgresql import JSONB as JSON
 from sqlalchemy import TIMESTAMP
@@ -421,3 +421,14 @@ class ContributionsResult(ListResult):
 
 class StudyBundlesResult(ListResult):
     data: List[StudyBundle]
+
+
+class ParseError(BaseModel):
+    loc: str
+    msg: str
+    severity: Literal["error", "warning"] = "error"
+
+
+class StudyDraftParseResult(BaseModel):
+    study: Optional[StudyDraft] = None
+    errors: List[ParseError] = []

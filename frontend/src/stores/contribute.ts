@@ -16,6 +16,8 @@ import type {
   InstrumentParameter,
   Dataset,
   FileNode,
+  ParseError,
+  StudyDraftParseResult,
 } from 'src/models';
 
 import type { DataFile } from 'src/components/models';
@@ -37,6 +39,8 @@ export const useContributeStore = defineStore(
       datasets: [],
     } as Study);
 
+    const parseErrors = ref<ParseError[]>([]);
+
     const dataFiles = ref<DataFile[]>([]);
 
     const dataEmbargo = ref<string | undefined>('none');
@@ -50,7 +54,7 @@ export const useContributeStore = defineStore(
         buildings: [],
         instruments: [],
         datasets: [],
-      } as Study;
+      };
       dataFiles.value = [];
       dataEmbargo.value = 'none';
     }
@@ -78,7 +82,7 @@ export const useContributeStore = defineStore(
         email: '',
         email_public: true,
         institution: '',
-      } as Person);
+      });
     }
 
     function deleteContributor(i: number) {
@@ -118,7 +122,7 @@ export const useContributeStore = defineStore(
             level: '',
           },
           spaces: [],
-        } as Building);
+        });
       }
     }
 
@@ -161,7 +165,7 @@ export const useContributeStore = defineStore(
           id: id,
           ...getSpaceDefaults(building.type),
           identifier: `${id}`,
-        } as Space);
+        });
       }
     }
 
@@ -199,7 +203,7 @@ export const useContributeStore = defineStore(
           model: '',
           equipment_grade_rating: 'unknown',
           placement: 'unknown',
-        } as Instrument);
+        });
       }
     }
 
@@ -283,7 +287,7 @@ export const useContributeStore = defineStore(
         description: dataFile.file.name,
         variables: dataFile.variables,
         folder: uploaded,
-      } as Dataset);
+      });
     }
 
     async function updateDataset(dataset: Dataset, dataFile: DataFile) {
@@ -321,6 +325,7 @@ export const useContributeStore = defineStore(
     }
 
     async function readExcel(file: File) {
+      parseErrors.value = [];
       let identifier = study.value.identifier;
       if (!isUUID(identifier)) {
         identifier = '';
@@ -328,8 +333,18 @@ export const useContributeStore = defineStore(
       const formData = new FormData();
       formData.append('files', file);
       const res = await api.post('/contribute/study-excel', formData);
-      console.log(res.data);
-      study.value = res.data;
+      console.debug(res.data);
+      const parseResult: StudyDraftParseResult = res.data;
+      parseErrors.value = parseResult.errors;
+      study.value = parseResult.study || {
+        identifier: '',
+        name: '',
+        description: '',
+        contributors: [],
+        buildings: [],
+        instruments: [],
+        datasets: [],
+      };
       study.value.identifier = identifier;
     }
 
@@ -495,10 +510,15 @@ export const useContributeStore = defineStore(
       return res.data;
     }
 
+    function clearErrors() {
+      parseErrors.value = [];
+    }
+
     return {
       study,
       dataEmbargo,
       inProgress,
+      parseErrors,
       reset,
       load,
       addContributor,
@@ -525,6 +545,7 @@ export const useContributeStore = defineStore(
       uploadTmpFiles,
       getDrafts,
       getBundles,
+      clearErrors,
     };
   },
   { persist: true },
