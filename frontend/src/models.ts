@@ -77,6 +77,16 @@ export interface Study extends DBModel {
   instruments?: Instrument[];
   datasets?: Dataset[];
 }
+export interface ParseError {
+    loc: string;
+    msg: string;
+    severity: string;
+}
+
+export interface StudyDraftParseResult {
+    study: Study | null;
+    errors: ParseError[];
+}
 
 export interface StudiesResult extends ListResult {
   data: Study[];

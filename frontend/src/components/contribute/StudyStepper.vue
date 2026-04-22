@@ -65,6 +65,39 @@
             </div>
           </q-card-section>
         </q-card>
+        <q-card v-if="contrib.parseErrors?.length>0" class="q-mb-lg bg-negative text-white">
+          <q-card-section>
+            <div class="row">
+              <q-icon
+                name="warning"
+                class="on-left"
+                style="margin-top: 10px"
+              />
+              <div class="q-mt-sm">
+                {{ t('study.parse.errors') }}
+              </div>
+              <q-btn
+                label="Clear errors"
+                color="white"
+                icon="clear"
+                size="sm"
+                outline
+                no-caps
+                class="on-right"
+                style="margin-top: 7px"
+                @click="contrib.clearErrors"
+              />
+            </div>
+            <ul>
+              <li v-for="(error, index) in contrib.parseErrors" :key="index">
+                {{ `${error.loc}: ${error.msg}` }}
+              </li>
+            </ul>
+          </q-card-section>
+          <q-card-section>
+
+          </q-card-section>
+        </q-card>
         <q-markdown no-heading-anchor-links :src="StepStudyMd" />
         <q-form ref="studyFormRef">
           <study-form class="q-mt-lg" />
@@ -257,6 +290,8 @@ const canNext = computed(() => {
   return false;
 });
 
+onMounted(() => contrib.clearErrors())
+
 function onPause() {
   emit('pause');
 }
@@ -341,7 +376,14 @@ function onExcelFileUpdated() {
       .readExcel(excelFile.value)
       .then(() => (step.value = 1))
       .catch((err) => notifyError(err))
-      .finally(() => (loading.value = false));
+      .finally(() => {
+        loading.value = false;
+        if (contrib.parseErrors.length > 0) {
+          notifyError('study.parse.errors');
+        } else {
+          notifyInfo('study.parse.success');
+        }
+      });
   }
 }
 

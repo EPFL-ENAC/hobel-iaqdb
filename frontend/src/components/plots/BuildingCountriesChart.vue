@@ -48,11 +48,11 @@ const option = ref<EChartsOption>({});
 const loading = ref(false);
 
 const counts = computed(() => {
-  return props.features?.reduce((acc, feature) => {
+  return props.features?.reduce((acc: { [key: string]: number }, feature) => {
     const type = feature.properties?.country;
     acc[type] = (acc[type] || 0) + 1;
     return acc;
-  }, {} as { [key: string]: number }) || {};
+  }, {}) || {};
 });
 
 const gradientArray = new Gradient()
