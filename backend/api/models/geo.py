@@ -12,7 +12,7 @@ class BuildingProperties(BaseModel):
     identifier: str
     country: str
     city: str
-    altitude: int
+    altitude: int | None = None
     climate_zone: str | None = None
     age_group: str | None = None
     socioeconomic_status: str | None = None
