@@ -24,7 +24,7 @@
     "jszip": "^3.10.1",
     "keycloak-js": "^26.0.0",
     "lorem-ipsum": "^2.0.8",
-    "maplibre-gl": "^4.3.2",
+    "maplibre-gl": "^6.4.1",
     "maplibregl-theme-switcher": "github:EPFL-ENAC/maplibregl-theme-switcher#1.2.0",
     "papaparse": "^5.5.3",
     "pinia": "^3.0.1",
