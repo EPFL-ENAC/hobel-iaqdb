@@ -1,0 +1,68 @@
+name: backend
+
+'on':
+  push:
+    branches: [main, dev]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend.yml'
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libpq-dev libgdal-dev
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Install dependencies
+        run: uv sync --locked
+
+      - name: Cache pre-commit hooks
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('backend/.pre-commit-config.yaml') }}
+
+      - name: Lint
+        run: uv run pre-commit run --all-files --show-diff-on-failure
+
+      - name: Check imports
+        run: uv run python -c "import api.main"
+        env:
+          DB_HOST: localhost
+          DB_PORT: '5432'
+          DB_PREFIX: postgresql+asyncpg
+          DB_NAME: iaqdb
+          DB_USER: iaqdb
+          DB_PASSWORD: iaqdb
+          KEYCLOAK_API_ID: ci
+          KEYCLOAK_API_SECRET: ci
+          S3_ENDPOINT_PROTOCOL: https
+          S3_ENDPOINT_HOSTNAME: localhost
+          S3_ACCESS_KEY_ID: ci
+          S3_SECRET_ACCESS_KEY: ci
+          S3_REGION: ci
+          S3_BUCKET: ci
+          S3_PATH_PREFIX: ci
