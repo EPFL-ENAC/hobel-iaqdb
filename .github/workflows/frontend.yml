@@ -34,6 +34,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Generates the gitignored .quasar/tsconfig.json that tsconfig.json extends
+      - name: Prepare Quasar
+        run: npx quasar prepare
+
       - name: Lint
         run: npm run lint
 
