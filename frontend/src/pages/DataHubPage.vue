@@ -34,8 +34,8 @@
 </template>
 
 <script setup lang="ts">
-import MaplibreMap from 'components/MaplibreMap.vue';
-import StudyList from 'src/components/StudyList.vue';
+import MaplibreMap from '@/components/MaplibreMap.vue';
+import StudyList from '@/components/StudyList.vue';
 import type { Map } from 'maplibre-gl';
 
 const tab = ref('map');

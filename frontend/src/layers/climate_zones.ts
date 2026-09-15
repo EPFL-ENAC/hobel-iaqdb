@@ -1,6 +1,6 @@
 import type { Map } from 'maplibre-gl';
-import { LayerManager } from 'src/layers/models';
-import type { FilterParams } from 'src/stores/filters';
+import { LayerManager } from '@/layers/models';
+import type { FilterParams } from '@/stores/filters';
 
 const VERSION = '2024-07-01T14:54';
 const CDN_URL = `https://enacit4r-cdn.epfl.ch/iaq/${VERSION}/koppen_geiger/1991_2020`;

@@ -32,7 +32,7 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import StudyStepper from 'src/components/contribute/StudyStepper.vue';
+import StudyStepper from '@/components/contribute/StudyStepper.vue';
 
 interface Props {
   modelValue: boolean;

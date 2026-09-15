@@ -44,8 +44,8 @@
 </template>
 
 <script setup lang="ts">
-import type { Instrument, InstrumentParameter } from 'src/models';
-import { physicalParameterOptions } from 'src/utils/options';
+import type { Instrument, InstrumentParameter } from '@/models';
+import { physicalParameterOptions } from '@/utils/options';
 
 interface Props {
   modelValue: InstrumentParameter;

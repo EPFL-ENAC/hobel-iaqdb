@@ -51,7 +51,7 @@
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
 import { copyToClipboard } from 'quasar';
-import { notifyError, notifyInfo } from 'src/utils/notify';
+import { notifyError, notifyInfo } from '@/utils/notify';
 
 const $q = useQuasar();
 const { t } = useI18n();

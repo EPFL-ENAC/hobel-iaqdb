@@ -126,9 +126,9 @@ import {
   equipmentGradeOptions,
   placementOptions,
   physicalParameterOptions,
-} from 'src/utils/options';
-import type { Instrument } from 'src/models';
-import { notifyInfo } from 'src/utils/notify';
+} from '@/utils/options';
+import type { Instrument } from '@/models';
+import { notifyInfo } from '@/utils/notify';
 
 const { t } = useI18n();
 const contrib = useContributeStore();

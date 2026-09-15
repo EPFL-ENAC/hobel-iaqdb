@@ -45,8 +45,8 @@
 </template>
 
 <script setup lang="ts">
-import type { InstrumentParameter } from 'src/models';
-import { equipmentGradeOptions, placementOptions } from 'src/utils/options';
+import type { InstrumentParameter } from '@/models';
+import { equipmentGradeOptions, placementOptions } from '@/utils/options';
 
 const catalogStore = useCatalogStore();
 const { t } = useI18n();

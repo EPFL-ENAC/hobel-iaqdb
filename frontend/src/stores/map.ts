@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
-import { BuildingsLayerManager } from 'src/layers/buildings';
-import { ClimateZonesLayerManager } from 'src/layers/climate_zones';
+import { BuildingsLayerManager } from '@/layers/buildings';
+import { ClimateZonesLayerManager } from '@/layers/climate_zones';
 import type { Map } from 'maplibre-gl';
-import type { FilterParams } from 'src/stores/filters';
+import type { FilterParams } from '@/stores/filters';
 
 export type LayerSelection = {
   id: string;

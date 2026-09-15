@@ -13,8 +13,8 @@
 </template>
 
 <script setup lang="ts">
-import type { Building, BuildingsResult } from 'src/models';
-import type { TableRequestProps } from 'src/components/models';
+import type { Building, BuildingsResult } from '@/models';
+import type { TableRequestProps } from '@/components/models';
 
 const catalogStore = useCatalogStore();
 const filtersStore = useFiltersStore();

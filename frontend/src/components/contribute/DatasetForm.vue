@@ -61,11 +61,11 @@
 </template>
 
 <script setup lang="ts">
-import DatasetVariablesForm from 'src/components/contribute/DatasetVariablesForm.vue';
-import DataFileDialog from 'src/components/contribute/DataFileDialog.vue';
-import type { Dataset, FileNode } from 'src/models';
-import type { DataFile } from 'src/components/models';
-import { notifyError } from 'src/utils/notify';
+import DatasetVariablesForm from '@/components/contribute/DatasetVariablesForm.vue';
+import DataFileDialog from '@/components/contribute/DataFileDialog.vue';
+import type { Dataset, FileNode } from '@/models';
+import type { DataFile } from '@/components/models';
+import { notifyError } from '@/utils/notify';
 
 const contrib = useContributeStore();
 

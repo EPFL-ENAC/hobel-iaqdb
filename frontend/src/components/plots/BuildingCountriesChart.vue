@@ -23,11 +23,11 @@ import type { EChartsOption } from 'echarts';
 import { use } from 'echarts/core';
 import { TreemapChart } from 'echarts/charts';
 import { SVGRenderer } from 'echarts/renderers';
-import { initOptions, updateOptions } from 'src/components/plots/charts';
+import { initOptions, updateOptions } from '@/components/plots/charts';
 import {
   TooltipComponent,
 } from 'echarts/components';
-import { countryOptions } from 'src/utils/options';
+import { countryOptions } from '@/utils/options';
 import Gradient from 'javascript-color-gradient'
 
 use([

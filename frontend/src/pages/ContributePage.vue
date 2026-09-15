@@ -52,10 +52,10 @@
 </template>
 
 <script setup lang="ts">
-import ContributeMd from 'src/assets/contribute.md';
-import StudyStepper from 'src/components/contribute/StudyStepper.vue';
-import StudyUploadDialog from 'src/components/contribute/StudyUploadDialog.vue';
-import StudyStartDialog from 'src/components/contribute/StudyStartDialog.vue';
+import ContributeMd from '@/assets/contribute.md';
+import StudyStepper from '@/components/contribute/StudyStepper.vue';
+import StudyUploadDialog from '@/components/contribute/StudyUploadDialog.vue';
+import StudyStartDialog from '@/components/contribute/StudyStartDialog.vue';
 
 const { t } = useI18n();
 const contrib = useContributeStore();

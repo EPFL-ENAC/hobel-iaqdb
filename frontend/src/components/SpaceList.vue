@@ -13,8 +13,8 @@
 </template>
 
 <script setup lang="ts">
-import type { Space, SpacesResult } from 'src/models';
-import type { TableRequestProps } from 'src/components/models';
+import type { Space, SpacesResult } from '@/models';
+import type { TableRequestProps } from '@/components/models';
 
 const catalogStore = useCatalogStore();
 const filtersStore = useFiltersStore();

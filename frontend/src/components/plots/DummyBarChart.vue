@@ -18,7 +18,7 @@ import type { EChartsOption } from 'echarts';
 import { use } from 'echarts/core';
 import { BarChart } from 'echarts/charts';
 import { SVGRenderer } from 'echarts/renderers';
-import { initOptions, updateOptions } from 'src/components/plots/charts';
+import { initOptions, updateOptions } from '@/components/plots/charts';
 import {
   TitleComponent,
   GridComponent,

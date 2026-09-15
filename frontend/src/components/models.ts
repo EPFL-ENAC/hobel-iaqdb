@@ -1,4 +1,4 @@
-import type { Variable } from 'src/models';
+import type { Variable } from '@/models';
 
 export interface DataFile {
   file: File;
