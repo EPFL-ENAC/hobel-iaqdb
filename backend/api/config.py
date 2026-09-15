@@ -1,6 +1,7 @@
+from functools import lru_cache
+
 from pydantic import model_validator
 from pydantic_settings import BaseSettings
-from functools import lru_cache
 
 
 class Config(BaseSettings):
@@ -38,9 +39,7 @@ class Config(BaseSettings):
     def form_db_url(cls, values: dict) -> dict:
         """Form the DB URL from the settings"""
         if "DB_URL" not in values:
-            values[
-                "DB_URL"
-            ] = "{prefix}://{user}:{password}@{host}:{port}/{db}".format(
+            values["DB_URL"] = "{prefix}://{user}:{password}@{host}:{port}/{db}".format(
                 prefix=values["DB_PREFIX"],
                 user=values["DB_USER"],
                 password=values["DB_PASSWORD"],

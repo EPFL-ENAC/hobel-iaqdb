@@ -1,15 +1,16 @@
-from fastapi import FastAPI, Depends, status, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
+from logging import INFO, basicConfig
+
 from api.config import config
-from api.db import get_session, AsyncSession
-from logging import basicConfig, INFO
+from api.db import AsyncSession, get_session
+from api.views.catalog import router as catalog_router
+from api.views.contribute import router as contribute_router
+from api.views.files import router as files_router
+from api.views.map import router as map_router
+from api.views.stats import router as stats_router
+from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.sql import text
-from api.views.catalog import router as catalog_router
-from api.views.stats import router as stats_router
-from api.views.contribute import router as contribute_router
-from api.views.map import router as map_router
-from api.views.files import router as files_router
 
 basicConfig(level=INFO)
 
@@ -28,6 +29,7 @@ app.add_middleware(
 
 class HealthCheck(BaseModel):
     """Response model to validate and return when performing a health check."""
+
     status: str = "OK"
 
 
@@ -53,6 +55,7 @@ async def get_health(
         raise HTTPException(status_code=500, detail=f"DB Error: {e}")
 
     return HealthCheck(status="OK")
+
 
 app.include_router(
     stats_router,

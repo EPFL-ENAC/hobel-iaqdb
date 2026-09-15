@@ -1,10 +1,10 @@
-from fastapi import APIRouter, Depends, Query
-from api.db import get_session, AsyncSession
-from api.services.space import SpaceService
-from api.services.building import BuildingService
-from api.services.study import StudyService
+from api.db import AsyncSession, get_session
 from api.models.catalog import GroupByResult
+from api.services.building import BuildingService
+from api.services.space import SpaceService
+from api.services.study import StudyService
 from enacit4r_sql.utils.query import paramAsDict
+from fastapi import APIRouter, Depends, Query
 
 router = APIRouter()
 
