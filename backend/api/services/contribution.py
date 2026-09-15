@@ -1,12 +1,12 @@
+from datetime import datetime
+
+from api.auth import User
 from api.db import AsyncSession
-from sqlalchemy.sql import text
-from sqlalchemy.orm import selectinload
-from sqlmodel import select
-from fastapi import HTTPException
 from api.models.catalog import Contribution, ContributionsResult
 from enacit4r_sql.utils.query import QueryBuilder
-from api.auth import User
-from datetime import datetime
+from fastapi import HTTPException
+from sqlalchemy.sql import text
+from sqlmodel import select
 
 
 class ContributionQueryBuilder(QueryBuilder):
@@ -14,37 +14,36 @@ class ContributionQueryBuilder(QueryBuilder):
 
 
 class ContributionService:
-
     def __init__(self, session: AsyncSession):
         self.session = session
 
     async def count(self) -> int:
         """Count all contributions"""
-        count = (await self.session.exec(text("select count(id) from contribution"))).scalar()
+        count = (
+            await self.session.exec(text("select count(id) from contribution"))
+        ).scalar()
         return count
 
     async def get(self, contribution_id: int) -> Contribution:
         """Get a contribution by id"""
         res = await self.session.exec(
-            select(Contribution).where(
-                Contribution.id == contribution_id)
+            select(Contribution).where(Contribution.id == contribution_id)
         )
         contribution = res.one_or_none()
         if not contribution:
-            raise HTTPException(
-                status_code=404, detail="Contribution not found")
+            raise HTTPException(status_code=404, detail="Contribution not found")
         return contribution
 
     async def get_by_identifier(self, study_identifier: str) -> Contribution:
         """Get a contribution by id"""
         res = await self.session.exec(
             select(Contribution).where(
-                Contribution.study_identifier == study_identifier)
+                Contribution.study_identifier == study_identifier
+            )
         )
         contribution = res.one_or_none()
         if not contribution:
-            raise HTTPException(
-                status_code=404, detail="Contribution not found")
+            raise HTTPException(status_code=404, detail="Contribution not found")
 
         return contribution
 
@@ -55,8 +54,7 @@ class ContributionService:
         )
         contribution = res.one_or_none()
         if not contribution:
-            raise HTTPException(
-                status_code=404, detail="Contribution not found")
+            raise HTTPException(status_code=404, detail="Contribution not found")
         await self.session.delete(contribution)
         await self.session.commit()
         return contribution
@@ -65,12 +63,12 @@ class ContributionService:
         """Delete a contribution by study identifier"""
         res = await self.session.exec(
             select(Contribution).where(
-                Contribution.study_identifier == study_identifier)
+                Contribution.study_identifier == study_identifier
+            )
         )
         contribution = res.one_or_none()
         if not contribution:
-            raise HTTPException(
-                status_code=404, detail="Contribution not found")
+            raise HTTPException(status_code=404, detail="Contribution not found")
         await self.session.delete(contribution)
         await self.session.commit()
         return contribution
@@ -88,10 +86,7 @@ class ContributionService:
         start, end, query = builder.build_query(total_count)
         if total_count == 0:
             return ContributionsResult(
-                total=total_count,
-                skip=start,
-                limit=end - start + 1,
-                data=[]
+                total=total_count, skip=start, limit=end - start + 1, data=[]
             )
 
         # Execute query
@@ -99,10 +94,7 @@ class ContributionService:
         contributions = results.all()
 
         return ContributionsResult(
-            total=total_count,
-            skip=start,
-            limit=end - start + 1,
-            data=contributions
+            total=total_count, skip=start, limit=end - start + 1, data=contributions
         )
 
     async def create(self, payload: Contribution, user: User = None) -> Contribution:
@@ -116,49 +108,71 @@ class ContributionService:
         await self.session.commit()
         return contribution
 
-    async def update(self, id_or_identifier: str, payload: Contribution, user: User = None) -> Contribution:
+    async def update(
+        self, id_or_identifier: str, payload: Contribution, user: User = None
+    ) -> Contribution:
         """Update a contribution"""
         res = await self.session.exec(
-            select(Contribution).where(Contribution.id == int(id_or_identifier)) if id_or_identifier.isdigit() else
-            select(Contribution).where(
-                Contribution.study_identifier == id_or_identifier)
+            select(Contribution).where(Contribution.id == int(id_or_identifier))
+            if id_or_identifier.isdigit()
+            else select(Contribution).where(
+                Contribution.study_identifier == id_or_identifier
+            )
         )
         contribution = res.one_or_none()
         if not contribution:
-            raise HTTPException(
-                status_code=404, detail="Contribution not found")
+            raise HTTPException(status_code=404, detail="Contribution not found")
         for key, value in payload.model_dump().items():
-            if key not in ["id", "study_identifier", "created_at", "updated_at", "created_by", "updated_by", "published_at", "published_by"]:
+            if key not in [
+                "id",
+                "study_identifier",
+                "created_at",
+                "updated_at",
+                "created_by",
+                "updated_by",
+                "published_at",
+                "published_by",
+            ]:
                 setattr(contribution, key, value)
         contribution.updated_at = datetime.now()
         contribution.updated_by = user.username if user else None
         await self.session.commit()
         return contribution
 
-    async def touch_by_identifier(self, study_identifier: str, user: User = None) -> Contribution:
+    async def touch_by_identifier(
+        self, study_identifier: str, user: User = None
+    ) -> Contribution:
         """Touch a contribution by study identifier"""
         res = await self.session.exec(
             select(Contribution).where(
-                Contribution.study_identifier == study_identifier)
+                Contribution.study_identifier == study_identifier
+            )
         )
         contribution = res.one_or_none()
         if not contribution:
-            contribution = await self.create(Contribution(study_identifier=study_identifier), user)
+            contribution = await self.create(
+                Contribution(study_identifier=study_identifier), user
+            )
         else:
             contribution.updated_at = datetime.now()
             contribution.updated_by = user.username if user else None
             await self.session.commit()
         return contribution
 
-    async def publish_by_identifier(self, study_identifier: str, user: User = None) -> Contribution:
+    async def publish_by_identifier(
+        self, study_identifier: str, user: User = None
+    ) -> Contribution:
         """Publish a contribution by study identifier"""
         res = await self.session.exec(
             select(Contribution).where(
-                Contribution.study_identifier == study_identifier)
+                Contribution.study_identifier == study_identifier
+            )
         )
         contribution = res.one_or_none()
         if not contribution:
-            contribution = await self.create(Contribution(study_identifier=study_identifier), user)
+            contribution = await self.create(
+                Contribution(study_identifier=study_identifier), user
+            )
         contribution.published_at = datetime.now()
         contribution.published_by = user.username if user else None
         await self.session.commit()

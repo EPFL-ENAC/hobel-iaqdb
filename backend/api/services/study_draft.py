@@ -1,18 +1,21 @@
-import os
-import uuid
 import json
+import logging
+import os
 import tempfile
 import urllib.parse
-import logging
-from api.services.s3 import s3_client
-from api.config import config
+import uuid
+
 from api.models.catalog import Study, StudyDraft
+from api.services.s3 import s3_client
 
 
 class StudyDraftService:
-
     async def createOrUpdate(self, study: Study) -> Study:
-        if study.identifier is None or study.identifier == "" or study.identifier == "_draft":
+        if (
+            study.identifier is None
+            or study.identifier == ""
+            or study.identifier == "_draft"
+        ):
             study.identifier = str(uuid.uuid4())
 
         # Destination folder in s3
@@ -24,13 +27,18 @@ class StudyDraftService:
                 if "children" in dataset.folder:
                     for i, file in enumerate(dataset.folder["children"]):
                         if "/tmp/" in file["path"]:
-                            dataset_file_path = f"{s3_folder}/files/{dataset.name}/{file['name']}"
-                            new_key = await s3_client.move_file(file["path"], dataset_file_path)
+                            dataset_file_path = (
+                                f"{s3_folder}/files/{dataset.name}/{file['name']}"
+                            )
+                            new_key = await s3_client.move_file(
+                                file["path"], dataset_file_path
+                            )
                             file["path"] = urllib.parse.quote(new_key)
                             dataset.folder["children"][i] = file
                 dataset.folder["name"] = dataset.name
                 dataset.folder["path"] = s3_client.to_s3_path(
-                    urllib.parse.quote(f"{s3_folder}/files/{dataset.name}"))
+                    urllib.parse.quote(f"{s3_folder}/files/{dataset.name}")
+                )
 
         # TODO Remove files that are not linked to a dataset
 
@@ -45,15 +53,16 @@ class StudyDraftService:
             study_dict = study.model_dump()
             with open(temp_file_path, "w") as temp_file:
                 json.dump(study_dict, temp_file, indent=2)
-            await s3_client.upload_local_file(temp_dir, "study.json", s3_folder=s3_folder)
+            await s3_client.upload_local_file(
+                temp_dir, "study.json", s3_folder=s3_folder
+            )
 
         return study
 
     async def delete(self, identifier: str):
         exists = await self.exists(identifier)
         if not exists:
-            raise Exception(
-                f"Study with identifier {identifier} does not exist.")
+            raise Exception(f"Study with identifier {identifier} does not exist.")
 
         await s3_client.delete_files(f"draft/{identifier}")
 
@@ -63,8 +72,7 @@ class StudyDraftService:
     async def get(self, identifier: str) -> StudyDraft:
         exists = await self.exists(identifier)
         if not exists:
-            raise Exception(
-                f"Study with identifier {identifier} does not exist.")
+            raise Exception(f"Study with identifier {identifier} does not exist.")
 
         file_path = f"draft/{identifier}/study.json"
         content, mime_type = await s3_client.get_file(file_path)
@@ -74,7 +82,11 @@ class StudyDraftService:
     async def list(self) -> list[StudyDraft]:
         """List all studies"""
         folder_path = "draft/"
-        files = [study_file for study_file in await s3_client.list_files(folder_path) if study_file.endswith("/study.json")]
+        files = [
+            study_file
+            for study_file in await s3_client.list_files(folder_path)
+            if study_file.endswith("/study.json")
+        ]
 
         study_drafts = []
         for file in files:
@@ -87,7 +99,6 @@ class StudyDraftService:
     async def reinstate(self, identifier: str) -> None:
         """Reinstate a study draft by checking if it exists."""
 
-        draft_folder = f"draft/{identifier}"
         pub_folder = f"pub/{identifier}"
 
         exists = await self.exists(identifier)
@@ -105,8 +116,7 @@ class StudyDraftService:
         # Rewrite the study.json file in the draft folder
         study_draft = await self.get(identifier)
         for dataset in study_draft.datasets:
-            dataset.folder["path"] = dataset.folder["path"].replace(
-                "/pub/", "/draft/")
+            dataset.folder["path"] = dataset.folder["path"].replace("/pub/", "/draft/")
             if "children" in dataset.folder:
                 for i, file in enumerate(dataset.folder["children"]):
                     file["path"] = file["path"].replace("/pub/", "/draft/")

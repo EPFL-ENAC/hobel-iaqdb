@@ -1,18 +1,17 @@
 """init
 
 Revision ID: 7c4f7731da01
-Revises: 
+Revises:
 Create Date: 2024-08-19 11:18:46.713858
 
 """
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
-
+from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = '7c4f7731da01'
+revision: str = "7c4f7731da01"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -41,8 +40,7 @@ def upgrade() -> None:
         sa.Column("license", sa.String(), nullable=True),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_study_identifier"), "study",
-                    ["identifier"], unique=False),
+    op.create_index(op.f("ix_study_identifier"), "study", ["identifier"], unique=False),
 
     op.create_table(
         "person",
@@ -52,11 +50,13 @@ def upgrade() -> None:
         sa.Column("email_public", sa.Boolean(), nullable=False),
         sa.Column("institution", sa.String(), nullable=False),
         sa.Column("study_id", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(["study_id"], ["study.id"],),
+        sa.ForeignKeyConstraint(
+            ["study_id"],
+            ["study.id"],
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_person_study_id"),
-                    "person", ["study_id"], unique=False)
+    op.create_index(op.f("ix_person_study_id"), "person", ["study_id"], unique=False)
 
     op.create_table(
         "instrument",
@@ -67,13 +67,18 @@ def upgrade() -> None:
         sa.Column("equipment_grade_rating", sa.String(), nullable=True),
         sa.Column("placement", sa.String(), nullable=True),
         sa.Column("study_id", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(["study_id"], ["study.id"],),
+        sa.ForeignKeyConstraint(
+            ["study_id"],
+            ["study.id"],
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_instrument_identifier"), "instrument",
-                    ["identifier"], unique=False),
-    op.create_index(op.f("ix_instrument_study_id"), "instrument",
-                    ["study_id"], unique=False)
+    op.create_index(
+        op.f("ix_instrument_identifier"), "instrument", ["identifier"], unique=False
+    ),
+    op.create_index(
+        op.f("ix_instrument_study_id"), "instrument", ["study_id"], unique=False
+    )
 
     op.create_table(
         "instrumentparameter",
@@ -83,14 +88,28 @@ def upgrade() -> None:
         sa.Column("measurement_uncertainty", sa.String(), nullable=True),
         sa.Column("instrument_id", sa.Integer(), nullable=True),
         sa.Column("study_id", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(["instrument_id"], ["instrument.id"],),
-        sa.ForeignKeyConstraint(["study_id"], ["study.id"],),
+        sa.ForeignKeyConstraint(
+            ["instrument_id"],
+            ["instrument.id"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["study_id"],
+            ["study.id"],
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_instrumentparameter_instrument_id"), "instrumentparameter",
-                    ["instrument_id"], unique=False)
-    op.create_index(op.f("ix_instrumentparameter_study_id"), "instrumentparameter",
-                    ["study_id"], unique=False)
+    op.create_index(
+        op.f("ix_instrumentparameter_instrument_id"),
+        "instrumentparameter",
+        ["instrument_id"],
+        unique=False,
+    )
+    op.create_index(
+        op.f("ix_instrumentparameter_study_id"),
+        "instrumentparameter",
+        ["study_id"],
+        unique=False,
+    )
 
     op.create_table(
         "building",
@@ -118,13 +137,18 @@ def upgrade() -> None:
         sa.Column("other_special_population", sa.String(), nullable=True),
         sa.Column("smoking", sa.String(), nullable=False),
         sa.Column("study_id", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(["study_id"], ["study.id"],),
+        sa.ForeignKeyConstraint(
+            ["study_id"],
+            ["study.id"],
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_building_identifier"), "building",
-                    ["identifier"], unique=False),
-    op.create_index(op.f("ix_building_study_id"), "building",
-                    ["study_id"], unique=False)
+    op.create_index(
+        op.f("ix_building_identifier"), "building", ["identifier"], unique=False
+    ),
+    op.create_index(
+        op.f("ix_building_study_id"), "building", ["study_id"], unique=False
+    )
 
     op.create_table(
         "certification",
@@ -132,11 +156,18 @@ def upgrade() -> None:
         sa.Column("program", sa.String(), nullable=False),
         sa.Column("level", sa.String(), nullable=False),
         sa.Column("building_id", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(["building_id"], ["building.id"],),
+        sa.ForeignKeyConstraint(
+            ["building_id"],
+            ["building.id"],
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_certification_building_id"), "certification",
-                    ["building_id"], unique=False)
+    op.create_index(
+        op.f("ix_certification_building_id"),
+        "certification",
+        ["building_id"],
+        unique=False,
+    )
 
     op.create_table(
         "space",
@@ -168,16 +199,21 @@ def upgrade() -> None:
         sa.Column("detergents", sa.String(), nullable=True),
         sa.Column("study_id", sa.Integer(), nullable=True),
         sa.Column("building_id", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(["building_id"], ["building.id"],),
-        sa.ForeignKeyConstraint(["study_id"], ["study.id"],),
+        sa.ForeignKeyConstraint(
+            ["building_id"],
+            ["building.id"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["study_id"],
+            ["study.id"],
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_space_identifier"), "space",
-                    ["identifier"], unique=False),
-    op.create_index(op.f("ix_space_building_id"), "space",
-                    ["building_id"], unique=False)
-    op.create_index(op.f("ix_space_study_id"), "space",
-                    ["study_id"], unique=False)
+    op.create_index(op.f("ix_space_identifier"), "space", ["identifier"], unique=False),
+    op.create_index(
+        op.f("ix_space_building_id"), "space", ["building_id"], unique=False
+    )
+    op.create_index(op.f("ix_space_study_id"), "space", ["study_id"], unique=False)
 
     op.create_table(
         "dataset",
@@ -186,11 +222,13 @@ def upgrade() -> None:
         sa.Column("description", sa.String(), nullable=False),
         sa.Column("folder", sa.JSON(), nullable=True),
         sa.Column("study_id", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(["study_id"], ["study.id"],),
+        sa.ForeignKeyConstraint(
+            ["study_id"],
+            ["study.id"],
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_dataset_study_id"), "dataset",
-                    ["study_id"], unique=False)
+    op.create_index(op.f("ix_dataset_study_id"), "dataset", ["study_id"], unique=False)
 
     op.create_table(
         "variable",
@@ -202,16 +240,23 @@ def upgrade() -> None:
         sa.Column("reference", sa.String(), nullable=True),
         sa.Column("study_id", sa.Integer(), nullable=True),
         sa.Column("dataset_id", sa.Integer(), nullable=True),
-        sa.ForeignKeyConstraint(["dataset_id"], ["dataset.id"],),
-        sa.ForeignKeyConstraint(["study_id"], ["study.id"],),
+        sa.ForeignKeyConstraint(
+            ["dataset_id"],
+            ["dataset.id"],
+        ),
+        sa.ForeignKeyConstraint(
+            ["study_id"],
+            ["study.id"],
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index(op.f("ix_variable_name"), "variable",
-                    ["name"], unique=False),
-    op.create_index(op.f("ix_variable_dataset_id"), "variable",
-                    ["dataset_id"], unique=False)
-    op.create_index(op.f("ix_variable_study_id"), "variable",
-                    ["study_id"], unique=False)
+    op.create_index(op.f("ix_variable_name"), "variable", ["name"], unique=False),
+    op.create_index(
+        op.f("ix_variable_dataset_id"), "variable", ["dataset_id"], unique=False
+    )
+    op.create_index(
+        op.f("ix_variable_study_id"), "variable", ["study_id"], unique=False
+    )
     # ### end Alembic commands ###
 
 
@@ -222,18 +267,19 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_space_identifier"), table_name="space")
     op.drop_table("space")
 
-    op.drop_index(op.f("ix_certification_building_id"),
-                  table_name="certification")
+    op.drop_index(op.f("ix_certification_building_id"), table_name="certification")
     op.drop_table("certification")
 
     op.drop_index(op.f("ix_building_study_id"), table_name="building")
     op.drop_index(op.f("ix_building_identifier"), table_name="building")
     op.drop_table("building")
 
-    op.drop_index(op.f("ix_instrumentparameter_study_id"),
-                  table_name="instrumentparameter")
-    op.drop_index(op.f("ix_instrumentparameter_instrument_id"),
-                  table_name="instrumentparameter")
+    op.drop_index(
+        op.f("ix_instrumentparameter_study_id"), table_name="instrumentparameter"
+    )
+    op.drop_index(
+        op.f("ix_instrumentparameter_instrument_id"), table_name="instrumentparameter"
+    )
     op.drop_table("instrumentparameter")
 
     op.drop_index(op.f("ix_instrument_study_id"), table_name="instrument")
@@ -248,8 +294,7 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_dataset_study_id"), table_name="dataset")
     op.drop_table("dataset")
 
-    op.drop_index(op.f("ix_person_study_id"),
-                  table_name="person")
+    op.drop_index(op.f("ix_person_study_id"), table_name="person")
     op.drop_index(op.f("ix_person_email"), table_name="person")
     op.drop_table("person")
 
