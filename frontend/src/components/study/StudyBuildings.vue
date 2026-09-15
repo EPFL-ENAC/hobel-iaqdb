@@ -68,10 +68,10 @@
 </template>
 
 <script setup lang="ts">
-import MaplibreMap from 'src/components/MaplibreMap.vue';
+import MaplibreMap from '@/components/MaplibreMap.vue';
 import type { Map } from 'maplibre-gl';
-import type { Building, Space } from 'src/models';
-import { outdoorEnvOptions, type OptionItem } from 'src/utils/options';
+import type { Building, Space } from '@/models';
+import { outdoorEnvOptions, type OptionItem } from '@/utils/options';
 
 interface Props {
   showMap?: boolean;

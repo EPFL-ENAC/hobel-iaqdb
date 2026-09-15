@@ -11,5 +11,5 @@
 </template>
 
 <script setup lang="ts">
-import AppToolbar from 'src/components/AppToolbar.vue';
+import AppToolbar from '@/components/AppToolbar.vue';
 </script>

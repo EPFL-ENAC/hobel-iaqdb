@@ -17,8 +17,8 @@
 </template>
 
 <script setup lang="ts">
-import StudyDetails from 'src/components/study/StudyDetails.vue';
-import StudyTabs from 'src/components/study/StudyTabs.vue';
+import StudyDetails from '@/components/study/StudyDetails.vue';
+import StudyTabs from '@/components/study/StudyTabs.vue';
 
 const catalogStore = useCatalogStore();
 

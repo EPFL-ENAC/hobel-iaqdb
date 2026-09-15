@@ -23,7 +23,7 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import StudyTabs from 'src/components/study/StudyTabs.vue';
+import StudyTabs from '@/components/study/StudyTabs.vue';
 
 const catalogStore = useCatalogStore();
 

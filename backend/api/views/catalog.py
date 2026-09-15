@@ -1,14 +1,29 @@
-from fastapi import APIRouter, Depends, Query
-from api.db import get_session, AsyncSession
-from api.auth import kc_service, User
-from api.services.study import StudyService
+from api.auth import User, kc_service
+from api.db import AsyncSession, get_session
+from api.models.catalog import (
+    Building,
+    BuildingRead,
+    BuildingsResult,
+    Dataset,
+    DatasetsResult,
+    Instrument,
+    InstrumentsResult,
+    Space,
+    SpacesResult,
+    StudiesResult,
+    Study,
+    StudyRead,
+    StudySummariesResult,
+    StudySummary,
+)
 from api.services.building import BuildingService
-from api.services.space import SpaceService
-from api.services.instrument import InstrumentService
 from api.services.dataset import DatasetService
-from api.models.catalog import Study, StudyRead, StudySummary, StudiesResult, StudySummariesResult, Building, BuildingRead, BuildingsResult, Space, SpacesResult, Instrument, InstrumentsResult, Dataset, DatasetsResult
-from enacit4r_sql.utils.query import paramAsArray, paramAsDict
+from api.services.instrument import InstrumentService
+from api.services.space import SpaceService
+from api.services.study import StudyService
 from api.utils.colors import string_to_color
+from enacit4r_sql.utils.query import paramAsArray, paramAsDict
+from fastapi import APIRouter, Depends, Query
 
 router = APIRouter()
 
@@ -22,22 +37,35 @@ async def get_study_summaries(
 ) -> StudySummariesResult:
     """Get all study summaries"""
     service = StudyService(session)
-    res = await service.find(paramAsDict(filter), paramAsArray(sort), paramAsArray(range))
+    res = await service.find(
+        paramAsDict(filter), paramAsArray(sort), paramAsArray(range)
+    )
     if res is None:
         return StudySummariesResult(studies=[])
     # Make study summary from study
-    summaries = [StudySummary(
-        id=study.id,
-        identifier=study.identifier,
-        name=study.name,
-        description=study.description,
-        countries=list(
-            set([building.country for building in study.buildings])),
-        cities=list(
-            set([f"{building.city}, {building.country}" for building in study.buildings if building.city and building.country])),
-        color=string_to_color(study.identifier),
-    ) for study in res.data]
-    return StudySummariesResult(data=summaries, total=res.total, skip=res.skip, limit=res.limit)
+    summaries = [
+        StudySummary(
+            id=study.id,
+            identifier=study.identifier,
+            name=study.name,
+            description=study.description,
+            countries=list(set([building.country for building in study.buildings])),
+            cities=list(
+                set(
+                    [
+                        f"{building.city}, {building.country}"
+                        for building in study.buildings
+                        if building.city and building.country
+                    ]
+                )
+            ),
+            color=string_to_color(study.identifier),
+        )
+        for study in res.data
+    ]
+    return StudySummariesResult(
+        data=summaries, total=res.total, skip=res.skip, limit=res.limit
+    )
 
 
 @router.get("/studies", response_model=StudiesResult)
@@ -49,7 +77,9 @@ async def get_studies(
 ) -> StudiesResult:
     """Get all studies"""
     service = StudyService(session)
-    res = await service.find(paramAsDict(filter), paramAsArray(sort), paramAsArray(range))
+    res = await service.find(
+        paramAsDict(filter), paramAsArray(sort), paramAsArray(range)
+    )
     return res
 
 
@@ -152,7 +182,9 @@ async def get_buildings(
 ) -> BuildingsResult:
     """Get all buildings"""
     service = BuildingService(session)
-    res = await service.find(paramAsDict(filter), paramAsArray(sort), paramAsArray(range))
+    res = await service.find(
+        paramAsDict(filter), paramAsArray(sort), paramAsArray(range)
+    )
     return res
 
 
@@ -188,7 +220,9 @@ async def get_spaces(
 ) -> SpacesResult:
     """Get all spaces"""
     service = SpaceService(session)
-    res = await service.find(paramAsDict(filter), paramAsArray(sort), paramAsArray(range))
+    res = await service.find(
+        paramAsDict(filter), paramAsArray(sort), paramAsArray(range)
+    )
     return res
 
 
@@ -224,7 +258,9 @@ async def get_instruments(
 ) -> InstrumentsResult:
     """Get all instruments"""
     service = InstrumentService(session)
-    res = await service.find(paramAsDict(filter), paramAsArray(sort), paramAsArray(range))
+    res = await service.find(
+        paramAsDict(filter), paramAsArray(sort), paramAsArray(range)
+    )
     return res
 
 
@@ -249,7 +285,9 @@ async def get_datasets(
 ) -> DatasetsResult:
     """Get all datasets"""
     service = DatasetService(session)
-    res = await service.find(paramAsDict(filter), paramAsArray(sort), paramAsArray(range))
+    res = await service.find(
+        paramAsDict(filter), paramAsArray(sort), paramAsArray(range)
+    )
     return res
 
 

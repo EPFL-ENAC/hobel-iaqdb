@@ -47,8 +47,8 @@
 </template>
 
 <script setup lang="ts">
-import type { Study, StudiesResult } from 'src/models';
-import type { TableRequestProps } from 'src/components/models';
+import type { Study, StudiesResult } from '@/models';
+import type { TableRequestProps } from '@/components/models';
 
 const { t } = useI18n();
 const catalogStore = useCatalogStore();

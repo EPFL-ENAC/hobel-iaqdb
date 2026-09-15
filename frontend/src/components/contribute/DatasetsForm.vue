@@ -100,11 +100,11 @@
 </template>
 
 <script setup lang="ts">
-import DataFileDialog from 'src/components/contribute/DataFileDialog.vue';
-import DatasetForm from 'src/components/contribute/DatasetForm.vue';
-import type { DataFile } from 'src/components/models';
-import { notifyError } from 'src/utils/notify';
-import type { Dataset, FileNode } from 'src/models';
+import DataFileDialog from '@/components/contribute/DataFileDialog.vue';
+import DatasetForm from '@/components/contribute/DatasetForm.vue';
+import type { DataFile } from '@/components/models';
+import { notifyError } from '@/utils/notify';
+import type { Dataset, FileNode } from '@/models';
 
 const { t } = useI18n();
 const contrib = useContributeStore();

@@ -45,8 +45,8 @@
 </template>
 
 <script setup lang="ts">
-import type { Variable } from 'src/models';
-import { truncateString } from 'src/utils/strings';
+import type { Variable } from '@/models';
+import { truncateString } from '@/utils/strings';
 
 const catalogStore = useCatalogStore();
 const { t } = useI18n();

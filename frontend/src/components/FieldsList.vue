@@ -50,8 +50,8 @@
 </template>
 
 <script setup lang="ts">
-import { toMaxDecimals } from 'src/utils/numbers';
-import { truncateString } from 'src/utils/strings';
+import { toMaxDecimals } from '@/utils/numbers';
+import { truncateString } from '@/utils/strings';
 
 export interface FieldItem {
   field: string;

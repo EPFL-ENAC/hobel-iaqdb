@@ -2,7 +2,8 @@ import hashlib
 
 
 def string_to_color(text: str, min_lum=0.3, max_lum=0.8) -> str:
-    """Convert a string to a color hex code, ensuring the color is within specified luminance bounds."""
+    """Convert a string to a color hex code, ensuring the color is within
+    specified luminance bounds."""
     # Hash the string
     hash_digest = hashlib.sha256(text.encode()).hexdigest()
 

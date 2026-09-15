@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { withRange } from 'src/utils/numbers';
+import { withRange } from '@/utils/numbers';
 
 export type FilterParams = {
   countries?: string[] | null;

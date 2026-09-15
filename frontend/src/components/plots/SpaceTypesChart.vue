@@ -13,17 +13,17 @@
 </template>
 
 <script setup lang="ts">
-import type { GroupByCount } from 'src/models';
+import type { GroupByCount } from '@/models';
 import ECharts from 'vue-echarts';
 import type { EChartsOption } from 'echarts';
 import { use } from 'echarts/core';
 import { TreemapChart } from 'echarts/charts';
 import { SVGRenderer } from 'echarts/renderers';
-import { initOptions, updateOptions } from 'src/components/plots/charts';
+import { initOptions, updateOptions } from '@/components/plots/charts';
 import {
   TooltipComponent,
 } from 'echarts/components';
-import { spaceTypeOptions } from 'src/utils/options';
+import { spaceTypeOptions } from '@/utils/options';
 import Gradient from 'javascript-color-gradient'
 
 use([

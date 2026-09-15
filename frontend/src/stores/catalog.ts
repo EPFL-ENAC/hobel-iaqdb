@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { api } from 'src/boot/api';
+import { api } from '@/boot/api';
 import type {
   Study,
   Building,
@@ -11,9 +11,9 @@ import type {
   SpacesResult,
   StudySummariesResult,
   GroupByResult,
-} from 'src/models';
+} from '@/models';
 import { DEFAULT_ALTITUDES, DEFAULT_CONSTRUCTION_YEARS } from './filters';
-import { withRange } from 'src/utils/numbers';
+import { withRange } from '@/utils/numbers';
 
 export const useCatalogStore = defineStore('catalog', () => {
   const authStore = useAuthStore();

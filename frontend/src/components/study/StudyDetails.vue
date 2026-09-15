@@ -36,10 +36,10 @@
 </template>
 
 <script setup lang="ts">
-import { licenseOptions } from 'src/utils/options';
-import FieldsList from 'src/components/FieldsList.vue';
-import type { FieldItem } from 'src/components/FieldsList.vue';
-import type { Study, Person } from 'src/models';
+import { licenseOptions } from '@/utils/options';
+import FieldsList from '@/components/FieldsList.vue';
+import type { FieldItem } from '@/components/FieldsList.vue';
+import type { Study, Person } from '@/models';
 
 const catalogStore = useCatalogStore();
 const { t } = useI18n();

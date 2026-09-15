@@ -87,9 +87,9 @@
 </template>
 
 <script setup lang="ts">
-import { notifyInfo } from 'src/utils/notify';
+import { notifyInfo } from '@/utils/notify';
 import InstrumentForm from './InstrumentForm.vue';
-import type { Instrument } from 'src/models';
+import type { Instrument } from '@/models';
 
 const { t } = useI18n();
 const contrib = useContributeStore();

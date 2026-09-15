@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import DummyCandlestickChart from 'src/components/plots/DummyCandlestickChart.vue';
-import DummyBarChart from 'src/components/plots/DummyBarChart.vue';
-import DummyLineChart from 'src/components/plots/DummyLineChart.vue';
+import DummyCandlestickChart from '@/components/plots/DummyCandlestickChart.vue';
+import DummyBarChart from '@/components/plots/DummyBarChart.vue';
+import DummyLineChart from '@/components/plots/DummyLineChart.vue';
 </script>

@@ -45,8 +45,8 @@
 </template>
 
 <script setup lang="ts">
-import StudyView from 'src/components/study/StudyView.vue';
-import ConfirmDialog from 'src/components/ConfirmDialog.vue';
+import StudyView from '@/components/study/StudyView.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 
 const { t } = useI18n();
 const authStore = useAuthStore();

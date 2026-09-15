@@ -1,5 +1,5 @@
 import { Notify } from 'quasar';
-import { t } from 'src/boot/i18n';
+import { t } from '@/boot/i18n';
 
 export function notifySuccess(message: string) {
   Notify.create({

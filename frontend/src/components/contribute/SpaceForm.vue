@@ -304,8 +304,8 @@ import {
   minorCombustionSourcesOptions,
   majorCombustionSourcesOptions,
   yesNoOptions,
-} from 'src/utils/options';
-import type { Building, Space } from 'src/models';
+} from '@/utils/options';
+import type { Building, Space } from '@/models';
 
 interface Props {
   modelValue: Space;

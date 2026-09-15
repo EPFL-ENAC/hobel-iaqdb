@@ -4,9 +4,9 @@ import {
   mechanicalVentilationTypeOptions,
   physicalParameterOptions,
   yesNoOptions,
-} from 'src/utils/options';
+} from '@/utils/options';
 import { defineStore } from 'pinia';
-import { api, baseUrl } from 'src/boot/api';
+import { api, baseUrl } from '@/boot/api';
 import type {
   Study,
   Building,
@@ -18,9 +18,9 @@ import type {
   FileNode,
   ParseError,
   StudyDraftParseResult,
-} from 'src/models';
+} from '@/models';
 
-import type { DataFile } from 'src/components/models';
+import type { DataFile } from '@/components/models';
 
 export const useContributeStore = defineStore(
   'contribute',

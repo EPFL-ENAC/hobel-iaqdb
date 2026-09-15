@@ -35,12 +35,12 @@ import type {
   GeoJsonProperties,
   Geometry,
 } from 'geojson';
-import BuildingTypesChart from 'src/components/plots/BuildingTypesChart.vue';
-import BuildingCountriesChart from 'src/components/plots/BuildingCountriesChart.vue';
-import BuildingMechanicalVentilationsChart from 'src/components/plots/BuildingMechanicalVentilationsChart.vue';
-import SpaceTypesChart from 'src/components/plots/SpaceTypesChart.vue';
-import SpaceMechanicalVentilationsChart from 'src/components/plots/SpaceMechanicalVentilationsChart.vue';
-import type { BuildingsLayerManager } from 'src/layers/buildings';
+import BuildingTypesChart from '@/components/plots/BuildingTypesChart.vue';
+import BuildingCountriesChart from '@/components/plots/BuildingCountriesChart.vue';
+import BuildingMechanicalVentilationsChart from '@/components/plots/BuildingMechanicalVentilationsChart.vue';
+import SpaceTypesChart from '@/components/plots/SpaceTypesChart.vue';
+import SpaceMechanicalVentilationsChart from '@/components/plots/SpaceMechanicalVentilationsChart.vue';
+import type { BuildingsLayerManager } from '@/layers/buildings';
 
 
 const { t } = useI18n();

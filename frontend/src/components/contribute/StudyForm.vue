@@ -205,7 +205,7 @@ import PersonForm from './PersonFom.vue';
 import {
   occupantImpactOptions,
   otherIndoorParamOptions,
-} from 'src/utils/options';
+} from '@/utils/options';
 
 const { t } = useI18n();
 const contrib = useContributeStore();

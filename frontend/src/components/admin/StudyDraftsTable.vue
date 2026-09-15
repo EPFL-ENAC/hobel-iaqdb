@@ -65,13 +65,13 @@
 </template>
 
 <script setup lang="ts">
-import type { StudyBundle, Study, Contribution } from 'src/models';
-import StudyDraftDialog from 'src/components/admin/StudyDraftDialog.vue';
-import StudyUploadDialog from 'src/components/contribute/StudyUploadDialog.vue';
-import ConfirmDialog from 'src/components/ConfirmDialog.vue';
-import { notifyError, notifySuccess } from 'src/utils/notify';
-import { toDatetimeString } from 'src/utils/time';
-import { dataEmbargoOptions } from 'src/utils/options';
+import type { StudyBundle, Study, Contribution } from '@/models';
+import StudyDraftDialog from '@/components/admin/StudyDraftDialog.vue';
+import StudyUploadDialog from '@/components/contribute/StudyUploadDialog.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
+import { notifyError, notifySuccess } from '@/utils/notify';
+import { toDatetimeString } from '@/utils/time';
+import { dataEmbargoOptions } from '@/utils/options';
 
 const { t } = useI18n();
 const authStore = useAuthStore();

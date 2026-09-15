@@ -2,8 +2,8 @@
 Based loosely on https://github.com/gauravgola96/FastAPI-Example
 
 ## Requirements
-- python 3.10.9
-- poetry
+- python 3.11 (see `.python-version`)
+- [uv](https://docs.astral.sh/uv/)
 - Make
 - Docker with docker compose
 - OS:
@@ -19,14 +19,14 @@ Create a file .env and put all s3 credential here
 ```
 .env
 ```
-s3 credentials 
+s3 credentials
 
 ```
 S3_ACCESS_KEY_ID=
 S3_SECRET_ACCESS_KEY=
-S3_REGION = 
-S3_BUCKET = 
-S3_PATH_PREFIX = 
+S3_REGION =
+S3_BUCKET =
+S3_PATH_PREFIX =
 
 ```
 

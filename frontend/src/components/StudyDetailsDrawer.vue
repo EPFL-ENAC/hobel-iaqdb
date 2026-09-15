@@ -16,8 +16,8 @@
 </template>
 
 <script setup lang="ts">
-import StudyDetails from 'src/components/study/StudyDetails.vue';
-import StudyDialog from 'src/components/study/StudyDialog.vue';
+import StudyDetails from '@/components/study/StudyDetails.vue';
+import StudyDialog from '@/components/study/StudyDialog.vue';
 
 const { t } = useI18n();
 const catalogStore = useCatalogStore();

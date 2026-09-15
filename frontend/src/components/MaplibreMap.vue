@@ -13,13 +13,8 @@
 <script setup lang="ts">
 import 'maplibre-gl/dist/maplibre-gl.css';
 import '@maplibre/maplibre-gl-geocoder/dist/maplibre-gl-geocoder.css';
-import 'maplibregl-theme-switcher/styles.css';
-import maplibregl from 'maplibre-gl';
+import * as maplibregl from 'maplibre-gl';
 import MaplibreGeocoder from '@maplibre/maplibre-gl-geocoder';
-import {
-  ThemeSwitcherControl,
-  type ThemeDefinition,
-} from 'maplibregl-theme-switcher';
 import {
   AttributionControl,
   FullscreenControl,
@@ -28,11 +23,12 @@ import {
   type MapMouseEvent,
   NavigationControl,
   ScaleControl,
+  setWorkerUrl,
   type StyleSpecification,
 } from 'maplibre-gl';
-import { DivControl } from 'src/utils/control';
-import { geocoderApi } from 'src/utils/geocoder';
-import type { Settings } from 'src/stores/settings';
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
+import { DivControl } from '@/utils/control';
+import { geocoderApi } from '@/utils/geocoder';
 
 interface Props {
   styleSpec?: string | StyleSpecification | undefined;
@@ -40,7 +36,6 @@ interface Props {
   zoom?: number;
   minZoom?: number;
   maxZoom?: number;
-  themes?: ThemeDefinition[];
   position?: boolean | string | undefined;
   geocoder?: boolean | string | undefined;
   attribution?: string;
@@ -62,18 +57,14 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits(['map:loaded', 'map:click']);
 
-const settingsStore = useSettingsStore();
+// maplibre-gl v6 ships its worker as a separate ESM file; under a bundler the
+// URL cannot be inferred from import.meta.url, so it must be set explicitly.
+// https://maplibre.org/maplibre-gl-js/docs/#installation
+setWorkerUrl(maplibreWorkerUrl);
 
 const { locale } = useI18n({ useScope: 'global' });
 const DEFAULT_ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>, <a href="https://www.epfl.ch/" target="_blank">EPFL</a>';
-// to be adapted to the style.json
-const DEFAULT_THEME = 'light';
-const THEMES: ThemeDefinition[] = [
-  { id: 'classic', label: 'Classic' },
-  { id: 'light', label: 'Light' },
-  { id: 'dark', label: 'Dark' },
-];
 
 const loading = ref(true);
 
@@ -94,20 +85,6 @@ onMounted(() => {
   map.addControl(new GeolocateControl({}));
   map.addControl(new ScaleControl());
   map.addControl(new FullscreenControl());
-
-  const settings = settingsStore.settings;
-  map.addControl(
-    new ThemeSwitcherControl(THEMES, {
-      defaultStyle: settings ? settings.theme || DEFAULT_THEME : DEFAULT_THEME,
-      eventListeners: {
-        onChange(event: MouseEvent, style) {
-          // persist the last theme choice
-          settingsStore.saveSettings({ theme: style } as Settings);
-          return false;
-        },
-      },
-    }),
-  );
 
   map.addControl(
     new AttributionControl({
@@ -147,13 +124,6 @@ onMounted(() => {
   }
 
   void map.once('load', () => {
-    THEMES.map((th) => th.id).forEach((id) => {
-      map?.setLayoutProperty(
-        id,
-        'visibility',
-        id === settings?.theme ? 'visible' : 'none',
-      );
-    });
     emit('map:loaded', map);
     loading.value = false;
   });

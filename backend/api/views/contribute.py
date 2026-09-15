@@ -1,19 +1,29 @@
-import pkg_resources
-from fastapi import APIRouter, Depends, Body, Query, HTTPException
-from fastapi.responses import FileResponse, Response
-from fastapi.datastructures import UploadFile
-from fastapi.param_functions import File
+from importlib.resources import files
+
+from api.auth import User, kc_service
 from api.config import config
-from api.db import get_session, AsyncSession
-from api.services.study_parser import StudyParser
+from api.db import AsyncSession, get_session
+from api.models.catalog import (
+    Contribution,
+    ContributionsResult,
+    Study,
+    StudyBundle,
+    StudyBundlesResult,
+    StudyDraft,
+    StudyDraftParseResult,
+    StudyDraftsResult,
+    StudyRead,
+)
+from api.services.contribution import ContributionService
 from api.services.study import StudyService
 from api.services.study_draft import StudyDraftService
-from api.services.contribution import ContributionService
-from api.models.catalog import StudyDraft, StudyDraftsResult, StudyBundlesResult, StudyBundle, StudyRead, Study, Contribution, ContributionsResult, StudyDraftParseResult
+from api.services.study_parser import StudyParser
 from api.utils.files import file_checker
-from api.auth import kc_service, User
 from enacit4r_sql.utils.query import paramAsArray, paramAsDict
-from datetime import datetime
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from fastapi.datastructures import UploadFile
+from fastapi.param_functions import File
+from fastapi.responses import FileResponse, Response
 
 router = APIRouter()
 
@@ -21,25 +31,35 @@ router = APIRouter()
 @router.get("/study-template")
 async def get_study_template():
     version = "3.2.1"
-    data_file_path = pkg_resources.resource_filename(
-        "api", f"data/Metadata_entry_form_v{version}.xlsm")
-    return FileResponse(data_file_path, filename=f"iaqdb_study_template_v{version}.xlsm", media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    data_file_path = str(files("api") / f"data/Metadata_entry_form_v{version}.xlsm")
+    return FileResponse(
+        data_file_path,
+        filename=f"iaqdb_study_template_v{version}.xlsm",
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
 
 
 @router.get("/dataset-dictionary")
 async def get_dataset_dictionary():
-    data_file_path = pkg_resources.resource_filename(
-        "api", "data/Dictionary_data.xlsx")
-    return FileResponse(data_file_path, filename="iaqdb_dataset_dictionary.xlsx", media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    data_file_path = str(files("api") / "data/Dictionary_data.xlsx")
+    return FileResponse(
+        data_file_path,
+        filename="iaqdb_dataset_dictionary.xlsx",
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
 
 
-@router.post("/study-excel",
-             status_code=200,
-             dependencies=[Depends(file_checker.check_size)],
-             response_model=StudyDraftParseResult)
+@router.post(
+    "/study-excel",
+    status_code=200,
+    dependencies=[Depends(file_checker.check_size)],
+    response_model=StudyDraftParseResult,
+)
 async def read_study_from_excel(
     files: UploadFile = File(
-        description="Excel file containing study, building, space descriptions")):
+        description="Excel file containing study, building, space descriptions"
+    ),
+):
     try:
         parser = StudyParser()
         study = parser.parse(files.file._file)
@@ -62,16 +82,17 @@ async def get_study_bundles(
     contribService = ContributionService(session)
     bundles = []
     contributions = await contribService.find(
-        filter={'study_identifier': [study.identifier for study in studies]},
+        filter={"study_identifier": [study.identifier for study in studies]},
         sort=[],
-        range=[]
+        range=[],
     )
     contributions_map = {
-        contribution.study_identifier: contribution for contribution in contributions.data}
+        contribution.study_identifier: contribution
+        for contribution in contributions.data
+    }
     for study in studies:
         bundle = StudyBundle(
-            study=study,
-            contribution=contributions_map.get(study.identifier, None)
+            study=study, contribution=contributions_map.get(study.identifier, None)
         )
         bundles.append(bundle)
     return StudyBundlesResult(total=len(studies), skip=0, limit=None, data=bundles)
@@ -95,11 +116,14 @@ async def create_study_draft(
 ) -> StudyDraft:
     """Create a study draft"""
     service = StudyDraftService()
-    if study.identifier is not None and study.identifier != "" and study.identifier != "_draft":
+    if (
+        study.identifier is not None
+        and study.identifier != ""
+        and study.identifier != "_draft"
+    ):
         exists = await service.exists(study.identifier)
         if exists:
-            raise Exception(
-                f"Study with identifier {study.identifier} already exists.")
+            raise Exception(f"Study with identifier {study.identifier} already exists.")
     study = await service.createOrUpdate(StudyDraft.model_validate(study))
     await ContributionService(session).touch_by_identifier(study.identifier, user)
     return study
@@ -157,17 +181,21 @@ async def reinstate_study_draft(
 ) -> Response:
     """Get the study from the database and push it in draft"""
     study_service = StudyService(session)
-    results = await study_service.find(filter={'identifier': identifier}, sort=[], range=[])
+    results = await study_service.find(
+        filter={"identifier": identifier}, sort=[], range=[]
+    )
     if not results or results.total == 0:
         raise HTTPException(
-            status_code=404, detail=f"Study with identifier {identifier} not found")
+            status_code=404, detail=f"Study with identifier {identifier} not found"
+        )
     service = StudyDraftService()
     await service.reinstate(identifier)
     return Response(
         content="Study reinstated in draft",
         status_code=200,
         headers={
-            "Location": f"{config.PATH_PREFIX}/contribute/study-draft/{identifier}"}
+            "Location": f"{config.PATH_PREFIX}/contribute/study-draft/{identifier}"
+        },
     )
 
 
@@ -190,7 +218,9 @@ async def get_contributions(
 ) -> ContributionsResult:
     """Get all contributions"""
     service = ContributionService(session)
-    res = await service.find(paramAsDict(filter), paramAsArray(sort), paramAsArray(range))
+    res = await service.find(
+        paramAsDict(filter), paramAsArray(sort), paramAsArray(range)
+    )
     return res
 
 
@@ -223,22 +253,26 @@ async def delete_contribution(
         await service.delete_by_identifier(id)
 
 
-@router.post("/contribution/", response_model=Contribution, response_model_exclude_none=True)
+@router.post(
+    "/contribution/", response_model=Contribution, response_model_exclude_none=True
+)
 async def create_contribution(
     contribution: Contribution,
     session: AsyncSession = Depends(get_session),
-    user: User = Depends(kc_service.get_user_info())
+    user: User = Depends(kc_service.get_user_info()),
 ) -> Contribution:
     """Create a contribution"""
     return await ContributionService(session).create(contribution, user)
 
 
-@router.put("/contribution/{id}", response_model=Contribution, response_model_exclude_none=True)
+@router.put(
+    "/contribution/{id}", response_model=Contribution, response_model_exclude_none=True
+)
 async def update_contribution(
     id: str,
     contribution: Contribution,
     session: AsyncSession = Depends(get_session),
-    user: User = Depends(kc_service.get_user_info(required=False))
+    user: User = Depends(kc_service.get_user_info(required=False)),
 ) -> Contribution:
     """Update a contribution by id"""
     return await ContributionService(session).update(id, contribution, user)
