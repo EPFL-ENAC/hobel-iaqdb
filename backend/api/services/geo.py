@@ -1,4 +1,4 @@
-import pkg_resources
+from importlib.resources import files
 import requests
 import rasterio
 from pyproj import Transformer
@@ -42,8 +42,8 @@ CLIMATE_ZONES = [
 class GeoService:
 
     def readClimateZone(self, lon: float = 0, lat: float = 0, precise: bool = True) -> ClimateZone:
-        data_file_path = pkg_resources.resource_filename(
-            "api", "data/koppen_geiger_1991_2020_0p00833333.tif" if precise else "data/koppen_geiger_1991_2020_0p1.tif")
+        data_file_name = "koppen_geiger_1991_2020_0p00833333.tif" if precise else "koppen_geiger_1991_2020_0p1.tif"
+        data_file_path = str(files("api") / "data" / data_file_name)
 
         value = -1
 

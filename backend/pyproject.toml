@@ -37,9 +37,6 @@ dev = [
 
 [tool.uv]
 package = false
-# Keeps the resolution close to the former poetry.lock (Nov 2024).
-# Remove this line and run `uv lock --upgrade` to bump dependencies.
-exclude-newer = "2024-11-15T00:00:00Z"
 
 [tool.uv.sources]
 enacit4r-auth = { git = "https://github.com/EPFL-ENAC/enacit4r-auth", rev = "0.4.3" }
