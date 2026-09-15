@@ -2,8 +2,8 @@
 Based loosely on https://github.com/gauravgola96/FastAPI-Example
 
 ## Requirements
-- python 3.10.9
-- poetry
+- python 3.11 (see `.python-version`)
+- [uv](https://docs.astral.sh/uv/)
 - Make
 - Docker with docker compose
 - OS:
