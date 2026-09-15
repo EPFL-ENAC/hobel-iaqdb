@@ -144,11 +144,11 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import HowToCiteMd from 'src/assets/how-to-cite.md';
-import IntroductionMd from 'src/assets/introduction.md';
-import essentialLinks from 'src/assets/links.json';
-import EssentialLink from 'src/components/EssentialLink.vue';
-import SimpleDialog from 'src/components/SimpleDialog.vue';
+import HowToCiteMd from '@/assets/how-to-cite.md';
+import IntroductionMd from '@/assets/introduction.md';
+import essentialLinks from '@/assets/links.json';
+import EssentialLink from '@/components/EssentialLink.vue';
+import SimpleDialog from '@/components/SimpleDialog.vue';
 
 interface Props {
   noMenu?: boolean;

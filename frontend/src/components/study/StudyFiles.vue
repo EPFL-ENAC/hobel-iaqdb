@@ -43,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-import { getSizeLabel } from 'src/utils/numbers';
+import { getSizeLabel } from '@/utils/numbers';
 
 const { t } = useI18n();
 const catalogStore = useCatalogStore();

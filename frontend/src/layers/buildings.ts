@@ -6,12 +6,12 @@ import type {
   Geometry,
 } from 'geojson';
 import Spiderfy, { type SpiderfyOptions } from '@nazka/map-gl-js-spiderfy';
-import { LayerManager } from 'src/layers/models';
-import type { FilterParams } from 'src/stores/filters';
-import { baseUrl } from 'src/boot/api';
-import { truncateString } from 'src/utils/strings';
-import { t } from 'src/boot/i18n';
-import { buildingTypeOptions, outdoorEnvOptions, yesNoOptions, mechanicalVentilationTypeOptions, ageGroupOptions, socioeconomicStatusOptions } from 'src/utils/options';
+import { LayerManager } from '@/layers/models';
+import type { FilterParams } from '@/stores/filters';
+import { baseUrl } from '@/boot/api';
+import { truncateString } from '@/utils/strings';
+import { t } from '@/boot/i18n';
+import { buildingTypeOptions, outdoorEnvOptions, yesNoOptions, mechanicalVentilationTypeOptions, ageGroupOptions, socioeconomicStatusOptions } from '@/utils/options';
 import { Screen } from 'quasar';
 
 const GEOJSON_URL = `${baseUrl}/map/buildings`;
@@ -315,6 +315,6 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
       ...this.buildingsData,
       features: filteredFeatures,
     };
-    map.getSource<GeoJSONSource>('buildings')?.setData(this.filteredData);
+    void map.getSource<GeoJSONSource>('buildings')?.setData(this.filteredData);
   }
 }

@@ -92,9 +92,9 @@
 </template>
 
 <script setup lang="ts">
-import { notifyInfo } from 'src/utils/notify';
+import { notifyInfo } from '@/utils/notify';
 import BuildingForm from './BuildingForm.vue';
-import type { Building } from 'src/models';
+import type { Building } from '@/models';
 
 const { t } = useI18n();
 const contrib = useContributeStore();

@@ -224,18 +224,18 @@
 </template>
 
 <script setup lang="ts">
-import StepStudyMd from 'src/assets/step-study.md';
-import StepBuildingsMd from 'src/assets/step-buildings.md';
-import StepInstrumentsMd from 'src/assets/step-instruments.md';
-import StepDatasetsMd from 'src/assets/step-datasets.md';
-import StudyForm from 'src/components/contribute/StudyForm.vue';
-import BuildingsForm from 'src/components/contribute/BuildingsForm.vue';
-import InstrumentsForm from 'src/components/contribute/InstrumentsForm.vue';
-import DatasetsForm from 'src/components/contribute/DatasetsForm.vue';
-import { baseUrl } from 'src/boot/api';
+import StepStudyMd from '@/assets/step-study.md';
+import StepBuildingsMd from '@/assets/step-buildings.md';
+import StepInstrumentsMd from '@/assets/step-instruments.md';
+import StepDatasetsMd from '@/assets/step-datasets.md';
+import StudyForm from '@/components/contribute/StudyForm.vue';
+import BuildingsForm from '@/components/contribute/BuildingsForm.vue';
+import InstrumentsForm from '@/components/contribute/InstrumentsForm.vue';
+import DatasetsForm from '@/components/contribute/DatasetsForm.vue';
+import { baseUrl } from '@/boot/api';
 import { copyToClipboard } from 'quasar';
-import { notifyError, notifyInfo } from 'src/utils/notify';
-import { dataEmbargoOptions } from 'src/utils/options';
+import { notifyError, notifyInfo } from '@/utils/notify';
+import { dataEmbargoOptions } from '@/utils/options';
 
 interface Props {
   dialog?: boolean;

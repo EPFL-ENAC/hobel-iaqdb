@@ -1,5 +1,5 @@
-import { defineBoot } from '#q-app/wrappers'
-import { useSettingsStore } from 'src/stores/settings';
+import { defineBoot } from '#q-app'
+import { useSettingsStore } from '@/stores/settings';
 
 export default defineBoot(() => {
   const settingsStore = useSettingsStore();

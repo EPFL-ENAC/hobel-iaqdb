@@ -280,7 +280,7 @@
 </template>
 
 <script setup lang="ts">
-import { DEFAULT_CONSTRUCTION_YEARS, DEFAULT_ALTITUDES } from 'src/stores/filters';
+import { DEFAULT_CONSTRUCTION_YEARS, DEFAULT_ALTITUDES } from '@/stores/filters';
 import {
   climateOptions,
   mechanicalVentilationTypeOptions,
@@ -294,9 +294,9 @@ import {
   biocontaminantsOptions,
   otherPollutantsOptions,
   countryOptions,
-} from 'src/utils/options';
-import type { StudySummary } from 'src/models';
-import { truncateString } from 'src/utils/strings';
+} from '@/utils/options';
+import type { StudySummary } from '@/models';
+import { truncateString } from '@/utils/strings';
 
 const { t } = useI18n();
 const mapStore = useMapStore();

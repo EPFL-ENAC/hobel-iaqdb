@@ -39,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import StudyDraftsTable from 'src/components/admin/StudyDraftsTable.vue';
+import StudyDraftsTable from '@/components/admin/StudyDraftsTable.vue';
 
 const { t } = useI18n();
 const authStore = useAuthStore();

@@ -58,8 +58,8 @@
 </template>
 
 <script setup lang="ts">
-import { referenceOptions } from 'src/utils/options';
-import type { Dataset, Variable } from 'src/models';
+import { referenceOptions } from '@/utils/options';
+import type { Dataset, Variable } from '@/models';
 
 //const contrib = useContributeStore();
 

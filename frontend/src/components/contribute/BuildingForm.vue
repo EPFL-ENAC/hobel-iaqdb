@@ -403,11 +403,11 @@ import {
   socioeconomicStatusOptions,
   countryOptions,
   yesNoOptions,
-} from 'src/utils/options';
-import { geocoderApi } from 'src/utils/geocoder';
-import type { Building, Certification } from 'src/models';
-import SpaceForm from 'src/components/contribute/SpaceForm.vue';
-import { notifyInfo } from 'src/utils/notify';
+} from '@/utils/options';
+import { geocoderApi } from '@/utils/geocoder';
+import type { Building, Certification } from '@/models';
+import SpaceForm from '@/components/contribute/SpaceForm.vue';
+import { notifyInfo } from '@/utils/notify';
 
 const { t } = useI18n();
 const contrib = useContributeStore();

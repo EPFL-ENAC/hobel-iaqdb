@@ -35,10 +35,10 @@
 </template>
 
 <script setup lang="ts">
-import StudyBuildings from 'src/components/study/StudyBuildings.vue';
-import StudyInstruments from 'src/components/study/StudyInstruments.vue';
-import StudyDatasets from 'src/components/study/StudyDatasets.vue';
-import StudyFiles from 'src/components/study/StudyFiles.vue';
+import StudyBuildings from '@/components/study/StudyBuildings.vue';
+import StudyInstruments from '@/components/study/StudyInstruments.vue';
+import StudyDatasets from '@/components/study/StudyDatasets.vue';
+import StudyFiles from '@/components/study/StudyFiles.vue';
 
 interface Props {
   showMap?: boolean;

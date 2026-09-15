@@ -54,12 +54,12 @@
 
 <script setup lang="ts">
 import { useQuasar } from 'quasar';
-import { referenceOptions } from 'src/utils/options';
+import { referenceOptions } from '@/utils/options';
 import Papa from 'papaparse';
 import JSZip from 'jszip';
-import type { DataFile } from 'src/components/models';
-import type { Variable } from 'src/models';
-import { notifyError } from 'src/utils/notify';
+import type { DataFile } from '@/components/models';
+import type { Variable } from '@/models';
+import { notifyError } from '@/utils/notify';
 
 interface Props {
   modelValue: boolean;

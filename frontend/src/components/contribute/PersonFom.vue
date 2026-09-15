@@ -39,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Person } from 'src/models';
+import type { Person } from '@/models';
 
 interface Props {
   modelValue: Person;

@@ -18,8 +18,8 @@
 </template>
 
 <script setup lang="ts">
-import IntroductionMd from 'src/assets/introduction.md';
-import AppHeader from 'src/components/AppHeader.vue';
+import IntroductionMd from '@/assets/introduction.md';
+import AppHeader from '@/components/AppHeader.vue';
 
 const { t } = useI18n();
 </script>
