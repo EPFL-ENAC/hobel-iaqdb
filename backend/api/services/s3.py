@@ -1,4 +1,5 @@
 import asyncio
+from pathlib import Path
 
 from api.config import config
 from enacit4r_files.services.s3 import S3Service
@@ -81,3 +82,13 @@ async def copy_objects(pairs: list[tuple[str, str]]) -> None:
             await copy_object(source_key, destination_key)
 
     await asyncio.gather(*(copy_one(*pair) for pair in pairs))
+
+
+async def download_object(key: str, path: Path) -> Path:
+    """Stream one object, given its full S3 key, to a local file."""
+    async with s3_client._client() as client:
+        response = await client.get_object(Bucket=s3_client.bucket, Key=key)
+        with path.open("wb") as stream:
+            async for chunk in response["Body"].iter_chunks(1 << 20):
+                stream.write(chunk)
+    return path

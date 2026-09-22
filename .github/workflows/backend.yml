@@ -21,6 +21,20 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    services:
+      timescaledb:
+        image: timescale/timescaledb:latest-pg15
+        env:
+          POSTGRES_USER: iaqdb
+          POSTGRES_PASSWORD: iaqdb
+          POSTGRES_DB: iaqdb
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U iaqdb"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
 
@@ -48,11 +62,11 @@ jobs:
       - name: Lint
         run: uv run pre-commit run --all-files --show-diff-on-failure
 
-      - name: Check imports
-        run: uv run python -c "import api.main"
+      - name: Test
+        run: uv run pytest -q
         env:
           DB_HOST: localhost
-          DB_PORT: '5432'
+          DB_PORT: '5433'
           DB_PREFIX: postgresql+asyncpg
           DB_NAME: iaqdb
           DB_USER: iaqdb

@@ -1,5 +1,5 @@
 from api.auth import User, kc_service
-from api.db import AsyncSession, get_session
+from api.db import AsyncSession, get_engine, get_session
 from api.models.catalog import (
     Building,
     BuildingRead,
@@ -17,15 +17,28 @@ from api.models.catalog import (
     StudySummary,
 )
 from api.services.building import BuildingService
+from api.services.catalog_version import CatalogVersionService
 from api.services.dataset import DatasetService
 from api.services.instrument import InstrumentService
+from api.services.publish import refresh_after_delete
 from api.services.space import SpaceService
 from api.services.study import StudyService
 from api.utils.colors import string_to_color
 from enacit4r_sql.utils.query import paramAsArray, paramAsDict
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, Query
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 router = APIRouter()
+
+
+async def _published_data_changed(
+    session: AsyncSession, engine: AsyncEngine, background_tasks: BackgroundTasks
+) -> None:
+    """Invalidate the explore caches and bring the continuous aggregates in
+    line with the cascaded measurement deletes."""
+    await CatalogVersionService(session).bump()
+    await session.commit()
+    background_tasks.add_task(refresh_after_delete, engine)
 
 
 @router.get("/study-summaries", response_model=StudySummariesResult)
@@ -101,7 +114,9 @@ async def get_study(
 @router.delete("/study/{id}")
 async def delete_study(
     id: str,
+    background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
+    engine: AsyncEngine = Depends(get_engine),
     user: User = Depends(kc_service.require_admin()),
 ) -> None:
     """Delete study by id or identifier"""
@@ -110,6 +125,7 @@ async def delete_study(
         await service.delete(int(id))
     else:
         await service.delete_by_identifier(id)
+    await _published_data_changed(session, engine, background_tasks)
 
 
 @router.get("/study/{id}/buildings", response_model=BuildingsResult)
@@ -203,12 +219,15 @@ async def get_building(
 @router.delete("/building/{id}")
 async def delete_building(
     id: int,
+    background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
+    engine: AsyncEngine = Depends(get_engine),
     user: User = Depends(kc_service.require_admin()),
 ) -> None:
     """Delete building by id"""
     service = BuildingService(session)
     await service.delete(id)
+    await _published_data_changed(session, engine, background_tasks)
 
 
 @router.get("/spaces", response_model=SpacesResult)
@@ -241,12 +260,15 @@ async def get_space(
 @router.delete("/space/{id}")
 async def delete_space(
     id: int,
+    background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
+    engine: AsyncEngine = Depends(get_engine),
     user: User = Depends(kc_service.require_admin()),
 ) -> None:
     """Delete space by id"""
     service = SpaceService(session)
     await service.delete(id)
+    await _published_data_changed(session, engine, background_tasks)
 
 
 @router.get("/instruments", response_model=InstrumentsResult)

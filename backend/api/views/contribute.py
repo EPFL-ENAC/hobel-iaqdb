@@ -2,7 +2,7 @@ from importlib.resources import files
 
 from api.auth import User, kc_service
 from api.config import config
-from api.db import AsyncSession, get_session
+from api.db import AsyncSession, get_engine, get_session
 from api.models.catalog import (
     Contribution,
     ContributionsResult,
@@ -14,16 +14,19 @@ from api.models.catalog import (
     StudyDraftsResult,
     StudyRead,
 )
+from api.services.catalog_version import CatalogVersionService
 from api.services.contribution import ContributionService
+from api.services.publish import load_published_study
 from api.services.study import StudyService
 from api.services.study_draft import StudyDraftService
 from api.services.study_parser import StudyParser
 from api.utils.files import file_checker
 from enacit4r_sql.utils.query import paramAsArray, paramAsDict
-from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Query
 from fastapi.datastructures import UploadFile
 from fastapi.param_functions import File
 from fastapi.responses import FileResponse, Response
+from sqlalchemy.ext.asyncio import AsyncEngine
 
 router = APIRouter()
 
@@ -161,15 +164,21 @@ async def update_study_draft(
 @router.put("/study-draft/{identifier}/_publish", response_model=StudyRead)
 async def publish_study_draft(
     identifier: str,
+    background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
+    engine: AsyncEngine = Depends(get_engine),
     user: User = Depends(kc_service.require_admin()),
 ) -> Study:
-    """Save the study draft in the database"""
+    """Save the study draft in the database, then load its measurements in
+    the background (each dataset's `summary_status` reports the outcome)"""
     service = StudyDraftService()
     study_draft = await service.get(identifier)
     study_service = StudyService(session)
     study = await study_service.save(study_draft)
     await ContributionService(session).publish_by_identifier(study.identifier, user)
+    await CatalogVersionService(session).bump()
+    await session.commit()
+    background_tasks.add_task(load_published_study, engine, study.id)
     return study
 
 
