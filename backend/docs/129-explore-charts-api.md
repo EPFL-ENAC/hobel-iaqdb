@@ -2,13 +2,15 @@
 status: draft
 issue: 129
 last_updated: 2026-09-22
-summary: Three query-shaped stats endpoints over raw measurements in a TimescaleDB hypertable (continuous aggregates as a derived cache), one response envelope, and a click model where every drill-down is a filter refinement of the same request.
+summary: Three query-shaped stats endpoints over raw measurements in a TimescaleDB hypertable (continuous aggregates as a derived cache), one response envelope, and a click model where every drill-down is a filter refinement of the same request. Implemented on branch feat/129; §15 lists where the code refined the design.
 ---
 
 # Explore charts API
 
 Design note for issue #129. Flip `status` to `accepted` when the issue is
 closed; chart sub-issues #109–#126 implement against this contract.
+All four tiers of §13 are implemented; §15 records what the code does
+differently from the first draft and why.
 
 ## 1. Facts this design rests on
 
@@ -94,32 +96,47 @@ measurement_day      hierarchical continuous aggregate over measurement_hour:
 
 Rules, all explicit and all reported by `make seed-check`:
 
-- `parameter` is seeded from a versioned CSV (`api/data/parameters.csv`, the
-  dictionary issue #107 produces). A slug or a `real_unit` absent from the
-  dictionary **fails the import of that dataset** with a listed error. No
-  guessing units. `value` is stored in the canonical unit; the original
-  `real_unit` is not stored, the conversion is in the dictionary.
-- Every CSV row of every `data_type` is loaded into `measurement`.
-  `time_integrated` rows (e.g. 24-h gravimetric PM2.5) keep `start_ts` and
-  `end_ts` and take `ts = start_ts`. `statistical` rows are loaded with their
-  `statistic` (`mean`, `p95`, …) but **excluded from the continuous
-  aggregates** by the `WHERE` in their definition, and counted in
-  `dataset_parameter.n_statistical` so their absence from charts is visible.
-- `building_id` / `space_id` are resolved to catalog FKs by identifier within
-  the study. Unresolved rows keep `NULL` FKs, are counted in `n_unlinked`, and
-  appear as a `null` bucket when grouped by a building/space attribute. The
-  UI labels that bucket "unknown"; it is never merged into another bucket.
-- `ts` is local wall-clock (what the CSV contains), stored as `TIMESTAMP`
-  without time zone. Month-of-year and hour-of-day profiles are only
+- `parameter` is seeded from versioned CSVs (`api/data/parameters.csv` and
+  `api/data/benchmarks.csv`, mirrored into the tables by
+  `ParameterService.sync` at boot and at seed). The content shipped here is
+  **provisional**, derived from the slugs and units present in SEED_DATA and
+  the factors of `Dictionary_data.xlsx`; #107 replaces it as data. No
+  guessing units: `value` is stored in the canonical unit, the source unit
+  is `coalesce(real_unit, inferred_unit)` (the processed CSVs leave
+  `real_unit` empty for 17 % of the rows and fill `inferred_unit`), the
+  conversion is in the dictionary.
+- **Every row goes to exactly one bin** of the dataset's `load_report`
+  (`loaded`, `missing`, `statistical`, `unknown_parameter{slug}`,
+  `unknown_unit{slug|unit}`, `unparseable_value{slug}`,
+  `unparseable_timestamp`, plus `unlinked_building/space/instrument`
+  counts). Rejected rows are counted, never fixed and never loaded; the
+  dataset fails only when no row loads or a file cannot be read. The seed
+  data has 14 000 distinct slugs, 14 M non-numeric values and 740 k
+  unparseable timestamps, so "an unknown slug fails the dataset" would have
+  loaded nothing. `missing` is a value that is empty or `NA`; a decimal
+  comma (`18,9`) is accepted, `5.2 K` is not.
+- `time_integrated` rows keep `start_ts` and `end_ts` and take
+  `ts = coalesce(start_ts, ts)`. `statistical` rows carry no timestamp in
+  99.97 % of the cases, so they **cannot enter the hypertable**: they are
+  counted in the report only, until #127 gives them a table.
+- `building_id` / `space_id` / `instrument_id` are resolved to catalog FKs by
+  identifier within the study (spaces within their building). Unresolved
+  rows keep `NULL` FKs, are counted in the report, and appear as a `null`
+  bucket when grouped by a building/space attribute. The UI labels that
+  bucket "unknown"; it is never merged into another bucket.
+- `ts` is local wall-clock, stored as `TIMESTAMP` without time zone. A
+  trailing UTC offset (`-04:00`, 26 M rows in 9 datasets) is **dropped**, the
+  wall clock is kept. Month-of-year and hour-of-day profiles are only
   meaningful in local time.
 - The continuous aggregates are **materialized only** (`materialized_only =
   true`): a request never triggers real-time aggregation over raw. They are
-  refreshed explicitly for the dataset's time range at the end of each load,
-  so a chart is either up to date or the dataset is still `pending` (§ import
-  pipeline). No background refresh policy, so there is no window where
-  charts show half a dataset.
+  refreshed by `MeasurementService.refresh_all()` (full window; TimescaleDB
+  only recomputes invalidated buckets) at the end of each load and after
+  every delete that cascades into `measurement`, so a chart is either up to
+  date or the dataset is still `pending`. No background refresh policy.
 - `dataset_parameter` is derived from `measurement` in one SQL statement per
-  load; it is the only place counts of raw records are cached.
+  load (`n_records`, `n_missing`, `first_at`, `last_at`, `n_buildings`,
+  `n_spaces`); it is the only place counts of raw records are cached.
 - Every table has `ON DELETE CASCADE` from `dataset`. `dataset_id` is a
   compression segment-by column, so deleting a dataset drops whole compressed
   batches instead of decompressing rows.
@@ -148,13 +165,14 @@ and on compressed chunks by the segment-by columns.
    `[first_at, last_at + 1 day)`, and the `dataset_parameter` upsert, all in
    the same job.
 4. The whole load is idempotent per dataset: it starts by deleting the
-   dataset's rows, and the seed reuses the file MD5 key from #128 to skip
-   unchanged files.
+   dataset's rows. The MD5 key from #128 only skips the S3 upload:
+   `StudyService.save` recreates the study and its datasets, so the seed
+   always reloads measurements.
 5. Seed calls it per dataset after the S3 upload. Publish (`/contribute`)
    calls it as a background task, streaming the S3 object to a temp file
-   first. `dataset.summary_status ∈ {pending, ready, failed}` plus
-   `summary_error` make the state visible in the UI; a failed load is never
-   a silent empty chart.
+   first. `dataset.summary_status ∈ {pending, ready, failed}`,
+   `summary_error` and `load_report` make the state visible in the UI; a
+   failed load is never a silent empty chart.
 
 Seed-only optimisations, applied by the seed script and not by publish: drop
 the three secondary indexes on `measurement` before the bulk load and rebuild
@@ -306,9 +324,9 @@ dimensions require. At `grain=raw` the same SQL runs over the hypertable,
 
 | agg | payload | SQL core |
 | --- | --- | --- |
-| `coverage` | `coverage {n_datasets, n_missing, first_at, last_at}` | reads `dataset_parameter` only, no fact scan |
+| `coverage` | `coverage {n_datasets, n_missing, first_at, last_at}` | reads `dataset_parameter` only, no fact scan. Building and space dimensions join through the study, so a dataset counts under every country its study has a building in |
 | `count` | `n`, `n_records` | `count(*)`, `sum(n)` |
-| `stats` | `stats {…}` | `percentile_cont(array[.05,.25,.5,.75,.95]) within group (order by mean)`, weighted mean, `stddev_samp(mean)`, `min`, `max` |
+| `stats` | `stats {…}` | `percentile_cont(array[.05,.25,.5,.75,.95]) within group (order by mean)`, weighted mean, `stddev_samp(mean)`, `min(mean)`, `max(mean)` (the same series as the percentiles, so box plots are consistent) |
 | `exceedance` | `exceedance {threshold, n_above, share}` | `count(*) filter (where mean > :threshold)` |
 
 `by=parameter&agg=coverage` is also the query behind the dynamic variable
@@ -325,10 +343,11 @@ instrument_id, ts)` so only co-located, co-timed readings pair).
 - `agg=pairs&x=co2&y=air_temperature[&by=country]`: self-join on
   `(dataset_id, space_id, hour)`. Two statements: (1) per group
   `count, regr_slope, regr_intercept, regr_r2, corr` over **all** matched rows;
-  (2) a deterministic sample of points, `WHERE id % step = 0` with
-  `step = ceil(n / 2000)`, so the trend line is exact and the dots are a
-  stable, cacheable sample. Bucket carries `fit`, `points`, `sampled: true`
-  and `n`.
+  (2) a deterministic sample of points, `row_number() over (order by
+  dataset_id, space_id, hour) % step = 0` with `step = ceil(n / 2000)` (the
+  aggregates have no `id`), so the trend line is exact and the dots are a
+  stable, cacheable sample. Bucket carries `fit`, `points`, `n` and
+  `sampled` (true only when `step > 1`).
 - `x` parameter with a metric `y` (chart 13, CO2 × occupancy): `x` is first
   aggregated per `(dataset, space)`, then joined to the space column; one point
   per space, `fit` over all spaces. `meta.grain` echoes `space`.
@@ -337,9 +356,10 @@ instrument_id, ts)` so only co-located, co-timed readings pair).
   (`max(mean) filter (where parameter = 'co2') as co2 …` grouped by
   `dataset_id, space_id, hour`), then a single `SELECT` computes
   `corr(a, b)` and `count(a) filter (where b is not null)` for every pair.
-  Spearman ranks each column with a window function over the same CTE. Cells
-  are buckets keyed `[x, y]` with `n` and `fit.r`. Max 10 parameters (45
-  cells).
+  Spearman ranks each column, per pair, within the rows where the other
+  parameter is present (`rank() over (partition by b is not null order by
+  a)`, ties get their lowest rank). Cells are buckets keyed `[x, y]` (slugs
+  sorted) with `n` and `fit.r`. Max 10 parameters (45 cells).
 
 ## 8. Click model
 
@@ -643,10 +663,14 @@ Each tier is a shippable PR against `dev` with its own plan file.
 4. **Relationships**: `/stats/relationships`. Unblocks 13, 17, 18.
 
 Each tier ships a test per aggregation on a fixture of ~5 000 raw rows with a
-known answer, run at all three grains so the continuous aggregates are
-checked against raw, and a query-plan check (`EXPLAIN`) asserting the fact
-scan uses the `(parameter, time)` index. Tests run against the TimescaleDB
-image, not plain Postgres.
+known answer (`backend/tests/fixtures.py`, expectations recomputed in plain
+Python in `tests/expected.py`), run at all three grains so the continuous
+aggregates are checked against raw, and a query-plan check (`EXPLAIN`)
+asserting the fact scan uses an index starting with `parameter`. Tests run
+against the TimescaleDB image, not plain Postgres: `make test-db` starts a
+throwaway container on port 5433, `make test` runs the suite against it
+(the tests truncate tables and refuse any other port). CI runs the same
+against a `timescale/timescaledb:latest-pg15` service.
 
 ## 14. Out of scope and open points
 
@@ -664,4 +688,27 @@ image, not plain Postgres.
   the hosting team before tier 1 starts.
 - The 20 M-record cap on `grain=raw` is a first value from the 0.5 s / 5 M
   rows measurement; tune it against the deployed budget once tier 3 runs on
-  real volume.
+  real volume. The cap is checked on `dataset_parameter` for the matched
+  studies and datasets (building and space criteria cannot narrow it there),
+  so it is conservative.
+- The processed CSVs use 14 000 free-form slugs (`temperature_c`,
+  `avp_in1_co2`, `carbon_dioxidee` …); canonicalising them is #107's job.
+  Until then the report of every dataset lists what was left out.
+
+## 15. What the implementation refined
+
+Read with §1–§14; code wins where they still disagree.
+
+| topic | first draft | shipped |
+| --- | --- | --- |
+| unknown slug or unit | fails the dataset | row counted in `load_report`, dataset fails only when nothing loads (§3) |
+| `statistical` rows | loaded, excluded from aggregates | not loaded (no timestamp), counted in the report (§3) |
+| source unit | `real_unit` | `coalesce(real_unit, inferred_unit)` (§3) |
+| tz offsets | not considered | stripped, wall clock kept (§3) |
+| aggregate refresh | per dataset time range | `refresh_all()` after loads and deletes; invalidation makes it cheap (§3) |
+| `dataset_parameter` | also `n_unlinked`, `n_statistical` | those live in `dataset.load_report` |
+| seed skip | MD5 skips the load too | MD5 skips the upload only, the load always runs (§3) |
+| catalog fan-out | not considered | `coverage`, the raw cap and `metadata` with `parameters` reason at study level; `measurements`, `relationships` and the empty-state suggestion filter the fact rows themselves |
+| pairs sample | `id % step` | `row_number() % step`, `sampled` true only when sampling happened (§7) |
+| dictionary | #107's CSV | provisional CSVs in `api/data`, synced at boot and seed |
+| frequencies routes | deleted | deleted; the five `PlotsDrawer` charts became one `MetadataTreemapChart` over `/stats/metadata` |

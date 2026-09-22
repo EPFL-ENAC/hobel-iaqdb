@@ -10,6 +10,7 @@ from api.services.catalog_version import CatalogVersionService
 from api.services.explore.cache import canonical_key, respond
 from api.services.explore.measurements import MeasurementQueryService
 from api.services.explore.metadata import MetadataService
+from api.services.explore.relationships import RelationshipService
 from api.services.explore.schema import explore_schema
 from fastapi import APIRouter, Depends, Query, Request
 
@@ -52,4 +53,20 @@ async def get_measurements(
     version = await CatalogVersionService(session).get()
     key = canonical_key("measurements", query, version)
     service = MeasurementQueryService(session)
+    return await respond(request, key, lambda: service.query(query, version))
+
+
+@router.get(
+    "/relationships", response_model=ExploreResult, response_model_exclude_none=True
+)
+async def get_relationships(
+    request: Request,
+    query: Annotated[ExploreQuery, Query()],
+    session: AsyncSession = Depends(get_session),
+):
+    """Pairwise queries over co-located, co-timed measurements:
+    `agg=pairs` (x, y) or `agg=matrix` (parameters)."""
+    version = await CatalogVersionService(session).get()
+    key = canonical_key("relationships", query, version)
+    service = RelationshipService(session)
     return await respond(request, key, lambda: service.query(query, version))
