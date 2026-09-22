@@ -8,6 +8,7 @@ from api.db import AsyncSession, get_session
 from api.models.explore import ExploreQuery, ExploreResult, ExploreSchema
 from api.services.catalog_version import CatalogVersionService
 from api.services.explore.cache import canonical_key, respond
+from api.services.explore.measurements import MeasurementQueryService
 from api.services.explore.metadata import MetadataService
 from api.services.explore.schema import explore_schema
 from fastapi import APIRouter, Depends, Query, Request
@@ -35,4 +36,20 @@ async def get_metadata(
     version = await CatalogVersionService(session).get()
     key = canonical_key("metadata", query, version)
     service = MetadataService(session)
+    return await respond(request, key, lambda: service.query(query, version))
+
+
+@router.get(
+    "/measurements", response_model=ExploreResult, response_model_exclude_none=True
+)
+async def get_measurements(
+    request: Request,
+    query: Annotated[ExploreQuery, Query()],
+    session: AsyncSession = Depends(get_session),
+):
+    """Group-by over measurements at `grain` day (default), hour or raw:
+    `agg=coverage|count|stats|exceedance`."""
+    version = await CatalogVersionService(session).get()
+    key = canonical_key("measurements", query, version)
+    service = MeasurementQueryService(session)
     return await respond(request, key, lambda: service.query(query, version))
