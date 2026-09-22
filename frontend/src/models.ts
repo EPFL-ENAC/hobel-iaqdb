@@ -166,6 +166,10 @@ export interface Dataset extends DBModel {
   description?: string;
   folder: FileNode;
   variables?: Variable[];
+  // measurement load state, set by the backend after publish
+  summary_status?: 'pending' | 'ready' | 'failed';
+  summary_error?: string;
+  load_report?: Record<string, unknown>;
 }
 
 export interface FileNode {
@@ -183,14 +187,122 @@ export interface UploadResult {
   files: FileNode[];
 }
 
-export interface GroupByCount {
-    value: string | null;
-    count: number;
+// ---- Explore charts API (/stats/*), mirrors backend api/models/explore.py
+
+export type ExploreEntity = 'studies' | 'buildings' | 'spaces' | 'datasets';
+export type ExploreGrain = 'day' | 'hour' | 'raw';
+export type ExploreSource = 'metadata' | 'measurements' | 'relationships';
+export type ExploreAgg =
+  | 'count'
+  | 'availability'
+  | 'coverage'
+  | 'stats'
+  | 'exceedance'
+  | 'pairs'
+  | 'matrix';
+
+export interface ExploreDimension {
+  key: string;
+  label: string;
+  entity: 'study' | 'building' | 'space' | 'dataset' | 'parameter' | 'time';
+  filter_path: string | null;
+  drill_to: string | null;
+  kind: 'category' | 'time';
 }
 
-export interface GroupByResult {
-    field: string;
-    counts: GroupByCount[];
+export interface ExploreBenchmark {
+  id: number;
+  parameter: string;
+  source: string;
+  averaging: 'hour' | 'day';
+  value: number;
+  unit: string;
+  note?: string;
+}
+
+export interface ExploreParameter {
+  slug: string;
+  label: string;
+  reference: string;
+  unit: string;
+  benchmarks: ExploreBenchmark[];
+}
+
+export interface ExploreSchema {
+  dimensions: ExploreDimension[];
+  parameters: ExploreParameter[];
+  metrics: string[];
+  version: number;
+}
+
+/** Same dialect as /catalog/*, anchored on the study. */
+export interface ExploreFilter {
+  [key: string]: unknown;
+  $building?: Record<string, unknown>;
+  $space?: Record<string, unknown>;
+  $dataset?: Record<string, unknown>;
+}
+
+export interface ExploreParams {
+  filter?: ExploreFilter;
+  from?: string;
+  to?: string;
+  parameters?: string[];
+  by?: string[];
+  agg?: ExploreAgg;
+  grain?: ExploreGrain;
+  qualifier?: string[];
+  threshold?: number;
+  entity?: ExploreEntity;
+  fields?: string[];
+  x?: string;
+  y?: string;
+  method?: 'pearson' | 'spearman';
+}
+
+export interface ExploreStats {
+  mean: number;
+  sd?: number;
+  min: number;
+  p05: number;
+  p25: number;
+  p50: number;
+  p75: number;
+  p95: number;
+  max: number;
+}
+
+export interface ExploreBucket {
+  key: (string | null)[];
+  n: number;
+  n_records?: number;
+  stats?: ExploreStats;
+  exceedance?: { threshold: number; n_above: number; share: number };
+  coverage?: { n_datasets: number; n_missing: number; first_at?: string; last_at?: string };
+  availability?: { present: number; total: number };
+  fit?: { slope?: number; intercept?: number; r2?: number; r?: number };
+  points?: [number, number][];
+  sampled?: boolean;
+}
+
+export interface ExploreMeta {
+  source: ExploreSource;
+  agg: ExploreAgg;
+  grain: ExploreGrain | 'space' | 'entity';
+  dimensions: string[];
+  parameters: string[];
+  unit?: string;
+  from?: string;
+  to?: string;
+  n: number;
+  n_records?: number;
+  version: number;
+  available_parameters?: string[];
+}
+
+export interface ExploreResult {
+  meta: ExploreMeta;
+  buckets: ExploreBucket[];
 }
 
 export interface Contribution extends DBModel {
