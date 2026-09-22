@@ -19,7 +19,7 @@ from api.models.catalog import (
     StudyDraft,
     Variable,
 )
-from api.services.s3 import s3_client
+from api.services.s3 import copy_objects, s3_client
 from enacit4r_sql.utils.query import QueryBuilder
 from fastapi import HTTPException
 from sqlalchemy import func
@@ -200,11 +200,9 @@ class StudyService:
             for file in await s3_client.list_files(draft_folder)
             if not file.endswith("/study.json")
         ]
-        if study_files:
-            # Copy the study files to the pub folder
-            for file in study_files:
-                new_file = file.replace("/draft/", "/pub/")
-                await s3_client.copy_file(file, new_file)
+        await copy_objects(
+            [(file, file.replace("/draft/", "/pub/")) for file in study_files]
+        )
 
         # Contributors
         study_dict["contributors"] = []
