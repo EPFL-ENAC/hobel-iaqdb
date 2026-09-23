@@ -35,5 +35,7 @@ async def test_schema_etag_and_304(client):
 
 async def test_frequencies_routes_are_gone(client):
     for entity in ("studies", "buildings", "spaces"):
-        response = await client.get(f"/stats/frequencies/{entity}", params={"by": "type"})
+        response = await client.get(
+            f"/stats/frequencies/{entity}", params={"by": "type"}
+        )
         assert response.status_code == 404

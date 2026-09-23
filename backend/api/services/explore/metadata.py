@@ -17,14 +17,30 @@ from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 ROOTS = {"studies": Study, "buildings": Building, "spaces": Space, "datasets": Dataset}
-ENTITY_OF = {"studies": "study", "buildings": "building", "spaces": "space", "datasets": "dataset"}
+ENTITY_OF = {
+    "studies": "study",
+    "buildings": "building",
+    "spaces": "space",
+    "datasets": "dataset",
+}
 # columns a client never asks the availability of
-IDENTITY_FIELDS = {"id", "identifier", "study_id", "building_id", "dataset_id", "folder"}
+IDENTITY_FIELDS = {
+    "id",
+    "identifier",
+    "study_id",
+    "building_id",
+    "dataset_id",
+    "folder",
+}
 
 
 def metadata_frame(entity: str) -> Frame:
     """Join paths from each root entity to the others (study is the hub)."""
-    parameter = (DatasetParameter, col(DatasetParameter.dataset_id) == col(Dataset.id), ("dataset",))
+    parameter = (
+        DatasetParameter,
+        col(DatasetParameter.dataset_id) == col(Dataset.id),
+        ("dataset",),
+    )
     if entity == "studies":
         available = {
             "building": (Building, col(Building.study_id) == col(Study.id), ()),
@@ -51,7 +67,11 @@ def metadata_frame(entity: str) -> Frame:
             "study": (Study, col(Study.id) == col(Dataset.study_id), ()),
             "building": (Building, col(Building.study_id) == col(Dataset.study_id), ()),
             "space": (Space, col(Space.study_id) == col(Dataset.study_id), ()),
-            "parameter": (DatasetParameter, col(DatasetParameter.dataset_id) == col(Dataset.id), ()),
+            "parameter": (
+                DatasetParameter,
+                col(DatasetParameter.dataset_id) == col(Dataset.id),
+                (),
+            ),
         }
     frame = Frame(ENTITY_OF[entity], ROOTS[entity], available)
     frame.parameter = None
@@ -71,7 +91,9 @@ class MetadataService:
             raise HTTPException(status_code=422, detail="entity is required")
         agg = query.agg or "count"
         if agg not in ("count", "availability"):
-            raise HTTPException(status_code=422, detail="agg must be count or availability")
+            raise HTTPException(
+                status_code=422, detail="agg must be count or availability"
+            )
         filter = parse_filter(query.filter)
         parameters = await check_parameters(self.session, query.parameters)
         if agg == "availability":
@@ -125,7 +147,10 @@ class MetadataService:
         frame = metadata_frame(query.entity)
         statement = select(
             func.count(func.distinct(root.id)),
-            *[func.count(func.distinct(root.id)).filter(getattr(root, f).isnot(None)) for f in fields],
+            *[
+                func.count(func.distinct(root.id)).filter(getattr(root, f).isnot(None))
+                for f in fields
+            ],
         )
         statement = apply_joined_filter(frame, statement, filter)
         if query.parameters:

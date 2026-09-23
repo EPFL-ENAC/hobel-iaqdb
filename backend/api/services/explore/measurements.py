@@ -73,7 +73,9 @@ class MeasurementQueryService:
         statement = statement.select_from(frame.select_from).group_by(*keys)
         rows = (await self.session.exec(statement)).all()
         # without keys an empty scan still yields one row of count 0
-        return [self._bucket(agg, query, len(keys), row) for row in rows if row[len(keys)]]
+        return [
+            self._bucket(agg, query, len(keys), row) for row in rows if row[len(keys)]
+        ]
 
     def _measures(self, agg: str, fact: Fact, query: ExploreQuery) -> list:
         value = fact.value
@@ -81,7 +83,9 @@ class MeasurementQueryService:
             return []
         if agg == "exceedance":
             if query.threshold is None:
-                raise HTTPException(status_code=422, detail="exceedance needs threshold")
+                raise HTTPException(
+                    status_code=422, detail="exceedance needs threshold"
+                )
             return [func.count().filter(value > query.threshold)]
         # stats: at day/hour these are statistics of bucket means, weighted
         # mean excepted; at raw, of the readings themselves
@@ -122,7 +126,9 @@ class MeasurementQueryService:
             )
         return bucket
 
-    async def _coverage(self, query, filter, specs: list[DimensionSpec]) -> list[Bucket]:
+    async def _coverage(
+        self, query, filter, specs: list[DimensionSpec]
+    ) -> list[Bucket]:
         """From `dataset_parameter` only, no fact scan. Datasets are
         deduplicated per key before summing, since a study's buildings and
         spaces fan out the join."""
@@ -184,7 +190,11 @@ def coverage_frame() -> Frame:
     available = {
         "dataset": (Dataset, col(Dataset.id) == col(dp.dataset_id), ()),
         "study": (Study, col(Study.id) == col(Dataset.study_id), ("dataset",)),
-        "building": (Building, col(Building.study_id) == col(Dataset.study_id), ("dataset",)),
+        "building": (
+            Building,
+            col(Building.study_id) == col(Dataset.study_id),
+            ("dataset",),
+        ),
         "space": (Space, col(Space.study_id) == col(Dataset.study_id), ("dataset",)),
     }
     return Frame("parameter", dp, available, time=None, parameter=col(dp.parameter))

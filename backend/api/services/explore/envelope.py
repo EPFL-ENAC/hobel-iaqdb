@@ -50,7 +50,9 @@ def number(value) -> float | None:
     return None if value is None else float(value)
 
 
-async def check_parameters(session: AsyncSession, slugs: list[str]) -> dict[str, Parameter]:
+async def check_parameters(
+    session: AsyncSession, slugs: list[str]
+) -> dict[str, Parameter]:
     """Known parameters by slug; an unknown slug is a 422 listing the valid ones."""
     known = {p.slug: p for p in (await session.exec(select(Parameter))).all()}
     unknown = [s for s in slugs if s not in known]
@@ -99,4 +101,3 @@ async def finish(
     if not buckets:
         meta.available_parameters = await available_parameters(session, query, filter)
     return ExploreResult(meta=meta, buckets=buckets)
-

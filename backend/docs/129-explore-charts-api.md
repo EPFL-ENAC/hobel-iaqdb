@@ -1,16 +1,17 @@
 ---
-status: draft
+status: accepted
 issue: 129
-last_updated: 2026-09-22
+last_updated: 2026-09-23
 summary: Three query-shaped stats endpoints over raw measurements in a TimescaleDB hypertable (continuous aggregates as a derived cache), one response envelope, and a click model where every drill-down is a filter refinement of the same request. Implemented on branch feat/129; §15 lists where the code refined the design.
 ---
 
 # Explore charts API
 
-Design note for issue #129. Flip `status` to `accepted` when the issue is
-closed; chart sub-issues #109–#126 implement against this contract.
-All four tiers of §13 are implemented; §15 records what the code does
-differently from the first draft and why.
+Design note for issue #129. Chart sub-issues #109–#126 implement against
+this contract. All four tiers of §13 are implemented on `feat/129`
+(33 backend tests, lint and frontend typecheck green on 2026-09-23); flip
+`status` to `delivered` when the branch is merged. §15 records what the
+code does differently from the first draft and why.
 
 ## 1. Facts this design rests on
 
@@ -441,7 +442,7 @@ also carry `filter=F` unless stated.
 | 5 | Datasets by climate zone | `metadata?entity=datasets&by=climate_zone` | drill → `country`. Zero-count zones are rendered by merging with the known Köppen domain on the client (presentation, no computation) |
 | 6 | Records by month | `measurements?agg=count&by=month_of_year,parameter&grain=day&from=T&to=T` | tooltip shows the parameter stack; no drill |
 | 7 | Measurement period | `measurements?agg=coverage&by=dataset` → `first_at`/`last_at` Gantt | `navigate` → study page |
-| 8 | Metadata availability | `metadata?entity=buildings&agg=availability` and `entity=spaces` | `navigate` → catalog list filtered to missing values (needs a null criterion in the QueryBuilder; verify enacit4r-sql supports it before promising the click) |
+| 8 | Metadata availability | `metadata?entity=buildings&agg=availability` and `entity=spaces` | `navigate` → catalog list filtered to missing values with `{"<field>": null}` (enacit4r-sql renders it as `IS NULL`, see §14) |
 | 9 | Descriptive statistics | `measurements?agg=stats&parameters=P&by=<context>&grain=day&from=T&to=T` box plot | drill along the context's `drill_to` |
 | 10 | Benchmark comparison | same as 9 with `by=year`; benchmark line from `/stats/schema` | toggles benchmark; `agg=exceedance&threshold=<benchmark.value>` for the share above |
 | 11 | Trends | `measurements?agg=stats&parameters=P&by=month&from=Y-01-01&to=Y+1-01-01` → line (p50, p25–p75 band) and table from the same buckets | drill → `day` inside the clicked month |
@@ -681,8 +682,12 @@ against a `timescale/timescaledb:latest-pg15` service.
   fixes its shape and that unknown slugs fail loudly.
 - Time-integrated and statistical `data_type` handling above is the minimal
   explicit rule; #127 may refine it, behind the same tables.
-- The null-criterion needed for chart 8's click has to be confirmed in
-  enacit4r-sql `QueryBuilder` before the sub-issue promises it.
+- The null criterion needed for chart 8's click is supported by the
+  enacit4r-sql `QueryBuilder` (checked 2026-09-23 against the installed
+  version): `{"field": null}` renders `field IS NULL`, a list containing
+  `null` renders `field IS NULL OR field IN (...)`, and
+  `{"field": {"$exists": false}}` also matches JSON `'null'` text. The
+  sub-issue can promise the click.
 - The production database host has to allow the `timescaledb` extension and
   provide ~140 GB of temporary disk for the one-time seed. To confirm with
   the hosting team before tier 1 starts.

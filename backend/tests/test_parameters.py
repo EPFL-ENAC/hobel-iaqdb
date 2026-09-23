@@ -23,7 +23,9 @@ def test_malformed_dictionary_fails(tmp_path: Path):
     )
     with pytest.raises(ValueError, match="canonical unit"):
         read_parameters(bad)
-    bad.write_text("slug,label,reference,unit,conversions\nco2,CO2,carbon dioxide,,{}\n")
+    bad.write_text(
+        "slug,label,reference,unit,conversions\nco2,CO2,carbon dioxide,,{}\n"
+    )
     with pytest.raises(ValueError, match="missing"):
         read_parameters(bad)
 

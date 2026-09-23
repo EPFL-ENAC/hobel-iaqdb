@@ -172,7 +172,10 @@ class MeasurementReader:
 
     def _register(self, parameters: list[Parameter], maps: CatalogMaps) -> None:
         con = self.con
-        con.execute("CREATE TABLE dictionary (slug VARCHAR, unit VARCHAR, factor DOUBLE, off DOUBLE)")
+        con.execute(
+            "CREATE TABLE dictionary"
+            " (slug VARCHAR, unit VARCHAR, factor DOUBLE, off DOUBLE)"
+        )
         con.executemany(
             "INSERT INTO dictionary VALUES (?, ?, ?, ?)",
             [
@@ -185,7 +188,9 @@ class MeasurementReader:
         con.executemany(
             "INSERT INTO buildings VALUES (?, ?)", list(maps.buildings.items())
         )
-        con.execute("CREATE TABLE spaces (building VARCHAR, identifier VARCHAR, id INTEGER)")
+        con.execute(
+            "CREATE TABLE spaces (building VARCHAR, identifier VARCHAR, id INTEGER)"
+        )
         con.executemany(
             "INSERT INTO spaces VALUES (?, ?, ?)",
             [(b, s, i) for (b, s), i in maps.spaces.items()],

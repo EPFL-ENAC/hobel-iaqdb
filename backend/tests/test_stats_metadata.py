@@ -54,7 +54,9 @@ async def test_count_by_dimension(client, session, clean_db, tmp_path):
     ]
 
 
-async def test_count_datasets_with_parameter_and_filter(client, session, clean_db, tmp_path):
+async def test_count_datasets_with_parameter_and_filter(
+    client, session, clean_db, tmp_path
+):
     await loaded_fixture(session, clean_db, tmp_path)
     response = await client.get(
         "/stats/metadata",
@@ -89,7 +91,9 @@ async def test_count_datasets_with_parameter_and_filter(client, session, clean_d
     assert body["meta"]["available_parameters"] == []
 
 
-async def test_empty_state_lists_available_parameters(client, session, clean_db, tmp_path):
+async def test_empty_state_lists_available_parameters(
+    client, session, clean_db, tmp_path
+):
     await loaded_fixture(session, clean_db, tmp_path)
     response = await client.get(
         "/stats/metadata",
@@ -112,11 +116,25 @@ async def test_availability(client, session, clean_db, tmp_path):
     )
     assert response.status_code == 200
     assert buckets_of(response.json()) == {
-        ("climate_zone",): {"key": ["climate_zone"], "n": 2, "availability": {"present": 2, "total": 2}},
-        ("construction_year",): {"key": ["construction_year"], "n": 1, "availability": {"present": 1, "total": 2}},
-        ("timezone",): {"key": ["timezone"], "n": 0, "availability": {"present": 0, "total": 2}},
+        ("climate_zone",): {
+            "key": ["climate_zone"],
+            "n": 2,
+            "availability": {"present": 2, "total": 2},
+        },
+        ("construction_year",): {
+            "key": ["construction_year"],
+            "n": 1,
+            "availability": {"present": 1, "total": 2},
+        },
+        ("timezone",): {
+            "key": ["timezone"],
+            "n": 0,
+            "availability": {"present": 0, "total": 2},
+        },
     }
-    response = await client.get("/stats/metadata", params={"entity": "spaces", "agg": "availability"})
+    response = await client.get(
+        "/stats/metadata", params={"entity": "spaces", "agg": "availability"}
+    )
     keys = {b["key"][0] for b in response.json()["buckets"]}
     assert "occupancy_density" in keys and "id" not in keys and "identifier" not in keys
 
@@ -130,8 +148,14 @@ async def test_validation_errors(client, session, clean_db, tmp_path):
         ({"entity": "buildings", "parameters": "xyz"}, "unknown parameters"),
         ({"entity": "buildings", "by": "a,b,c"}, "at most 2"),
         ({"entity": "buildings", "filter": "{"}, "not JSON"),
-        ({"entity": "buildings", "filter": json.dumps({"$building": {"nope": 1}})}, "unknown filter field"),
-        ({"entity": "buildings", "agg": "availability", "fields": "nope"}, "unknown fields"),
+        (
+            {"entity": "buildings", "filter": json.dumps({"$building": {"nope": 1}})},
+            "unknown filter field",
+        ),
+        (
+            {"entity": "buildings", "agg": "availability", "fields": "nope"},
+            "unknown fields",
+        ),
     ]
     for params, message in cases:
         response = await client.get("/stats/metadata", params=params)
@@ -148,9 +172,11 @@ async def test_cache_etag_and_version(client, session, clean_db, tmp_path):
         "/stats/metadata", params=params, headers={"If-None-Match": etag}
     )
     assert cached.status_code == 304
-    # the same query with keys in another order and a canonical-equivalent filter hits the same entry
+    # the same query with keys in another order and a canonical-equivalent
+    # filter hits the same entry
     same = await client.get(
-        "/stats/metadata", params={"by": "country", "entity": "buildings", "filter": "{}"}
+        "/stats/metadata",
+        params={"by": "country", "entity": "buildings", "filter": "{}"},
     )
     assert same.headers["etag"] == etag
     # a data change bumps the version and the ETag

@@ -4,7 +4,16 @@ They live on their own MetaData so Alembic never tries to create them: the
 migration owns them (they are TimescaleDB materialized views)."""
 
 from api.models.measurement import measurement
-from sqlalchemy import TIMESTAMP, BigInteger, Column, Float, Integer, MetaData, String, Table
+from sqlalchemy import (
+    TIMESTAMP,
+    BigInteger,
+    Column,
+    Float,
+    Integer,
+    MetaData,
+    String,
+    Table,
+)
 
 aggregates_metadata = MetaData()
 

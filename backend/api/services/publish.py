@@ -54,7 +54,9 @@ async def load_published_study(engine: AsyncEngine, study_id: int) -> None:
             errors.append(f"{dataset.name}: {e}")
     await service.refresh_all()
     if errors:
-        raise RuntimeError(f"study {study_id}: {len(errors)} dataset(s) failed: {errors}")
+        raise RuntimeError(
+            f"study {study_id}: {len(errors)} dataset(s) failed: {errors}"
+        )
 
 
 async def refresh_after_delete(engine: AsyncEngine) -> None:

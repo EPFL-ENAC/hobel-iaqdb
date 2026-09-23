@@ -37,7 +37,9 @@ class ExploreCache:
         self.results: TTLCache = TTLCache(maxsize=maxsize, ttl=ttl)
         self.locks: dict[str, asyncio.Lock] = {}
 
-    async def get(self, key: str, compute: Callable[[], Awaitable[BaseModel]]) -> BaseModel:
+    async def get(
+        self, key: str, compute: Callable[[], Awaitable[BaseModel]]
+    ) -> BaseModel:
         if key in self.results:
             return self.results[key]
         lock = self.locks.setdefault(key, asyncio.Lock())

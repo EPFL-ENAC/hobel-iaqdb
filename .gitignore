@@ -4,3 +4,4 @@ node_modules
 *.bak
 notes.md
 tmp
+.DS_Store

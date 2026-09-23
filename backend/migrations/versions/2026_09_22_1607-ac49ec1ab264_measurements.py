@@ -18,9 +18,7 @@ down_revision: Union[str, None] = "7cb4d4b01470"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
-AGGREGATE_KEYS = (
-    "dataset_id, study_id, building_id, space_id, instrument_id, parameter"
-)
+AGGREGATE_KEYS = "dataset_id, study_id, building_id, space_id, instrument_id, parameter"
 
 
 def upgrade() -> None:
@@ -84,9 +82,7 @@ def upgrade() -> None:
         sa.Column("end_ts", sa.TIMESTAMP(), nullable=True),
         sa.Column("value", sa.Float(), nullable=False),
         sa.Column("value_qualifier", sa.String(), nullable=True),
-        sa.ForeignKeyConstraint(
-            ["building_id"], ["building.id"], ondelete="CASCADE"
-        ),
+        sa.ForeignKeyConstraint(["building_id"], ["building.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(["dataset_id"], ["dataset.id"], ondelete="CASCADE"),
         sa.ForeignKeyConstraint(
             ["instrument_id"], ["instrument.id"], ondelete="CASCADE"

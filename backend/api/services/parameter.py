@@ -95,9 +95,7 @@ class ParameterService:
         Returns the number of parameters."""
         parameters = read_parameters()
         benchmarks = read_benchmarks(parameters={p.slug: p for p in parameters})
-        statement = insert(Parameter).values(
-            [p.model_dump() for p in parameters]
-        )
+        statement = insert(Parameter).values([p.model_dump() for p in parameters])
         statement = statement.on_conflict_do_update(
             index_elements=[Parameter.slug],
             set_={

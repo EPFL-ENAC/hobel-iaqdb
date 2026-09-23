@@ -40,7 +40,9 @@ class RelationshipService:
         if agg == "matrix":
             slugs = query.parameters
             if len(slugs) < 2:
-                raise HTTPException(status_code=422, detail="matrix needs 2+ parameters")
+                raise HTTPException(
+                    status_code=422, detail="matrix needs 2+ parameters"
+                )
         else:
             if not query.x or not query.y:
                 raise HTTPException(status_code=422, detail="pairs needs x and y")
@@ -76,7 +78,11 @@ class RelationshipService:
         """Self-join: x readings as `a`, y readings as `b`, matched on
         dataset, space and time (and instrument at raw)."""
         a, b = Fact(grain, "a"), Fact(grain, "b")
-        on = [a.c.dataset_id == b.c.dataset_id, a.c.space_id == b.c.space_id, a.time == b.time]
+        on = [
+            a.c.dataset_id == b.c.dataset_id,
+            a.c.space_id == b.c.space_id,
+            a.time == b.time,
+        ]
         if grain == "raw":
             on.append(a.c.instrument_id == b.c.instrument_id)
         frame = a.frame()
@@ -117,7 +123,9 @@ class RelationshipService:
         step = max(1, math.ceil(total / SAMPLE))
         order = [a.c.dataset_id, a.c.space_id, a.time]
         numbered = select(
-            *keys, x.label("x"), y.label("y"),
+            *keys,
+            x.label("x"),
+            y.label("y"),
             func.row_number().over(order_by=order).label("rn"),
         )
         numbered = self._pair_where(numbered, a, b, query, filter)
@@ -151,7 +159,9 @@ class RelationshipService:
         )
         inner = fact.where(inner, query, filter, [query.x])
         inner = inner.where(fact.c.space_id.isnot(None))
-        sub = inner.group_by(fact.c.dataset_id, fact.c.space_id, fact.c.building_id).subquery()
+        sub = inner.group_by(
+            fact.c.dataset_id, fact.c.space_id, fact.c.building_id
+        ).subquery()
         metric = getattr(METRIC_MODELS[entity], attr)
         joined = sub.join(Space, col(Space.id) == sub.c.space_id).outerjoin(
             Building, col(Building.id) == sub.c.building_id
@@ -165,10 +175,23 @@ class RelationshipService:
                 )
             keys.append(getattr(METRIC_MODELS[spec.entity], attr_of(spec)))
         y = col(metric)
-        base = select(*keys, func.count(), func.regr_slope(y, sub.c.x),
-                      func.regr_intercept(y, sub.c.x), func.regr_r2(y, sub.c.x),
-                      func.corr(y, sub.c.x)).select_from(joined).where(y.isnot(None))
-        rows = [r for r in (await self.session.exec(base.group_by(*keys))).all() if r[len(keys)]]
+        base = (
+            select(
+                *keys,
+                func.count(),
+                func.regr_slope(y, sub.c.x),
+                func.regr_intercept(y, sub.c.x),
+                func.regr_r2(y, sub.c.x),
+                func.corr(y, sub.c.x),
+            )
+            .select_from(joined)
+            .where(y.isnot(None))
+        )
+        rows = [
+            r
+            for r in (await self.session.exec(base.group_by(*keys))).all()
+            if r[len(keys)]
+        ]
         width = len(keys)
         buckets = {
             tuple(key_text(v) for v in row[:width]): Bucket(
@@ -186,7 +209,9 @@ class RelationshipService:
             for row in rows
         }
         points = select(*keys, sub.c.x, y).select_from(joined).where(y.isnot(None))
-        for row in (await self.session.exec(points.order_by(sub.c.dataset_id, sub.c.space_id))).all():
+        for row in (
+            await self.session.exec(points.order_by(sub.c.dataset_id, sub.c.space_id))
+        ).all():
             key = tuple(key_text(v) for v in row[:width])
             buckets[key].points.append((float(row[width]), float(row[width + 1])))
         return list(buckets.values())
@@ -203,7 +228,9 @@ class RelationshipService:
         ]
         pivot = select(fact.c.dataset_id, fact.c.space_id, fact.time, *columns)
         pivot = fact.where(pivot, query, filter, slugs)
-        pivot = pivot.group_by(fact.c.dataset_id, fact.c.space_id, fact.time).cte("pivot")
+        pivot = pivot.group_by(fact.c.dataset_id, fact.c.space_id, fact.time).cte(
+            "pivot"
+        )
         source = pivot
         if query.method == "spearman":
             source = self._ranked(pivot, len(slugs))
@@ -229,6 +256,11 @@ class RelationshipService:
                         fit=Fit(slope=None, intercept=None, r2=None, r=r),
                     )
                 )
+        # a cell with no co-timed rows stays in a partial matrix (the grid
+        # must be complete), but a matrix with no data at all is the empty
+        # state of D3: no buckets, `available_parameters` filled
+        if all(bucket.n == 0 for bucket in buckets):
+            return []
         return buckets
 
     def _ranked(self, pivot, width: int):

@@ -4,14 +4,7 @@ from api.models.measurement import DatasetParameter
 from api.services.measurement import MeasurementService
 from sqlalchemy import text
 from sqlmodel import select
-from tests.fixtures import (
-    CSV_COLUMNS,
-    D1_REPORT,
-    daily,
-    hourly,
-    make_fixture,
-    mean,
-)
+from tests.fixtures import CSV_COLUMNS, D1_REPORT, daily, hourly, make_fixture, mean
 
 
 async def load_all(session, engine, tmp_path):
@@ -134,7 +127,11 @@ async def test_continuous_aggregates_match_raw(session, clean_db, tmp_path):
 async def test_statistical_rows_are_not_aggregated(session, clean_db, tmp_path):
     fx, reports = await load_all(session, clean_db, tmp_path)
     assert reports["D1"].statistical == 1
-    n = (await session.exec(text("SELECT count(*) FROM measurement WHERE data_type = 'statistical'"))).scalar()
+    n = (
+        await session.exec(
+            text("SELECT count(*) FROM measurement WHERE data_type = 'statistical'")
+        )
+    ).scalar()
     assert n == 0
 
 
@@ -145,20 +142,24 @@ async def test_reload_is_idempotent_and_delete_cascades(session, clean_db, tmp_p
     await service.load(fx.datasets["D1"], fx.files["D1"])
     after = (await session.exec(text("SELECT count(*) FROM measurement"))).scalar()
     assert before == after
-    hours_before = (await session.exec(text("SELECT count(*) FROM measurement_hour"))).scalar()
+    hours_before = (
+        await session.exec(text("SELECT count(*) FROM measurement_hour"))
+    ).scalar()
     dataset = await session.get(Dataset, fx.datasets["D2"])
     await session.delete(dataset)
     await session.commit()
     await service.refresh_all()
     left = (
-        await session.exec(
-            text("SELECT count(DISTINCT dataset_id) FROM measurement")
-        )
+        await session.exec(text("SELECT count(DISTINCT dataset_id) FROM measurement"))
     ).scalar()
     assert left == 1
-    hours_after = (await session.exec(text("SELECT count(*) FROM measurement_hour"))).scalar()
+    hours_after = (
+        await session.exec(text("SELECT count(*) FROM measurement_hour"))
+    ).scalar()
     assert hours_after == hours_before - len(hourly(fx.series[("pm2_5", "S3")]))
-    summaries = (await session.exec(text("SELECT count(*) FROM dataset_parameter"))).scalar()
+    summaries = (
+        await session.exec(text("SELECT count(*) FROM dataset_parameter"))
+    ).scalar()
     assert summaries == 2
 
 
@@ -190,5 +191,11 @@ async def test_compression_and_empty_file(session, clean_db, tmp_path):
     await session.refresh(dataset)
     assert dataset.summary_status == "failed"
     assert dataset.summary_error == "no row loaded"
-    n = (await session.exec(text("SELECT count(*) FROM measurement WHERE dataset_id = :id").bindparams(id=dataset.id))).scalar()
+    n = (
+        await session.exec(
+            text("SELECT count(*) FROM measurement WHERE dataset_id = :id").bindparams(
+                id=dataset.id
+            )
+        )
+    ).scalar()
     assert n == 0

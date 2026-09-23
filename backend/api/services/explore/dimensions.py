@@ -86,14 +86,24 @@ class DimensionSpec:
 
 def _category(key, label, entity, attr, filter_path, drill_to) -> DimensionSpec:
     return DimensionSpec(
-        key, label, entity, filter_path, drill_to, "category",
+        key,
+        label,
+        entity,
+        filter_path,
+        drill_to,
+        "category",
         lambda f: getattr(f.use(entity), attr),
     )
 
 
 def _time(key, label, trunc, drill_to) -> DimensionSpec:
     return DimensionSpec(
-        key, label, "time", "from", drill_to, "time",
+        key,
+        label,
+        "time",
+        "from",
+        drill_to,
+        "time",
         lambda f: func.date_trunc(trunc, f.time_column()),
     )
 
@@ -103,36 +113,74 @@ DIMENSIONS: dict[str, DimensionSpec] = {
     for d in (
         _category("study", "Study", "study", "identifier", "identifier", "dataset"),
         _category("dataset", "Dataset", "dataset", "id", "$dataset.id", None),
-        _category("country", "Country", "building", "country", "$building.country", "city"),
+        _category(
+            "country", "Country", "building", "country", "$building.country", "city"
+        ),
         _category("city", "City", "building", "city", "$building.city", "study"),
         _category(
-            "climate_zone", "Climate zone", "building", "climate_zone",
-            "$building.climate_zone", "country",
+            "climate_zone",
+            "Climate zone",
+            "building",
+            "climate_zone",
+            "$building.climate_zone",
+            "country",
         ),
-        _category("building_type", "Building type", "building", "type", "$building.type", "country"),
         _category(
-            "ventilation", "Mechanical ventilation", "building", "mechanical_ventilation",
-            "$building.mechanical_ventilation", "ventilation_type",
+            "building_type",
+            "Building type",
+            "building",
+            "type",
+            "$building.type",
+            "country",
         ),
         _category(
-            "ventilation_type", "Ventilation type", "space", "mechanical_ventilation_type",
-            "$space.mechanical_ventilation_type", "space_type",
+            "ventilation",
+            "Mechanical ventilation",
+            "building",
+            "mechanical_ventilation",
+            "$building.mechanical_ventilation",
+            "ventilation_type",
+        ),
+        _category(
+            "ventilation_type",
+            "Ventilation type",
+            "space",
+            "mechanical_ventilation_type",
+            "$space.mechanical_ventilation_type",
+            "space_type",
         ),
         _category("space_type", "Space type", "space", "type", "$space.type", None),
-        _category("occupancy", "Occupancy", "space", "occupancy", "$space.occupancy", None),
+        _category(
+            "occupancy", "Occupancy", "space", "occupancy", "$space.occupancy", None
+        ),
         DimensionSpec(
-            "parameter", "Parameter", "parameter", "parameters", None, "category",
+            "parameter",
+            "Parameter",
+            "parameter",
+            "parameters",
+            None,
+            "category",
             lambda f: f.parameter_column(),
         ),
         _time("year", "Year", "year", "month"),
         _time("month", "Month", "month", "day"),
         _time("day", "Day", "day", None),
         DimensionSpec(
-            "month_of_year", "Month of year", "time", None, None, "category",
+            "month_of_year",
+            "Month of year",
+            "time",
+            None,
+            None,
+            "category",
             lambda f: extract("month", f.time_column()),
         ),
         DimensionSpec(
-            "hour_of_day", "Hour of day", "time", None, None, "category",
+            "hour_of_day",
+            "Hour of day",
+            "time",
+            None,
+            None,
+            "category",
             lambda f: extract("hour", f.time_column()),
             grain="hour",
         ),
@@ -147,7 +195,10 @@ def resolve(keys: list[str], grain: str | None) -> list[DimensionSpec]:
         if spec is None:
             raise HTTPException(
                 status_code=422,
-                detail=f"unknown dimension '{key}', expected one of {sorted(DIMENSIONS)}",
+                detail=(
+                    f"unknown dimension '{key}',"
+                    f" expected one of {sorted(DIMENSIONS)}"
+                ),
             )
         if spec.grain and spec.grain != grain:
             raise HTTPException(

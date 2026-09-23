@@ -6,11 +6,7 @@ from api.models.catalog import Building, Dataset, Space, Study
 from api.models.explore import ExploreQuery
 from api.models.measurement import DatasetParameter
 from api.services.explore.dimensions import Frame
-from api.services.explore.filters import (
-    apply_criteria,
-    apply_fact_filter,
-    criteria_of,
-)
+from api.services.explore.filters import apply_criteria, apply_fact_filter, criteria_of
 from api.services.explore.tables import GRAIN_TABLES
 from fastapi import HTTPException
 from sqlalchemy import func
@@ -47,7 +43,9 @@ class Fact:
     def records(self):
         return func.sum(self.n) if self.n is not None else func.count()
 
-    def where(self, statement, query: ExploreQuery, filter: dict, parameters: list[str]):
+    def where(
+        self, statement, query: ExploreQuery, filter: dict, parameters: list[str]
+    ):
         if parameters:
             statement = statement.where(self.c.parameter.in_(parameters))
         if query.from_:

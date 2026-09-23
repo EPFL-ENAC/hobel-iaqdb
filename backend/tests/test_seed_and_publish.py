@@ -30,8 +30,12 @@ def seed_folder(tmp_path: Path, rows) -> Path:
             {
                 "name": "D1",
                 "description": "d1",
-                "folder": {"name": "D1", "path": "x", "is_file": False,
-                           "children": [{"name": "d1.csv", "path": "x/d1.csv"}]},
+                "folder": {
+                    "name": "D1",
+                    "path": "x",
+                    "is_file": False,
+                    "children": [{"name": "d1.csv", "path": "x/d1.csv"}],
+                },
             }
         ],
     )
@@ -65,7 +69,9 @@ def test_seed_check_reports_every_bin(tmp_path: Path):
     assert "unlinked space 1" in line
 
 
-async def test_publish_loads_from_s3_and_refreshes(session, clean_db, tmp_path, monkeypatch):
+async def test_publish_loads_from_s3_and_refreshes(
+    session, clean_db, tmp_path, monkeypatch
+):
     fx = await make_catalog(session)
     rows = d1_rows(fx)
     local = write_csv(tmp_path / "d1_long.csv", rows)
@@ -75,7 +81,10 @@ async def test_publish_loads_from_s3_and_refreshes(session, clean_db, tmp_path, 
         "path": "iaqdb/test/pub/study-a/files/D1",
         "is_file": False,
         "children": [
-            {"name": "d1_long.csv", "path": "iaqdb/test/pub/study-a/files/D1/d1_long.csv"},
+            {
+                "name": "d1_long.csv",
+                "path": "iaqdb/test/pub/study-a/files/D1/d1_long.csv",
+            },
             {"name": "raw.xlsx", "path": "iaqdb/test/pub/study-a/files/D1/raw.xlsx"},
         ],
     }
@@ -112,8 +121,14 @@ async def test_publish_loads_from_s3_and_refreshes(session, clean_db, tmp_path, 
 
 def test_csv_keys_unquote_and_filter():
     dataset = Dataset(
-        name="D", description="d",
-        folder={"children": [{"name": "a b.csv", "path": "p/a%20b.csv"}, {"name": "x.zip", "path": "p/x.zip"}]},
+        name="D",
+        description="d",
+        folder={
+            "children": [
+                {"name": "a b.csv", "path": "p/a%20b.csv"},
+                {"name": "x.zip", "path": "p/x.zip"},
+            ]
+        },
     )
     assert publish.csv_keys(dataset) == [("p/a b.csv", "a b.csv")]
     assert publish.csv_keys(Dataset(name="D", description="d", folder=None)) == []

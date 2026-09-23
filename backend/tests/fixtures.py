@@ -13,13 +13,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from api.models.catalog import (
-    Building,
-    Dataset,
-    Instrument,
-    Space,
-    Study,
-)
+from api.models.catalog import Building, Dataset, Instrument, Space, Study
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 START = datetime(2023, 3, 1, 0, 0)
@@ -128,7 +122,15 @@ def series_rows(
     while t < START + timedelta(days=DAYS):
         value = fn(t)
         rows.append(
-            Row(dataset, building, space, slug, str(value), unit, timestamp=t.isoformat())
+            Row(
+                dataset,
+                building,
+                space,
+                slug,
+                str(value),
+                unit,
+                timestamp=t.isoformat(),
+            )
         )
         expected.append((t, value))
         t += step
@@ -139,12 +141,22 @@ def d1_rows(fx: Fixture) -> list[Row]:
     rows = []
     for space in ("S1", "S2"):
         co2, exp = series_rows(
-            "D1", "B1", space, "co2", "ppm", timedelta(minutes=10),
+            "D1",
+            "B1",
+            space,
+            "co2",
+            "ppm",
+            timedelta(minutes=10),
             lambda t, s=space: co2_at(t, s),
         )
         fx.series[("co2", space)] = exp
         temp, exp = series_rows(
-            "D1", "B1", space, "air_temperature", "°C", timedelta(minutes=10),
+            "D1",
+            "B1",
+            space,
+            "air_temperature",
+            "°C",
+            timedelta(minutes=10),
             lambda t, s=space: temperature_at(t, s),
         )
         fx.series[("air_temperature", space)] = exp
@@ -165,9 +177,20 @@ def d1_rows(fx: Fixture) -> list[Row]:
         Row("D1", "B1", "S1", "co2", "1.5 K", "ppm", timestamp=ts),
         Row("D1", "B1", "S1", "co2", "520", "ppm", timestamp="NA"),
         Row("D1", "B1", "S1", "co2", "530", "ppm", timestamp="2023-03"),
-        Row("D1", "B1", "S1", "co2", "700", "ppm", data_type="statistical", statistic="p95"),
+        Row(
+            "D1",
+            "B1",
+            "S1",
+            "co2",
+            "700",
+            "ppm",
+            data_type="statistical",
+            statistic="p95",
+        ),
     ]
-    fx.series[("air_temperature", "S1")].append((START + timedelta(days=DAYS, hours=1), 21.5))
+    fx.series[("air_temperature", "S1")].append(
+        (START + timedelta(days=DAYS, hours=1), 21.5)
+    )
     fx.series[("co2", "S1")].append((START + timedelta(days=DAYS, hours=1), 500.0))
     fx.series[("co2", "S9")] = [(START + timedelta(days=DAYS, hours=1), 510.0)]
     return rows
@@ -195,9 +218,16 @@ def d2_rows(fx: Fixture) -> list[Row]:
     start = START + timedelta(days=DAYS)
     rows.append(
         Row(
-            "D2", "B2", "S3", "pm2_5", "0.012", "mg/m³",
-            start=start.isoformat(), end=(start + timedelta(days=1)).isoformat(),
-            data_type="time_integrated", instrument="I2",
+            "D2",
+            "B2",
+            "S3",
+            "pm2_5",
+            "0.012",
+            "mg/m³",
+            start=start.isoformat(),
+            end=(start + timedelta(days=1)).isoformat(),
+            data_type="time_integrated",
+            instrument="I2",
         )
     )
     fx.series[("pm2_5", "S3")].append((start, 12.0))
@@ -218,25 +248,55 @@ async def make_catalog(session: AsyncSession) -> Fixture:
     session.add(study)
     await session.commit()
     b1 = Building(
-        identifier="B1", country="CH", city="Zurich", type="office",
-        climate_zone="Cfb", mechanical_ventilation="yes", construction_year=1990,
-        altitude=400, study_id=study.id,
+        identifier="B1",
+        country="CH",
+        city="Zurich",
+        type="office",
+        climate_zone="Cfb",
+        mechanical_ventilation="yes",
+        construction_year=1990,
+        altitude=400,
+        study_id=study.id,
     )
     b2 = Building(
-        identifier="B2", country="DE", city="Berlin", type="school",
-        climate_zone="Dfb", mechanical_ventilation="no", study_id=study.id,
+        identifier="B2",
+        country="DE",
+        city="Berlin",
+        type="school",
+        climate_zone="Dfb",
+        mechanical_ventilation="no",
+        study_id=study.id,
     )
     session.add_all([b1, b2])
     await session.commit()
     spaces = [
-        Space(identifier="S1", type="office", mechanical_ventilation_type="mechanical",
-              occupancy="occupied", occupancy_density=0.1, floor_area=40.0,
-              study_id=study.id, building_id=b1.id),
-        Space(identifier="S2", type="meeting room", mechanical_ventilation_type="natural",
-              occupancy="occupied", occupancy_density=0.3, study_id=study.id,
-              building_id=b1.id),
-        Space(identifier="S3", type="classroom", mechanical_ventilation_type="natural",
-              occupancy="occupied", study_id=study.id, building_id=b2.id),
+        Space(
+            identifier="S1",
+            type="office",
+            mechanical_ventilation_type="mechanical",
+            occupancy="occupied",
+            occupancy_density=0.1,
+            floor_area=40.0,
+            study_id=study.id,
+            building_id=b1.id,
+        ),
+        Space(
+            identifier="S2",
+            type="meeting room",
+            mechanical_ventilation_type="natural",
+            occupancy="occupied",
+            occupancy_density=0.3,
+            study_id=study.id,
+            building_id=b1.id,
+        ),
+        Space(
+            identifier="S3",
+            type="classroom",
+            mechanical_ventilation_type="natural",
+            occupancy="occupied",
+            study_id=study.id,
+            building_id=b2.id,
+        ),
     ]
     session.add_all(spaces)
     session.add_all(
