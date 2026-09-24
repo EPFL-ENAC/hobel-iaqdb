@@ -35,6 +35,21 @@
             </q-card-section>
           </q-card>
         </div>
+        <div class="col-12 col-md-6">
+          <q-card flat bordered>
+            <q-card-section class="q-pb-none">
+              <div class="text-subtitle1 text-bold">
+                {{ t('plots.records_by_pollutant') }}
+              </div>
+              <div class="text-caption text-grey-7">
+                {{ t('plots.records_by_pollutant_hint') }}
+              </div>
+            </q-card-section>
+            <q-card-section>
+              <CoverageBarChart v-if="exploreStore.schema" :height="600" />
+            </q-card-section>
+          </q-card>
+        </div>
       </div>
     </div>
   </q-page>
@@ -42,6 +57,7 @@
 
 <script setup lang="ts">
 import MetadataBarChart from '@/components/plots/MetadataBarChart.vue';
+import CoverageBarChart from '@/components/plots/CoverageBarChart.vue';
 
 const { t } = useI18n();
 const exploreStore = useExploreStore();
