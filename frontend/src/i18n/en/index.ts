@@ -217,6 +217,9 @@ export default {
   },
   plots: {
     buildings_overview: 'Buildings overview',
+    error: 'Could not load the chart',
+    no_data: 'No data for these filters',
+    unknown: 'Unknown',
     building_type: 'Building Type',
     building_country: 'Building Country',
     building_ventilation: 'Building with Mechanical Ventilation',

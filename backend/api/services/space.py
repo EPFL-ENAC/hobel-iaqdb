@@ -1,15 +1,7 @@
 from api.db import AsyncSession
-from api.models.catalog import (
-    Building,
-    GroupByCount,
-    GroupByResult,
-    Space,
-    SpacesResult,
-    Study,
-)
+from api.models.catalog import Building, Space, SpacesResult, Study
 from enacit4r_sql.utils.query import QueryBuilder
 from fastapi import HTTPException
-from sqlalchemy import func
 from sqlalchemy.sql import text
 from sqlmodel import select
 
@@ -19,13 +11,6 @@ class SpaceQueryBuilder(QueryBuilder):
         query = self.build_count_query()
         query = self._apply_joins(query, filter)
         return query
-
-    def build_group_query_with_joins(self, filter, group_by_column):
-        query = self._apply_filter(
-            select(group_by_column, func.count(func.distinct(self.model.id)))
-        )
-        query = self._apply_joins(query, filter)
-        return query.group_by(group_by_column)
 
     def build_query_with_joins(self, total_count, filter):
         start, end, query = self.build_query(total_count)
@@ -90,26 +75,4 @@ class SpaceService:
 
         return SpacesResult(
             total=total_count, skip=start, limit=end - start + 1, data=spaces
-        )
-
-    async def count_group_by(self, filter: dict, group_by: str) -> dict:
-        """Count all spaces matching filter"""
-        builder = SpaceQueryBuilder(
-            Space, filter, [], [], {"$study": Study, "$building": Building}
-        )
-
-        # Do a query to satisfy total count
-        count_query = builder.build_group_query_with_joins(
-            filter, getattr(Space, group_by)
-        )
-        group_by_count_res = await self.session.exec(count_query)
-        group_by_counts = group_by_count_res.all()
-
-        # Convert to dict
-        return GroupByResult(
-            field=group_by,
-            counts=[
-                GroupByCount(value=str(item[0]) if item[0] else None, count=item[1])
-                for item in group_by_counts
-            ],
         )

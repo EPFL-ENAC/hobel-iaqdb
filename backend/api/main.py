@@ -1,7 +1,9 @@
+from contextlib import asynccontextmanager
 from logging import INFO, basicConfig
 
 from api.config import config
-from api.db import AsyncSession, get_session
+from api.db import AsyncSession, get_engine, get_session
+from api.services.parameter import ParameterService
 from api.views.catalog import router as catalog_router
 from api.views.contribute import router as contribute_router
 from api.views.files import router as files_router
@@ -14,7 +16,17 @@ from sqlalchemy.sql import text
 
 basicConfig(level=INFO)
 
-app = FastAPI(root_path=config.PATH_PREFIX)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # The parameter dictionary CSVs are the source of truth; mirror them at boot
+    async with AsyncSession(get_engine(), expire_on_commit=False) as session:
+        await ParameterService(session).sync()
+        await session.commit()
+    yield
+
+
+app = FastAPI(root_path=config.PATH_PREFIX, lifespan=lifespan)
 
 origins = ["*"]
 

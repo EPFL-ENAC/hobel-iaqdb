@@ -1,0 +1,7 @@
+parameter,source,averaging,value,unit,note
+pm2_5,WHO AQG 2021,day,15,µg/m³,24-hour mean
+pm10,WHO AQG 2021,day,45,µg/m³,24-hour mean
+no2,WHO AQG 2021,day,25,µg/m³,24-hour mean
+so2,WHO AQG 2021,day,40,µg/m³,24-hour mean
+o3,WHO AQG 2021,hour,100,µg/m³,8-hour mean
+co,WHO AQG 2021,day,3.49,ppm,24-hour mean of 4 mg/m³ converted at 25 °C and 1 atm

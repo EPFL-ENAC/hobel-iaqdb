@@ -17,6 +17,13 @@ re-run only uploads what changed: the MD5 of each file is stored with the S3
 object and cached locally (SEED_DATA/.seed-cache.json, keyed by size and
 mtime) so unchanged files are neither read nor uploaded again.
 
+After publishing, the processed CSVs are loaded into the `measurement`
+hypertable (MeasurementService), one dataset at a time, and every row that
+could not be loaded is reported per dataset. Publishing recreates the study,
+so measurements are always reloaded. The secondary indexes are dropped for
+the bulk load and rebuilt at the end, when chunks are compressed and the
+continuous aggregates refreshed once.
+
 Usage:
     python -m api.scripts.seed                    import all studies
     python -m api.scripts.seed <identifier>...    import only these studies
@@ -35,11 +42,15 @@ import time
 import traceback
 import urllib.parse
 import zipfile
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from api.config import config
-from api.models.catalog import DatasetDraft, StudyDraft
+from api.models.catalog import DatasetDraft, Study, StudyDraft
+from api.models.measurement import Parameter
+from api.services.catalog_version import CatalogVersionService
+from api.services.measurement import CatalogMaps, MeasurementReader, MeasurementService
+from api.services.parameter import ParameterService, read_parameters
 from api.services.s3 import s3_client
 from api.services.study import StudyService
 from api.services.study_draft import StudyDraftService
@@ -65,6 +76,15 @@ class SeedStudy:
     draft: StudyDraft
     dataset_files: list[tuple[DatasetDraft, list[Path]]]
     warnings: list[str]
+
+
+@dataclass
+class Outcome:
+    skipped: int = 0
+    # one line per dataset: where its rows went
+    reports: list[str] = field(default_factory=list)
+    # datasets whose load failed (the study counts as failed)
+    errors: list[str] = field(default_factory=list)
 
 
 def visible_entries(folder: Path) -> list[Path]:
@@ -364,9 +384,50 @@ async def delete_stale_draft_files(identifier: str, keep: set[str]) -> None:
             await s3_client.delete_file(key)
 
 
-async def publish(engine, seed: SeedStudy, cache: Md5Cache) -> int:
-    """Replace the study draft with SEED_DATA content, then publish it.
-    Returns the number of files skipped because unchanged in S3."""
+def draft_maps(draft: StudyDraft) -> CatalogMaps:
+    """Catalog maps of a draft, with positional ids: enough to count the
+    rows that would not link, without a database."""
+    maps = CatalogMaps()
+    for i, building in enumerate(draft.buildings, start=1):
+        maps.buildings[building.identifier] = i
+        for j, space in enumerate(building.spaces, start=1):
+            maps.spaces[(building.identifier, space.identifier)] = j
+    for i, instrument in enumerate(draft.instruments, start=1):
+        maps.instruments[instrument.identifier] = i
+    return maps
+
+
+def check_measurements(seed: SeedStudy, parameters: list[Parameter]) -> list[str]:
+    """Classify every dataset file against the dictionary and the draft."""
+    maps = draft_maps(seed.draft)
+    lines = []
+    for dataset, paths in seed.dataset_files:
+        reader = MeasurementReader(paths, parameters, maps)
+        try:
+            report = reader.classify().report
+        finally:
+            reader.close()
+        lines.append(f"{dataset.name}: {report.summary()}")
+    return lines
+
+
+async def load_measurements(engine, seed: SeedStudy, study: Study) -> Outcome:
+    """Load every dataset of the published study, bulk mode."""
+    service = MeasurementService(engine)
+    ids = {dataset.name: dataset.id for dataset in study.datasets}
+    outcome = Outcome()
+    for dataset, paths in seed.dataset_files:
+        try:
+            report = await service.load(ids[dataset.name], paths, bulk=True)
+            outcome.reports.append(f"{dataset.name}: {report.summary()}")
+        except Exception as e:
+            outcome.errors.append(f"{dataset.name}: {type(e).__name__}: {e}")
+    return outcome
+
+
+async def publish(engine, seed: SeedStudy, cache: Md5Cache) -> Outcome:
+    """Replace the study draft with SEED_DATA content, publish it and load
+    its measurements."""
     identifier = seed.draft.identifier
     await delete_stale_draft_files(
         identifier,
@@ -386,8 +447,10 @@ async def publish(engine, seed: SeedStudy, cache: Md5Cache) -> int:
 
     draft = await StudyDraftService().createOrUpdate(seed.draft)
     async with AsyncSession(engine, expire_on_commit=False) as session:
-        await StudyService(session).save(draft)
-    return skipped
+        study = await StudyService(session).save(draft)
+    outcome = await load_measurements(engine, seed, study)
+    outcome.skipped = skipped
+    return outcome
 
 
 def study_folders(identifiers: list[str]) -> list[Path]:
@@ -413,22 +476,22 @@ async def run(check_only: bool, identifiers: list[str]) -> list[tuple[str, str]]
 
     engine = create_async_engine(config.DB_URL)
     cache = Md5Cache(MD5_CACHE)
+    parameters = read_parameters()
+    if not check_only:
+        await begin_bulk(engine)
     failures = []
     folders = study_folders(identifiers)
     for i, folder in enumerate(folders, start=1):
         print(f"[{i}/{len(folders)}] {folder.name} ...", flush=True)
         try:
             seed = load_study(folder)
-            skipped = 0 if check_only else await publish(engine, seed, cache)
-            for warning in seed.warnings:
-                print(f"    WARNING: {warning}")
-            total_files = sum(len(f) for _, f in seed.dataset_files)
-            print(
-                f"    ok: {seed.draft.name} "
-                f"({len(seed.dataset_files)} dataset(s), {total_files} file(s)"
-                + (f", {skipped} already in S3" if skipped else "")
-                + ")"
-            )
+            if check_only:
+                outcome = Outcome(reports=check_measurements(seed, parameters))
+            else:
+                outcome = await publish(engine, seed, cache)
+            report_study(seed, outcome)
+            if outcome.errors:
+                raise RuntimeError(f"{len(outcome.errors)} dataset load(s) failed")
         except Exception as e:
             traceback.print_exc()
             failures.append((folder.name, f"{type(e).__name__}: {e}"))
@@ -436,9 +499,54 @@ async def run(check_only: bool, identifiers: list[str]) -> list[tuple[str, str]]
         finally:
             if not check_only:
                 cache.save()
+    if not check_only:
+        await end_bulk(engine)
     await engine.dispose()
     await s3_client.close()
     return failures
+
+
+def report_study(seed: SeedStudy, outcome: Outcome) -> None:
+    for warning in seed.warnings:
+        print(f"    WARNING: {warning}")
+    for line in outcome.reports:
+        print(f"    {line}")
+    for line in outcome.errors:
+        print(f"    FAILED {line}")
+    total_files = sum(len(f) for _, f in seed.dataset_files)
+    print(
+        f"    ok: {seed.draft.name} "
+        f"({len(seed.dataset_files)} dataset(s), {total_files} file(s)"
+        + (f", {outcome.skipped} already in S3" if outcome.skipped else "")
+        + ")"
+    )
+
+
+async def begin_bulk(engine) -> None:
+    """Mirror the dictionary, then drop the secondary indexes of the
+    hypertable: the bulk COPY is twice as fast without them."""
+    async with AsyncSession(engine, expire_on_commit=False) as session:
+        await ParameterService(session).sync()
+        await session.commit()
+    await MeasurementService(engine).drop_bulk_indexes()
+
+
+async def end_bulk(engine) -> None:
+    """Rebuild indexes, compress every chunk, refresh the aggregates once and
+    invalidate the explore caches."""
+    service = MeasurementService(engine)
+    for step, action in (
+        ("rebuilding indexes", service.create_bulk_indexes),
+        ("compressing chunks", service.compress_all),
+        ("refreshing continuous aggregates", service.refresh_all),
+    ):
+        started = time.perf_counter()
+        print(f"{step} ...", flush=True)
+        await action()
+        print(f"    done in {time.perf_counter() - started:.0f}s", flush=True)
+    async with AsyncSession(engine, expire_on_commit=False) as session:
+        await CatalogVersionService(session).bump()
+        await session.commit()
 
 
 def main() -> None:
