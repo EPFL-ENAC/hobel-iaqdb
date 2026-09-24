@@ -4,6 +4,7 @@ import type { ExploreBucket, ExploreDimension, ExploreParams, ExploreResult } fr
 import { useFiltersStore } from '@/stores/filters';
 import {
   buildingTypeOptions,
+  climateOptions,
   countryOptions,
   mechanicalVentilationTypeOptions,
   spaceTypeOptions,
@@ -71,6 +72,7 @@ export function toSeries(
 /** Label lists for the dimensions whose keys are codes. */
 const KEY_OPTIONS: Record<string, OptionItem[]> = {
   country: countryOptions,
+  climate_zone: climateOptions,
   building_type: buildingTypeOptions,
   ventilation: yesNoOptions,
   ventilation_type: mechanicalVentilationTypeOptions,
