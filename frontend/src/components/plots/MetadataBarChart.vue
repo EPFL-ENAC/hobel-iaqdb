@@ -47,6 +47,7 @@ import { BarChart } from 'echarts/charts';
 import { SVGRenderer } from 'echarts/renderers';
 import { GridComponent, TooltipComponent } from 'echarts/components';
 import {
+  hasGlobalFilter,
   initOptions,
   keyLabel,
   onBucketClick,
@@ -141,7 +142,7 @@ const canClick = computed(
 const clickable = computed(() => {
   const dimension = current.value?.dimension;
   if (!dimension || props.click === 'none') return false;
-  if (props.click === 'filter') return !!dimension.filter_path;
+  if (props.click === 'filter') return hasGlobalFilter(dimension.filter_path);
   return canClick.value && !!(dimension.drill_to || dimension.filter_path);
 });
 
@@ -150,11 +151,14 @@ const selectedKeys = computed<Set<string>>(() => {
   void filtersStore.updates;
   if (props.click !== 'filter') return new Set();
   const path = current.value?.dimension.filter_path;
+  const ventilation = filtersStore.mechanical_ventilation;
   const selected: Record<string, string[]> = {
+    identifier: filtersStore.study_ids,
     '$building.country': filtersStore.countries,
     '$building.city': filtersStore.cities,
     '$building.climate_zone': filtersStore.climate_zones,
     '$building.type': filtersStore.building_types,
+    '$building.mechanical_ventilation': ventilation ? [ventilation] : [],
     '$space.mechanical_ventilation_type': filtersStore.mechanical_ventilation_types,
   };
   return new Set(path ? selected[path] || [] : []);
