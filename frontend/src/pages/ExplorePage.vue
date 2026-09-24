@@ -50,6 +50,27 @@
             </q-card-section>
           </q-card>
         </div>
+        <div class="col-12 col-md-6">
+          <q-card flat bordered>
+            <q-card-section class="q-pb-none">
+              <div class="text-subtitle1 text-bold">
+                {{ t('plots.datasets_by_building_type') }}
+              </div>
+              <div class="text-caption text-grey-7">
+                {{ t('plots.datasets_by_building_type_hint') }}
+              </div>
+            </q-card-section>
+            <q-card-section>
+              <MetadataBarChart
+                v-if="exploreStore.schema"
+                entity="datasets"
+                by="building_type"
+                click="none"
+                :height="600"
+              />
+            </q-card-section>
+          </q-card>
+        </div>
       </div>
     </div>
   </q-page>
