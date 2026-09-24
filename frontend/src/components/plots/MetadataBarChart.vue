@@ -88,6 +88,8 @@ interface Props {
   withParameters?: boolean;
   /** height of the plot area; the bars share it */
   height?: number;
+  /** `horizontal` (default): one row per key; `vertical`: one column per key */
+  orientation?: 'horizontal' | 'vertical';
 }
 
 interface Level {
@@ -107,6 +109,7 @@ const props = withDefaults(defineProps<Props>(), {
   withParameters: true,
   height: 200,
   click: 'drill',
+  orientation: 'horizontal',
 });
 const i18n = useI18n();
 const { t } = i18n;
@@ -119,6 +122,8 @@ const SELECTED_COLOR = '#2f6fa8';
 const TEXT = '#424242';
 const MUTED = '#757575';
 const GRID = '#e0e0e0';
+/** above this many columns, vertical bars slant their labels */
+const VERTICAL_FLAT_MAX = 6;
 
 /** Drill stack, `stack[0]` being the chart as mounted. */
 const stack = ref<Level[]>([]);
@@ -233,6 +238,29 @@ function buildOption(level: Level, value: ExploreResult): EChartsOption {
     },
   }));
   const countKey = `${props.entity}_with_count`;
+  const vertical = props.orientation === 'vertical';
+  const valueAxis = {
+    type: 'value' as const,
+    minInterval: 1,
+    axisLine: { show: false },
+    axisTick: { show: false },
+    axisLabel: { color: MUTED },
+    splitLine: { lineStyle: { color: GRID, width: 1 } },
+  };
+  const categoryAxis = {
+    type: 'category' as const,
+    // horizontal bars read top-down in bucket order
+    inverse: !vertical,
+    data: items.map((item) => item.name),
+    axisLine: { show: false },
+    axisTick: { show: false },
+    axisLabel: !vertical
+      ? { color: TEXT, width: 160, overflow: 'truncate' as const }
+      : items.length > VERTICAL_FLAT_MAX
+        ? // too many columns for flat labels: slant and truncate them
+          { color: TEXT, interval: 0, rotate: 40, width: 120, overflow: 'truncate' as const }
+        : { color: TEXT, interval: 0, width: 100, overflow: 'break' as const },
+  };
   return {
     tooltip: {
       trigger: 'item',
@@ -244,32 +272,25 @@ function buildOption(level: Level, value: ExploreResult): EChartsOption {
           : '';
       },
     },
-    grid: { left: 8, right: 40, top: 8, bottom: 8, containLabel: true },
-    xAxis: {
-      type: 'value',
-      minInterval: 1,
-      axisLine: { show: false },
-      axisTick: { show: false },
-      axisLabel: { color: MUTED },
-      splitLine: { lineStyle: { color: GRID, width: 1 } },
-    },
-    yAxis: {
-      type: 'category',
-      inverse: true,
-      data: items.map((item) => item.name),
-      axisLine: { show: false },
-      axisTick: { show: false },
-      axisLabel: { color: TEXT, width: 160, overflow: 'truncate' },
-    },
+    grid: vertical
+      ? { left: 8, right: 8, top: 24, bottom: 8, containLabel: true }
+      : { left: 8, right: 40, top: 8, bottom: 8, containLabel: true },
+    xAxis: vertical ? categoryAxis : valueAxis,
+    yAxis: vertical ? valueAxis : categoryAxis,
     series: [
       {
         type: 'bar',
         data: items,
         barCategoryGap: '30%',
         cursor: clickable.value ? 'pointer' : 'default',
-        itemStyle: { borderRadius: [0, 4, 4, 0] },
+        itemStyle: { borderRadius: vertical ? [4, 4, 0, 0] : [0, 4, 4, 0] },
         emphasis: { itemStyle: { color: SELECTED_COLOR } },
-        label: { show: true, position: 'right', color: TEXT, formatter: '{c}' },
+        label: {
+          show: true,
+          position: vertical ? 'top' : 'right',
+          color: TEXT,
+          formatter: '{c}',
+        },
       },
     ],
   };
