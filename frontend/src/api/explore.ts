@@ -5,7 +5,12 @@
  */
 import { api } from '@/boot/api';
 import type { ExploreFilter, ExploreParams, ExploreResult, ExploreSchema } from '@/models';
-import { DEFAULT_ALTITUDES, DEFAULT_CONSTRUCTION_YEARS, useFiltersStore } from '@/stores/filters';
+import {
+  DEFAULT_ALTITUDES,
+  DEFAULT_CONSTRUCTION_YEARS,
+  DEFAULT_MEASUREMENT_YEARS,
+  useFiltersStore,
+} from '@/stores/filters';
 import { withRange } from '@/utils/numbers';
 
 export type ExploreRoute = 'metadata' | 'measurements' | 'relationships';
@@ -62,6 +67,20 @@ export function exploreFilter(): ExploreFilter {
     ...studyCriteria(),
     $building: buildingCriteria(),
     $space: spaceCriteria(),
+  };
+}
+
+/**
+ * The measurement time range, as `from` (inclusive) and `to` (exclusive)
+ * dates: whole years, none at the default bounds. Only the measurement
+ * routes filter rows by it.
+ */
+export function exploreRange(): Pick<ExploreParams, 'from' | 'to'> {
+  const { min, max } = useFiltersStore().measurement_years;
+  if (!withRange([min, max], [DEFAULT_MEASUREMENT_YEARS.min, DEFAULT_MEASUREMENT_YEARS.max])) return {};
+  return {
+    ...(min > DEFAULT_MEASUREMENT_YEARS.min ? { from: `${min}-01-01` } : {}),
+    ...(max < DEFAULT_MEASUREMENT_YEARS.max ? { to: `${max + 1}-01-01` } : {}),
   };
 }
 

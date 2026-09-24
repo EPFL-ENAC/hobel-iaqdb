@@ -38,9 +38,9 @@
             <div class="q-mt-md text-grey-8">{{ t('measurement_year') }}</div>
             <div class="q-pl-md q-pr-md">
               <q-range
-                v-model="measurementYear"
-                :min="2000"
-                :max="new Date().getFullYear()"
+                v-model="filtersStore.measurement_years"
+                :min="DEFAULT_MEASUREMENT_YEARS.min"
+                :max="DEFAULT_MEASUREMENT_YEARS.max"
                 :step="1"
                 label
                 snap
@@ -242,7 +242,7 @@
 </template>
 
 <script setup lang="ts">
-import { DEFAULT_CONSTRUCTION_YEARS, DEFAULT_ALTITUDES } from '@/stores/filters';
+import { DEFAULT_CONSTRUCTION_YEARS, DEFAULT_ALTITUDES, DEFAULT_MEASUREMENT_YEARS } from '@/stores/filters';
 import {
   climateOptions,
   mechanicalVentilationTypeOptions,
@@ -264,7 +264,6 @@ const exploreStore = useExploreStore();
 const route = useRoute();
 
 const tab = ref('geography');
-const measurementYear = ref({ min: 2000, max: new Date().getFullYear() });
 const studySummaries = ref<StudySummary[]>([]);
 const climateZoneLayerVisible = ref(false);
 

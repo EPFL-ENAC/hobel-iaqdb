@@ -14,6 +14,7 @@ declare global {
   const $toRef: typeof import('vue/macros')['$toRef']
   const DEFAULT_ALTITUDES: typeof import('./stores/filters')['DEFAULT_ALTITUDES']
   const DEFAULT_CONSTRUCTION_YEARS: typeof import('./stores/filters')['DEFAULT_CONSTRUCTION_YEARS']
+  const DEFAULT_MEASUREMENT_YEARS: typeof import('./stores/filters')['DEFAULT_MEASUREMENT_YEARS']
   const DEFAULT_PARAMETER: typeof import('./stores/explore')['DEFAULT_PARAMETER']
   const EffectScope: typeof import('vue')['EffectScope']
   const acceptHMRUpdate: typeof import('pinia')['acceptHMRUpdate']
@@ -121,6 +122,7 @@ declare module 'vue' {
     readonly $toRef: UnwrapRef<typeof import('vue/macros')['$toRef']>
     readonly DEFAULT_ALTITUDES: UnwrapRef<typeof import('./stores/filters')['DEFAULT_ALTITUDES']>
     readonly DEFAULT_CONSTRUCTION_YEARS: UnwrapRef<typeof import('./stores/filters')['DEFAULT_CONSTRUCTION_YEARS']>
+    readonly DEFAULT_MEASUREMENT_YEARS: UnwrapRef<typeof import('./stores/filters')['DEFAULT_MEASUREMENT_YEARS']>
     readonly DEFAULT_PARAMETER: UnwrapRef<typeof import('./stores/explore')['DEFAULT_PARAMETER']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>

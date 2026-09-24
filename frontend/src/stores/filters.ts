@@ -6,6 +6,7 @@ export type FilterParams = {
   cities?: string[] | null;
   construction_years?: [number, number] | undefined;
   altitudes?: [number, number] | undefined;
+  measurement_years?: [number, number] | undefined;
   climate_zones?: string[] | null;
   building_types?: string[] | null;
   age_groups?: string[] | null;
@@ -18,6 +19,7 @@ export type FilterParams = {
 
 export const DEFAULT_CONSTRUCTION_YEARS = { min: 1800, max: new Date().getFullYear() };
 export const DEFAULT_ALTITUDES = { min: 0, max: 2500 };
+export const DEFAULT_MEASUREMENT_YEARS = { min: 2000, max: new Date().getFullYear() };
 
 export const useFiltersStore = defineStore(
   'filters',
@@ -26,6 +28,7 @@ export const useFiltersStore = defineStore(
     const cities = ref<string[]>([]);
     const construction_years = ref({ ...DEFAULT_CONSTRUCTION_YEARS });
     const altitudes = ref({ ...DEFAULT_ALTITUDES });
+    const measurement_years = ref({ ...DEFAULT_MEASUREMENT_YEARS });
     const climate_zones = ref<string[]>([]);
     const study_ids = ref<string[]>([]);
     const building_types = ref<string[]>([]);
@@ -42,6 +45,7 @@ export const useFiltersStore = defineStore(
       cities.value = [];
       construction_years.value = { ...DEFAULT_CONSTRUCTION_YEARS };
       altitudes.value = { ...DEFAULT_ALTITUDES };
+      measurement_years.value = { ...DEFAULT_MEASUREMENT_YEARS };
       climate_zones.value = [];
       study_ids.value = [];
       building_types.value = [];
@@ -59,11 +63,15 @@ export const useFiltersStore = defineStore(
     function asParams(): FilterParams {
       const constructionsRange: [number, number] = [construction_years.value.min, construction_years.value.max];
       const altitudesRange: [number, number] = [altitudes.value.min, altitudes.value.max];
+      const measurementYearsRange: [number, number] = [measurement_years.value.min, measurement_years.value.max];
       return {
         countries: countries.value.length > 0 ? [...countries.value] : null,
         cities: cities.value.length > 0 ? [...cities.value] : null,
         construction_years: withRange(constructionsRange, [DEFAULT_CONSTRUCTION_YEARS.min, DEFAULT_CONSTRUCTION_YEARS.max]) ? constructionsRange : undefined,
         altitudes: withRange(altitudesRange, [DEFAULT_ALTITUDES.min, DEFAULT_ALTITUDES.max]) ? altitudesRange : undefined,
+        measurement_years: withRange(measurementYearsRange, [DEFAULT_MEASUREMENT_YEARS.min, DEFAULT_MEASUREMENT_YEARS.max])
+          ? measurementYearsRange
+          : undefined,
         climate_zones: climate_zones.value ? [...climate_zones.value] : [],
         building_types: building_types.value ? [...building_types.value] : [],
         age_groups: age_groups.value ? [...age_groups.value] : [],
@@ -80,6 +88,7 @@ export const useFiltersStore = defineStore(
       cities,
       construction_years,
       altitudes,
+      measurement_years,
       climate_zones,
       study_ids,
       building_types,
