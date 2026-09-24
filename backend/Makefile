@@ -19,7 +19,7 @@ test-db:
 		-e POSTGRES_USER=$$(grep '^DB_USER=' $(env_path) | cut -d= -f2-) \
 		-e POSTGRES_PASSWORD=$$(grep '^DB_PASSWORD=' $(env_path) | cut -d= -f2-) \
 		-e POSTGRES_DB=$$(grep '^DB_NAME=' $(env_path) | cut -d= -f2-) \
-		timescale/timescaledb:latest-pg15
+		timescale/timescaledb:latest-pg18
 
 test:
 	DB_PORT=$(test_db_port) uv run dotenv -f "$(env_path)" run --no-override pytest $(args)

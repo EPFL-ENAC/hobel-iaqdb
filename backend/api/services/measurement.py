@@ -24,6 +24,7 @@ from api.models.measurement import (
     DatasetParameter,
     LoadReport,
     Parameter,
+    measurement,
 )
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -459,18 +460,20 @@ class MeasurementService:
             return result.scalar_one()
 
     async def drop_bulk_indexes(self) -> None:
-        """Seed only: the bulk COPY is twice as fast without secondary indexes."""
+        """Seed only: the bulk COPY is faster without the query index. The
+        FK-leading indexes are kept (see MEASUREMENT_BULK_INDEXES)."""
         async with self.engine.begin() as conn:
             for name in MEASUREMENT_BULK_INDEXES:
                 await conn.execute(text(f"DROP INDEX IF EXISTS {name}"))
 
     async def create_bulk_indexes(self) -> None:
+        """Recreate every secondary index of the model, not only the ones this
+        version drops: a run aborted under an older seed may have left more
+        of them missing."""
         async with self.engine.begin() as conn:
-            for name, columns in (
-                ("ix_measurement_parameter_ts", "parameter, ts"),
-                ("ix_measurement_dataset_parameter_ts", "dataset_id, parameter, ts"),
-                ("ix_measurement_space_ts", "space_id, ts"),
-            ):
+            for index in measurement.indexes:
+                name = index.name
+                columns = ", ".join(c.name for c in index.columns)
                 await conn.execute(
                     text(
                         f"CREATE INDEX IF NOT EXISTS {name} ON measurement ({columns})"

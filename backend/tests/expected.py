@@ -92,9 +92,11 @@ def regression(points: list[tuple[float, float]]) -> dict:
 
 
 def ranks(values: list[float]) -> list[float]:
-    """Lowest rank for ties, as PostgreSQL rank()."""
+    """Average rank for ties, as Spearman's rho requires."""
     ordered = sorted(values)
-    return [ordered.index(v) + 1 for v in values]
+    return [
+        (ordered.index(v) + 1 + ordered.index(v) + ordered.count(v)) / 2 for v in values
+    ]
 
 
 def spearman(points: list[tuple[float, float]]) -> float:

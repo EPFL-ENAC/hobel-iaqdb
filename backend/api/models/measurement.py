@@ -111,6 +111,12 @@ measurement = Table(
     Index("ix_measurement_parameter_ts", "parameter", "ts"),
     Index("ix_measurement_dataset_parameter_ts", "dataset_id", "parameter", "ts"),
     Index("ix_measurement_space_ts", "space_id", "ts"),
+    # every cascading FK needs an index on its column: deleting a catalog row
+    # runs `DELETE FROM measurement WHERE <fk> = $1`, and without one that is
+    # a scan of the whole hypertable per deleted building, space, instrument
+    Index("ix_measurement_building_id", "building_id"),
+    Index("ix_measurement_instrument_id", "instrument_id"),
+    Index("ix_measurement_study_id", "study_id"),
 )
 
 # Columns copied in, in this order (see MeasurementService.load)
@@ -129,12 +135,11 @@ MEASUREMENT_COLUMNS = [
     "value_qualifier",
 ]
 
-# Secondary indexes dropped for the bulk seed and rebuilt after it
-MEASUREMENT_BULK_INDEXES = [
-    "ix_measurement_parameter_ts",
-    "ix_measurement_dataset_parameter_ts",
-    "ix_measurement_space_ts",
-]
+# Indexes dropped for the bulk seed and rebuilt after it: only the query
+# index whose leading column is not a foreign key. The FK-leading indexes stay
+# so that recreating a study (the seed deletes and re-inserts its catalog rows)
+# keeps every cascade an index lookup instead of a scan of the hypertable.
+MEASUREMENT_BULK_INDEXES = {"ix_measurement_parameter_ts": "parameter, ts"}
 
 
 class LoadReport(BaseModel):

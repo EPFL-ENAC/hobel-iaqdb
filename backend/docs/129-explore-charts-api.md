@@ -142,11 +142,18 @@ Rules, all explicit and all reported by `make seed-check`:
   compression segment-by column, so deleting a dataset drops whole compressed
   batches instead of decompressing rows.
 
-Indexes on `measurement`: `(parameter, ts DESC)`, `(dataset_id, parameter,
-ts DESC)`, `(space_id, ts DESC)`; the same three on each continuous
-aggregate with `hour` / `day`. Building and space attribute filters join the
-small catalog tables; the fact scan is bounded by `(parameter, time range)`,
-and on compressed chunks by the segment-by columns.
+Indexes on `measurement`: `(parameter, ts)`, `(dataset_id, parameter, ts)`,
+`(space_id, ts)` for the queries, plus single-column indexes on
+`building_id`, `instrument_id` and `study_id` so that **every cascading
+foreign key is an index lookup**: deleting a catalog row runs
+`DELETE FROM measurement WHERE <fk> = $1`, and without an index that is a
+scan of the whole hypertable per deleted building, space or instrument
+(measured at 0.4 s per row on 5 M rows, hours per study on the full
+volume). Each continuous aggregate gets `(dataset_id, parameter, bucket)`
+on top of the group indexes TimescaleDB creates. Building and space
+attribute filters join the small catalog tables; the fact scan is bounded
+by `(parameter, time range)`, and on compressed chunks by the segment-by
+columns.
 
 ### Import pipeline
 
@@ -176,10 +183,13 @@ and on compressed chunks by the segment-by columns.
    failed load is never a silent empty chart.
 
 Seed-only optimisations, applied by the seed script and not by publish: drop
-the three secondary indexes on `measurement` before the bulk load and rebuild
-them after (halves the `COPY` time), and set `synchronous_commit = off` and a
-large `max_wal_size` for the duration of the run. Publish loads one dataset
-into an indexed table and takes seconds.
+the `(parameter, ts)` query index on `measurement` before the bulk load and
+rebuild it after, and set `synchronous_commit = off` and a large
+`max_wal_size` for the duration of the run. The FK-leading indexes are
+**kept** during the seed: it recreates every study, so it deletes and
+re-inserts the study's catalog rows, and each of those deletes cascades
+into the hypertable. Publish loads one dataset into an indexed table and
+takes seconds.
 
 Measured cost of loading the full seed (5 M-row sample, scaled to ~305 M
 rows; Docker Desktop on a laptop, 4 CPU / 4 GB / virtual disk):
@@ -205,7 +215,7 @@ loads one dataset at a time and recompresses its chunks immediately, so it
 never needs that headroom.
 
 Deployment: the `postgres` service in `docker-compose.yml` moves from
-`postgres:15.5-alpine` to `timescale/timescaledb:latest-pg15`. The production
+`postgres:15.5-alpine` to `timescale/timescaledb:latest-pg18`. The production
 database host must allow the `timescaledb` extension (open point, §14).
 
 ## 4. Common parameter contract
@@ -412,9 +422,13 @@ continuous aggregate behind the same contract; no API change.
    previous request when its params change so a stale response never paints.
 
 `catalog_version` is a single-row table bumped **in the route transaction** of
-publish, delete and seed. Reading it is one PK lookup per request. Nothing is
-ever invalidated by hand, and no result can outlive the data it was computed
-on.
+publish and delete (the catalog changed) and **again after the background
+refresh** of the continuous aggregates (the measurement data changed), so a
+chart computed from not-yet-refreshed aggregates in between is dropped rather
+than cached under the new version. Seed bumps once, after its refresh, and
+the dictionary sync at boot bumps when the CSVs changed since the last run.
+Reading it is one PK lookup per request. Nothing is ever invalidated by hand,
+and no result can outlive the data it was computed on.
 
 ### Request scheduling on the Explore page
 
@@ -671,7 +685,7 @@ asserting the fact scan uses an index starting with `parameter`. Tests run
 against the TimescaleDB image, not plain Postgres: `make test-db` starts a
 throwaway container on port 5433, `make test` runs the suite against it
 (the tests truncate tables and refuse any other port). CI runs the same
-against a `timescale/timescaledb:latest-pg15` service.
+against a `timescale/timescaledb:latest-pg18` service.
 
 ## 14. Out of scope and open points
 
@@ -717,3 +731,4 @@ Read with §1–§14; code wins where they still disagree.
 | pairs sample | `id % step` | `row_number() % step`, `sampled` true only when sampling happened (§7) |
 | dictionary | #107's CSV | provisional CSVs in `api/data`, synced at boot and seed |
 | frequencies routes | deleted | deleted; the five `PlotsDrawer` charts became one `MetadataTreemapChart` over `/stats/metadata` |
+| bulk seed indexes | drop all three secondary indexes | drop only `(parameter, ts)`; FK columns keep an index (migration `a97d374f471c`) because a re-run recreates studies and each cascaded delete scanned the hypertable (§3) |

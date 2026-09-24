@@ -265,16 +265,22 @@ class RelationshipService:
 
     def _ranked(self, pivot, width: int):
         """Spearman: rank each parameter within the rows where the other
-        parameter of the pair is present (ties get their lowest rank), and
-        blank the rank wherever either value is missing."""
+        parameter of the pair is present (ties get their average rank, as
+        Spearman's rho requires), and blank the rank wherever either value
+        is missing."""
         values = [pivot.c[f"p{i}"] for i in range(width)]
         pairs = [(i, j) for i in range(width) for j in range(width) if i != j]
-        ranks = [
-            func.rank()
-            .over(partition_by=pivot.c[f"p{j}"].isnot(None), order_by=pivot.c[f"p{i}"])
-            .label(f"r{i}_{j}")
-            for i, j in pairs
-        ]
+
+        def average_rank(i: int, j: int):
+            # rank() gives ties their lowest rank; adding half the number
+            # of remaining tied rows turns it into the average rank
+            present = pivot.c[f"p{j}"].isnot(None)
+            value = pivot.c[f"p{i}"]
+            lowest = func.rank().over(partition_by=present, order_by=value)
+            tied = func.count().over(partition_by=[present, value])
+            return lowest + (tied - 1) / 2.0
+
+        ranks = [average_rank(i, j).label(f"r{i}_{j}") for i, j in pairs]
         ranked = select(*values, *ranks).select_from(pivot).cte("ranked")
         masked = [
             case(

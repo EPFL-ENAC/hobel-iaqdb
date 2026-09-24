@@ -8,6 +8,7 @@ from pathlib import Path
 
 from api.db import AsyncSession
 from api.models.measurement import Benchmark, Parameter
+from api.services.catalog_version import CatalogVersionService
 from sqlalchemy.dialects.postgresql import insert
 from sqlmodel import col, delete, select
 
@@ -85,16 +86,28 @@ def read_benchmarks(
     return benchmarks
 
 
+def _parameter_key(p: Parameter) -> tuple:
+    return (p.label, p.reference, p.unit, json.dumps(p.conversions, sort_keys=True))
+
+
+def _benchmark_key(b: Benchmark) -> tuple:
+    return (b.parameter, b.source, b.averaging, b.value, b.unit, b.note)
+
+
 class ParameterService:
     def __init__(self, session: AsyncSession):
         self.session = session
 
     async def sync(self) -> int:
         """Upsert the CSV dictionary into the database. Parameters are never
-        deleted (measurements reference them); benchmarks are replaced.
+        deleted (measurements reference them); benchmarks are replaced. The
+        catalog version is bumped when anything changed, so cached explore
+        results (the schema carries the dictionary) do not outlive it.
         Returns the number of parameters."""
         parameters = read_parameters()
         benchmarks = read_benchmarks(parameters={p.slug: p for p in parameters})
+        if await self._mirrored(parameters, benchmarks):
+            return len(parameters)
         statement = insert(Parameter).values([p.model_dump() for p in parameters])
         statement = statement.on_conflict_do_update(
             index_elements=[Parameter.slug],
@@ -108,7 +121,23 @@ class ParameterService:
         await self.session.exec(statement)
         await self.session.exec(delete(Benchmark))
         self.session.add_all(benchmarks)
+        await CatalogVersionService(self.session).bump()
         return len(parameters)
+
+    async def _mirrored(
+        self, parameters: list[Parameter], benchmarks: list[Benchmark]
+    ) -> bool:
+        """Whether the database already holds exactly the CSV contents."""
+        stored = {p.slug: p for p in await self.all()}
+        if any(
+            stored.get(p.slug) is None
+            or _parameter_key(stored[p.slug]) != _parameter_key(p)
+            for p in parameters
+        ):
+            return False
+        return sorted(map(_benchmark_key, await self.benchmarks())) == sorted(
+            map(_benchmark_key, benchmarks)
+        )
 
     async def all(self) -> list[Parameter]:
         result = await self.session.exec(

@@ -170,7 +170,9 @@ async def publish_study_draft(
     user: User = Depends(kc_service.require_admin()),
 ) -> Study:
     """Save the study draft in the database, then load its measurements in
-    the background (each dataset's `summary_status` reports the outcome)"""
+    the background (each dataset's `summary_status` reports the outcome).
+    The version is bumped here for the catalog change and again by the
+    background task once the aggregates hold the loaded measurements."""
     service = StudyDraftService()
     study_draft = await service.get(identifier)
     study_service = StudyService(session)

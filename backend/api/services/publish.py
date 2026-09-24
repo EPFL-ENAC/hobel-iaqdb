@@ -7,6 +7,7 @@ import urllib.parse
 from pathlib import Path
 
 from api.models.catalog import Dataset
+from api.services.catalog_version import CatalogVersionService
 from api.services.measurement import MeasurementService
 from api.services.s3 import download_object
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -38,6 +39,16 @@ async def load_dataset(service: MeasurementService, dataset: Dataset) -> None:
         await service.load(dataset.id, paths)
 
 
+async def refresh_and_bump(engine: AsyncEngine) -> None:
+    """Refresh the continuous aggregates, then bump the catalog version so
+    that explore results computed from the stale aggregates in the meantime
+    are dropped. The route bumps once more on commit, for the catalog itself."""
+    await MeasurementService(engine).refresh_all()
+    async with AsyncSession(engine, expire_on_commit=False) as session:
+        await CatalogVersionService(session).bump()
+        await session.commit()
+
+
 async def load_published_study(engine: AsyncEngine, study_id: int) -> None:
     """Load every dataset of the study; the aggregates are refreshed even
     when a load fails, since publishing replaced the previous rows."""
@@ -52,7 +63,7 @@ async def load_published_study(engine: AsyncEngine, study_id: int) -> None:
             await load_dataset(service, dataset)
         except Exception as e:
             errors.append(f"{dataset.name}: {e}")
-    await service.refresh_all()
+    await refresh_and_bump(engine)
     if errors:
         raise RuntimeError(
             f"study {study_id}: {len(errors)} dataset(s) failed: {errors}"
@@ -62,4 +73,4 @@ async def load_published_study(engine: AsyncEngine, study_id: int) -> None:
 async def refresh_after_delete(engine: AsyncEngine) -> None:
     """Deleting catalog rows cascades to `measurement`; the continuous
     aggregates only follow on refresh."""
-    await MeasurementService(engine).refresh_all()
+    await refresh_and_bump(engine)

@@ -23,7 +23,7 @@ jobs:
         working-directory: backend
     services:
       timescaledb:
-        image: timescale/timescaledb:latest-pg15
+        image: timescale/timescaledb:latest-pg18
         env:
           POSTGRES_USER: iaqdb
           POSTGRES_PASSWORD: iaqdb

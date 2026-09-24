@@ -34,8 +34,9 @@ router = APIRouter()
 async def _published_data_changed(
     session: AsyncSession, engine: AsyncEngine, background_tasks: BackgroundTasks
 ) -> None:
-    """Invalidate the explore caches and bring the continuous aggregates in
-    line with the cascaded measurement deletes."""
+    """Invalidate the explore caches for the catalog change now; the
+    background task brings the continuous aggregates in line with the
+    cascaded measurement deletes and bumps the version again after."""
     await CatalogVersionService(session).bump()
     await session.commit()
     background_tasks.add_task(refresh_after_delete, engine)

@@ -58,7 +58,7 @@ services:
     links:
       - postgres
   postgres:
-    image: timescale/timescaledb:latest-pg15
+    image: timescale/timescaledb:latest-pg18
     expose:
       - 5432
     ports:

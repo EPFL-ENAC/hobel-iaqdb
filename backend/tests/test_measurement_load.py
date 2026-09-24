@@ -199,3 +199,50 @@ async def test_compression_and_empty_file(session, clean_db, tmp_path):
         )
     ).scalar()
     assert n == 0
+
+
+FK_COLUMNS = ("dataset_id", "study_id", "building_id", "space_id", "instrument_id")
+
+
+async def index_names(session) -> set[str]:
+    rows = await session.exec(
+        text("SELECT indexname FROM pg_indexes WHERE tablename = 'measurement'")
+    )
+    return set(rows.scalars().all())
+
+
+async def test_cascades_are_index_lookups_even_in_bulk_mode(
+    session, clean_db, tmp_path
+):
+    """Recreating a study deletes its catalog rows one by one; each delete
+    cascades into the hypertable and must hit an index, also while the seed
+    has the query index dropped."""
+    # bulk mode as the seed runs it: chunks stay uncompressed until the end,
+    # so the cascades go through the btree indexes (compressed chunks are
+    # pruned by segment-by metadata instead and never show an index scan)
+    fx = await make_fixture(session, tmp_path)
+    service = MeasurementService(clean_db)
+    for name, paths in fx.files.items():
+        await service.load(fx.datasets[name], paths, bulk=True)
+    await service.drop_bulk_indexes()
+    try:
+        names = await index_names(session)
+        assert "ix_measurement_parameter_ts" not in names
+        # the planner prefers a scan on a 5 000-row table: force its hand
+        await session.exec(text("SET enable_seqscan = off"))
+        for column in FK_COLUMNS:
+            plan = "\n".join(
+                (
+                    await session.exec(
+                        text(f"EXPLAIN DELETE FROM measurement WHERE {column} = 1")
+                    )
+                ).scalars()
+            )
+            assert "Index Scan" in plan or "Bitmap Index Scan" in plan, (column, plan)
+            assert "Seq Scan" not in plan, (column, plan)
+    finally:
+        await session.exec(text("SET enable_seqscan = on"))
+        # release the planning locks before another connection rebuilds
+        await session.rollback()
+        await service.create_bulk_indexes()
+    assert "ix_measurement_parameter_ts" in await index_names(session)

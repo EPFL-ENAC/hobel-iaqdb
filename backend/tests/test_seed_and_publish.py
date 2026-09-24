@@ -8,7 +8,7 @@ import pytest
 from api.models.catalog import Dataset, StudyDraft
 from api.scripts import seed
 from api.services import publish
-from api.services.measurement import MeasurementService
+from api.services.catalog_version import CatalogVersionService
 from api.services.parameter import read_parameters
 from sqlalchemy import text
 from tests.fixtures import D1_REPORT, d1_rows, make_catalog, write_csv
@@ -111,12 +111,15 @@ async def test_publish_loads_from_s3_and_refreshes(
     assert d2.summary_error == "no CSV file in the dataset folder"
     hours = (await session.exec(text("SELECT count(*) FROM measurement_hour"))).scalar()
     assert hours > 0
+    # the version is bumped once the aggregates are refreshed, even on failure
+    assert await CatalogVersionService(session).get() == 2
     # the delete path leaves no stale aggregate rows behind
     await session.delete(dataset)
     await session.commit()
-    await MeasurementService(clean_db).refresh_all()
+    await publish.refresh_after_delete(clean_db)
     hours = (await session.exec(text("SELECT count(*) FROM measurement_hour"))).scalar()
     assert hours == 0
+    assert await CatalogVersionService(session).get() == 3
 
 
 def test_csv_keys_unquote_and_filter():
