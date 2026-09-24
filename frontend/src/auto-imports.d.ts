@@ -14,6 +14,7 @@ declare global {
   const $toRef: typeof import('vue/macros')['$toRef']
   const DEFAULT_ALTITUDES: typeof import('./stores/filters')['DEFAULT_ALTITUDES']
   const DEFAULT_CONSTRUCTION_YEARS: typeof import('./stores/filters')['DEFAULT_CONSTRUCTION_YEARS']
+  const DEFAULT_PARAMETER: typeof import('./stores/explore')['DEFAULT_PARAMETER']
   const EffectScope: typeof import('vue')['EffectScope']
   const acceptHMRUpdate: typeof import('pinia')['acceptHMRUpdate']
   const computed: typeof import('vue')['computed']
@@ -82,6 +83,7 @@ declare global {
   const useCounterStore: (typeof import('./stores/help'))['useCounterStore']
   const useCssModule: typeof import('vue')['useCssModule']
   const useCssVars: typeof import('vue')['useCssVars']
+  const useExploreStore: typeof import('./stores/explore')['useExploreStore']
   const useFiltersStore: typeof import('./stores/filters')['useFiltersStore']
   const useHelpStore: typeof import('./stores/help')['useHelpStore']
   const useI18n: typeof import('vue-i18n')['useI18n']
@@ -119,6 +121,7 @@ declare module 'vue' {
     readonly $toRef: UnwrapRef<typeof import('vue/macros')['$toRef']>
     readonly DEFAULT_ALTITUDES: UnwrapRef<typeof import('./stores/filters')['DEFAULT_ALTITUDES']>
     readonly DEFAULT_CONSTRUCTION_YEARS: UnwrapRef<typeof import('./stores/filters')['DEFAULT_CONSTRUCTION_YEARS']>
+    readonly DEFAULT_PARAMETER: UnwrapRef<typeof import('./stores/explore')['DEFAULT_PARAMETER']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
@@ -185,6 +188,7 @@ declare module 'vue' {
     readonly useContributeStore: UnwrapRef<typeof import('./stores/contribute')['useContributeStore']>
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
     readonly useCssVars: UnwrapRef<typeof import('vue')['useCssVars']>
+    readonly useExploreStore: UnwrapRef<typeof import('./stores/explore')['useExploreStore']>
     readonly useFiltersStore: UnwrapRef<typeof import('./stores/filters')['useFiltersStore']>
     readonly useHelpStore: UnwrapRef<typeof import('./stores/help')['useHelpStore']>
     readonly useI18n: UnwrapRef<typeof import('vue-i18n')['useI18n']>
