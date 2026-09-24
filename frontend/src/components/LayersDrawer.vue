@@ -393,7 +393,7 @@ function onToggleClimateZonesLayer() {
 
 function onResetFilters() {
   filtersStore.reset();
-  exploreStore.parameters = [];
+  exploreStore.resetParameters();
   onUpdatedFilter();
 }
 

@@ -47,7 +47,11 @@ export function clearExploreCache() {
   inflight.clear();
 }
 
-export function useExploreQuery(route: ExploreRoute, params: () => ExploreParams | null) {
+/**
+ * Imperative explore request: `load(params)` runs one request and fills
+ * `result`; the caller decides when. A `load` aborts the previous one.
+ */
+export function useExploreRequest(route: ExploreRoute) {
   const result = ref<ExploreResult | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -55,45 +59,55 @@ export function useExploreQuery(route: ExploreRoute, params: () => ExploreParams
 
   const empty = computed(() => result.value !== null && result.value.meta.n === 0);
 
-  async function run() {
-    const current = params();
+  /** Resolves with the result, or null when aborted by a later load or failed. */
+  async function load(params: ExploreParams | null): Promise<ExploreResult | null> {
     controller?.abort();
     controller = null;
-    if (current === null) {
+    if (params === null) {
       result.value = null;
-      return;
+      return null;
     }
-    const key = canonicalKey(route, current);
+    const key = canonicalKey(route, params);
     const cached = results.get(key);
     if (cached) {
       result.value = cached;
       error.value = null;
-      return;
+      return cached;
     }
     const own = new AbortController();
     controller = own;
     loading.value = true;
     error.value = null;
-    const shared = join(route, current, key);
+    const shared = join(route, params, key);
     const onAbort = () => leave(shared);
     own.signal.addEventListener('abort', onAbort, { once: true });
     try {
       const value = await shared.promise;
       results.set(key, value);
-      if (controller === own) result.value = value;
+      if (controller !== own) return null;
+      result.value = value;
+      return value;
     } catch (e: unknown) {
       // this chart moved on (or unmounted): the outcome is no longer its own
-      if (own.signal.aborted || axios.isCancel(e)) return;
+      if (own.signal.aborted || axios.isCancel(e)) return null;
       error.value = e instanceof Error ? e.message : String(e);
       if (controller === own) result.value = null;
+      return null;
     } finally {
       own.signal.removeEventListener('abort', onAbort);
       if (controller === own) loading.value = false;
     }
   }
 
-  watch(params, () => void run(), { immediate: true, deep: true });
   onBeforeUnmount(() => controller?.abort());
 
-  return { result, loading, error, empty, refresh: run };
+  return { result, loading, error, empty, load };
+}
+
+/** Reactive explore request: re-runs whenever `params()` changes. */
+export function useExploreQuery(route: ExploreRoute, params: () => ExploreParams | null) {
+  const request = useExploreRequest(route);
+  const run = () => request.load(params());
+  watch(params, () => void run(), { immediate: true, deep: true });
+  return { ...request, refresh: run };
 }

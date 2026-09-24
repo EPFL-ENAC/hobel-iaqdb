@@ -218,14 +218,15 @@ export default {
   plots: {
     buildings_overview: 'Buildings overview',
     error: 'Could not load the chart',
-    no_data: 'No data for these filters',
+    no_data: 'No data for these filters.',
     no_data_for: 'No {parameters} data for these filters.',
     available_parameters: 'Available: {parameters}',
     unknown: 'Unknown',
     datasets_by_country: 'Datasets by country',
     datasets_by_country_hint: 'Number of datasets per country containing the selected pollutant. Click a country to see its cities.',
-    parameters: 'Air pollutant',
-    parameters_hint: 'Datasets that contain the selected parameters (none selected: all datasets)',
+    parameters: 'Air pollutant (charts only)',
+    parameters_hint:
+      'Charts count the datasets that contain the selected pollutants (none selected: all datasets). The map and the lists are not affected.',
     levels: {
       country: 'No countries | 1 country | {count} countries',
       city: 'No cities | 1 city | {count} cities',
@@ -260,6 +261,8 @@ export default {
   buildings: 'Buildings',
   buildings_count: 'No buildings | building | buildings',
   buildings_with_count: 'No buildings | 1 building | {count} buildings',
+  spaces_with_count: 'No spaces | 1 space | {count} spaces',
+  studies_with_count: 'No studies | 1 study | {count} studies',
   explore: 'Explore',
   explore_info: 'Visualize, analyze, and download data interactively',
   cities: 'Cities',

@@ -3,10 +3,10 @@
     <div class="row items-center no-wrap q-mb-xs">
       <q-breadcrumbs class="text-caption" active-color="secondary" gutter="xs">
         <q-breadcrumbs-el
-          v-for="(level, i) in levels"
+          v-for="(level, i) in stack"
           :key="i"
           :label="level.label"
-          :class="i < levels.length - 1 ? 'cursor-pointer' : 'text-grey-8'"
+          :class="i < stack.length - 1 ? 'cursor-pointer' : 'text-grey-8'"
           @click="popTo(i)"
         />
       </q-breadcrumbs>
@@ -18,9 +18,9 @@
     </div>
     <div v-else-if="empty" class="text-grey-7 text-caption">
       {{
-        t('plots.no_data_for', {
-          parameters: parameterLabels || t('plots.unknown').toLowerCase(),
-        })
+        parameterLabels
+          ? t('plots.no_data_for', { parameters: parameterLabels })
+          : t('plots.no_data')
       }}
       <span v-if="availableLabels">{{
         t('plots.available_parameters', { parameters: availableLabels })
@@ -53,12 +53,13 @@ import {
   updateOptions,
 } from '@/components/plots/charts';
 import { exploreFilter } from '@/api/explore';
-import { useExploreQuery } from '@/composables/useExploreQuery';
+import { useExploreRequest } from '@/composables/useExploreQuery';
 import type {
   ExploreBucket,
   ExploreDimension,
   ExploreEntity,
   ExploreParams,
+  ExploreResult,
 } from '@/models';
 
 use([SVGRenderer, BarChart, GridComponent, TooltipComponent]);
@@ -98,7 +99,8 @@ const props = withDefaults(defineProps<Props>(), {
   withParameters: true,
   height: 200,
 });
-const { t } = useI18n();
+const i18n = useI18n();
+const { t } = i18n;
 const router = useRouter();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
@@ -113,39 +115,8 @@ const stack = ref<Level[]>([]);
 const current = computed(() => stack.value[stack.value.length - 1] ?? null);
 const option = ref<EChartsOption>({});
 
-const rootParams = computed<ExploreParams | null>(() => {
-  void filtersStore.updates;
-  const dimension = exploreStore.dimension(props.by);
-  if (!dimension) return null;
-  const params: ExploreParams = {
-    entity: props.entity,
-    by: [props.by],
-    filter: exploreFilter(),
-  };
-  if (props.withParameters && exploreStore.parameters.length)
-    params.parameters = [...exploreStore.parameters];
-  return params;
-});
+const { result, loading, error, empty, load } = useExploreRequest('metadata');
 
-// a filter or parameter change restarts the drill from the top
-watch(
-  rootParams,
-  (params) => {
-    const dimension = exploreStore.dimension(props.by);
-    stack.value =
-      params && dimension
-        ? [{ params, dimension, label: dimension.label }]
-        : [];
-  },
-  { immediate: true },
-);
-
-const { result, loading, error, empty } = useExploreQuery(
-  'metadata',
-  () => current.value?.params ?? null,
-);
-
-const levels = computed(() => stack.value);
 /** false once the drill has reached `depth` levels below the first */
 const canClick = computed(
   () => props.depth === undefined || stack.value.length - 1 < props.depth,
@@ -168,14 +139,44 @@ const summary = computed(() => {
   const entity = t(`${props.entity}_with_count`, value.meta.n);
   const key = `plots.levels.${level.dimension.key}`;
   const buckets = value.buckets.length;
-  const groups = te(key)
+  const groups = i18n.te(key)
     ? t(key, buckets)
     : `${buckets} ${level.dimension.label.toLowerCase()}`;
   return `${entity} · ${groups}`;
 });
 
-function te(key: string): boolean {
-  return t(key, 0) !== key;
+onMounted(() => void restart());
+// applying the filters (or the parameters) restarts the drill from the top
+filtersStore.$onAction(({ name, after }) => {
+  if (name === 'notifyUpdate') after(() => void restart());
+});
+
+/** Rebuild the first level from the current filters and load it. */
+function restart(): Promise<void> {
+  const dimension = exploreStore.dimension(props.by);
+  if (!dimension) return show([]);
+  const params: ExploreParams = {
+    entity: props.entity,
+    by: [props.by],
+    filter: exploreFilter(),
+  };
+  if (props.withParameters && exploreStore.parameters.length)
+    params.parameters = [...exploreStore.parameters];
+  return show([{ params, dimension, label: dimension.label }]);
+}
+
+/** Make `levels` the drill stack and load its last level. */
+async function show(levels: Level[]): Promise<void> {
+  stack.value = levels;
+  const level = current.value;
+  const value = await load(level?.params ?? null);
+  // a later show() took over while this one waited
+  if (current.value !== level) return;
+  if (!value || !level) {
+    option.value = {};
+    return;
+  }
+  option.value = buildOption(level, value);
 }
 
 function label(
@@ -183,39 +184,24 @@ function label(
   key: string | null | undefined,
 ): string {
   if (key === null || key === undefined) return t('plots.unknown');
-  return dimension.key === 'study'
-    ? exploreStore.studyName(key)
-    : keyLabel(dimension.key, key);
+  return keyLabel(dimension.key, key);
 }
 
-watch(result, (value) => {
-  if (value && current.value?.dimension.key === 'study') {
-    void exploreStore.loadStudyNames(
-      value.buckets.flatMap((bucket) => (bucket.key[0] ? [bucket.key[0]] : [])),
-    );
-  }
-});
-
-watch([result, () => exploreStore.studyNames], ([value]) => {
-  const level = current.value;
-  if (!value || !level) {
-    option.value = {};
-    return;
-  }
+function buildOption(level: Level, value: ExploreResult): EChartsOption {
   const items: BarItem[] = value.buckets.map((bucket) => ({
     name: label(level.dimension, bucket.key[0]),
     value: bucket.n,
     bucket,
   }));
-  const entityWord = t(`${props.entity}_with_count`, 2).replace(/^\d+\s*/, '');
-  option.value = {
+  const countKey = `${props.entity}_with_count`;
+  return {
     tooltip: {
       trigger: 'item',
       formatter: (params) => {
         const item = (Array.isArray(params) ? params[0] : params)?.data as
           BarItem | undefined;
         return item
-          ? `${item.name}<br/><b>${item.value}</b> ${entityWord}`
+          ? `${item.name}<br/>${t(countKey, item.value)}`
           : '';
       },
     },
@@ -252,7 +238,7 @@ watch([result, () => exploreStore.studyNames], ([value]) => {
       },
     ],
   };
-});
+}
 
 function onClick(event: { data?: unknown; componentType?: string }) {
   const level = current.value;
@@ -273,11 +259,10 @@ function onClick(event: { data?: unknown; componentType?: string }) {
   if (!next) return;
   const dimension = exploreStore.dimension(next.by?.[0] || '');
   if (!dimension) return;
-  stack.value = [...stack.value, { params: next, dimension, label: item.name }];
+  void show([...stack.value, { params: next, dimension, label: item.name }]);
 }
 
 function popTo(index: number) {
-  if (index < stack.value.length - 1)
-    stack.value = stack.value.slice(0, index + 1);
+  if (index < stack.value.length - 1) void show(stack.value.slice(0, index + 1));
 }
 </script>

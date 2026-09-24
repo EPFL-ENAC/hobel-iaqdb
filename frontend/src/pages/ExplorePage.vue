@@ -35,14 +35,6 @@
             </q-card-section>
           </q-card>
         </div>
-        <div class="col-12 col-md-6">
-          <DummyBarChart :height="200" />
-        </div>
-      </div>
-      <div class="row q-col-gutter-md">
-        <div class="col-12">
-          <DummyLineChart :height="200" />
-        </div>
       </div>
     </div>
   </q-page>
@@ -50,8 +42,6 @@
 
 <script setup lang="ts">
 import MetadataBarChart from '@/components/plots/MetadataBarChart.vue';
-import DummyBarChart from '@/components/plots/DummyBarChart.vue';
-import DummyLineChart from '@/components/plots/DummyLineChart.vue';
 
 const { t } = useI18n();
 const exploreStore = useExploreStore();
