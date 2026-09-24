@@ -31,7 +31,7 @@ import { BarChart } from 'echarts/charts';
 import { SVGRenderer } from 'echarts/renderers';
 import { GridComponent, TooltipComponent } from 'echarts/components';
 import { initOptions, updateOptions } from '@/components/plots/charts';
-import { exploreFilter } from '@/api/explore';
+import { exploreFilter, exploreRange } from '@/api/explore';
 import { useExploreRequest } from '@/composables/useExploreQuery';
 import type { ExploreBucket, ExploreParams } from '@/models';
 
@@ -69,7 +69,12 @@ const dimensionLabel = computed(() => dimension.value?.label || '');
 
 function params(): ExploreParams | null {
   if (!dimension.value) return null;
-  return { agg: 'coverage', by: ['parameter'], filter: exploreFilter() };
+  return {
+    agg: 'coverage',
+    by: ['parameter'],
+    filter: exploreFilter(),
+    ...exploreRange(),
+  };
 }
 
 const { result, loading, error, empty, load } =
