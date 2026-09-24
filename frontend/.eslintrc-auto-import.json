@@ -104,6 +104,8 @@
     "watch": true,
     "watchEffect": true,
     "watchPostEffect": true,
-    "watchSyncEffect": true
+    "watchSyncEffect": true,
+    "DEFAULT_PARAMETER": true,
+    "useExploreStore": true
   }
 }

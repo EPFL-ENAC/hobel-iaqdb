@@ -2,6 +2,14 @@ import type { SetOptionOpts } from 'echarts';
 import type { Router } from 'vue-router';
 import type { ExploreBucket, ExploreDimension, ExploreParams, ExploreResult } from '@/models';
 import { useFiltersStore } from '@/stores/filters';
+import {
+  buildingTypeOptions,
+  countryOptions,
+  mechanicalVentilationTypeOptions,
+  spaceTypeOptions,
+  yesNoOptions,
+  type OptionItem,
+} from '@/utils/options';
 
 export const initOptions: InitOptions = {
   renderer: 'svg',
@@ -58,6 +66,20 @@ export function toSeries(
     entry.data.push({ key: bucket.key[pointDimension] ?? null, value: value(bucket), bucket });
   }
   return [...series.values()];
+}
+
+/** Label lists for the dimensions whose keys are codes. */
+const KEY_OPTIONS: Record<string, OptionItem[]> = {
+  country: countryOptions,
+  building_type: buildingTypeOptions,
+  ventilation: yesNoOptions,
+  ventilation_type: mechanicalVentilationTypeOptions,
+  space_type: spaceTypeOptions,
+};
+
+/** Human label of a bucket key: the option label for coded dimensions, the key itself otherwise. */
+export function keyLabel(dimension: string, key: string): string {
+  return KEY_OPTIONS[dimension]?.find((opt) => opt.value === key)?.label || key;
 }
 
 export type ClickKind = 'filter' | 'drill' | 'navigate';
