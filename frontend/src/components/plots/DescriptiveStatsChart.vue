@@ -46,7 +46,7 @@
       {{
         parameter
           ? t('plots.no_data_for', {
-              parameters: exploreStore.parameterLabel(parameter),
+              parameters: parameterLabel,
             })
           : t('plots.no_data')
       }}
@@ -79,12 +79,14 @@ import {
   initOptions,
   keyLabel,
   onBucketClick,
-  STATS_CONTEXTS,
   updateOptions,
 } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useExploreRequest } from '@/composables/useExploreQuery';
-import { DEFAULT_PARAMETER } from '@/stores/explore';
+import {
+  useContextChoice,
+  useParameterChoice,
+} from '@/composables/useContextScope';
 import type {
   ExploreBucket,
   ExploreDimension,
@@ -134,8 +136,10 @@ const GRID = '#e0e0e0';
 const PERCENTILES = ['p05', 'p25', 'p50', 'p75', 'p95'] as const;
 
 /** the pollutant compared; stats take one at a time */
-const parameter = ref<string | null>(null);
-const context = ref('country');
+const parameters = useParameterChoice();
+const { parameter, parameterOptions, parameterLabel } = parameters;
+const contexts = useContextChoice(parameter);
+const { context, contextOptions, contextDimension } = contexts;
 /** Drill stack, `stack[0]` being the chosen context. */
 const stack = ref<Level[]>([]);
 const current = computed(() => stack.value[stack.value.length - 1] ?? null);
@@ -144,21 +148,6 @@ const rows = ref<Row[]>([]);
 
 const { result, loading, error, empty, load } =
   useExploreRequest('measurements');
-
-/** the selected pollutants, or every pollutant when none is selected */
-const parameterOptions = computed(() => {
-  const selected = new Set(exploreStore.parameters);
-  return exploreStore.parameterOptions.filter(
-    (opt) => !selected.size || selected.has(opt.value),
-  );
-});
-
-const contextOptions = computed(() =>
-  STATS_CONTEXTS.flatMap((key) => {
-    const dimension = exploreStore.dimension(key);
-    return dimension ? [{ value: key, label: dimension.label }] : [];
-  }),
-);
 
 const unit = computed(() => result.value?.meta.unit || '');
 
@@ -180,30 +169,20 @@ const summary = computed(() => {
   )}`;
 });
 
-/**
- * The pollutant menu follows the global selection: keeps the choice while
- * offered, else the default, else the first.
- */
-function settleParameter(): void {
-  const values = parameterOptions.value.map((opt) => opt.value);
-  if (parameter.value && values.includes(parameter.value)) return;
-  parameter.value = values.includes(DEFAULT_PARAMETER)
-    ? DEFAULT_PARAMETER
-    : (values[0] ?? null);
+/** Settle the menus, then restart the drill: on mount and when the filters are applied. */
+async function refresh(): Promise<void> {
+  await parameters.refresh();
+  await contexts.refresh();
+  await restart();
 }
 
-/** Settle the pollutant, then restart the drill: on mount and when the filters are applied. */
-function refresh(): Promise<void> {
-  settleParameter();
-  return restart();
-}
-
-function onParameter(value: string | null): void {
+async function onParameter(value: string | null): Promise<void> {
   parameter.value = value;
-  void restart();
+  await contexts.refresh();
+  await restart();
 }
 
-function onContext(value: string): void {
+function onContext(value: string | null): void {
   context.value = value;
   void restart();
 }
@@ -216,11 +195,11 @@ filtersStore.$onAction(({ name, after }) => {
 
 /** Rebuild the first level from the current filters and load it. */
 function restart(): Promise<void> {
-  const dimension = exploreStore.dimension(context.value);
+  const dimension = contextDimension.value;
   if (!dimension || !parameter.value) return show([]);
   const params: ExploreParams = {
     agg: 'stats',
-    by: [context.value],
+    by: [dimension.key],
     parameters: [parameter.value],
     grain: 'day',
     filter: exploreFilter(),
@@ -323,8 +302,8 @@ function buildOption(items: Row[]): EChartsOption {
       type: 'value',
       scale: true,
       name: unit.value
-        ? `${exploreStore.parameterLabel(parameter.value || '')} (${unit.value})`
-        : exploreStore.parameterLabel(parameter.value || ''),
+        ? `${parameterLabel.value} (${unit.value})`
+        : parameterLabel.value,
       nameLocation: 'middle',
       nameGap: 28,
       nameTextStyle: { color: MUTED },
