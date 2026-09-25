@@ -144,6 +144,21 @@
             </q-card-section>
           </q-card>
         </div>
+        <div class="col-12 col-md-6">
+          <q-card flat bordered class="full-height">
+            <q-card-section class="q-pb-none">
+              <div class="text-subtitle1 text-bold">
+                {{ t('plots.descriptive_stats') }}
+              </div>
+              <div class="text-caption text-grey-7">
+                {{ t('plots.descriptive_stats_hint') }}
+              </div>
+            </q-card-section>
+            <q-card-section>
+              <DescriptiveStatsChart v-if="exploreStore.schema" :height="600" />
+            </q-card-section>
+          </q-card>
+        </div>
       </div>
     </div>
   </q-page>
@@ -154,6 +169,7 @@ import MetadataBarChart from '@/components/plots/MetadataBarChart.vue';
 import CoverageBarChart from '@/components/plots/CoverageBarChart.vue';
 import MonthlyRecordsChart from '@/components/plots/MonthlyRecordsChart.vue';
 import MeasurementPeriodChart from '@/components/plots/MeasurementPeriodChart.vue';
+import DescriptiveStatsChart from '@/components/plots/DescriptiveStatsChart.vue';
 
 const { t } = useI18n();
 const exploreStore = useExploreStore();
