@@ -82,21 +82,18 @@ import {
   TooltipComponent,
 } from 'echarts/components';
 import {
+  benchmarkOf,
   initOptions,
   keyLabel,
   refine,
+  roundBound,
   STATS_CONTEXTS,
   updateOptions,
 } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useExploreRequest } from '@/composables/useExploreQuery';
 import { DEFAULT_PARAMETER } from '@/stores/explore';
-import type {
-  ExploreBenchmark,
-  ExploreBucket,
-  ExploreDimension,
-  ExploreParams,
-} from '@/models';
+import type { ExploreBucket, ExploreDimension, ExploreParams } from '@/models';
 
 use([
   SVGRenderer,
@@ -111,14 +108,6 @@ interface Props {
   /** height of the plot area; the rows share it */
   height?: number;
 }
-
-/** A benchmark from the schema, or a stand-in until one is provided. */
-type Benchmark = Pick<
-  ExploreBenchmark,
-  'source' | 'averaging' | 'value' | 'unit' | 'note'
-> & {
-  placeholder?: boolean;
-};
 
 /** One drill level: the same context, three requests. */
 interface Level {
@@ -153,20 +142,6 @@ const BENCHMARK_COLOR = '#d32f2f';
 const TEXT = '#424242';
 const MUTED = '#757575';
 const GRID = '#e0e0e0';
-/**
- * Stand-ins for pollutants the database has no benchmark for yet; shown with
- * a "placeholder" badge until the reference values are provided.
- */
-const PLACEHOLDER_BENCHMARKS: Record<string, Benchmark> = {
-  co2: {
-    source: 'Placeholder',
-    averaging: 'day',
-    value: 800,
-    unit: 'ppm',
-    note: 'target',
-    placeholder: true,
-  },
-};
 
 const parameter = ref<string | null>(null);
 const context = ref('country');
@@ -212,13 +187,9 @@ const parameterLabel = computed(() =>
   exploreStore.parameterLabel(parameter.value || ''),
 );
 
-const benchmark = computed<Benchmark | null>(() => {
-  const slug = parameter.value;
-  if (!slug) return null;
-  const listed = exploreStore.schema?.parameters.find((p) => p.slug === slug)
-    ?.benchmarks[0];
-  return listed ?? PLACEHOLDER_BENCHMARKS[slug] ?? null;
-});
+const benchmark = computed(() =>
+  benchmarkOf(exploreStore.schema, parameter.value),
+);
 
 const unit = computed(
   () => result.value?.meta.unit || benchmark.value?.unit || '',
@@ -402,10 +373,11 @@ function buildOption(items: Row[]): EChartsOption {
       min: 0,
       // keep the benchmark in view even when every median is far below it
       max: (extent: { max: number }) =>
-        Math.max(extent.max, b?.value ?? 0) * 1.1,
+        roundBound(Math.max(extent.max, b?.value ?? 0) * 1.1, Math.ceil),
       axisLine: { show: false },
       axisTick: { show: false },
-      axisLabel: { color: MUTED },
+      // the last tick would run into the share column's header
+      axisLabel: { color: MUTED, showMaxLabel: false },
       splitLine: { lineStyle: { color: GRID, width: 1 } },
     },
     yAxis: [

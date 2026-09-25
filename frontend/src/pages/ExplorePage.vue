@@ -174,6 +174,25 @@
             </q-card-section>
           </q-card>
         </div>
+        <div class="col-12 col-md-6">
+          <q-card flat bordered class="full-height">
+            <q-card-section class="q-pb-none">
+              <div class="text-subtitle1 text-bold">
+                {{ t('plots.trends') }}
+              </div>
+              <div class="text-caption text-grey-7">
+                {{ t('plots.trends_hint') }}
+              </div>
+            </q-card-section>
+            <q-card-section>
+              <TrendChart
+                v-if="exploreStore.schema"
+                :height="320"
+                :table-height="280"
+              />
+            </q-card-section>
+          </q-card>
+        </div>
       </div>
     </div>
   </q-page>
@@ -186,6 +205,7 @@ import MonthlyRecordsChart from '@/components/plots/MonthlyRecordsChart.vue';
 import MeasurementPeriodChart from '@/components/plots/MeasurementPeriodChart.vue';
 import DescriptiveStatsChart from '@/components/plots/DescriptiveStatsChart.vue';
 import BenchmarkChart from '@/components/plots/BenchmarkChart.vue';
+import TrendChart from '@/components/plots/TrendChart.vue';
 
 const { t } = useI18n();
 const exploreStore = useExploreStore();
