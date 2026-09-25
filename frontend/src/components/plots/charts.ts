@@ -1,9 +1,17 @@
 import type { SetOptionOpts } from 'echarts';
 import type { Router } from 'vue-router';
-import type { ExploreBucket, ExploreDimension, ExploreParams, ExploreResult } from '@/models';
+import type {
+  ExploreBenchmark,
+  ExploreBucket,
+  ExploreDimension,
+  ExploreParams,
+  ExploreResult,
+  ExploreSchema,
+} from '@/models';
 import { useFiltersStore } from '@/stores/filters';
 import {
   buildingTypeOptions,
+  climateOptions,
   countryOptions,
   mechanicalVentilationTypeOptions,
   spaceTypeOptions,
@@ -68,9 +76,54 @@ export function toSeries(
   return [...series.values()];
 }
 
+/** A benchmark from the schema, or a stand-in until one is provided. */
+export type Benchmark = Pick<ExploreBenchmark, 'source' | 'averaging' | 'value' | 'unit' | 'note'> & {
+  placeholder?: boolean;
+};
+
+/**
+ * Stand-ins for pollutants the database has no benchmark for yet; charts show
+ * them with a "placeholder" badge until the reference values are provided.
+ */
+const PLACEHOLDER_BENCHMARKS: Record<string, Benchmark> = {
+  co2: {
+    source: 'Placeholder',
+    averaging: 'day',
+    value: 800,
+    unit: 'ppm',
+    note: 'target',
+    placeholder: true,
+  },
+};
+
+/** The first benchmark the schema lists for a pollutant, else its placeholder. */
+export function benchmarkOf(schema: ExploreSchema | null, slug: string | null): Benchmark | null {
+  if (!slug) return null;
+  const listed = schema?.parameters.find((p) => p.slug === slug)?.benchmarks[0];
+  return listed ?? PLACEHOLDER_BENCHMARKS[slug] ?? null;
+}
+
+/** 463 → 450 (floor) or 500 (ceil): a readable axis bound, to half a magnitude. */
+export function roundBound(value: number, round: (v: number) => number): number {
+  const step = 10 ** Math.floor(Math.log10(Math.abs(value) || 1)) / 2;
+  return round(value / step) * step;
+}
+
+/** The contexts a statistics chart can compare, in menu order. */
+export const STATS_CONTEXTS = [
+  'country',
+  'city',
+  'climate_zone',
+  'building_type',
+  'ventilation',
+  'ventilation_type',
+  'space_type',
+];
+
 /** Label lists for the dimensions whose keys are codes. */
 const KEY_OPTIONS: Record<string, OptionItem[]> = {
   country: countryOptions,
+  climate_zone: climateOptions,
   building_type: buildingTypeOptions,
   ventilation: yesNoOptions,
   ventilation_type: mechanicalVentilationTypeOptions,

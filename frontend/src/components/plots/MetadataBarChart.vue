@@ -77,10 +77,19 @@ interface Props {
   leaf?: string;
   /** how many levels a click may drill below the first; unlimited by default */
   depth?: number;
+  /**
+   * `drill` (default): a click refines the chart itself, level by level;
+   * `filter`: a click pushes the bucket key into the global filters, so the
+   * map, the lists and every chart re-query. The keys already selected in the
+   * global filters are highlighted; `none`: the chart is read-only.
+   */
+  click?: 'drill' | 'filter' | 'none';
   /** count only entities that contain the selected parameters */
   withParameters?: boolean;
   /** height of the plot area; the bars share it */
   height?: number;
+  /** `horizontal` (default): one row per key; `vertical`: one column per key */
+  orientation?: 'horizontal' | 'vertical';
 }
 
 interface Level {
@@ -93,11 +102,14 @@ interface BarItem {
   name: string;
   value: number;
   bucket: ExploreBucket;
+  itemStyle: { color: string };
 }
 
 const props = withDefaults(defineProps<Props>(), {
   withParameters: true,
   height: 200,
+  click: 'drill',
+  orientation: 'horizontal',
 });
 const i18n = useI18n();
 const { t } = i18n;
@@ -106,9 +118,12 @@ const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
 
 const BAR_COLOR = '#4f8fcc';
+const SELECTED_COLOR = '#2f6fa8';
 const TEXT = '#424242';
 const MUTED = '#757575';
 const GRID = '#e0e0e0';
+/** above this many columns, vertical bars slant their labels */
+const VERTICAL_FLAT_MAX = 6;
 
 /** Drill stack, `stack[0]` being the chart as mounted. */
 const stack = ref<Level[]>([]);
@@ -121,6 +136,29 @@ const { result, loading, error, empty, load } = useExploreRequest('metadata');
 const canClick = computed(
   () => props.depth === undefined || stack.value.length - 1 < props.depth,
 );
+
+/** whether a click on the current level does anything */
+const clickable = computed(() => {
+  const dimension = current.value?.dimension;
+  if (!dimension || props.click === 'none') return false;
+  if (props.click === 'filter') return !!dimension.filter_path;
+  return canClick.value && !!(dimension.drill_to || dimension.filter_path);
+});
+
+/** In `filter` mode, the keys of this dimension already in the global filters. */
+const selectedKeys = computed<Set<string>>(() => {
+  void filtersStore.updates;
+  if (props.click !== 'filter') return new Set();
+  const path = current.value?.dimension.filter_path;
+  const selected: Record<string, string[]> = {
+    '$building.country': filtersStore.countries,
+    '$building.city': filtersStore.cities,
+    '$building.climate_zone': filtersStore.climate_zones,
+    '$building.type': filtersStore.building_types,
+    '$space.mechanical_ventilation_type': filtersStore.mechanical_ventilation_types,
+  };
+  return new Set(path ? selected[path] || [] : []);
+});
 
 const parameterLabels = computed(() =>
   exploreStore.parameters.map(exploreStore.parameterLabel).join(', '),
@@ -192,8 +230,37 @@ function buildOption(level: Level, value: ExploreResult): EChartsOption {
     name: label(level.dimension, bucket.key[0]),
     value: bucket.n,
     bucket,
+    itemStyle: {
+      color:
+        bucket.key[0] && selectedKeys.value.has(bucket.key[0])
+          ? SELECTED_COLOR
+          : BAR_COLOR,
+    },
   }));
   const countKey = `${props.entity}_with_count`;
+  const vertical = props.orientation === 'vertical';
+  const valueAxis = {
+    type: 'value' as const,
+    minInterval: 1,
+    axisLine: { show: false },
+    axisTick: { show: false },
+    axisLabel: { color: MUTED },
+    splitLine: { lineStyle: { color: GRID, width: 1 } },
+  };
+  const categoryAxis = {
+    type: 'category' as const,
+    // horizontal bars read top-down in bucket order
+    inverse: !vertical,
+    data: items.map((item) => item.name),
+    axisLine: { show: false },
+    axisTick: { show: false },
+    axisLabel: !vertical
+      ? { color: TEXT, width: 160, overflow: 'truncate' as const }
+      : items.length > VERTICAL_FLAT_MAX
+        ? // too many columns for flat labels: slant and truncate them
+          { color: TEXT, interval: 0, rotate: 40, width: 120, overflow: 'truncate' as const }
+        : { color: TEXT, interval: 0, width: 100, overflow: 'break' as const },
+  };
   return {
     tooltip: {
       trigger: 'item',
@@ -205,36 +272,25 @@ function buildOption(level: Level, value: ExploreResult): EChartsOption {
           : '';
       },
     },
-    grid: { left: 8, right: 40, top: 8, bottom: 8, containLabel: true },
-    xAxis: {
-      type: 'value',
-      minInterval: 1,
-      axisLine: { show: false },
-      axisTick: { show: false },
-      axisLabel: { color: MUTED },
-      splitLine: { lineStyle: { color: GRID, width: 1 } },
-    },
-    yAxis: {
-      type: 'category',
-      inverse: true,
-      data: items.map((item) => item.name),
-      axisLine: { show: false },
-      axisTick: { show: false },
-      axisLabel: { color: TEXT, width: 160, overflow: 'truncate' },
-    },
+    grid: vertical
+      ? { left: 8, right: 8, top: 24, bottom: 8, containLabel: true }
+      : { left: 8, right: 40, top: 8, bottom: 8, containLabel: true },
+    xAxis: vertical ? categoryAxis : valueAxis,
+    yAxis: vertical ? valueAxis : categoryAxis,
     series: [
       {
         type: 'bar',
         data: items,
         barCategoryGap: '30%',
-        cursor:
-          canClick.value &&
-          (level.dimension.drill_to || level.dimension.filter_path)
-            ? 'pointer'
-            : 'default',
-        itemStyle: { color: BAR_COLOR, borderRadius: [0, 4, 4, 0] },
-        emphasis: { itemStyle: { color: '#2f6fa8' } },
-        label: { show: true, position: 'right', color: TEXT, formatter: '{c}' },
+        cursor: clickable.value ? 'pointer' : 'default',
+        itemStyle: { borderRadius: vertical ? [4, 4, 0, 0] : [0, 4, 4, 0] },
+        emphasis: { itemStyle: { color: SELECTED_COLOR } },
+        label: {
+          show: true,
+          position: vertical ? 'top' : 'right',
+          color: TEXT,
+          formatter: '{c}',
+        },
       },
     ],
   };
@@ -243,8 +299,16 @@ function buildOption(level: Level, value: ExploreResult): EChartsOption {
 function onClick(event: { data?: unknown; componentType?: string }) {
   const level = current.value;
   const item = event.data as BarItem | undefined;
-  if (!canClick.value || !level || !item || event.componentType !== 'series')
+  if (!clickable.value || !level || !item || event.componentType !== 'series')
     return;
+  if (props.click === 'filter') {
+    // the filters store bumps `updates`, which restarts the chart from the root
+    onBucketClick(
+      { kind: 'filter', dimension: level.dimension, params: level.params },
+      item.bucket,
+    );
+    return;
+  }
   const drills =
     level.dimension.drill_to !== null && level.dimension.key !== props.leaf;
   const next = onBucketClick(
