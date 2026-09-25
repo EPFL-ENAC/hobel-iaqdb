@@ -69,6 +69,17 @@ export function toSeries(
   return [...series.values()];
 }
 
+/** The contexts a statistics chart can compare, in menu order. */
+export const STATS_CONTEXTS = [
+  'country',
+  'city',
+  'climate_zone',
+  'building_type',
+  'ventilation',
+  'ventilation_type',
+  'space_type',
+];
+
 /** Label lists for the dimensions whose keys are codes. */
 const KEY_OPTIONS: Record<string, OptionItem[]> = {
   country: countryOptions,
