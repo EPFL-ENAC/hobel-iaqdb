@@ -208,6 +208,21 @@
             </q-card-section>
           </q-card>
         </div>
+        <div class="col-12 col-md-6">
+          <q-card flat bordered class="full-height">
+            <q-card-section class="q-pb-none">
+              <div class="text-subtitle1 text-bold">
+                {{ t('plots.relationship') }}
+              </div>
+              <div class="text-caption text-grey-7">
+                {{ t('plots.relationship_hint') }}
+              </div>
+            </q-card-section>
+            <q-card-section>
+              <RelationshipChart v-if="exploreStore.schema" :height="600" />
+            </q-card-section>
+          </q-card>
+        </div>
       </div>
     </div>
   </q-page>
@@ -222,6 +237,7 @@ import DescriptiveStatsChart from '@/components/plots/DescriptiveStatsChart.vue'
 import BenchmarkChart from '@/components/plots/BenchmarkChart.vue';
 import TrendChart from '@/components/plots/TrendChart.vue';
 import ExceedanceChart from '@/components/plots/ExceedanceChart.vue';
+import RelationshipChart from '@/components/plots/RelationshipChart.vue';
 
 const { t } = useI18n();
 const exploreStore = useExploreStore();
