@@ -81,6 +81,14 @@ export const useExploreStore = defineStore(
       return studyNamesPending;
     }
 
+    /**
+     * Event: open the pair x × y in the custom relationship chart, e.g. from a
+     * correlation matrix cell. The chart listens with `$onAction`.
+     */
+    function showPair(x: string, y: string): { x: string; y: string } {
+      return { x, y };
+    }
+
     function parameterLabel(slug: string): string {
       return (
         schema.value?.parameters.find((p) => p.slug === slug)?.label || slug
@@ -98,6 +106,7 @@ export const useExploreStore = defineStore(
       parameterLabel,
       studyNames,
       loadStudyNames,
+      showPair,
     };
   },
   { persist: { pick: ['parameters'] } },

@@ -65,6 +65,7 @@
         :option="option"
         :update-options="updateOptions"
         :loading="loading"
+        @click="onClick"
       />
     </div>
   </div>
@@ -266,7 +267,7 @@ const option = computed<EChartsOption>(() => {
       {
         type: 'heatmap',
         data,
-        cursor: 'default',
+        cursor: 'pointer',
         itemStyle: { borderColor: '#fff', borderWidth: 2 },
         label: {
           show: true,
@@ -336,6 +337,15 @@ function onParameters(value: string[] | null): void {
 function onMethod(value: Method): void {
   method.value = value;
   reload();
+}
+
+/** a cell of two pollutants measured together opens their scatter */
+function onClick(event: { value?: unknown }): void {
+  const [i, j, r] = (event.value as [number, number, number | '-']) || [];
+  const x = i === undefined ? undefined : order.value[i];
+  const y = j === undefined ? undefined : order.value[j];
+  if (!x || !y || x === y || r === '-') return;
+  exploreStore.showPair(x, y);
 }
 
 onMounted(() => void refresh());
