@@ -10,6 +10,7 @@
 import type { Ref } from 'vue';
 import {
   benchmarkOf,
+  isUnknownKey,
   keyLabel,
   refine,
   STATS_CONTEXTS,
@@ -84,6 +85,36 @@ export function useParameterChoice({
   return { parameter, parameterOptions, parameterLabel, refresh };
 }
 
+/** Options of the context menu. */
+export interface ContextChoiceOptions {
+  /** adds an "All" entry (null), the initial choice */
+  optional?: boolean;
+  /** the initial choice when not optional */
+  initial?: string;
+  /** contexts left out, e.g. the dimension the chart already groups by */
+  exclude?: string[];
+  /**
+   * a dimension the chart needs known: contexts and values are offered only
+   * where some data has a known key of it, e.g. a ventilation type
+   */
+  requireKnown?: string;
+}
+
+/** Group-by of a menu query: the menu's dimension, then the one it needs known. */
+function menuBy(key: string, requireKnown?: string): string[] {
+  return requireKnown ? [key, requireKnown] : [key];
+}
+
+/** Whether a menu bucket counts: a known menu key, and a known required key. */
+function counts(
+  bucket: { key: (string | null)[] },
+  requireKnown?: string,
+): boolean {
+  const key = bucket.key[0];
+  if (key === null || key === undefined) return false;
+  return !requireKnown || !isUnknownKey(bucket.key[1]);
+}
+
 /**
  * The context a chart compares or narrows to. The menu lists the contexts
  * with at least one known value for the pollutant. `optional` adds an "All"
@@ -91,12 +122,17 @@ export function useParameterChoice({
  */
 export function useContextChoice(
   parameter: Ref<string | null>,
-  { optional = false, initial = 'country' } = {},
+  {
+    optional = false,
+    initial = 'country',
+    exclude = [],
+    requireKnown,
+  }: ContextChoiceOptions = {},
 ) {
   const { t } = useI18n();
   const exploreStore = useExploreStore();
   const context = ref<string | null>(optional ? null : initial);
-  const probes = STATS_CONTEXTS.map(
+  const probes = STATS_CONTEXTS.filter((key) => !exclude.includes(key)).map(
     (key) => [key, useExploreRequest('measurements')] as const,
   );
 
@@ -106,15 +142,14 @@ export function useContextChoice(
     for (const [key, probe] of probes) {
       const buckets = probe.result.value?.buckets;
       if (!buckets) return null;
-      if (buckets.some((b) => b.key[0] !== null && b.key[0] !== undefined))
-        keys.add(key);
+      if (buckets.some((b) => counts(b, requireKnown))) keys.add(key);
     }
     return keys;
   });
 
   const contextOptions = computed(() => {
     const withData = available.value;
-    const options = STATS_CONTEXTS.flatMap((key) => {
+    const options = probes.flatMap(([key]) => {
       const dimension = exploreStore.dimension(key);
       if (!dimension || (withData && !withData.has(key))) return [];
       return [{ value: key, label: dimension.label }];
@@ -140,7 +175,7 @@ export function useContextChoice(
           slug && exploreStore.dimension(key)
             ? {
                 agg: 'count',
-                by: [key],
+                by: menuBy(key, requireKnown),
                 parameters: [slug],
                 grain: 'day',
                 filter: exploreFilter(),
@@ -163,11 +198,18 @@ export function useContextChoice(
  * narrowed to, on top of the global filters. The value menu lists the
  * context's values with data.
  */
-export function useContextScope(options: ParameterChoiceOptions = {}) {
+export function useContextScope(
+  options: ParameterChoiceOptions &
+    Pick<ContextChoiceOptions, 'exclude' | 'requireKnown'> = {},
+) {
   const { t } = useI18n();
   const parameters = useParameterChoice(options);
   const { parameter } = parameters;
-  const contexts = useContextChoice(parameter, { optional: true });
+  const contexts = useContextChoice(parameter, {
+    optional: true,
+    exclude: options.exclude ?? [],
+    ...(options.requireKnown ? { requireKnown: options.requireKnown } : {}),
+  });
   const { context, contextDimension } = contexts;
   const contextValue = ref<string | null>(null);
   const valuesRequest = useExploreRequest('measurements');
@@ -179,11 +221,13 @@ export function useContextScope(options: ParameterChoiceOptions = {}) {
   const valueOptions = computed(() => {
     const dimension = contextDimension.value;
     if (!dimension) return [];
-    return (valuesRequest.result.value?.buckets || [])
-      .flatMap((b) => {
-        const key = b.key[0];
-        return key ? [{ value: key, label: keyLabel(dimension.key, key) }] : [];
-      })
+    const keys = new Set(
+      (valuesRequest.result.value?.buckets || []).flatMap((b) =>
+        counts(b, options.requireKnown) && b.key[0] ? [b.key[0]] : [],
+      ),
+    );
+    return [...keys]
+      .map((key) => ({ value: key, label: keyLabel(dimension.key, key) }))
       .sort((a, b) => a.label.localeCompare(b.label));
   });
 
@@ -210,7 +254,7 @@ export function useContextScope(options: ParameterChoiceOptions = {}) {
     await valuesRequest.load({
       filter: exploreFilter(),
       agg: 'count',
-      by: [context.value],
+      by: menuBy(context.value, options.requireKnown),
       parameters: [parameter.value],
       grain: 'day',
     });

@@ -109,6 +109,13 @@ export function roundBound(value: number, round: (v: number) => number): number 
   return round(value / step) * step;
 }
 
+/** Keys that name no category: missing, or coded as unknown / not applicable. */
+const UNKNOWN_KEYS = new Set(['unknown', 'na']);
+
+export function isUnknownKey(key: string | null | undefined): boolean {
+  return key === null || key === undefined || UNKNOWN_KEYS.has(key);
+}
+
 /** The contexts a statistics chart can compare, in menu order. */
 export const STATS_CONTEXTS = [
   'country',
