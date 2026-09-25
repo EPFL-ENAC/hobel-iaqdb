@@ -79,6 +79,7 @@ import {
   initOptions,
   keyLabel,
   onBucketClick,
+  STATS_CONTEXTS,
   updateOptions,
 } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
@@ -131,16 +132,6 @@ const TEXT = '#424242';
 const MUTED = '#757575';
 const GRID = '#e0e0e0';
 const PERCENTILES = ['p05', 'p25', 'p50', 'p75', 'p95'] as const;
-/** the contexts a user can compare, in menu order */
-const CONTEXTS = [
-  'country',
-  'city',
-  'climate_zone',
-  'building_type',
-  'ventilation',
-  'ventilation_type',
-  'space_type',
-];
 
 /** the pollutant compared; stats take one at a time */
 const parameter = ref<string | null>(null);
@@ -163,7 +154,7 @@ const parameterOptions = computed(() => {
 });
 
 const contextOptions = computed(() =>
-  CONTEXTS.flatMap((key) => {
+  STATS_CONTEXTS.flatMap((key) => {
     const dimension = exploreStore.dimension(key);
     return dimension ? [{ value: key, label: dimension.label }] : [];
   }),

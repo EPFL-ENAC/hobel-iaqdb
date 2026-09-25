@@ -159,6 +159,21 @@
             </q-card-section>
           </q-card>
         </div>
+        <div class="col-12 col-md-6">
+          <q-card flat bordered class="full-height">
+            <q-card-section class="q-pb-none">
+              <div class="text-subtitle1 text-bold">
+                {{ t('plots.benchmark_comparison') }}
+              </div>
+              <div class="text-caption text-grey-7">
+                {{ t('plots.benchmark_comparison_hint') }}
+              </div>
+            </q-card-section>
+            <q-card-section>
+              <BenchmarkChart v-if="exploreStore.schema" :height="600" />
+            </q-card-section>
+          </q-card>
+        </div>
       </div>
     </div>
   </q-page>
@@ -170,6 +185,7 @@ import CoverageBarChart from '@/components/plots/CoverageBarChart.vue';
 import MonthlyRecordsChart from '@/components/plots/MonthlyRecordsChart.vue';
 import MeasurementPeriodChart from '@/components/plots/MeasurementPeriodChart.vue';
 import DescriptiveStatsChart from '@/components/plots/DescriptiveStatsChart.vue';
+import BenchmarkChart from '@/components/plots/BenchmarkChart.vue';
 
 const { t } = useI18n();
 const exploreStore = useExploreStore();
