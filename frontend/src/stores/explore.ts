@@ -12,6 +12,9 @@ export const useExploreStore = defineStore(
     /** persisted; first visit starts on the default, an empty list means all datasets */
     const parameters = ref<string[]>([DEFAULT_PARAMETER]);
     let pending: Promise<ExploreSchema> | null = null;
+    /** study identifier to name, for chart labels; filled once by loadStudyNames */
+    const studyNames = ref(new Map<string, string>());
+    let studyNamesPending: Promise<void> | null = null;
 
     const dimensions = computed(
       () =>
@@ -60,6 +63,24 @@ export const useExploreStore = defineStore(
       return dimensions.value.get(key);
     }
 
+    /** Load the study names once; later calls share the first request. */
+    function loadStudyNames(): Promise<void> {
+      if (!studyNamesPending)
+        studyNamesPending = useCatalogStore()
+          .loadStudySummaries(0, 1000, false)
+          .then((res) => {
+            studyNames.value = new Map(
+              res.data.map((s) => [s.identifier, s.name]),
+            );
+          })
+          .catch((err: unknown) => {
+            // a failed load may be retried by the next caller
+            studyNamesPending = null;
+            throw err;
+          });
+      return studyNamesPending;
+    }
+
     function parameterLabel(slug: string): string {
       return (
         schema.value?.parameters.find((p) => p.slug === slug)?.label || slug
@@ -75,6 +96,8 @@ export const useExploreStore = defineStore(
       resetParameters,
       dimension,
       parameterLabel,
+      studyNames,
+      loadStudyNames,
     };
   },
   { persist: { pick: ['parameters'] } },
