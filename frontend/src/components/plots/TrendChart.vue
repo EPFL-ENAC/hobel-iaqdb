@@ -133,6 +133,9 @@ import {
   TooltipComponent,
 } from 'echarts/components';
 import {
+  GRID,
+  MUTED,
+  TEXT,
   benchmarkOf,
   initOptions,
   onBucketClick,
@@ -199,9 +202,6 @@ const exploreStore = useExploreStore();
 const MEDIAN_COLOR = '#2f5596';
 const BAND_COLOR = 'rgba(79, 143, 204, 0.18)';
 const BENCHMARK_COLOR = '#d32f2f';
-const TEXT = '#424242';
-const MUTED = '#757575';
-const GRID = '#e0e0e0';
 
 const {
   parameter,

@@ -92,6 +92,9 @@ import { BarChart } from 'echarts/charts';
 import { SVGRenderer } from 'echarts/renderers';
 import { GridComponent, TooltipComponent } from 'echarts/components';
 import {
+  GRID,
+  MUTED,
+  TEXT,
   benchmarkOf,
   initOptions,
   updateOptions,
@@ -131,9 +134,6 @@ const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
 
 const BAR_COLOR = '#2f5596';
-const TEXT = '#424242';
-const MUTED = '#757575';
-const GRID = '#e0e0e0';
 
 const {
   parameter,

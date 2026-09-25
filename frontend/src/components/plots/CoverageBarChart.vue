@@ -30,7 +30,13 @@ import { use } from 'echarts/core';
 import { BarChart } from 'echarts/charts';
 import { SVGRenderer } from 'echarts/renderers';
 import { GridComponent, TooltipComponent } from 'echarts/components';
-import { initOptions, updateOptions } from '@/components/plots/charts';
+import {
+  GRID,
+  MUTED,
+  TEXT,
+  initOptions,
+  updateOptions,
+} from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';
 import { useExploreRequest } from '@/composables/useExploreQuery';
@@ -62,9 +68,6 @@ const exploreStore = useExploreStore();
 
 const BAR_COLOR = '#4f8fcc';
 const SELECTED_COLOR = '#2f6fa8';
-const TEXT = '#424242';
-const MUTED = '#757575';
-const GRID = '#e0e0e0';
 
 const dimension = computed(() => exploreStore.dimension('parameter'));
 const dimensionLabel = computed(() => dimension.value?.label || '');

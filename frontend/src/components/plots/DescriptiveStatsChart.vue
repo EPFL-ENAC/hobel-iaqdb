@@ -70,6 +70,9 @@ import {
   TooltipComponent,
 } from 'echarts/components';
 import {
+  GRID,
+  MUTED,
+  TEXT,
   clickedRow,
   initOptions,
   keyLabel,
@@ -128,9 +131,6 @@ const exploreStore = useExploreStore();
 const RANGE_COLOR = '#bdbdbd';
 const PERCENTILE_COLOR = '#2f5596';
 const MEAN_COLOR = '#d32f2f';
-const TEXT = '#424242';
-const MUTED = '#757575';
-const GRID = '#e0e0e0';
 const PERCENTILES = ['p05', 'p25', 'p50', 'p75', 'p95'] as const;
 
 /** the pollutant compared; stats take one at a time */

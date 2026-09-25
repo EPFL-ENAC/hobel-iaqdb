@@ -82,7 +82,12 @@ import {
   TooltipComponent,
   VisualMapComponent,
 } from 'echarts/components';
-import { initOptions, updateOptions } from '@/components/plots/charts';
+import {
+  MUTED,
+  TEXT,
+  initOptions,
+  updateOptions,
+} from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useExploreRequest } from '@/composables/useExploreQuery';
 import { useParametersWithRecords } from '@/composables/useContextScope';
@@ -130,8 +135,6 @@ const SHORT: Record<string, string> = {
 const NEGATIVE = '#b2182b';
 const NEUTRAL = '#f7f7f7';
 const POSITIVE = '#2166ac';
-const TEXT = '#424242';
-const MUTED = '#757575';
 
 const selected = ref<string[]>([]);
 const method = ref<Method>('pearson');

@@ -62,7 +62,13 @@ import {
   LegendComponent,
   TooltipComponent,
 } from 'echarts/components';
-import { initOptions, updateOptions } from '@/components/plots/charts';
+import {
+  GRID,
+  MUTED,
+  TEXT,
+  initOptions,
+  updateOptions,
+} from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';
 import { useExploreRequest } from '@/composables/useExploreQuery';
@@ -94,9 +100,6 @@ const DEFAULT_X = 'air_temperature';
 const DEFAULT_Y = 'co2';
 const POINT_COLOR = 'rgba(47, 85, 150, 0.45)';
 const FIT_COLOR = '#d32f2f';
-const TEXT = '#424242';
-const MUTED = '#757575';
-const GRID = '#e0e0e0';
 
 const root = ref<HTMLElement | null>(null);
 const x = ref<string | null>(null);

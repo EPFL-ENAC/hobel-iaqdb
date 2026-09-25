@@ -47,6 +47,9 @@ import { BarChart } from 'echarts/charts';
 import { SVGRenderer } from 'echarts/renderers';
 import { GridComponent, TooltipComponent } from 'echarts/components';
 import {
+  GRID,
+  MUTED,
+  TEXT,
   hasGlobalFilter,
   initOptions,
   keyLabel,
@@ -122,9 +125,6 @@ const exploreStore = useExploreStore();
 
 const BAR_COLOR = '#4f8fcc';
 const SELECTED_COLOR = '#2f6fa8';
-const TEXT = '#424242';
-const MUTED = '#757575';
-const GRID = '#e0e0e0';
 /** above this many columns, vertical bars slant their labels */
 const VERTICAL_FLAT_MAX = 6;
 
