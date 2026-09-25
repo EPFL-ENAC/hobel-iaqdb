@@ -311,6 +311,8 @@ export default {
     relationship_ventilation_hint: 'Median of daily means of the pollutant per ventilation system type. Narrow it to a context; click a bar to see its space types.',
     relationship_climate: 'Relationships: pollutant × climate',
     relationship_climate_hint: 'Median of daily means of the pollutant per Köppen climate zone. Narrow it to a context; click a bar to see its countries.',
+    relationship_building_type: 'Relationships: pollutant × building type',
+    relationship_building_type_hint: 'Median of daily means of the pollutant per building type, ranked. Narrow it to a context; click a bar to see its countries.',
     unknown_left_out: '{count} daily values without a known {dimension} are left out.',
     other_pollutants: 'Other | Other (1 pollutant) | Other ({count} pollutants)',
     records: 'Records',

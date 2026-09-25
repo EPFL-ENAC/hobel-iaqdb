@@ -8,6 +8,7 @@ import type {
   ExploreResult,
   ExploreSchema,
 } from '@/models';
+import { useExploreStore } from '@/stores/explore';
 import { useFiltersStore } from '@/stores/filters';
 import {
   buildingTypeOptions,
@@ -137,8 +138,12 @@ const KEY_OPTIONS: Record<string, OptionItem[]> = {
   space_type: spaceTypeOptions,
 };
 
-/** Human label of a bucket key: the option label for coded dimensions, the key itself otherwise. */
+/**
+ * Human label of a bucket key: the study name for studies, the option label
+ * for coded dimensions, the key itself otherwise.
+ */
 export function keyLabel(dimension: string, key: string): string {
+  if (dimension === 'study') return useExploreStore().studyNames.get(key) || key;
   return KEY_OPTIONS[dimension]?.find((opt) => opt.value === key)?.label || key;
 }
 

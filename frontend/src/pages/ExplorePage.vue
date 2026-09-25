@@ -257,6 +257,26 @@
             </q-card-section>
           </q-card>
         </div>
+        <div class="col-12 col-md-6">
+          <q-card flat bordered class="full-height">
+            <q-card-section class="q-pb-none">
+              <div class="text-subtitle1 text-bold">
+                {{ t('plots.relationship_building_type') }}
+              </div>
+              <div class="text-caption text-grey-7">
+                {{ t('plots.relationship_building_type_hint') }}
+              </div>
+            </q-card-section>
+            <q-card-section>
+              <GroupMedianChart
+                v-if="exploreStore.schema"
+                by="building_type"
+                orientation="horizontal"
+                :height="600"
+              />
+            </q-card-section>
+          </q-card>
+        </div>
       </div>
     </div>
   </q-page>
@@ -277,5 +297,9 @@ import GroupMedianChart from '@/components/plots/GroupMedianChart.vue';
 const { t } = useI18n();
 const exploreStore = useExploreStore();
 
-onMounted(() => void exploreStore.loadSchema());
+onMounted(() => {
+  void exploreStore.loadSchema();
+  // chart labels of studies drilled into
+  void exploreStore.loadStudyNames();
+});
 </script>

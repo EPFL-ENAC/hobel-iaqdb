@@ -114,6 +114,8 @@ interface Props {
   by?: string;
   /** height of the plot area */
   height?: number;
+  /** `vertical` (default): one column per group; `horizontal`: ranked rows, highest on top */
+  orientation?: 'vertical' | 'horizontal';
 }
 
 interface Level {
@@ -134,6 +136,7 @@ interface Bar {
 const props = withDefaults(defineProps<Props>(), {
   by: 'ventilation_type',
   height: 400,
+  orientation: 'vertical',
 });
 const { t, locale } = useI18n();
 const router = useRouter();
@@ -233,6 +236,7 @@ const option = computed<EChartsOption>(() => {
   if (!items.length) return {};
   const u = unit.value ? ` ${unit.value}` : '';
   const drills = !!current.value?.dimension.drill_to;
+  const horizontal = props.orientation === 'horizontal';
   return {
     tooltip: {
       trigger: 'item',
@@ -247,18 +251,28 @@ const option = computed<EChartsOption>(() => {
         ].join('<br/>');
       },
     },
-    grid: { left: 8, right: 8, top: 24, bottom: 8, containLabel: true },
-    xAxis: {
+    grid: {
+      left: 8,
+      right: horizontal ? 48 : 8,
+      top: 24,
+      bottom: 8,
+      containLabel: true,
+    },
+    // the groups on one axis, the medians on the other
+    [horizontal ? 'yAxis' : 'xAxis']: {
       type: 'category',
+      inverse: horizontal,
       data: items.map((bar) => bar.short),
       axisLine: { lineStyle: { color: GRID } },
       axisTick: { show: false },
-      axisLabel: { color: TEXT, interval: 0, width: 110, overflow: 'break' },
+      axisLabel: horizontal
+        ? { color: TEXT, width: 160, overflow: 'truncate' }
+        : { color: TEXT, interval: 0, width: 110, overflow: 'break' },
     },
-    yAxis: {
+    [horizontal ? 'xAxis' : 'yAxis']: {
       type: 'value',
       name: unit.value,
-      nameTextStyle: { color: MUTED, align: 'right' },
+      nameTextStyle: { color: MUTED, align: horizontal ? 'left' : 'right' },
       axisLine: { show: false },
       axisTick: { show: false },
       axisLabel: { color: MUTED },
@@ -271,10 +285,13 @@ const option = computed<EChartsOption>(() => {
         barCategoryGap: '30%',
         barMaxWidth: 96,
         cursor: drills ? 'pointer' : 'default',
-        itemStyle: { color: BAR_COLOR, borderRadius: [4, 4, 0, 0] },
+        itemStyle: {
+          color: BAR_COLOR,
+          borderRadius: horizontal ? [0, 4, 4, 0] : [4, 4, 0, 0],
+        },
         label: {
           show: true,
-          position: 'top',
+          position: horizontal ? 'right' : 'top',
           color: TEXT,
           formatter: (p) => formatValue((p.data as Bar).value),
         },
