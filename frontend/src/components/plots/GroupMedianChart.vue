@@ -76,6 +76,7 @@
       {{
         t('plots.unknown_left_out', {
           count: dropped.toLocaleString(locale),
+          dimension: groupLabel.toLowerCase(),
         })
       }}
     </div>
@@ -123,6 +124,8 @@ interface Level {
 
 interface Bar {
   name: string;
+  /** axis and summary label: the code of a "[Cfb] Temperate, …" name */
+  short: string;
   value: number;
   stats: ExploreStats;
   bucket: ExploreBucket;
@@ -173,6 +176,16 @@ function formatValue(value: number): string {
   }).format(value);
 }
 
+/** label of the grouping of the first level, for the left-out note */
+const groupLabel = computed(
+  () => exploreStore.dimension(props.by)?.label || '',
+);
+
+/** "[Cfb] Temperate, no dry season, warm summer" → "Cfb"; other names as is */
+function shortLabel(name: string): string {
+  return /^\[([^\]]+)\]/.exec(name)?.[1] ?? name;
+}
+
 /** the dimension the loaded result groups by (it may lag the drill stack) */
 const grouping = computed(() => result.value?.meta.dimensions[0] ?? '');
 
@@ -186,6 +199,7 @@ const bars = computed<Bar[]>(() => {
       return [
         {
           name: keyLabel(dimension, key as string),
+          short: shortLabel(keyLabel(dimension, key as string)),
           value: bucket.stats.p50,
           stats: bucket.stats,
           bucket,
@@ -211,7 +225,7 @@ const summary = computed(() => {
   const u = unit.value ? ` ${unit.value}` : '';
   const groups = t(`plots.levels.${grouping.value}`, items.length);
   if (items.length < 2) return groups;
-  return `${high.name} +${formatValue(high.value - low.value)}${u} · ${groups}`;
+  return `${high.short} +${formatValue(high.value - low.value)}${u} · ${groups}`;
 });
 
 const option = computed<EChartsOption>(() => {
@@ -236,7 +250,7 @@ const option = computed<EChartsOption>(() => {
     grid: { left: 8, right: 8, top: 24, bottom: 8, containLabel: true },
     xAxis: {
       type: 'category',
-      data: items.map((bar) => bar.name),
+      data: items.map((bar) => bar.short),
       axisLine: { lineStyle: { color: GRID } },
       axisTick: { show: false },
       axisLabel: { color: TEXT, interval: 0, width: 110, overflow: 'break' },
