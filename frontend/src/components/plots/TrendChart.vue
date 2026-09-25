@@ -44,7 +44,7 @@
           :options="valueOptions"
           :label="contextLabel"
           :disable="!context"
-          :loading="valuesRequest.loading.value"
+          :loading="valuesLoading"
           emit-value
           map-options
           dense
@@ -138,16 +138,12 @@ import {
 import {
   benchmarkOf,
   initOptions,
-  keyLabel,
   onBucketClick,
-  refine,
   roundBound,
-  STATS_CONTEXTS,
   updateOptions,
 } from '@/components/plots/charts';
-import { exploreFilter } from '@/api/explore';
 import { useExploreRequest } from '@/composables/useExploreQuery';
-import { DEFAULT_PARAMETER } from '@/stores/explore';
+import { useContextScope } from '@/composables/useContextScope';
 import type {
   ExploreBucket,
   ExploreDimension,
@@ -198,11 +194,23 @@ const TEXT = '#424242';
 const MUTED = '#757575';
 const GRID = '#e0e0e0';
 
-const parameter = ref<string | null>(null);
+const {
+  parameter,
+  parameterOptions,
+  parameterLabel,
+  context,
+  contextValue,
+  contextOptions,
+  contextLabel,
+  valueOptions,
+  valuesLoading,
+  scopedFilter,
+  refresh,
+  selectParameter,
+  selectContext,
+  selectValue,
+} = useContextScope();
 const year = ref<number | null>(null);
-/** optional context the trend is narrowed to, e.g. country = SG */
-const context = ref<string | null>(null);
-const contextValue = ref<string | null>(null);
 /** Drill stack: the year by month, then a month by day. */
 const stack = ref<Level[]>([]);
 const current = computed(() => stack.value[stack.value.length - 1] ?? null);
@@ -212,34 +220,10 @@ const slots = ref<{ key: string; label: string; point: Point | null }[]>([]);
 
 const trendRequest = useExploreRequest('measurements');
 const yearsRequest = useExploreRequest('measurements');
-const valuesRequest = useExploreRequest('measurements');
 const { result, loading, error, empty } = trendRequest;
 
 const points = computed(() =>
   slots.value.flatMap((slot) => (slot.point ? [slot.point] : [])),
-);
-
-/** the selected pollutants, or every pollutant when none is selected */
-const parameterOptions = computed(() => {
-  const selected = new Set(exploreStore.parameters);
-  return exploreStore.parameterOptions.filter(
-    (opt) => !selected.size || selected.has(opt.value),
-  );
-});
-
-const contextOptions = computed(() => [
-  { value: null, label: t('plots.no_context') },
-  ...STATS_CONTEXTS.flatMap((key) => {
-    const dimension = exploreStore.dimension(key);
-    return dimension ? [{ value: key, label: dimension.label }] : [];
-  }),
-]);
-
-const contextDimension = computed(() =>
-  context.value ? exploreStore.dimension(context.value) : undefined,
-);
-const contextLabel = computed(
-  () => contextDimension.value?.label || t('plots.context_value'),
 );
 
 const yearOptions = computed(() =>
@@ -247,21 +231,6 @@ const yearOptions = computed(() =>
     .flatMap((b) => (b.key[0] ? [new Date(b.key[0]).getUTCFullYear()] : []))
     .sort((a, b) => b - a)
     .map((y) => ({ value: y, label: String(y) })),
-);
-
-const valueOptions = computed(() => {
-  const dimension = contextDimension.value;
-  if (!dimension) return [];
-  return (valuesRequest.result.value?.buckets || [])
-    .flatMap((b) => {
-      const key = b.key[0];
-      return key ? [{ value: key, label: keyLabel(dimension.key, key) }] : [];
-    })
-    .sort((a, b) => a.label.localeCompare(b.label));
-});
-
-const parameterLabel = computed(() =>
-  exploreStore.parameterLabel(parameter.value || ''),
 );
 
 const benchmark = computed(() =>
@@ -274,14 +243,6 @@ function formatValue(value: number): string {
   return new Intl.NumberFormat(locale.value, {
     maximumFractionDigits: value < 10 ? 2 : 0,
   }).format(value);
-}
-
-/** the global filters, narrowed to the chosen context value */
-function scopedFilter(): ExploreParams {
-  const base: ExploreParams = { filter: exploreFilter() };
-  const dimension = contextDimension.value;
-  if (!dimension || !contextValue.value) return base;
-  return refine(base, dimension, contextValue.value);
 }
 
 /** the year's (or month's) highest and lowest median */
@@ -302,18 +263,6 @@ const summary = computed(() => {
     }),
   ].join(' · ');
 });
-
-/**
- * The pollutant menu follows the global selection: keeps the choice while
- * offered, else the default, else the first.
- */
-function settleParameter(): void {
-  const values = parameterOptions.value.map((opt) => opt.value);
-  if (parameter.value && values.includes(parameter.value)) return;
-  parameter.value = values.includes(DEFAULT_PARAMETER)
-    ? DEFAULT_PARAMETER
-    : (values[0] ?? null);
-}
 
 /**
  * Years with data for the pollutant and context, then the trend: keeps the
@@ -345,32 +294,15 @@ async function reload(): Promise<void> {
   return restart();
 }
 
-/** Context values with data for the pollutant, any year. */
-function loadValues(): void {
-  if (!context.value || !parameter.value) {
-    void valuesRequest.load(null);
-    return;
-  }
-  void valuesRequest.load({
-    filter: exploreFilter(),
-    agg: 'count',
-    by: [context.value],
-    parameters: [parameter.value],
-    grain: 'day',
-  });
-}
-
 /** Settle the menus, then reload: on mount and when the filters are applied. */
-function refreshAll(): Promise<void> {
-  settleParameter();
-  loadValues();
-  return reload();
+async function refreshAll(): Promise<void> {
+  await refresh();
+  await reload();
 }
 
-function onParameter(value: string | null): void {
-  parameter.value = value;
-  loadValues();
-  void reload();
+async function onParameter(value: string | null): Promise<void> {
+  await selectParameter(value);
+  await reload();
 }
 
 function onYear(value: number | null): void {
@@ -378,17 +310,15 @@ function onYear(value: number | null): void {
   void restart();
 }
 
-function onContext(value: string | null): void {
+async function onContext(value: string | null): Promise<void> {
   // the trend changes only if a value of the old context was narrowing it
   const narrowed = contextValue.value !== null;
-  context.value = value;
-  contextValue.value = null;
-  loadValues();
-  if (narrowed) void reload();
+  await selectContext(value);
+  if (narrowed) await reload();
 }
 
 function onValue(value: string | null): void {
-  contextValue.value = value;
+  selectValue(value);
   void reload();
 }
 

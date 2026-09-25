@@ -87,12 +87,14 @@ import {
   keyLabel,
   refine,
   roundBound,
-  STATS_CONTEXTS,
   updateOptions,
 } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useExploreRequest } from '@/composables/useExploreQuery';
-import { DEFAULT_PARAMETER } from '@/stores/explore';
+import {
+  useContextChoice,
+  useParameterChoice,
+} from '@/composables/useContextScope';
 import type { ExploreBucket, ExploreDimension, ExploreParams } from '@/models';
 
 use([
@@ -143,8 +145,12 @@ const TEXT = '#424242';
 const MUTED = '#757575';
 const GRID = '#e0e0e0';
 
-const parameter = ref<string | null>(null);
-const context = ref('country');
+const parameters = useParameterChoice({
+  withBenchmark: true,
+});
+const { parameter, parameterOptions, parameterLabel } = parameters;
+const contexts = useContextChoice(parameter);
+const { context, contextOptions, contextDimension } = contexts;
 /** Drill stack, `stack[0]` being the chosen context. */
 const stack = ref<Level[]>([]);
 const current = computed(() => stack.value[stack.value.length - 1] ?? null);
@@ -166,25 +172,6 @@ const error = computed(
     filteredRequest.error.value ||
     databaseRequest.error.value ||
     exceedanceRequest.error.value,
-);
-
-/** the selected pollutants, or every pollutant when none is selected */
-const parameterOptions = computed(() => {
-  const selected = new Set(exploreStore.parameters);
-  return exploreStore.parameterOptions.filter(
-    (opt) => !selected.size || selected.has(opt.value),
-  );
-});
-
-const contextOptions = computed(() =>
-  STATS_CONTEXTS.flatMap((key) => {
-    const dimension = exploreStore.dimension(key);
-    return dimension ? [{ value: key, label: dimension.label }] : [];
-  }),
-);
-
-const parameterLabel = computed(() =>
-  exploreStore.parameterLabel(parameter.value || ''),
 );
 
 const benchmark = computed(() =>
@@ -212,30 +199,20 @@ const benchmarkLabel = computed(() => {
   return `${b.source} · ${formatValue(b.value)} ${b.unit}${note}`;
 });
 
-/**
- * The pollutant menu follows the global selection: keeps the choice while
- * offered, else the default, else the first.
- */
-function settleParameter(): void {
-  const values = parameterOptions.value.map((opt) => opt.value);
-  if (parameter.value && values.includes(parameter.value)) return;
-  parameter.value = values.includes(DEFAULT_PARAMETER)
-    ? DEFAULT_PARAMETER
-    : (values[0] ?? null);
+/** Settle the menus, then restart the drill: on mount and when the filters are applied. */
+async function refresh(): Promise<void> {
+  await parameters.refresh();
+  await contexts.refresh();
+  await restart();
 }
 
-/** Settle the pollutant, then restart the drill: on mount and when the filters are applied. */
-function refresh(): Promise<void> {
-  settleParameter();
-  return restart();
-}
-
-function onParameter(value: string | null): void {
+async function onParameter(value: string | null): Promise<void> {
   parameter.value = value;
-  void restart();
+  await contexts.refresh();
+  await restart();
 }
 
-function onContext(value: string): void {
+function onContext(value: string | null): void {
   context.value = value;
   void restart();
 }
@@ -248,12 +225,12 @@ filtersStore.$onAction(({ name, after }) => {
 
 /** Rebuild the first level from the current filters and load it. */
 function restart(): Promise<void> {
-  const dimension = exploreStore.dimension(context.value);
+  const dimension = contextDimension.value;
   const b = benchmark.value;
   if (!dimension || !parameter.value || !b) return show([]);
   // the benchmark's averaging period sets the grain of both statistics
   const base: ExploreParams = {
-    by: [context.value],
+    by: [dimension.key],
     parameters: [parameter.value],
     grain: b.averaging,
   };
