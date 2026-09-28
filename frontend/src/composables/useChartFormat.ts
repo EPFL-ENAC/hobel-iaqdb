@@ -8,10 +8,10 @@ export function useChartFormat() {
   const { t, locale } = useI18n();
   const filtersStore = useFiltersStore();
 
-  /** a measured value: 2 decimals below 10, none above */
+  /** a measured value: 2 decimals below 10 in magnitude, none above */
   function formatValue(value: number): string {
     return new Intl.NumberFormat(locale.value, {
-      maximumFractionDigits: value < 10 ? 2 : 0,
+      maximumFractionDigits: Math.abs(value) < 10 ? 2 : 0,
     }).format(value);
   }
 

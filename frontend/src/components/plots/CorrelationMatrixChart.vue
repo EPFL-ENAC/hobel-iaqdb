@@ -85,6 +85,7 @@ import {
 import { initOptions, updateOptions } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useExploreRequest } from '@/composables/useExploreQuery';
+import { useParametersWithRecords } from '@/composables/useContextScope';
 import type { ExploreParams } from '@/models';
 
 use([
@@ -135,7 +136,7 @@ const MUTED = '#757575';
 const selected = ref<string[]>([]);
 const method = ref<Method>('pearson');
 
-const coverage = useExploreRequest('measurements');
+const coverage = useParametersWithRecords();
 const { result, loading, error, empty, load } =
   useExploreRequest('relationships');
 
@@ -145,14 +146,7 @@ const methodOptions = computed(() => [
 ]);
 
 /** every pollutant with records under the filters */
-const parameterOptions = computed(() => {
-  const withData = new Set(
-    (coverage.result.value?.buckets || []).flatMap((b) =>
-      b.key[0] && b.n_records ? [b.key[0]] : [],
-    ),
-  );
-  return exploreStore.parameterOptions.filter((opt) => withData.has(opt.value));
-});
+const parameterOptions = coverage.options;
 
 function shortName(slug: string): string {
   return SHORT[slug] ?? exploreStore.parameterLabel(slug);
@@ -296,15 +290,11 @@ function params(): ExploreParams | null {
 
 /**
  * Pollutants with data, then the selection: keeps the pollutants that still
- * have data; with fewer than two, the global selection or the default set.
+ * have data; with fewer than two, the global selection or the default set,
+ * filled up from the pollutants with data when it has fewer than two of them.
  */
 async function settle(): Promise<void> {
-  await coverage.load({
-    agg: 'coverage',
-    by: ['parameter'],
-    filter: exploreFilter(),
-    ...exploreRange(),
-  });
+  await coverage.refresh();
   const offered = new Set(parameterOptions.value.map((opt) => opt.value));
   const kept = selected.value.filter((slug) => offered.has(slug));
   if (kept.length >= 2) {
@@ -312,10 +302,14 @@ async function settle(): Promise<void> {
     return;
   }
   const global = exploreStore.parameters.filter((slug) => offered.has(slug));
-  const start = global.length >= 2 ? global : DEFAULT_SET;
-  selected.value = start
-    .filter((slug) => offered.has(slug))
-    .slice(0, MAX_PARAMETERS);
+  if (global.length >= 2) {
+    selected.value = global.slice(0, MAX_PARAMETERS);
+    return;
+  }
+  const defaults = DEFAULT_SET.filter((slug) => offered.has(slug));
+  const start =
+    defaults.length >= 2 ? defaults : [...new Set([...defaults, ...offered])];
+  selected.value = start.slice(0, MAX_PARAMETERS);
 }
 
 function reload(): void {

@@ -10,7 +10,7 @@ Grain = Literal["day", "hour", "raw"]
 Source = Literal["metadata", "measurements", "relationships"]
 MetadataAgg = Literal["count", "availability"]
 MeasurementAgg = Literal["coverage", "count", "stats", "exceedance"]
-RelationshipAgg = Literal["pairs", "matrix"]
+RelationshipAgg = Literal["pairs", "matrix", "partners"]
 Method = Literal["pearson", "spearman"]
 Agg = MetadataAgg | MeasurementAgg | RelationshipAgg
 

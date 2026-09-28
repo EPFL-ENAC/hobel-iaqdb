@@ -98,6 +98,7 @@ import {
   updateOptions,
 } from '@/components/plots/charts';
 import { exploreRange } from '@/api/explore';
+import { useChartFormat } from '@/composables/useChartFormat';
 import { useExploreRequest } from '@/composables/useExploreQuery';
 import { useContextScope } from '@/composables/useContextScope';
 import type {
@@ -139,6 +140,7 @@ const props = withDefaults(defineProps<Props>(), {
   orientation: 'vertical',
 });
 const { t, locale } = useI18n();
+const { formatValue } = useChartFormat();
 const router = useRouter();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
@@ -173,17 +175,6 @@ const { result, loading, error, empty, load } =
 
 const unit = computed(() => result.value?.meta.unit || '');
 
-function formatValue(value: number): string {
-  return new Intl.NumberFormat(locale.value, {
-    maximumFractionDigits: value < 10 ? 2 : 0,
-  }).format(value);
-}
-
-/** label of the grouping of the first level, for the left-out note */
-const groupLabel = computed(
-  () => exploreStore.dimension(props.by)?.label || '',
-);
-
 /** "[Cfb] Temperate, no dry season, warm summer" → "Cfb"; other names as is */
 function shortLabel(name: string): string {
   return /^\[([^\]]+)\]/.exec(name)?.[1] ?? name;
@@ -191,6 +182,11 @@ function shortLabel(name: string): string {
 
 /** the dimension the loaded result groups by (it may lag the drill stack) */
 const grouping = computed(() => result.value?.meta.dimensions[0] ?? '');
+
+/** label of the loaded grouping, for the left-out note */
+const groupLabel = computed(
+  () => exploreStore.dimension(grouping.value)?.label || '',
+);
 
 /** one bar per known group, highest median first */
 const bars = computed<Bar[]>(() => {

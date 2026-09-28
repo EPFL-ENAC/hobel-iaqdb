@@ -302,7 +302,7 @@ export default {
       building_construction_year: 'Construction year',
       building_altitude: 'Altitude (m)',
     },
-    no_pairs: 'No space has both {parameter} and occupancy data for these filters.',
+    no_pairs: 'No space has both {parameter} data and a value for {metrics} for these filters.',
     one_point_per_space: 'One point per space',
     spaces: 'Spaces',
     spaces_count: 'No spaces | 1 space | {count} spaces',

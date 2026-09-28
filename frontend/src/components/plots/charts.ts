@@ -9,7 +9,7 @@ import type {
   ExploreSchema,
 } from '@/models';
 import { useExploreStore } from '@/stores/explore';
-import { useFiltersStore } from '@/stores/filters';
+import { cityName, useFiltersStore } from '@/stores/filters';
 import {
   buildingTypeOptions,
   climateOptions,
@@ -110,11 +110,13 @@ export function roundBound(value: number, round: (v: number) => number): number 
   return round(value / step) * step;
 }
 
-/** Keys that name no category: missing, or coded as unknown / not applicable (any case). */
-const UNKNOWN_KEYS = new Set(['unknown', 'na']);
-
+/**
+ * Keys that name no category: missing, or coded as unknown (any case).
+ * 'na' (not applicable) is a category of its own, e.g. a naturally ventilated
+ * space has ventilation_type 'na'; 'NA' is also Namibia's country code.
+ */
 export function isUnknownKey(key: string | null | undefined): boolean {
-  return key === null || key === undefined || UNKNOWN_KEYS.has(key.toLowerCase());
+  return key === null || key === undefined || key.toLowerCase() === 'unknown';
 }
 
 /** The contexts a statistics chart can compare, in menu order. */
@@ -134,7 +136,11 @@ const KEY_OPTIONS: Record<string, OptionItem[]> = {
   climate_zone: climateOptions,
   building_type: buildingTypeOptions,
   ventilation: yesNoOptions,
-  ventilation_type: mechanicalVentilationTypeOptions,
+  ventilation_type: [
+    ...mechanicalVentilationTypeOptions,
+    // a spelling found in the data, outside the vocabulary contributors pick from
+    { value: 'balanced mechanical ventilation', label: 'Balanced mechanical' },
+  ],
   space_type: spaceTypeOptions,
 };
 

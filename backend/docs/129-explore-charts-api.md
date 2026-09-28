@@ -230,13 +230,13 @@ shared.
 | `from`, `to` | ISO date | Half-open `[from, to)` on the time column of the chosen grain. Dates, not datetimes: charts pick years and months, and day-granular keys keep cache keys stable. |
 | `parameters` | comma-separated slugs | From `parameter.slug`. Unknown slug → 422 listing valid slugs. Max 10. |
 | `by` | comma-separated dimension keys, max 2 | From the dimension registry (§5). Time bucketing is a dimension (`month`, `year`), so there is no separate `bucket` parameter. Second key gives stacked/heatmap series. |
-| `agg` | enum per route | metadata: `count`, `availability`. measurements: `coverage`, `count`, `stats`, `exceedance`. relationships: `pairs`, `matrix`. |
+| `agg` | enum per route | metadata: `count`, `availability`. measurements: `coverage`, `count`, `stats`, `exceedance`. relationships: `pairs`, `matrix`, `partners`. |
 | `grain` | `day` (default), `hour` or `raw` | Which table the statistic is computed over: `measurement_day`, `measurement_hour` or the raw `measurement` hypertable. At `day`/`hour`, percentiles are percentiles of bucket means; at `raw` they are percentiles of the readings themselves. The response echoes the grain so the label is honest. `raw` is accepted only when `dataset_parameter` says the filter covers **≤ 20 M raw records**; above that the route answers 422 with the matched count and the client falls back to `hour`. No silent downgrade. |
 | `qualifier` | comma-separated | `grain=raw` only. Keeps rows whose `value_qualifier` is in the list; default is all. |
 | `threshold` | float | `agg=exceedance` only. The UI takes it from a benchmark in `/stats/schema` or from user input; the server never invents one. |
 | `entity` | `studies\|buildings\|spaces\|datasets` | metadata route only. |
 | `fields` | comma-separated | `agg=availability` only; defaults to all nullable fields of the entity. |
-| `x`, `y` | slug or metric key | relationships `agg=pairs`. A metric key is a numeric catalog column from a closed list (`space.occupancy_density`, `space.occupancy_number`, `space.floor_area`, `space.space_volume`, `building.airtightness`, `building.construction_year`, `building.altitude`). |
+| `x`, `y` | slug or metric key | relationships `agg=pairs`: `y` is fitted as a function of `x`, so a metric key goes in `x` (`y` is always a slug); `x` alone (a slug) for `agg=partners`. A metric key is a numeric catalog column from a closed list (`space.occupancy_density`, `space.occupancy_number`, `space.floor_area`, `space.space_volume`, `building.airtightness`, `building.construction_year`, `building.altitude`). |
 | `method` | `pearson` (default) or `spearman` | relationships only. |
 
 Canonical form: the frontend sorts list values and serialises the filter with
@@ -359,9 +359,11 @@ instrument_id, ts)` so only co-located, co-timed readings pair).
   aggregates have no `id`), so the trend line is exact and the dots are a
   stable, cacheable sample. Bucket carries `fit`, `points`, `n` and
   `sampled` (true only when `step > 1`).
-- `x` parameter with a metric `y` (chart 13, CO2 × occupancy): `x` is first
+- a metric `x` with a parameter `y` (chart 13, CO2 × occupancy): `y` is first
   aggregated per `(dataset, space)`, then joined to the space column; one point
-  per space, `fit` over all spaces. `meta.grain` echoes `space`.
+  `(metric, mean)` per space, `y` fitted on the metric over all spaces (how the
+  pollutant changes with occupancy, not the reverse). A metric `y` is a 422.
+  `meta.grain` echoes `space`.
 - `agg=matrix&parameters=co2,pm2_5,tvoc[&method=spearman]`: **one scan**.
   A CTE pivots the filtered rows to one column per parameter
   (`max(mean) filter (where parameter = 'co2') as co2 …` grouped by
@@ -371,6 +373,11 @@ instrument_id, ts)` so only co-located, co-timed readings pair).
   parameter is present (`rank() over (partition by b is not null order by
   a)`, ties get their lowest rank). Cells are buckets keyed `[x, y]` (slugs
   sorted) with `n` and `fit.r`. Max 10 parameters (45 cells).
+- `agg=partners&x=co2`: which parameters were measured with `x`, for the y
+  menu of chart 18. One statement: the distinct `(dataset_id, space_id, hour)`
+  rows of `x`, joined to every other parameter's rows; one bucket per
+  parameter keyed `[slug]`, `n` the shared rows (what the matrix cell with
+  `x` would count). No `by`, no `fit`.
 
 ## 8. Click model
 
@@ -461,12 +468,12 @@ also carry `filter=F` unless stated.
 | 10 | Benchmark comparison | same as 9 with `by=year`; benchmark line from `/stats/schema` | toggles benchmark; `agg=exceedance&threshold=<benchmark.value>` for the share above |
 | 11 | Trends | `measurements?agg=stats&parameters=P&by=month&from=Y-01-01&to=Y+1-01-01` → line (p50, p25–p75 band) and table from the same buckets | drill → `day` inside the clicked month |
 | 12 | Exceedance over time | `measurements?agg=exceedance&threshold=…&by=month_of_year&grain=<benchmark.averaging>` | drill → `year` |
-| 13 | CO₂ × occupancy | `relationships?agg=pairs&x=co2&y=space.occupancy_density` | `navigate` → space |
+| 13 | CO₂ × occupancy | `relationships?agg=pairs&x=space.occupancy_density&y=co2` | `navigate` → space |
 | 14 | CO₂ × ventilation | `measurements?agg=stats&parameters=co2&by=ventilation_type` | drill → `space_type` |
 | 15 | Pollutant × climate | `measurements?agg=stats&parameters=P&by=climate_zone` | drill → `country` |
 | 16 | Pollutant × building type | `measurements?agg=stats&parameters=P&by=building_type` | drill → `country` |
 | 17 | Correlation matrix | `relationships?agg=matrix&parameters=P&method=…` | cell click opens chart 18 with `x`, `y` from the cell key |
-| 18 | Custom relationship | `relationships?agg=pairs&x=…&y=…[&by=…]` | `navigate` → entity behind the point |
+| 18 | Custom relationship | `relationships?agg=partners&x=…` (y menu), then `relationships?agg=pairs&x=…&y=…[&by=…]` | `navigate` → entity behind the point |
 
 Benchmarks (chart 10, 12): the `benchmark` table is seeded with WHO 2021 air
 quality guideline values (PM2.5 24-h 15 µg/m³, PM10 24-h 45, NO2 24-h 25,
@@ -486,7 +493,7 @@ Grain = Literal["day", "hour", "raw"]
 Source = Literal["metadata", "measurements", "relationships"]
 MetadataAgg = Literal["count", "availability"]
 MeasurementAgg = Literal["coverage", "count", "stats", "exceedance"]
-RelationshipAgg = Literal["pairs", "matrix"]
+RelationshipAgg = Literal["pairs", "matrix", "partners"]
 Method = Literal["pearson", "spearman"]
 Agg = MetadataAgg | MeasurementAgg | RelationshipAgg
 

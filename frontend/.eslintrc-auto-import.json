@@ -107,6 +107,7 @@
     "watchSyncEffect": true,
     "DEFAULT_PARAMETER": true,
     "useExploreStore": true,
-    "DEFAULT_MEASUREMENT_YEARS": true
+    "DEFAULT_MEASUREMENT_YEARS": true,
+    "cityName": true
   }
 }

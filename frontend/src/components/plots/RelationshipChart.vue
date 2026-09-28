@@ -36,7 +36,12 @@
       {{ t('plots.error') }}: {{ error }}
     </div>
     <div v-else-if="!probing && !metric" class="text-grey-7 text-caption">
-      {{ t('plots.no_pairs', { parameter: parameterLabel }) }}
+      {{
+        t('plots.no_pairs', {
+          parameter: parameterLabel,
+          metrics: probedMetrics,
+        })
+      }}
     </div>
     <div v-else :style="`height: ${height}px;`">
       <e-charts
@@ -63,6 +68,7 @@ import {
 } from 'echarts/components';
 import { initOptions, updateOptions } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
+import { useChartFormat } from '@/composables/useChartFormat';
 import { useExploreRequest } from '@/composables/useExploreQuery';
 import { useParameterChoice } from '@/composables/useContextScope';
 import type { ExploreParams } from '@/models';
@@ -91,6 +97,7 @@ const i18n = useI18n();
 const { t, locale } = i18n;
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
+const { formatValue } = useChartFormat();
 
 const POINT_COLOR = 'rgba(47, 85, 150, 0.55)';
 const FIT_COLOR = '#d32f2f';
@@ -116,7 +123,13 @@ const current = computed(() =>
 );
 const result = computed(() => current.value?.result.value ?? null);
 const loading = computed(() => current.value?.loading.value ?? false);
-const error = computed(() => current.value?.error.value ?? null);
+/** the chosen metric's error; with no metric offered, the first probe's that failed */
+const error = computed(() =>
+  current.value
+    ? current.value.error.value
+    : ([...probes.values()].find((probe) => probe.error.value)?.error.value ??
+      null),
+);
 const probing = computed(() =>
   [...probes.values()].some((probe) => probe.loading.value),
 );
@@ -133,6 +146,13 @@ const metricOptions = computed(() =>
   ),
 );
 
+/** the metrics probed, for the no-pairs note: "floor area or altitude (m)" */
+const probedMetrics = computed(() =>
+  new Intl.ListFormat(locale.value, { type: 'disjunction' }).format(
+    [...probes.keys()].map((key) => metricName(key).toLowerCase()),
+  ),
+);
+
 const metricLabel = computed(() =>
   metric.value ? metricName(metric.value) : '',
 );
@@ -142,12 +162,6 @@ const unit = computed(() => result.value?.meta.unit || '');
 const grainLabel = computed(() =>
   result.value?.meta.grain === 'space' ? t('plots.one_point_per_space') : '',
 );
-
-function formatValue(value: number): string {
-  return new Intl.NumberFormat(locale.value, {
-    maximumFractionDigits: Math.abs(value) < 10 ? 2 : 0,
-  }).format(value);
-}
 
 /** points, correlation and fit quality */
 const summary = computed(() => {
@@ -174,9 +188,10 @@ async function probeAll(): Promise<void> {
     [...probes].map(([key, probe]) => {
       const params: ExploreParams | null = slug
         ? {
+            // the pollutant fitted on the metric
             agg: 'pairs',
-            x: slug,
-            y: key,
+            x: key,
+            y: slug,
             filter: exploreFilter(),
             ...exploreRange(),
           }
@@ -231,8 +246,8 @@ const option = computed<EChartsOption>(() => {
           [hi, fit.slope * hi + fit.intercept],
         ]
       : [];
-  const xName = `${parameterLabel.value}${unit.value ? ` (${unit.value})` : ''}`;
-  const yName = metricLabel.value;
+  const xName = metricLabel.value;
+  const yName = `${parameterLabel.value}${unit.value ? ` (${unit.value})` : ''}`;
   const spaceName = t('plots.spaces');
   const fitName = t('plots.trend_line');
   return {
@@ -273,7 +288,7 @@ const option = computed<EChartsOption>(() => {
     yAxis: {
       type: 'value',
       scale: true,
-      // counts and sizes stay on the positive side; the fit line is clipped
+      // concentrations stay on the positive side; the fit line is clipped
       ...(Math.min(...ys) >= 0 ? { min: 0 } : {}),
       name: yName,
       nameLocation: 'end',

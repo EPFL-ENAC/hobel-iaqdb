@@ -65,7 +65,7 @@ async def get_relationships(
     session: AsyncSession = Depends(get_session),
 ):
     """Pairwise queries over co-located, co-timed measurements:
-    `agg=pairs` (x, y) or `agg=matrix` (parameters)."""
+    `agg=pairs` (x, y), `agg=matrix` (parameters) or `agg=partners` (x)."""
     version = await CatalogVersionService(session).get()
     key = canonical_key("relationships", query, version)
     service = RelationshipService(session)

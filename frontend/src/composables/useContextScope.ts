@@ -20,6 +20,43 @@ import { useExploreRequest } from '@/composables/useExploreQuery';
 import { DEFAULT_PARAMETER } from '@/stores/explore';
 import type { ExploreParams } from '@/models';
 
+/**
+ * The pollutants with records under the global filters, in catalog order.
+ * `options` is empty until the first `refresh()` resolves.
+ */
+export function useParametersWithRecords() {
+  const exploreStore = useExploreStore();
+  const coverage = useExploreRequest('measurements');
+
+  /** slugs with records under the filters; null until known */
+  const available = computed(() => {
+    const buckets = coverage.result.value?.buckets;
+    if (!buckets) return null;
+    return new Set(
+      buckets.flatMap((b) => (b.key[0] && b.n_records ? [b.key[0]] : [])),
+    );
+  });
+
+  const options = computed(() => {
+    const withData = available.value;
+    return withData
+      ? exploreStore.parameterOptions.filter((opt) => withData.has(opt.value))
+      : [];
+  });
+
+  /** Reload which pollutants have records. */
+  async function refresh(): Promise<void> {
+    await coverage.load({
+      agg: 'coverage',
+      by: ['parameter'],
+      filter: exploreFilter(),
+      ...exploreRange(),
+    });
+  }
+
+  return { available, options, loading: coverage.loading, refresh };
+}
+
 /** Options of the pollutant menu. */
 export interface ParameterChoiceOptions {
   /** list only pollutants with a benchmark, for charts that compare to one */
@@ -37,21 +74,12 @@ export function useParameterChoice({
   const { t } = useI18n();
   const exploreStore = useExploreStore();
   const parameter = ref<string | null>(null);
-  const coverage = useExploreRequest('measurements');
-
-  /** slugs with records under the filters; null until known */
-  const available = computed(() => {
-    const buckets = coverage.result.value?.buckets;
-    if (!buckets) return null;
-    return new Set(
-      buckets.flatMap((b) => (b.key[0] && b.n_records ? [b.key[0]] : [])),
-    );
-  });
+  const coverage = useParametersWithRecords();
 
   /** the selected pollutants with records, benchmark or not */
   const withRecords = computed(() => {
     const selected = new Set(exploreStore.parameters);
-    const withData = available.value;
+    const withData = coverage.available.value;
     return exploreStore.parameterOptions.filter(
       (opt) =>
         (!selected.size || selected.has(opt.value)) &&
@@ -95,12 +123,7 @@ export function useParameterChoice({
 
   /** Reload which pollutants have records, then settle the choice. */
   async function refresh(): Promise<void> {
-    await coverage.load({
-      agg: 'coverage',
-      by: ['parameter'],
-      filter: exploreFilter(),
-      ...exploreRange(),
-    });
+    await coverage.refresh();
     settle();
   }
 
@@ -196,7 +219,8 @@ export function useContextChoice(
    * its data falls back to the first one offered. Coverage reads
    * `dataset_parameter` only, no fact scan: it keys a dataset by every
    * building of its study, loose for a value but enough to tell whether a
-   * context has any known one.
+   * context has any known one. A required known key needs the two keys on
+   * the same rows, so only then a fact count.
    */
   async function refresh(): Promise<void> {
     const slug = parameter.value;
@@ -205,8 +229,9 @@ export function useContextChoice(
         probe.load(
           slug && exploreStore.dimension(key)
             ? {
-                agg: 'count',
-                by: menuBy(key, requireKnown),
+                ...(requireKnown
+                  ? { agg: 'count', by: menuBy(key, requireKnown) }
+                  : { agg: 'coverage', by: [key] }),
                 parameters: [slug],
                 filter: exploreFilter(),
                 ...exploreRange(),

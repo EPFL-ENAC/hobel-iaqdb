@@ -64,7 +64,9 @@ import {
 } from 'echarts/components';
 import { initOptions, updateOptions } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
+import { useChartFormat } from '@/composables/useChartFormat';
 import { useExploreRequest } from '@/composables/useExploreQuery';
+import { useParametersWithRecords } from '@/composables/useContextScope';
 import type { ExploreParams } from '@/models';
 
 use([
@@ -85,12 +87,11 @@ withDefaults(defineProps<Props>(), { height: 400 });
 const { t, locale } = useI18n();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
+const { formatValue } = useChartFormat();
 
 /** the pair the chart opens on, when both have data together */
 const DEFAULT_X = 'air_temperature';
 const DEFAULT_Y = 'co2';
-/** a matrix takes at most 10 parameters: x and 9 candidates per probe */
-const PROBE_SIZE = 9;
 const POINT_COLOR = 'rgba(47, 85, 150, 0.45)';
 const FIT_COLOR = '#d32f2f';
 const TEXT = '#424242';
@@ -100,23 +101,16 @@ const GRID = '#e0e0e0';
 const root = ref<HTMLElement | null>(null);
 const x = ref<string | null>(null);
 const y = ref<string | null>(null);
-/** pollutants measured together with x, from the probes */
+/** pollutants measured together with x */
 const partners = ref<Set<string>>(new Set());
-const probing = ref(false);
 
-const coverage = useExploreRequest('measurements');
-const probes = useExploreRequest('relationships');
+const coverage = useParametersWithRecords();
+const probe = useExploreRequest('relationships');
+const probing = probe.loading;
 const { result, loading, error, load } = useExploreRequest('relationships');
 
 /** every pollutant with records under the filters */
-const xOptions = computed(() => {
-  const withData = new Set(
-    (coverage.result.value?.buckets || []).flatMap((b) =>
-      b.key[0] && b.n_records ? [b.key[0]] : [],
-    ),
-  );
-  return exploreStore.parameterOptions.filter((opt) => withData.has(opt.value));
-});
+const xOptions = coverage.options;
 
 /** the pollutants measured in the same space and hour as x */
 const yOptions = computed(() =>
@@ -129,12 +123,6 @@ function label(slug: string | null): string {
     exploreStore.parameterOptions.find((opt) => opt.value === slug)?.label ||
     slug
   );
-}
-
-function formatValue(value: number): string {
-  return new Intl.NumberFormat(locale.value, {
-    maximumFractionDigits: Math.abs(value) < 10 ? 2 : 0,
-  }).format(value);
 }
 
 const grainLabel = computed(() =>
@@ -272,44 +260,23 @@ function scope(): Pick<ExploreParams, 'filter' | 'from' | 'to'> {
 
 /** Pollutants with records; keeps x while offered, else the default, else the first. */
 async function settleX(): Promise<void> {
-  await coverage.load({ agg: 'coverage', by: ['parameter'], ...scope() });
+  await coverage.refresh();
   const offered = xOptions.value.map((opt) => opt.value);
   if (x.value && offered.includes(x.value)) return;
   x.value = offered.includes(DEFAULT_X) ? DEFAULT_X : (offered[0] ?? null);
 }
 
 /**
- * Which pollutants were measured with x: matrices of x and up to 9
- * candidates each, keeping the pairs with paired hours. Then y: kept while
- * offered, else the default, else the first.
+ * Which pollutants were measured with x, those sharing hours with it in one
+ * request. Then y: kept while offered, else the default, else the first.
  */
 async function settleY(): Promise<void> {
-  const slug = x.value;
-  const candidates = xOptions.value
-    .map((opt) => opt.value)
-    .filter((c) => c !== slug);
-  const found = new Set<string>();
-  if (slug) {
-    probing.value = true;
-    try {
-      for (let i = 0; i < candidates.length; i += PROBE_SIZE) {
-        const value = await probes.load({
-          agg: 'matrix',
-          parameters: [slug, ...candidates.slice(i, i + PROBE_SIZE)],
-          ...scope(),
-        });
-        for (const bucket of value?.buckets || []) {
-          const [a, b] = bucket.key;
-          if (!bucket.n || !a || !b) continue;
-          if (a === slug) found.add(b);
-          else if (b === slug) found.add(a);
-        }
-      }
-    } finally {
-      probing.value = false;
-    }
-  }
-  partners.value = found;
+  const value = await probe.load(
+    x.value ? { agg: 'partners', x: x.value, ...scope() } : null,
+  );
+  partners.value = new Set(
+    (value?.buckets || []).flatMap((b) => (b.n && b.key[0] ? [b.key[0]] : [])),
+  );
   const offered = yOptions.value.map((opt) => opt.value);
   if (y.value && offered.includes(y.value)) return;
   y.value = offered.includes(DEFAULT_Y) ? DEFAULT_Y : (offered[0] ?? null);

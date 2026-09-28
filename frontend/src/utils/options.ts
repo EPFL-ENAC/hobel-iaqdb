@@ -60,7 +60,6 @@ export const mechanicalVentilationTypeOptions = [
   { value: 'mixing', label: 'Mixing' },
   { value: 'displacement', label: 'Displacement' },
   { value: 'exhaust only', label: 'Exhaust only' },
-  { value: 'balanced mechanical ventilation', label: 'Balanced mechanical' },
   { value: 'other', label: 'Other' },
   { value: 'unknown', label: 'Unknown' },
   { value: 'na', label: 'Not applicable' },
