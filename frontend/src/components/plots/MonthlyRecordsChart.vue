@@ -41,7 +41,13 @@ import {
   LegendComponent,
   TooltipComponent,
 } from 'echarts/components';
-import { initOptions, updateOptions } from '@/components/plots/charts';
+import {
+  GRID,
+  MUTED,
+  TEXT,
+  initOptions,
+  updateOptions,
+} from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';
 import { useExploreRequest } from '@/composables/useExploreQuery';
@@ -63,9 +69,6 @@ const exploreStore = useExploreStore();
 /** the biggest pollutants get a color each, the rest stack as "Other" */
 const PALETTE = ['#4f8fcc', '#e8a33d', '#5aa469', '#c05b7b', '#8a6fc4'];
 const OTHER_COLOR = '#bdbdbd';
-const TEXT = '#424242';
-const MUTED = '#757575';
-const GRID = '#e0e0e0';
 const MONTHS = Array.from({ length: 12 }, (_, i) => String(i + 1));
 
 function params(): ExploreParams | null {

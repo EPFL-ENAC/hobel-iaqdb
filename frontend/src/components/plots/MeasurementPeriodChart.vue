@@ -34,7 +34,13 @@ import { use } from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import { SVGRenderer } from 'echarts/renderers';
 import { GridComponent, TooltipComponent } from 'echarts/components';
-import { initOptions, updateOptions } from '@/components/plots/charts';
+import {
+  GRID,
+  MUTED,
+  TEXT,
+  initOptions,
+  updateOptions,
+} from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';
 import { useExploreRequest } from '@/composables/useExploreQuery';
@@ -54,9 +60,6 @@ const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
 
 const LINE_COLOR = '#2f5596';
-const TEXT = '#424242';
-const MUTED = '#757575';
-const GRID = '#e0e0e0';
 
 function params(): ExploreParams | null {
   if (!exploreStore.dimension('dataset')) return null;

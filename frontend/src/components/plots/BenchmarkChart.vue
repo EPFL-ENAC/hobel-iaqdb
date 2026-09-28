@@ -84,6 +84,9 @@ import {
   TooltipComponent,
 } from 'echarts/components';
 import {
+  GRID,
+  MUTED,
+  TEXT,
   benchmarkOf,
   clickedRow,
   initOptions,
@@ -159,9 +162,6 @@ const exploreStore = useExploreStore();
 const FILTERED_COLOR = '#2f5596';
 const DATABASE_COLOR = '#9e9e9e';
 const BENCHMARK_COLOR = '#d32f2f';
-const TEXT = '#424242';
-const MUTED = '#757575';
-const GRID = '#e0e0e0';
 
 const parameters = useParameterChoice({
   withBenchmark: true,

@@ -27,6 +27,11 @@ export const updateOptions: SetOptionOpts = {
   notMerge: true,
 };
 
+/** Shared chart greys: labels, axis text, split lines. */
+export const TEXT = '#424242';
+export const MUTED = '#757575';
+export const GRID = '#e0e0e0';
+
 /**
  * https://echarts.apache.org/en/api.html#echarts.init
  */

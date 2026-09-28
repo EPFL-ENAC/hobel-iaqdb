@@ -26,8 +26,13 @@ export function useChartFormat() {
     );
   }
 
-  /** a 0..1 share as a whole percentage */
+  /**
+   * a 0..1 share as a whole percentage; a share short of either end never
+   * rounds onto it: a trace shows "< 1%", a near-whole "> 99%"
+   */
   function formatShare(value: number): string {
+    if (value > 0 && value < 0.005) return '< 1%';
+    if (value < 1 && value >= 0.995) return '> 99%';
     return `${Math.round(value * 100)}%`;
   }
 
