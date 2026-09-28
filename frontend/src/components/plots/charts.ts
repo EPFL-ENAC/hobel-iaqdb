@@ -4,6 +4,7 @@ import type { ExploreBucket, ExploreDimension, ExploreParams, ExploreResult } fr
 import { useFiltersStore } from '@/stores/filters';
 import {
   buildingTypeOptions,
+  climateOptions,
   countryOptions,
   mechanicalVentilationTypeOptions,
   spaceTypeOptions,
@@ -71,6 +72,7 @@ export function toSeries(
 /** Label lists for the dimensions whose keys are codes. */
 const KEY_OPTIONS: Record<string, OptionItem[]> = {
   country: countryOptions,
+  climate_zone: climateOptions,
   building_type: buildingTypeOptions,
   ventilation: yesNoOptions,
   ventilation_type: mechanicalVentilationTypeOptions,
@@ -108,6 +110,11 @@ const FILTER_TARGETS: Record<string, (value: string) => void> = {
   '$space.mechanical_ventilation_type': (value) =>
     push(useFiltersStore().mechanical_ventilation_types, value),
 };
+
+/** Whether a click on a dimension with this filter_path can set a global filter. */
+export function hasGlobalFilter(path: string | null | undefined): boolean {
+  return !!path && path in FILTER_TARGETS;
+}
 
 function push(list: string[], value: string) {
   if (!list.includes(value)) list.push(value);
