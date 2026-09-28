@@ -8,6 +8,7 @@ import type {
   ExploreResult,
   ExploreSchema,
 } from '@/models';
+import { cityName } from '@/api/explore';
 import { useFiltersStore } from '@/stores/filters';
 import {
   buildingTypeOptions,
@@ -135,6 +136,21 @@ export function keyLabel(dimension: string, key: string): string {
   return KEY_OPTIONS[dimension]?.find((opt) => opt.value === key)?.label || key;
 }
 
+/**
+ * The row a click hit on a chart with one category per row: the category
+ * index of a clicked label, or the one a `[value, index]` marker sits on.
+ * Rows go by index since labels repeat ("Unknown", same-named cities).
+ */
+export function clickedRow(event: {
+  componentType?: string;
+  dataIndex?: number;
+  data?: unknown;
+}): number | undefined {
+  return event.componentType === 'yAxis'
+    ? event.dataIndex
+    : (event.data as [unknown, number] | undefined)?.[1];
+}
+
 export type ClickKind = 'filter' | 'drill' | 'navigate';
 
 export interface ChartClick {
@@ -148,27 +164,53 @@ export interface ChartClick {
   router?: Router;
 }
 
-/** Global filter fields a dimension's filter_path maps to. */
-const FILTER_TARGETS: Record<string, (value: string) => void> = {
-  identifier: (value) => push(useFiltersStore().study_ids, value),
-  '$building.country': (value) => push(useFiltersStore().countries, value),
-  '$building.city': (value) => push(useFiltersStore().cities, value),
-  '$building.climate_zone': (value) => push(useFiltersStore().climate_zones, value),
-  '$building.type': (value) => push(useFiltersStore().building_types, value),
-  '$building.mechanical_ventilation': (value) => {
-    useFiltersStore().mechanical_ventilation = value;
+type FiltersStore = ReturnType<typeof useFiltersStore>;
+
+/** A field of the global filters: the bucket keys selected in it, and how a click adds one. */
+interface GlobalFilter {
+  selected: (filters: FiltersStore) => string[];
+  /** absent when a bucket key cannot be written back to the field */
+  add?: (filters: FiltersStore, value: string) => void;
+}
+
+/** A list field holding bucket keys as they are. */
+function listFilter(field: (filters: FiltersStore) => string[]): GlobalFilter {
+  return {
+    selected: field,
+    add: (filters, value) => {
+      const list = field(filters);
+      if (!list.includes(value)) list.push(value);
+    },
+  };
+}
+
+/** The global filter field a dimension's filter_path maps to. */
+const GLOBAL_FILTERS: Record<string, GlobalFilter> = {
+  identifier: listFilter((f) => f.study_ids),
+  '$building.country': listFilter((f) => f.countries),
+  // the store keeps "City, CC" and a city key is the bare name, without its
+  // country: a selected city highlights, a click cannot add one
+  '$building.city': { selected: (f) => f.cities.map(cityName) },
+  '$building.climate_zone': listFilter((f) => f.climate_zones),
+  '$building.type': listFilter((f) => f.building_types),
+  '$building.mechanical_ventilation': {
+    selected: (f) => (f.mechanical_ventilation ? [f.mechanical_ventilation] : []),
+    add: (f, value) => {
+      f.mechanical_ventilation = value;
+    },
   },
-  '$space.mechanical_ventilation_type': (value) =>
-    push(useFiltersStore().mechanical_ventilation_types, value),
+  '$space.mechanical_ventilation_type': listFilter((f) => f.mechanical_ventilation_types),
 };
 
 /** Whether a click on a dimension with this filter_path can set a global filter. */
 export function hasGlobalFilter(path: string | null | undefined): boolean {
-  return !!path && path in FILTER_TARGETS;
+  return !!path && !!GLOBAL_FILTERS[path]?.add;
 }
 
-function push(list: string[], value: string) {
-  if (!list.includes(value)) list.push(value);
+/** The keys of a dimension already selected in the global filters. */
+export function selectedFilterKeys(path: string | null | undefined): string[] {
+  const filter = path ? GLOBAL_FILTERS[path] : undefined;
+  return filter ? filter.selected(useFiltersStore()) : [];
 }
 
 /** Merge a bucket key into the request filter, following `filter_path`. */
@@ -216,9 +258,9 @@ export function onBucketClick(chart: ChartClick, bucket: ExploreBucket): Explore
   if (key === null || key === undefined) return null;
   if (chart.kind === 'filter') {
     const path = chart.dimension.filter_path;
-    const target = path ? FILTER_TARGETS[path] : undefined;
-    if (!target) throw new Error(`no global filter for dimension ${chart.dimension.key}`);
-    target(key);
+    const add = path ? GLOBAL_FILTERS[path]?.add : undefined;
+    if (!add) throw new Error(`no global filter for dimension ${chart.dimension.key}`);
+    add(useFiltersStore(), key);
     useFiltersStore().notifyUpdate();
     return null;
   }

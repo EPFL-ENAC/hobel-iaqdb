@@ -75,11 +75,8 @@
     <div v-if="error" class="text-negative text-caption">
       {{ t('plots.error') }}: {{ error }}
     </div>
-    <div
-      v-else-if="empty || (!loading && !year)"
-      class="text-grey-7 text-caption"
-    >
-      {{ t('plots.no_data_for', { parameters: parameterLabel }) }}
+    <div v-else-if="skipped || empty" class="text-grey-7 text-caption">
+      {{ noDataMessage }}
     </div>
     <template v-else>
       <div :style="`height: ${height}px;`">
@@ -142,12 +139,16 @@ import {
   roundBound,
   updateOptions,
 } from '@/components/plots/charts';
+import { exploreRange } from '@/api/explore';
+import { useChartFormat } from '@/composables/useChartFormat';
+import { useDrillStack } from '@/composables/useDrillStack';
 import { useExploreRequest } from '@/composables/useExploreQuery';
 import { useContextScope } from '@/composables/useContextScope';
 import type {
   ExploreBucket,
   ExploreDimension,
   ExploreParams,
+  ExploreResult,
   ExploreStats,
 } from '@/models';
 
@@ -181,8 +182,16 @@ interface Point {
   bucket: ExploreBucket;
 }
 
+/** a period of the level, null where no data */
+interface Slot {
+  key: string;
+  label: string;
+  point: Point | null;
+}
+
 withDefaults(defineProps<Props>(), { height: 400, tableHeight: 200 });
 const { t, locale } = useI18n();
+const { formatValue } = useChartFormat();
 const router = useRouter();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
@@ -198,6 +207,7 @@ const {
   parameter,
   parameterOptions,
   parameterLabel,
+  noDataMessage,
   context,
   contextValue,
   contextOptions,
@@ -211,16 +221,29 @@ const {
   selectValue,
 } = useContextScope();
 const year = ref<number | null>(null);
-/** Drill stack: the year by month, then a month by day. */
-const stack = ref<Level[]>([]);
-const current = computed(() => stack.value[stack.value.length - 1] ?? null);
 const option = ref<EChartsOption>({});
 /** every period of the level, gaps included, null where no data */
-const slots = ref<{ key: string; label: string; point: Point | null }[]>([]);
+const slots = ref<Slot[]>([]);
 
 const trendRequest = useExploreRequest('measurements');
 const yearsRequest = useExploreRequest('measurements');
-const { result, loading, error, empty } = trendRequest;
+const { result, loading, empty, skipped } = trendRequest;
+/** the year by month, then a month by day */
+const { stack, current, show, popTo } = useDrillStack<Level, ExploreResult>({
+  fetch: (level) => trendRequest.load(level?.params ?? null),
+  paint: (level, value) => {
+    slots.value = toSlots(level, value);
+    option.value = buildOption();
+  },
+  clear: () => {
+    slots.value = [];
+    option.value = {};
+  },
+});
+/** without its years, the trend cannot pick one to show */
+const error = computed(
+  () => trendRequest.error.value || yearsRequest.error.value,
+);
 
 const points = computed(() =>
   slots.value.flatMap((slot) => (slot.point ? [slot.point] : [])),
@@ -238,12 +261,6 @@ const benchmark = computed(() =>
 );
 
 const unit = computed(() => result.value?.meta.unit || '');
-
-function formatValue(value: number): string {
-  return new Intl.NumberFormat(locale.value, {
-    maximumFractionDigits: value < 10 ? 2 : 0,
-  }).format(value);
-}
 
 /** the year's (or month's) highest and lowest median */
 const summary = computed(() => {
@@ -270,11 +287,14 @@ const summary = computed(() => {
  */
 async function reload(): Promise<void> {
   if (!parameter.value) {
+    await yearsRequest.load(null);
     year.value = null;
     return restart();
   }
   const value = await yearsRequest.load({
     ...scopedFilter(),
+    // only the years inside the measurement-year filter
+    ...exploreRange(),
     agg: 'count',
     by: ['year'],
     parameters: [parameter.value],
@@ -344,24 +364,14 @@ function restart(): Promise<void> {
   return show([{ params, dimension, label: String(year.value) }]);
 }
 
-/** Make `levels` the drill stack and load its last level. */
-async function show(levels: Level[]): Promise<void> {
-  stack.value = levels;
-  const level = current.value;
-  const value = await trendRequest.load(level?.params ?? null);
-  // a later show() took over while this one waited
-  if (current.value !== level) return;
-  if (!value || !level) {
-    slots.value = [];
-    option.value = {};
-    return;
-  }
+/** every period of the level, with its point where it has data */
+function toSlots(level: Level, value: ExploreResult): Slot[] {
   const byKey = new Map(
     value.buckets.flatMap((b) =>
       b.key[0] && b.stats ? [[periodKey(b.key[0]), b] as const] : [],
     ),
   );
-  slots.value = periods(level).map(({ key, label }) => {
+  return periods(level).map(({ key, label }) => {
     const bucket = byKey.get(key);
     return {
       key,
@@ -371,7 +381,6 @@ async function show(levels: Level[]): Promise<void> {
         : null,
     };
   });
-  option.value = buildOption();
 }
 
 /** yyyy-mm-dd of a bucket key, whatever time part the server adds */
@@ -550,11 +559,6 @@ function onClick(event: { dataIndex?: number; seriesName?: string }) {
     ...stack.value,
     { params: next, dimension, label: `${slot.label} ${year.value}` },
   ]);
-}
-
-function popTo(index: number) {
-  if (index < stack.value.length - 1)
-    void show(stack.value.slice(0, index + 1));
 }
 </script>
 

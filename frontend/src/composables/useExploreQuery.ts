@@ -55,6 +55,8 @@ export function useExploreRequest(route: ExploreRoute) {
   const result = ref<ExploreResult | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
+  /** the last load had nothing to ask: its params were null */
+  const skipped = ref(false);
   let controller: AbortController | null = null;
 
   const empty = computed(() => result.value !== null && result.value.meta.n === 0);
@@ -63,8 +65,12 @@ export function useExploreRequest(route: ExploreRoute) {
   async function load(params: ExploreParams | null): Promise<ExploreResult | null> {
     controller?.abort();
     controller = null;
+    // the aborted load no longer owns `loading`: its finally leaves it alone
+    loading.value = false;
+    skipped.value = params === null;
     if (params === null) {
       result.value = null;
+      error.value = null;
       return null;
     }
     const key = canonicalKey(route, params);
@@ -101,7 +107,7 @@ export function useExploreRequest(route: ExploreRoute) {
 
   onBeforeUnmount(() => controller?.abort());
 
-  return { result, loading, error, empty, load };
+  return { result, loading, error, empty, skipped, load };
 }
 
 /** Reactive explore request: re-runs whenever `params()` changes. */

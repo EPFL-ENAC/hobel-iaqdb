@@ -65,11 +65,8 @@
     <div v-if="error" class="text-negative text-caption">
       {{ t('plots.error') }}: {{ error }}
     </div>
-    <div v-else-if="!benchmark" class="text-grey-7 text-caption">
-      {{ t('plots.no_benchmark', { parameter: parameterLabel }) }}
-    </div>
-    <div v-else-if="empty" class="text-grey-7 text-caption">
-      {{ t('plots.no_data_for', { parameters: parameterLabel }) }}
+    <div v-else-if="skipped || empty" class="text-grey-7 text-caption">
+      {{ noDataMessage }}
     </div>
     <div v-else :style="`height: ${height}px;`">
       <e-charts
@@ -100,6 +97,7 @@ import {
   updateOptions,
 } from '@/components/plots/charts';
 import { exploreRange } from '@/api/explore';
+import { useChartFormat } from '@/composables/useChartFormat';
 import { useExploreRequest } from '@/composables/useExploreQuery';
 import { useContextScope } from '@/composables/useContextScope';
 import type { ExploreParams } from '@/models';
@@ -128,6 +126,7 @@ interface Bar {
 
 withDefaults(defineProps<Props>(), { height: 400 });
 const { t, locale } = useI18n();
+const { formatCount, formatShare, describeBenchmark } = useChartFormat();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
 
@@ -139,7 +138,7 @@ const GRID = '#e0e0e0';
 const {
   parameter,
   parameterOptions,
-  parameterLabel,
+  noDataMessage,
   context,
   contextValue,
   contextOptions,
@@ -155,7 +154,7 @@ const {
 /** the period drilled into, shown year by year; null at the top level */
 const period = ref<Period | null>(null);
 
-const { result, loading, error, empty, load } =
+const { result, loading, error, empty, skipped, load } =
   useExploreRequest('measurements');
 
 const benchmark = computed(() =>
@@ -165,9 +164,8 @@ const benchmark = computed(() =>
 const benchmarkLabel = computed(() => {
   const b = benchmark.value;
   if (!b) return '';
-  const note = b.note ? ` (${b.note})` : '';
   return t('plots.share_above_hint', {
-    benchmark: `${b.source} · ${formatValue(b.value)} ${b.unit}${note}`,
+    benchmark: describeBenchmark(b),
     periods: t(`plots.averaging_${b.averaging}`),
   });
 });
@@ -182,16 +180,6 @@ const periods = computed<Period[]>(() => {
     month: i + 1,
   }));
 });
-
-function formatValue(value: number): string {
-  return new Intl.NumberFormat(locale.value, {
-    maximumFractionDigits: value < 10 ? 2 : 0,
-  }).format(value);
-}
-
-function formatShare(value: number): string {
-  return `${Math.round(value * 100)}%`;
-}
 
 /** days (or hours) above and in total, per calendar month and year */
 const cells = computed(() =>
@@ -326,8 +314,8 @@ const option = computed<EChartsOption>(() => {
           `<b>${bar.name}</b>`,
           `${t('plots.share_above')}: <b>${formatShare(bar.value)}</b>`,
           t('plots.above_of_total', {
-            above: bar.above.toLocaleString(locale.value),
-            total: bar.total.toLocaleString(locale.value),
+            above: formatCount(bar.above),
+            total: formatCount(bar.total),
             unit,
           }),
         ].join('<br/>');

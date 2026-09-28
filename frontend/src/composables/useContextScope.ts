@@ -33,6 +33,7 @@ export interface ParameterChoiceOptions {
 export function useParameterChoice({
   withBenchmark = false,
 }: ParameterChoiceOptions = {}) {
+  const { t } = useI18n();
   const exploreStore = useExploreStore();
   const parameter = ref<string | null>(null);
   const coverage = useExploreRequest('measurements');
@@ -46,20 +47,41 @@ export function useParameterChoice({
     );
   });
 
-  const parameterOptions = computed(() => {
+  /** the selected pollutants with records, benchmark or not */
+  const withRecords = computed(() => {
     const selected = new Set(exploreStore.parameters);
     const withData = available.value;
     return exploreStore.parameterOptions.filter(
       (opt) =>
         (!selected.size || selected.has(opt.value)) &&
-        (!withData || withData.has(opt.value)) &&
-        (!withBenchmark || !!benchmarkOf(exploreStore.schema, opt.value)),
+        (!withData || withData.has(opt.value)),
     );
   });
+
+  const parameterOptions = computed(() =>
+    withBenchmark
+      ? withRecords.value.filter(
+          (opt) => !!benchmarkOf(exploreStore.schema, opt.value),
+        )
+      : withRecords.value,
+  );
 
   const parameterLabel = computed(() =>
     exploreStore.parameterLabel(parameter.value || ''),
   );
+
+  /** why the chart is empty: no records for the pollutant, or none offered */
+  const noDataMessage = computed(() => {
+    if (parameter.value)
+      return t('plots.no_data_for', { parameters: parameterLabel.value });
+    // with records but none offered: none of them has a benchmark
+    const names = withRecords.value.map((opt) =>
+      exploreStore.parameterLabel(opt.value),
+    );
+    return names.length
+      ? t('plots.no_benchmark', { parameter: names.join(', ') })
+      : t('plots.no_data');
+  });
 
   /** keeps the choice while offered, else the default, else the first */
   function settle() {
@@ -81,7 +103,13 @@ export function useParameterChoice({
     settle();
   }
 
-  return { parameter, parameterOptions, parameterLabel, refresh };
+  return {
+    parameter,
+    parameterOptions,
+    parameterLabel,
+    noDataMessage,
+    refresh,
+  };
 }
 
 /**
@@ -130,7 +158,10 @@ export function useContextChoice(
 
   /**
    * Reload which contexts have data for the pollutant; a context that lost
-   * its data falls back to the first one offered.
+   * its data falls back to the first one offered. Coverage reads
+   * `dataset_parameter` only, no fact scan: it keys a dataset by every
+   * building of its study, loose for a value but enough to tell whether a
+   * context has any known one.
    */
   async function refresh(): Promise<void> {
     const slug = parameter.value;
@@ -139,10 +170,9 @@ export function useContextChoice(
         probe.load(
           slug && exploreStore.dimension(key)
             ? {
-                agg: 'count',
+                agg: 'coverage',
                 by: [key],
                 parameters: [slug],
-                grain: 'day',
                 filter: exploreFilter(),
                 ...exploreRange(),
               }
@@ -198,8 +228,9 @@ export function useContextScope(options: ParameterChoiceOptions = {}) {
   }
 
   /**
-   * Context values with data for the pollutant, any year; a value that lost
-   * its data is dropped.
+   * Context values with data for the pollutant in the measurement years; a
+   * value that lost its data is dropped. A fact count, not coverage: coverage would offer
+   * every country of a study's buildings, some without data.
    */
   async function refreshValues(): Promise<void> {
     if (!context.value || !parameter.value) {
@@ -209,6 +240,7 @@ export function useContextScope(options: ParameterChoiceOptions = {}) {
     }
     await valuesRequest.load({
       filter: exploreFilter(),
+      ...exploreRange(),
       agg: 'count',
       by: [context.value],
       parameters: [parameter.value],
@@ -248,6 +280,7 @@ export function useContextScope(options: ParameterChoiceOptions = {}) {
     parameter,
     parameterOptions: parameters.parameterOptions,
     parameterLabel: parameters.parameterLabel,
+    noDataMessage: parameters.noDataMessage,
     context,
     contextValue,
     contextOptions: contexts.contextOptions,

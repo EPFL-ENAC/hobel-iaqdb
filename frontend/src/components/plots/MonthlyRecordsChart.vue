@@ -43,8 +43,8 @@ import {
 } from 'echarts/components';
 import { initOptions, updateOptions } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
+import { useChartFormat } from '@/composables/useChartFormat';
 import { useExploreRequest } from '@/composables/useExploreQuery';
-import { DEFAULT_MEASUREMENT_YEARS } from '@/stores/filters';
 import type { ExploreParams } from '@/models';
 
 use([SVGRenderer, BarChart, GridComponent, LegendComponent, TooltipComponent]);
@@ -56,6 +56,7 @@ interface Props {
 
 withDefaults(defineProps<Props>(), { height: 400 });
 const { t, locale } = useI18n();
+const { formatCount, formatCompact, rangeLabel } = useChartFormat();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
 
@@ -103,17 +104,6 @@ const monthNames = computed(() => {
   return MONTHS.map((m) => format.format(new Date(Date.UTC(2000, +m - 1, 1))));
 });
 
-function formatCount(value: number): string {
-  return value.toLocaleString(locale.value);
-}
-
-/** axis ticks: 2M rather than 2,000,000 */
-function formatCompact(value: number): string {
-  return new Intl.NumberFormat(locale.value, { notation: 'compact' }).format(
-    value,
-  );
-}
-
 /** records per month (index 0 = January), per pollutant slug */
 const table = computed(() => {
   const rows = new Map<string, number[]>();
@@ -136,20 +126,6 @@ const totals = computed(() => {
   for (const row of table.value.values())
     row.forEach((value, i) => (sums[i] = (sums[i] ?? 0) + value));
   return sums;
-});
-
-const rangeLabel = computed(() => {
-  void filtersStore.updates;
-  const { min, max } = filtersStore.measurement_years;
-  const from = min > DEFAULT_MEASUREMENT_YEARS.min ? `${min}` : '';
-  const to = max < DEFAULT_MEASUREMENT_YEARS.max ? `${max}` : '';
-  if (!from && !to) return t('plots.all_years');
-  if (from === to) return from;
-  return from && to
-    ? `${from} – ${to}`
-    : from
-      ? t('plots.since_year', { year: from })
-      : t('plots.until_year', { year: to });
 });
 
 const parameterLabels = computed(() =>

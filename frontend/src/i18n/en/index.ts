@@ -218,6 +218,7 @@ export default {
   plots: {
     buildings_overview: 'Buildings overview',
     error: 'Could not load the chart',
+    partial_error: 'Part of the chart could not be loaded',
     no_data: 'No data for these filters.',
     no_data_for: 'No {parameters} data for these filters.',
     available_parameters: 'Available: {parameters}',

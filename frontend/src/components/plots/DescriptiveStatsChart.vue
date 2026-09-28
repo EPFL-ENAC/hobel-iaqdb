@@ -42,14 +42,8 @@
     <div v-if="error" class="text-negative text-caption">
       {{ t('plots.error') }}: {{ error }}
     </div>
-    <div v-else-if="empty" class="text-grey-7 text-caption">
-      {{
-        parameter
-          ? t('plots.no_data_for', {
-              parameters: parameterLabel,
-            })
-          : t('plots.no_data')
-      }}
+    <div v-else-if="skipped || empty" class="text-grey-7 text-caption">
+      {{ noDataMessage }}
     </div>
     <div v-else :style="`height: ${height}px;`">
       <e-charts
@@ -76,12 +70,15 @@ import {
   TooltipComponent,
 } from 'echarts/components';
 import {
+  clickedRow,
   initOptions,
   keyLabel,
   onBucketClick,
   updateOptions,
 } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
+import { useChartFormat } from '@/composables/useChartFormat';
+import { useDrillStack } from '@/composables/useDrillStack';
 import { useExploreRequest } from '@/composables/useExploreQuery';
 import {
   useContextChoice,
@@ -122,7 +119,8 @@ interface Row {
 }
 
 withDefaults(defineProps<Props>(), { height: 400 });
-const { t, locale } = useI18n();
+const { t } = useI18n();
+const { formatValue, formatCount } = useChartFormat();
 const router = useRouter();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
@@ -137,29 +135,29 @@ const PERCENTILES = ['p05', 'p25', 'p50', 'p75', 'p95'] as const;
 
 /** the pollutant compared; stats take one at a time */
 const parameters = useParameterChoice();
-const { parameter, parameterOptions, parameterLabel } = parameters;
+const { parameter, parameterOptions, parameterLabel, noDataMessage } =
+  parameters;
 const contexts = useContextChoice(parameter);
 const { context, contextOptions, contextDimension } = contexts;
-/** Drill stack, `stack[0]` being the chosen context. */
-const stack = ref<Level[]>([]);
-const current = computed(() => stack.value[stack.value.length - 1] ?? null);
 const option = ref<EChartsOption>({});
 const rows = ref<Row[]>([]);
 
-const { result, loading, error, empty, load } =
+const { result, loading, error, empty, skipped, load } =
   useExploreRequest('measurements');
+/** `stack[0]` is the chosen context */
+const { stack, current, show, popTo } = useDrillStack<Level, ExploreResult>({
+  fetch: (level) => load(level?.params ?? null),
+  paint: (level, value) => {
+    rows.value = toRows(level, value);
+    option.value = buildOption(rows.value);
+  },
+  clear: () => {
+    rows.value = [];
+    option.value = {};
+  },
+});
 
 const unit = computed(() => result.value?.meta.unit || '');
-
-function formatValue(value: number): string {
-  return new Intl.NumberFormat(locale.value, {
-    maximumFractionDigits: value < 10 ? 2 : 0,
-  }).format(value);
-}
-
-function formatCount(value: number): string {
-  return value.toLocaleString(locale.value);
-}
 
 const summary = computed(() => {
   const value = result.value;
@@ -206,22 +204,6 @@ function restart(): Promise<void> {
     ...exploreRange(),
   };
   return show([{ params, dimension, label: dimension.label }]);
-}
-
-/** Make `levels` the drill stack and load its last level. */
-async function show(levels: Level[]): Promise<void> {
-  stack.value = levels;
-  const level = current.value;
-  const value = await load(level?.params ?? null);
-  // a later show() took over while this one waited
-  if (current.value !== level) return;
-  if (!value || !level) {
-    rows.value = [];
-    option.value = {};
-    return;
-  }
-  rows.value = toRows(level, value);
-  option.value = buildOption(rows.value);
 }
 
 /** one row per key with stats, highest median at the top */
@@ -336,9 +318,10 @@ function buildOption(items: Row[]): EChartsOption {
         name: rangeName,
         symbolSize: 8,
         itemStyle: { color: RANGE_COLOR },
-        data: items.flatMap((row) => [
-          [row.stats.min, row.name],
-          [row.stats.max, row.name],
+        // a number on the category axis is the row index: labels repeat
+        data: items.flatMap((row, i) => [
+          [row.stats.min, i],
+          [row.stats.max, i],
         ]),
         silent: true,
         z: 2,
@@ -348,8 +331,8 @@ function buildOption(items: Row[]): EChartsOption {
         name: percentileName,
         symbolSize: 9,
         itemStyle: { color: PERCENTILE_COLOR },
-        data: items.flatMap((row) =>
-          PERCENTILES.map((p) => [row.stats[p], row.name]),
+        data: items.flatMap((row, i) =>
+          PERCENTILES.map((p) => [row.stats[p], i]),
         ),
         cursor: clickable.value ? 'pointer' : 'default',
         z: 3,
@@ -360,7 +343,7 @@ function buildOption(items: Row[]): EChartsOption {
         symbol: 'triangle',
         symbolSize: 11,
         itemStyle: { color: MEAN_COLOR },
-        data: items.map((row) => [row.stats.mean, row.name]),
+        data: items.map((row, i) => [row.stats.mean, i]),
         cursor: clickable.value ? 'pointer' : 'default',
         z: 4,
       },
@@ -371,18 +354,11 @@ function buildOption(items: Row[]): EChartsOption {
 const clickable = computed(() => !!current.value?.dimension.drill_to);
 
 /** a click on a row, its markers or its label drills into it */
-function onClick(event: {
-  componentType?: string;
-  value?: unknown;
-  data?: unknown;
-}) {
+function onClick(event: Parameters<typeof clickedRow>[0]) {
   const level = current.value;
   if (!level || !clickable.value) return;
-  const name =
-    event.componentType === 'yAxis'
-      ? (event.value as string)
-      : (event.data as [number, string] | undefined)?.[1];
-  const row = rows.value.find((r) => r.name === name);
+  const index = clickedRow(event);
+  const row = index === undefined ? undefined : rows.value[index];
   if (!row) return;
   const next = onBucketClick(
     {
@@ -397,10 +373,5 @@ function onClick(event: {
   const dimension = exploreStore.dimension(next.by?.[0] || '');
   if (!dimension) return;
   void show([...stack.value, { params: next, dimension, label: row.name }]);
-}
-
-function popTo(index: number) {
-  if (index < stack.value.length - 1)
-    void show(stack.value.slice(0, index + 1));
 }
 </script>

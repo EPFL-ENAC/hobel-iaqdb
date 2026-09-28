@@ -50,22 +50,24 @@
     <div v-if="error" class="text-negative text-caption">
       {{ t('plots.error') }}: {{ error }}
     </div>
-    <div v-else-if="!benchmark" class="text-grey-7 text-caption">
-      {{ t('plots.no_benchmark', { parameter: parameterLabel }) }}
+    <div v-else-if="skipped || empty" class="text-grey-7 text-caption">
+      {{ noDataMessage }}
     </div>
-    <div v-else-if="empty" class="text-grey-7 text-caption">
-      {{ t('plots.no_data_for', { parameters: parameterLabel }) }}
-    </div>
-    <div v-else :style="`height: ${height}px;`">
-      <e-charts
-        autoresize
-        :init-options="initOptions"
-        :option="option"
-        :update-options="updateOptions"
-        :loading="loading"
-        @click="onClick"
-      />
-    </div>
+    <template v-else>
+      <div v-if="partialError" class="text-grey-7 text-caption">
+        {{ t('plots.partial_error') }}: {{ partialError }}
+      </div>
+      <div :style="`height: ${height}px;`">
+        <e-charts
+          autoresize
+          :init-options="initOptions"
+          :option="option"
+          :update-options="updateOptions"
+          :loading="loading"
+          @click="onClick"
+        />
+      </div>
+    </template>
   </div>
 </template>
 
@@ -83,6 +85,7 @@ import {
 } from 'echarts/components';
 import {
   benchmarkOf,
+  clickedRow,
   initOptions,
   keyLabel,
   refine,
@@ -90,12 +93,19 @@ import {
   updateOptions,
 } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
+import { useChartFormat } from '@/composables/useChartFormat';
+import { useDrillStack } from '@/composables/useDrillStack';
 import { useExploreRequest } from '@/composables/useExploreQuery';
 import {
   useContextChoice,
   useParameterChoice,
 } from '@/composables/useContextScope';
-import type { ExploreBucket, ExploreDimension, ExploreParams } from '@/models';
+import type {
+  ExploreBucket,
+  ExploreDimension,
+  ExploreParams,
+  ExploreResult,
+} from '@/models';
 
 use([
   SVGRenderer,
@@ -123,6 +133,13 @@ interface Level {
   label: string;
 }
 
+/** A level's answers: the database medians and the shares may be missing. */
+interface Loaded {
+  filtered: ExploreResult;
+  database: ExploreResult | null;
+  exceedance: ExploreResult | null;
+}
+
 interface Row {
   key: string | null;
   name: string;
@@ -134,7 +151,8 @@ interface Row {
 }
 
 withDefaults(defineProps<Props>(), { height: 400 });
-const { t, locale } = useI18n();
+const { t } = useI18n();
+const { formatValue, formatShare, describeBenchmark } = useChartFormat();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
 
@@ -148,30 +166,40 @@ const GRID = '#e0e0e0';
 const parameters = useParameterChoice({
   withBenchmark: true,
 });
-const { parameter, parameterOptions, parameterLabel } = parameters;
+const { parameter, parameterOptions, parameterLabel, noDataMessage } =
+  parameters;
 const contexts = useContextChoice(parameter);
 const { context, contextOptions, contextDimension } = contexts;
-/** Drill stack, `stack[0]` being the chosen context. */
-const stack = ref<Level[]>([]);
-const current = computed(() => stack.value[stack.value.length - 1] ?? null);
 const option = ref<EChartsOption>({});
 const rows = ref<Row[]>([]);
 
 const filteredRequest = useExploreRequest('measurements');
 const databaseRequest = useExploreRequest('measurements');
 const exceedanceRequest = useExploreRequest('measurements');
-const { result, empty } = filteredRequest;
+const { result, empty, skipped } = filteredRequest;
+/** `stack[0]` is the chosen context */
+const { stack, current, show, popTo } = useDrillStack<Level, Loaded>({
+  fetch: loadLevel,
+  paint: (level, loaded) => {
+    rows.value = toRows(level, loaded);
+    option.value = buildOption(rows.value);
+  },
+  clear: () => {
+    rows.value = [];
+    option.value = {};
+  },
+});
 const loading = computed(
   () =>
     filteredRequest.loading.value ||
     databaseRequest.loading.value ||
     exceedanceRequest.loading.value,
 );
-const error = computed(
-  () =>
-    filteredRequest.error.value ||
-    databaseRequest.error.value ||
-    exceedanceRequest.error.value,
+/** the chart stands on the filtered medians alone */
+const error = computed(() => filteredRequest.error.value);
+/** the database medians and the shares only add to it: missing, the rows show without them */
+const partialError = computed(
+  () => databaseRequest.error.value || exceedanceRequest.error.value,
 );
 
 const benchmark = computed(() =>
@@ -182,22 +210,9 @@ const unit = computed(
   () => result.value?.meta.unit || benchmark.value?.unit || '',
 );
 
-function formatValue(value: number): string {
-  return new Intl.NumberFormat(locale.value, {
-    maximumFractionDigits: value < 10 ? 2 : 0,
-  }).format(value);
-}
-
-function formatShare(value: number): string {
-  return `${Math.round(value * 100)}%`;
-}
-
-const benchmarkLabel = computed(() => {
-  const b = benchmark.value;
-  if (!b) return '';
-  const note = b.note ? ` (${b.note})` : '';
-  return `${b.source} · ${formatValue(b.value)} ${b.unit}${note}`;
-});
+const benchmarkLabel = computed(() =>
+  benchmark.value ? describeBenchmark(benchmark.value) : '',
+);
 
 /** Settle the menus, then restart the drill: on mount and when the filters are applied. */
 async function refresh(): Promise<void> {
@@ -246,22 +261,21 @@ function restart(): Promise<void> {
   ]);
 }
 
-/** Make `levels` the drill stack and load its last level. */
-async function show(levels: Level[]): Promise<void> {
-  stack.value = levels;
-  const level = current.value;
+/** The level's three requests; only the filtered one is required. */
+async function loadLevel(level: Level | null): Promise<Loaded | null> {
   const [filtered, database, exceedance] = await Promise.all([
     filteredRequest.load(level?.filtered ?? null),
     databaseRequest.load(level?.database ?? null),
     exceedanceRequest.load(level?.exceedance ?? null),
   ]);
-  // a later show() took over while this one waited
-  if (current.value !== level) return;
-  if (!filtered || !level) {
-    rows.value = [];
-    option.value = {};
-    return;
-  }
+  return filtered ? { filtered, database, exceedance } : null;
+}
+
+/** one row per key with stats, highest median at the top */
+function toRows(
+  level: Level,
+  { filtered, database, exceedance }: Loaded,
+): Row[] {
   const medians = new Map(
     (database?.buckets || []).map((b) => [b.key[0] ?? null, b.stats?.p50]),
   );
@@ -271,7 +285,7 @@ async function show(levels: Level[]): Promise<void> {
       b.exceedance?.share,
     ]),
   );
-  rows.value = filtered.buckets
+  return filtered.buckets
     .flatMap((bucket) => {
       const key = bucket.key[0] ?? null;
       if (!bucket.stats) return [];
@@ -290,9 +304,7 @@ async function show(levels: Level[]): Promise<void> {
         },
       ];
     })
-    // highest median at the top
     .sort((a, b) => a.median - b.median);
-  option.value = buildOption(rows.value);
 }
 
 function buildOption(items: Row[]): EChartsOption {
@@ -399,7 +411,8 @@ function buildOption(items: Row[]): EChartsOption {
           borderColor: DATABASE_COLOR,
           borderWidth: 2,
         },
-        data: items.map((row) => [row.databaseMedian ?? '-', row.name]),
+        // a number on the category axis is the row index: labels repeat
+        data: items.map((row, i) => [row.databaseMedian ?? '-', i]),
         cursor: clickable ? 'pointer' : 'default',
         z: 4,
       },
@@ -408,7 +421,7 @@ function buildOption(items: Row[]): EChartsOption {
         name: filteredName,
         symbolSize: 12,
         itemStyle: { color: FILTERED_COLOR },
-        data: items.map((row) => [row.median, row.name]),
+        data: items.map((row, i) => [row.median, i]),
         cursor: clickable ? 'pointer' : 'default',
         z: 3,
       },
@@ -448,19 +461,12 @@ function buildOption(items: Row[]): EChartsOption {
 }
 
 /** a click on a row's markers or its label drills into it */
-function onClick(event: {
-  componentType?: string;
-  value?: unknown;
-  data?: unknown;
-}) {
+function onClick(event: Parameters<typeof clickedRow>[0]) {
   const level = current.value;
   const drillTo = level?.dimension.drill_to;
   if (!level || !drillTo) return;
-  const name =
-    event.componentType === 'yAxis'
-      ? (event.value as string)
-      : (event.data as [number, string] | undefined)?.[1];
-  const row = rows.value.find((r) => r.name === name);
+  const index = clickedRow(event);
+  const row = index === undefined ? undefined : rows.value[index];
   if (!row || row.key === null) return;
   const key = row.key;
   const next = (params: ExploreParams): ExploreParams => ({
@@ -479,10 +485,5 @@ function onClick(event: {
       label: row.name,
     },
   ]);
-}
-
-function popTo(index: number) {
-  if (index < stack.value.length - 1)
-    void show(stack.value.slice(0, index + 1));
 }
 </script>

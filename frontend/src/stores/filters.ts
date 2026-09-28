@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import { defineStore, type StateTree } from 'pinia';
 import { withRange } from '@/utils/numbers';
 
 export type FilterParams = {
@@ -6,7 +6,6 @@ export type FilterParams = {
   cities?: string[] | null;
   construction_years?: [number, number] | undefined;
   altitudes?: [number, number] | undefined;
-  measurement_years?: [number, number] | undefined;
   climate_zones?: string[] | null;
   building_types?: string[] | null;
   age_groups?: string[] | null;
@@ -20,6 +19,34 @@ export type FilterParams = {
 export const DEFAULT_CONSTRUCTION_YEARS = { min: 1800, max: new Date().getFullYear() };
 export const DEFAULT_ALTITUDES = { min: 0, max: 2500 };
 export const DEFAULT_MEASUREMENT_YEARS = { min: 2000, max: new Date().getFullYear() };
+
+/**
+ * Ranges whose default max is the current year. At its default a max means
+ * "no upper bound", so it is stored as null: an untouched range saved last
+ * year must not become "until last year" once the year turns.
+ */
+const YEAR_RANGES: Record<string, { max: number }> = {
+  construction_years: DEFAULT_CONSTRUCTION_YEARS,
+  measurement_years: DEFAULT_MEASUREMENT_YEARS,
+};
+
+function serialize(state: StateTree): string {
+  const stored = { ...state };
+  for (const [field, defaults] of Object.entries(YEAR_RANGES)) {
+    const range = state[field] as { max: number } | undefined;
+    if (range?.max === defaults.max) stored[field] = { ...range, max: null };
+  }
+  return JSON.stringify(stored);
+}
+
+function deserialize(value: string): StateTree {
+  const state = JSON.parse(value) as StateTree;
+  for (const [field, defaults] of Object.entries(YEAR_RANGES)) {
+    const range = state[field] as { max: number | null } | undefined;
+    if (range && range.max === null) state[field] = { ...range, max: defaults.max };
+  }
+  return state;
+}
 
 export const useFiltersStore = defineStore(
   'filters',
@@ -63,15 +90,11 @@ export const useFiltersStore = defineStore(
     function asParams(): FilterParams {
       const constructionsRange: [number, number] = [construction_years.value.min, construction_years.value.max];
       const altitudesRange: [number, number] = [altitudes.value.min, altitudes.value.max];
-      const measurementYearsRange: [number, number] = [measurement_years.value.min, measurement_years.value.max];
       return {
         countries: countries.value.length > 0 ? [...countries.value] : null,
         cities: cities.value.length > 0 ? [...cities.value] : null,
         construction_years: withRange(constructionsRange, [DEFAULT_CONSTRUCTION_YEARS.min, DEFAULT_CONSTRUCTION_YEARS.max]) ? constructionsRange : undefined,
         altitudes: withRange(altitudesRange, [DEFAULT_ALTITUDES.min, DEFAULT_ALTITUDES.max]) ? altitudesRange : undefined,
-        measurement_years: withRange(measurementYearsRange, [DEFAULT_MEASUREMENT_YEARS.min, DEFAULT_MEASUREMENT_YEARS.max])
-          ? measurementYearsRange
-          : undefined,
         climate_zones: climate_zones.value ? [...climate_zones.value] : [],
         building_types: building_types.value ? [...building_types.value] : [],
         age_groups: age_groups.value ? [...age_groups.value] : [],
@@ -103,5 +126,5 @@ export const useFiltersStore = defineStore(
       notifyUpdate,
     };
   },
-  { persist: true },
+  { persist: { serializer: { serialize, deserialize } } },
 );

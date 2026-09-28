@@ -51,9 +51,11 @@ import {
   initOptions,
   keyLabel,
   onBucketClick,
+  selectedFilterKeys,
   updateOptions,
 } from '@/components/plots/charts';
 import { exploreFilter } from '@/api/explore';
+import { useDrillStack } from '@/composables/useDrillStack';
 import { useExploreRequest } from '@/composables/useExploreQuery';
 import type {
   ExploreBucket,
@@ -126,12 +128,15 @@ const GRID = '#e0e0e0';
 /** above this many columns, vertical bars slant their labels */
 const VERTICAL_FLAT_MAX = 6;
 
-/** Drill stack, `stack[0]` being the chart as mounted. */
-const stack = ref<Level[]>([]);
-const current = computed(() => stack.value[stack.value.length - 1] ?? null);
 const option = ref<EChartsOption>({});
 
 const { result, loading, error, empty, load } = useExploreRequest('metadata');
+/** `stack[0]` is the chart as mounted */
+const { stack, current, show, popTo } = useDrillStack<Level, ExploreResult>({
+  fetch: (level) => load(level?.params ?? null),
+  paint: (level, value) => (option.value = buildOption(level, value)),
+  clear: () => (option.value = {}),
+});
 
 /** false once the drill has reached `depth` levels below the first */
 const canClick = computed(
@@ -150,18 +155,7 @@ const clickable = computed(() => {
 const selectedKeys = computed<Set<string>>(() => {
   void filtersStore.updates;
   if (props.click !== 'filter') return new Set();
-  const path = current.value?.dimension.filter_path;
-  const ventilation = filtersStore.mechanical_ventilation;
-  const selected: Record<string, string[]> = {
-    identifier: filtersStore.study_ids,
-    '$building.country': filtersStore.countries,
-    '$building.city': filtersStore.cities,
-    '$building.climate_zone': filtersStore.climate_zones,
-    '$building.type': filtersStore.building_types,
-    '$building.mechanical_ventilation': ventilation ? [ventilation] : [],
-    '$space.mechanical_ventilation_type': filtersStore.mechanical_ventilation_types,
-  };
-  return new Set(path ? selected[path] || [] : []);
+  return new Set(selectedFilterKeys(current.value?.dimension.filter_path));
 });
 const parameterLabels = computed(() =>
   exploreStore.parameters.map(exploreStore.parameterLabel).join(', '),
@@ -204,20 +198,6 @@ function restart(): Promise<void> {
   if (props.withParameters && exploreStore.parameters.length)
     params.parameters = [...exploreStore.parameters];
   return show([{ params, dimension, label: dimension.label }]);
-}
-
-/** Make `levels` the drill stack and load its last level. */
-async function show(levels: Level[]): Promise<void> {
-  stack.value = levels;
-  const level = current.value;
-  const value = await load(level?.params ?? null);
-  // a later show() took over while this one waited
-  if (current.value !== level) return;
-  if (!value || !level) {
-    option.value = {};
-    return;
-  }
-  option.value = buildOption(level, value);
 }
 
 function label(
@@ -327,9 +307,5 @@ function onClick(event: { data?: unknown; componentType?: string }) {
   const dimension = exploreStore.dimension(next.by?.[0] || '');
   if (!dimension) return;
   void show([...stack.value, { params: next, dimension, label: item.name }]);
-}
-
-function popTo(index: number) {
-  if (index < stack.value.length - 1) void show(stack.value.slice(0, index + 1));
 }
 </script>

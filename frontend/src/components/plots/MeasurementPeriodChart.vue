@@ -36,8 +36,8 @@ import { SVGRenderer } from 'echarts/renderers';
 import { GridComponent, TooltipComponent } from 'echarts/components';
 import { initOptions, updateOptions } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
+import { useChartFormat } from '@/composables/useChartFormat';
 import { useExploreRequest } from '@/composables/useExploreQuery';
-import { DEFAULT_MEASUREMENT_YEARS } from '@/stores/filters';
 import type { ExploreParams } from '@/models';
 
 use([SVGRenderer, LineChart, GridComponent, TooltipComponent]);
@@ -48,7 +48,8 @@ interface Props {
 }
 
 withDefaults(defineProps<Props>(), { height: 400 });
-const { t, locale } = useI18n();
+const { t } = useI18n();
+const { formatCount, rangeLabel } = useChartFormat();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
 
@@ -84,17 +85,14 @@ filtersStore.$onAction(({ name, after }) => {
   if (name === 'notifyUpdate') after(reload);
 });
 
-function formatCount(value: number): string {
-  return value.toLocaleString(locale.value);
-}
-
 /** datasets added per year, by the year of their first measurement */
 const added = computed(() => {
   const counts = new Map<number, number>();
   for (const bucket of result.value?.buckets || []) {
     const first = bucket.coverage?.first_at;
     if (!first) continue;
-    const year = new Date(first).getUTCFullYear();
+    // a naive timestamp: new Date() would read it as local time
+    const year = Number(first.slice(0, 4));
     counts.set(year, (counts.get(year) ?? 0) + 1);
   }
   return counts;
@@ -113,20 +111,6 @@ const years = computed(() => {
 const cumulative = computed(() => {
   let total = 0;
   return years.value.map((year) => (total += added.value.get(year) ?? 0));
-});
-
-const rangeLabel = computed(() => {
-  void filtersStore.updates;
-  const { min, max } = filtersStore.measurement_years;
-  const from = min > DEFAULT_MEASUREMENT_YEARS.min ? `${min}` : '';
-  const to = max < DEFAULT_MEASUREMENT_YEARS.max ? `${max}` : '';
-  if (!from && !to) return t('plots.all_years');
-  if (from === to) return from;
-  return from && to
-    ? `${from} – ${to}`
-    : from
-      ? t('plots.since_year', { year: from })
-      : t('plots.until_year', { year: to });
 });
 
 const parameterLabels = computed(() =>

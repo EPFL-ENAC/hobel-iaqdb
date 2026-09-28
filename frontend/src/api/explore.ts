@@ -19,6 +19,11 @@ function nonEmpty(values: string[] | null | undefined): string[] | undefined {
   return values && values.length ? [...values].sort() : undefined;
 }
 
+/** The store keeps cities as "City, CC"; filters and bucket keys use the bare name. */
+export function cityName(entry: string): string {
+  return entry.substring(0, entry.length - 4);
+}
+
 export function studyCriteria() {
   const filters = useFiltersStore();
   return { identifier: nonEmpty(filters.study_ids) };
@@ -41,8 +46,7 @@ export function buildingCriteria() {
   )
     ? [{ altitude: { $gte: filters.altitudes.min } }, { altitude: { $lte: filters.altitudes.max } }]
     : [];
-  // the store keeps cities as "City, CC"
-  const cities = (filters.cities || []).map((city) => city.substring(0, city.length - 4));
+  const cities = (filters.cities || []).map(cityName);
   return {
     $and: constructionYears.length || altitudes.length ? [...constructionYears, ...altitudes] : undefined,
     type: nonEmpty(filters.building_types),
@@ -77,7 +81,6 @@ export function exploreFilter(): ExploreFilter {
  */
 export function exploreRange(): Pick<ExploreParams, 'from' | 'to'> {
   const { min, max } = useFiltersStore().measurement_years;
-  if (!withRange([min, max], [DEFAULT_MEASUREMENT_YEARS.min, DEFAULT_MEASUREMENT_YEARS.max])) return {};
   return {
     ...(min > DEFAULT_MEASUREMENT_YEARS.min ? { from: `${min}-01-01` } : {}),
     ...(max < DEFAULT_MEASUREMENT_YEARS.max ? { to: `${max + 1}-01-01` } : {}),
