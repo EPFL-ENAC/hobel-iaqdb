@@ -199,7 +199,8 @@ export type ExploreAgg =
   | 'stats'
   | 'exceedance'
   | 'pairs'
-  | 'matrix';
+  | 'matrix'
+  | 'partners';
 
 export interface ExploreDimension {
   key: string;

@@ -20,6 +20,11 @@ export const DEFAULT_CONSTRUCTION_YEARS = { min: 1800, max: new Date().getFullYe
 export const DEFAULT_ALTITUDES = { min: 0, max: 2500 };
 export const DEFAULT_MEASUREMENT_YEARS = { min: 2000, max: new Date().getFullYear() };
 
+/** The store keeps cities as "City, CC"; filters and bucket keys use the bare name. */
+export function cityName(entry: string): string {
+  return entry.substring(0, entry.length - 4);
+}
+
 /**
  * Ranges whose default max is the current year. At its default a max means
  * "no upper bound", so it is stored as null: an untouched range saved last

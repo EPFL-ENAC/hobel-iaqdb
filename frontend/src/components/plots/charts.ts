@@ -8,8 +8,8 @@ import type {
   ExploreResult,
   ExploreSchema,
 } from '@/models';
-import { cityName } from '@/api/explore';
-import { useFiltersStore } from '@/stores/filters';
+import { useExploreStore } from '@/stores/explore';
+import { cityName, useFiltersStore } from '@/stores/filters';
 import {
   buildingTypeOptions,
   climateOptions,
@@ -110,6 +110,15 @@ export function roundBound(value: number, round: (v: number) => number): number 
   return round(value / step) * step;
 }
 
+/**
+ * Keys that name no category: missing, or coded as unknown (any case).
+ * 'na' (not applicable) is a category of its own, e.g. a naturally ventilated
+ * space has ventilation_type 'na'; 'NA' is also Namibia's country code.
+ */
+export function isUnknownKey(key: string | null | undefined): boolean {
+  return key === null || key === undefined || key.toLowerCase() === 'unknown';
+}
+
 /** The contexts a statistics chart can compare, in menu order. */
 export const STATS_CONTEXTS = [
   'country',
@@ -127,12 +136,20 @@ const KEY_OPTIONS: Record<string, OptionItem[]> = {
   climate_zone: climateOptions,
   building_type: buildingTypeOptions,
   ventilation: yesNoOptions,
-  ventilation_type: mechanicalVentilationTypeOptions,
+  ventilation_type: [
+    ...mechanicalVentilationTypeOptions,
+    // a spelling found in the data, outside the vocabulary contributors pick from
+    { value: 'balanced mechanical ventilation', label: 'Balanced mechanical' },
+  ],
   space_type: spaceTypeOptions,
 };
 
-/** Human label of a bucket key: the option label for coded dimensions, the key itself otherwise. */
+/**
+ * Human label of a bucket key: the study name for studies, the option label
+ * for coded dimensions, the key itself otherwise.
+ */
 export function keyLabel(dimension: string, key: string): string {
+  if (dimension === 'study') return useExploreStore().studyNames.get(key) || key;
   return KEY_OPTIONS[dimension]?.find((opt) => opt.value === key)?.label || key;
 }
 

@@ -10,6 +10,7 @@
 import type { Ref } from 'vue';
 import {
   benchmarkOf,
+  isUnknownKey,
   keyLabel,
   refine,
   STATS_CONTEXTS,
@@ -18,6 +19,43 @@ import { exploreFilter, exploreRange } from '@/api/explore';
 import { useExploreRequest } from '@/composables/useExploreQuery';
 import { DEFAULT_PARAMETER } from '@/stores/explore';
 import type { ExploreParams } from '@/models';
+
+/**
+ * The pollutants with records under the global filters, in catalog order.
+ * `options` is empty until the first `refresh()` resolves.
+ */
+export function useParametersWithRecords() {
+  const exploreStore = useExploreStore();
+  const coverage = useExploreRequest('measurements');
+
+  /** slugs with records under the filters; null until known */
+  const available = computed(() => {
+    const buckets = coverage.result.value?.buckets;
+    if (!buckets) return null;
+    return new Set(
+      buckets.flatMap((b) => (b.key[0] && b.n_records ? [b.key[0]] : [])),
+    );
+  });
+
+  const options = computed(() => {
+    const withData = available.value;
+    return withData
+      ? exploreStore.parameterOptions.filter((opt) => withData.has(opt.value))
+      : [];
+  });
+
+  /** Reload which pollutants have records. */
+  async function refresh(): Promise<void> {
+    await coverage.load({
+      agg: 'coverage',
+      by: ['parameter'],
+      filter: exploreFilter(),
+      ...exploreRange(),
+    });
+  }
+
+  return { available, options, loading: coverage.loading, refresh };
+}
 
 /** Options of the pollutant menu. */
 export interface ParameterChoiceOptions {
@@ -36,21 +74,12 @@ export function useParameterChoice({
   const { t } = useI18n();
   const exploreStore = useExploreStore();
   const parameter = ref<string | null>(null);
-  const coverage = useExploreRequest('measurements');
-
-  /** slugs with records under the filters; null until known */
-  const available = computed(() => {
-    const buckets = coverage.result.value?.buckets;
-    if (!buckets) return null;
-    return new Set(
-      buckets.flatMap((b) => (b.key[0] && b.n_records ? [b.key[0]] : [])),
-    );
-  });
+  const coverage = useParametersWithRecords();
 
   /** the selected pollutants with records, benchmark or not */
   const withRecords = computed(() => {
     const selected = new Set(exploreStore.parameters);
-    const withData = available.value;
+    const withData = coverage.available.value;
     return exploreStore.parameterOptions.filter(
       (opt) =>
         (!selected.size || selected.has(opt.value)) &&
@@ -94,12 +123,7 @@ export function useParameterChoice({
 
   /** Reload which pollutants have records, then settle the choice. */
   async function refresh(): Promise<void> {
-    await coverage.load({
-      agg: 'coverage',
-      by: ['parameter'],
-      filter: exploreFilter(),
-      ...exploreRange(),
-    });
+    await coverage.refresh();
     settle();
   }
 
@@ -112,6 +136,36 @@ export function useParameterChoice({
   };
 }
 
+/** Options of the context menu. */
+export interface ContextChoiceOptions {
+  /** adds an "All" entry (null), the initial choice */
+  optional?: boolean;
+  /** the initial choice when not optional */
+  initial?: string;
+  /** contexts left out, e.g. the dimension the chart already groups by */
+  exclude?: string[];
+  /**
+   * a dimension the chart needs known: contexts and values are offered only
+   * where some data has a known key of it, e.g. a ventilation type
+   */
+  requireKnown?: string;
+}
+
+/** Group-by of a menu query: the menu's dimension, then the one it needs known. */
+function menuBy(key: string, requireKnown?: string): string[] {
+  return requireKnown ? [key, requireKnown] : [key];
+}
+
+/** Whether a menu bucket counts: a known menu key, and a known required key. */
+function counts(
+  bucket: { key: (string | null)[] },
+  requireKnown?: string,
+): boolean {
+  const key = bucket.key[0];
+  if (key === null || key === undefined) return false;
+  return !requireKnown || !isUnknownKey(bucket.key[1]);
+}
+
 /**
  * The context a chart compares or narrows to. The menu lists the contexts
  * with at least one known value for the pollutant. `optional` adds an "All"
@@ -119,12 +173,17 @@ export function useParameterChoice({
  */
 export function useContextChoice(
   parameter: Ref<string | null>,
-  { optional = false, initial = 'country' } = {},
+  {
+    optional = false,
+    initial = 'country',
+    exclude = [],
+    requireKnown,
+  }: ContextChoiceOptions = {},
 ) {
   const { t } = useI18n();
   const exploreStore = useExploreStore();
   const context = ref<string | null>(optional ? null : initial);
-  const probes = STATS_CONTEXTS.map(
+  const probes = STATS_CONTEXTS.filter((key) => !exclude.includes(key)).map(
     (key) => [key, useExploreRequest('measurements')] as const,
   );
 
@@ -134,15 +193,14 @@ export function useContextChoice(
     for (const [key, probe] of probes) {
       const buckets = probe.result.value?.buckets;
       if (!buckets) return null;
-      if (buckets.some((b) => b.key[0] !== null && b.key[0] !== undefined))
-        keys.add(key);
+      if (buckets.some((b) => counts(b, requireKnown))) keys.add(key);
     }
     return keys;
   });
 
   const contextOptions = computed(() => {
     const withData = available.value;
-    const options = STATS_CONTEXTS.flatMap((key) => {
+    const options = probes.flatMap(([key]) => {
       const dimension = exploreStore.dimension(key);
       if (!dimension || (withData && !withData.has(key))) return [];
       return [{ value: key, label: dimension.label }];
@@ -161,7 +219,8 @@ export function useContextChoice(
    * its data falls back to the first one offered. Coverage reads
    * `dataset_parameter` only, no fact scan: it keys a dataset by every
    * building of its study, loose for a value but enough to tell whether a
-   * context has any known one.
+   * context has any known one. A required known key needs the two keys on
+   * the same rows, so only then a fact count.
    */
   async function refresh(): Promise<void> {
     const slug = parameter.value;
@@ -170,8 +229,9 @@ export function useContextChoice(
         probe.load(
           slug && exploreStore.dimension(key)
             ? {
-                agg: 'coverage',
-                by: [key],
+                ...(requireKnown
+                  ? { agg: 'count', by: menuBy(key, requireKnown) }
+                  : { agg: 'coverage', by: [key] }),
                 parameters: [slug],
                 filter: exploreFilter(),
                 ...exploreRange(),
@@ -193,11 +253,18 @@ export function useContextChoice(
  * narrowed to, on top of the global filters. The value menu lists the
  * context's values with data.
  */
-export function useContextScope(options: ParameterChoiceOptions = {}) {
+export function useContextScope(
+  options: ParameterChoiceOptions &
+    Pick<ContextChoiceOptions, 'exclude' | 'requireKnown'> = {},
+) {
   const { t } = useI18n();
   const parameters = useParameterChoice(options);
   const { parameter } = parameters;
-  const contexts = useContextChoice(parameter, { optional: true });
+  const contexts = useContextChoice(parameter, {
+    optional: true,
+    exclude: options.exclude ?? [],
+    ...(options.requireKnown ? { requireKnown: options.requireKnown } : {}),
+  });
   const { context, contextDimension } = contexts;
   const contextValue = ref<string | null>(null);
   const valuesRequest = useExploreRequest('measurements');
@@ -209,11 +276,13 @@ export function useContextScope(options: ParameterChoiceOptions = {}) {
   const valueOptions = computed(() => {
     const dimension = contextDimension.value;
     if (!dimension) return [];
-    return (valuesRequest.result.value?.buckets || [])
-      .flatMap((b) => {
-        const key = b.key[0];
-        return key ? [{ value: key, label: keyLabel(dimension.key, key) }] : [];
-      })
+    const keys = new Set(
+      (valuesRequest.result.value?.buckets || []).flatMap((b) =>
+        counts(b, options.requireKnown) && b.key[0] ? [b.key[0]] : [],
+      ),
+    );
+    return [...keys]
+      .map((key) => ({ value: key, label: keyLabel(dimension.key, key) }))
       .sort((a, b) => a.label.localeCompare(b.label));
   });
 
@@ -242,7 +311,7 @@ export function useContextScope(options: ParameterChoiceOptions = {}) {
       filter: exploreFilter(),
       ...exploreRange(),
       agg: 'count',
-      by: [context.value],
+      by: menuBy(context.value, options.requireKnown),
       parameters: [parameter.value],
       grain: 'day',
     });

@@ -9,6 +9,7 @@ import {
   DEFAULT_ALTITUDES,
   DEFAULT_CONSTRUCTION_YEARS,
   DEFAULT_MEASUREMENT_YEARS,
+  cityName,
   useFiltersStore,
 } from '@/stores/filters';
 import { withRange } from '@/utils/numbers';
@@ -17,11 +18,6 @@ export type ExploreRoute = 'metadata' | 'measurements' | 'relationships';
 
 function nonEmpty(values: string[] | null | undefined): string[] | undefined {
   return values && values.length ? [...values].sort() : undefined;
-}
-
-/** The store keeps cities as "City, CC"; filters and bucket keys use the bare name. */
-export function cityName(entry: string): string {
-  return entry.substring(0, entry.length - 4);
 }
 
 export function studyCriteria() {

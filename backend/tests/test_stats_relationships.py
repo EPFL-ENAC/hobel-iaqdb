@@ -68,7 +68,7 @@ async def test_pairs_with_a_catalog_metric(client, session, clean_db, tmp_path):
     fx = await loaded_fixture(session, clean_db, tmp_path)
     response = await client.get(
         "/stats/relationships",
-        params={"agg": "pairs", "x": "co2", "y": "space.occupancy_density"},
+        params={"agg": "pairs", "x": "space.occupancy_density", "y": "co2"},
     )
     assert response.status_code == 200, response.text
     body = response.json()
@@ -76,7 +76,7 @@ async def test_pairs_with_a_catalog_metric(client, session, clean_db, tmp_path):
     assert body["meta"]["parameters"] == ["co2"]
     bucket = body["buckets"][0]
     expected_points = sorted(
-        (mean([v for _, v in fx.series[("co2", space)]]), density)
+        (density, mean([v for _, v in fx.series[("co2", space)]]))
         for space, density in (("S1", 0.1), ("S2", 0.3))
     )
     assert bucket["n"] == 2
@@ -86,7 +86,13 @@ async def test_pairs_with_a_catalog_metric(client, session, clean_db, tmp_path):
     assert bucket["fit"]["r2"] == pytest.approx(1.0)
     response = await client.get(
         "/stats/relationships",
-        params={"agg": "pairs", "x": "co2", "y": "space.nope"},
+        params={"agg": "pairs", "x": "space.nope", "y": "co2"},
+    )
+    assert response.status_code == 422
+    # the metric is the explanatory variable: never y
+    response = await client.get(
+        "/stats/relationships",
+        params={"agg": "pairs", "x": "co2", "y": "space.occupancy_density"},
     )
     assert response.status_code == 422
 
@@ -144,3 +150,36 @@ async def test_matrix_empty_state(client, session, clean_db, tmp_path):
     assert body["buckets"] == []
     assert body["meta"]["n"] == 0
     assert body["meta"]["available_parameters"] == ["pm2_5"]
+
+
+async def test_partners(client, session, clean_db, tmp_path):
+    fx = await loaded_fixture(session, clean_db, tmp_path)
+    response = await client.get(
+        "/stats/relationships", params={"agg": "partners", "x": "co2"}
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["meta"]["parameters"] == ["co2"]
+    # pm2_5 is only measured in S3, where there is no CO2
+    expected = len(paired_hours(fx, "co2", "air_temperature", ("S1", "S2")))
+    assert buckets_of(body) == {
+        ("air_temperature",): {"key": ["air_temperature"], "n": expected}
+    }
+    # the same count as the matrix cell of the pair
+    response = await client.get(
+        "/stats/relationships",
+        params={"agg": "matrix", "parameters": "co2,air_temperature"},
+    )
+    assert response.json()["buckets"][0]["n"] == expected
+    # measured alone: no partner
+    response = await client.get(
+        "/stats/relationships", params={"agg": "partners", "x": "pm2_5"}
+    )
+    assert response.json()["buckets"] == []
+    for params in (
+        {"agg": "partners"},
+        {"agg": "partners", "x": "space.floor_area"},
+        {"agg": "partners", "x": "co2", "by": "country"},
+    ):
+        response = await client.get("/stats/relationships", params=params)
+        assert response.status_code == 422, params

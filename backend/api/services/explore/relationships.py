@@ -21,7 +21,7 @@ from sqlalchemy import and_, case, func
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-AGGS = ("pairs", "matrix")
+AGGS = ("pairs", "matrix", "partners")
 # points a pairs chart gets at most; the fit is always over every row
 SAMPLE = 2000
 METRIC_MODELS = {"space": Space, "building": Building}
@@ -43,18 +43,34 @@ class RelationshipService:
                 raise HTTPException(
                     status_code=422, detail="matrix needs 2+ parameters"
                 )
+        elif agg == "partners":
+            if not query.x or query.x in METRICS:
+                raise HTTPException(
+                    status_code=422, detail="partners needs a parameter x"
+                )
+            slugs = [query.x]
         else:
             if not query.x or not query.y:
                 raise HTTPException(status_code=422, detail="pairs needs x and y")
-            slugs = [query.x] + ([] if query.y in METRICS else [query.y])
+            if query.y in METRICS:
+                raise HTTPException(
+                    status_code=422,
+                    detail="a metric goes in x: y is fitted as a function of x",
+                )
+            slugs = ([] if query.x in METRICS else [query.x]) + [query.y]
         parameters = await check_parameters(self.session, sorted(set(slugs)))
         specs = resolve(query.by, grain)
         if grain == "raw":
-            await check_raw_cap(self.session, filter, slugs)
+            # partners scans every parameter, not only x
+            scanned = [] if agg == "partners" else slugs
+            await check_raw_cap(self.session, filter, scanned)
         if agg == "matrix":
             buckets = await self._matrix(grain, query, filter, slugs)
             grain_label = grain
-        elif query.y in METRICS:
+        elif agg == "partners":
+            buckets = await self._partners(grain, query, filter)
+            grain_label = grain
+        elif query.x in METRICS:
             buckets = await self._metric_pairs(grain, query, filter, specs)
             grain_label = "space"
         else:
@@ -143,9 +159,9 @@ class RelationshipService:
         return statement.where(b.c.parameter == query.y)
 
     async def _metric_pairs(self, grain, query, filter, specs) -> list[Bucket]:
-        """x aggregated per (dataset, space), then joined to the catalog
-        column named by y: one point per space, the fit over all spaces."""
-        entity, attr = query.y.split(".")
+        """The catalog column named by x against y aggregated per (dataset,
+        space): one point per space, y fitted on x over all spaces."""
+        entity, attr = query.x.split(".")
         fact = Fact(grain)
         inner = select(
             fact.c.dataset_id.label("dataset_id"),
@@ -155,9 +171,9 @@ class RelationshipService:
                 func.sum(fact.value * fact.n) / func.sum(fact.n)
                 if fact.n is not None
                 else func.avg(fact.value)
-            ).label("x"),
+            ).label("y"),
         )
-        inner = fact.where(inner, query, filter, [query.x])
+        inner = fact.where(inner, query, filter, [query.y])
         inner = inner.where(fact.c.space_id.isnot(None))
         sub = inner.group_by(
             fact.c.dataset_id, fact.c.space_id, fact.c.building_id
@@ -174,18 +190,18 @@ class RelationshipService:
                     status_code=422, detail=f"'{spec.key}' cannot group metric pairs"
                 )
             keys.append(getattr(METRIC_MODELS[spec.entity], attr_of(spec)))
-        y = col(metric)
+        x, y = col(metric), sub.c.y
         base = (
             select(
                 *keys,
                 func.count(),
-                func.regr_slope(y, sub.c.x),
-                func.regr_intercept(y, sub.c.x),
-                func.regr_r2(y, sub.c.x),
-                func.corr(y, sub.c.x),
+                func.regr_slope(y, x),
+                func.regr_intercept(y, x),
+                func.regr_r2(y, x),
+                func.corr(y, x),
             )
             .select_from(joined)
-            .where(y.isnot(None))
+            .where(x.isnot(None))
         )
         rows = [
             r
@@ -208,7 +224,7 @@ class RelationshipService:
             )
             for row in rows
         }
-        points = select(*keys, sub.c.x, y).select_from(joined).where(y.isnot(None))
+        points = select(*keys, x, y).select_from(joined).where(x.isnot(None))
         for row in (
             await self.session.exec(points.order_by(sub.c.dataset_id, sub.c.space_id))
         ).all():
@@ -262,6 +278,36 @@ class RelationshipService:
         if all(bucket.n == 0 for bucket in buckets):
             return []
         return buckets
+
+    async def _partners(self, grain, query, filter) -> list[Bucket]:
+        """The parameters measured with x: per parameter, the (dataset,
+        space, time) rows it shares with x, as a matrix cell with x counts
+        them. One statement, whatever the number of parameters."""
+        if query.by:
+            raise HTTPException(status_code=422, detail="partners takes no `by`")
+        x, other = Fact(grain, "x"), Fact(grain, "other")
+        with_x = x.where(
+            select(x.c.dataset_id, x.c.space_id, x.time.label("time")),
+            query,
+            filter,
+            [query.x],
+        )
+        with_x = with_x.distinct().subquery("with_x")
+        shared = select(
+            other.c.parameter, other.c.dataset_id, other.c.space_id, other.time
+        ).join(
+            with_x,
+            and_(
+                other.c.dataset_id == with_x.c.dataset_id,
+                other.c.space_id == with_x.c.space_id,
+                other.time == with_x.c.time,
+            ),
+        )
+        shared = other.where(shared, query, filter, [])
+        shared = shared.where(other.c.parameter != query.x).distinct().subquery()
+        counts = select(shared.c.parameter, func.count()).group_by(shared.c.parameter)
+        rows = (await self.session.exec(counts)).all()
+        return [Bucket(key=[slug], n=int(n)) for slug, n in rows]
 
     def _ranked(self, pivot, width: int):
         """Spearman: rank each parameter within the rows where the other
