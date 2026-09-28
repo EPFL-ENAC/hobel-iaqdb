@@ -106,6 +106,7 @@
     "watchPostEffect": true,
     "watchSyncEffect": true,
     "DEFAULT_PARAMETER": true,
-    "useExploreStore": true
+    "useExploreStore": true,
+    "DEFAULT_MEASUREMENT_YEARS": true
   }
 }

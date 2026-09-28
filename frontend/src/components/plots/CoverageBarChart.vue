@@ -31,7 +31,8 @@ import { BarChart } from 'echarts/charts';
 import { SVGRenderer } from 'echarts/renderers';
 import { GridComponent, TooltipComponent } from 'echarts/components';
 import { initOptions, updateOptions } from '@/components/plots/charts';
-import { exploreFilter } from '@/api/explore';
+import { exploreFilter, exploreRange } from '@/api/explore';
+import { useChartFormat } from '@/composables/useChartFormat';
 import { useExploreRequest } from '@/composables/useExploreQuery';
 import type { ExploreBucket, ExploreParams } from '@/models';
 
@@ -54,7 +55,8 @@ interface BarItem {
 }
 
 withDefaults(defineProps<Props>(), { height: 200 });
-const { t, locale } = useI18n();
+const { t } = useI18n();
+const { formatCount, formatCompact, formatShare } = useChartFormat();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
 
@@ -69,7 +71,12 @@ const dimensionLabel = computed(() => dimension.value?.label || '');
 
 function params(): ExploreParams | null {
   if (!dimension.value) return null;
-  return { agg: 'coverage', by: ['parameter'], filter: exploreFilter() };
+  return {
+    agg: 'coverage',
+    by: ['parameter'],
+    filter: exploreFilter(),
+    ...exploreRange(),
+  };
 }
 
 const { result, loading, error, empty, load } =
@@ -89,21 +96,6 @@ function completenessOf(bucket: ExploreBucket): number {
   const records = bucket.n_records ?? 0;
   const total = records + (bucket.coverage?.n_missing ?? 0);
   return total ? records / total : 0;
-}
-
-function formatCount(value: number): string {
-  return value.toLocaleString(locale.value);
-}
-
-/** axis ticks: 2M rather than 2,000,000 */
-function formatCompact(value: number): string {
-  return new Intl.NumberFormat(locale.value, { notation: 'compact' }).format(
-    value,
-  );
-}
-
-function formatShare(value: number): string {
-  return `${Math.round(value * 100)}%`;
 }
 
 const summary = computed(() => {

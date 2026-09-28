@@ -114,6 +114,100 @@
             </q-card-section>
           </q-card>
         </div>
+        <div class="col-12 col-md-6">
+          <q-card flat bordered class="full-height">
+            <q-card-section class="q-pb-none">
+              <div class="text-subtitle1 text-bold">
+                {{ t('plots.records_by_month') }}
+              </div>
+              <div class="text-caption text-grey-7">
+                {{ t('plots.records_by_month_hint') }}
+              </div>
+            </q-card-section>
+            <q-card-section>
+              <MonthlyRecordsChart v-if="exploreStore.schema" :height="600" />
+            </q-card-section>
+          </q-card>
+        </div>
+        <div class="col-12 col-md-6">
+          <q-card flat bordered class="full-height">
+            <q-card-section class="q-pb-none">
+              <div class="text-subtitle1 text-bold">
+                {{ t('plots.measurement_period') }}
+              </div>
+              <div class="text-caption text-grey-7">
+                {{ t('plots.measurement_period_hint') }}
+              </div>
+            </q-card-section>
+            <q-card-section>
+              <MeasurementPeriodChart v-if="exploreStore.schema" :height="600" />
+            </q-card-section>
+          </q-card>
+        </div>
+        <div class="col-12 col-md-6">
+          <q-card flat bordered class="full-height">
+            <q-card-section class="q-pb-none">
+              <div class="text-subtitle1 text-bold">
+                {{ t('plots.descriptive_stats') }}
+              </div>
+              <div class="text-caption text-grey-7">
+                {{ t('plots.descriptive_stats_hint') }}
+              </div>
+            </q-card-section>
+            <q-card-section>
+              <DescriptiveStatsChart v-if="exploreStore.schema" :height="600" />
+            </q-card-section>
+          </q-card>
+        </div>
+        <div class="col-12 col-md-6">
+          <q-card flat bordered class="full-height">
+            <q-card-section class="q-pb-none">
+              <div class="text-subtitle1 text-bold">
+                {{ t('plots.benchmark_comparison') }}
+              </div>
+              <div class="text-caption text-grey-7">
+                {{ t('plots.benchmark_comparison_hint') }}
+              </div>
+            </q-card-section>
+            <q-card-section>
+              <BenchmarkChart v-if="exploreStore.schema" :height="600" />
+            </q-card-section>
+          </q-card>
+        </div>
+        <div class="col-12 col-md-6">
+          <q-card flat bordered class="full-height">
+            <q-card-section class="q-pb-none">
+              <div class="text-subtitle1 text-bold">
+                {{ t('plots.trends') }}
+              </div>
+              <div class="text-caption text-grey-7">
+                {{ t('plots.trends_hint') }}
+              </div>
+            </q-card-section>
+            <q-card-section>
+              <TrendChart
+                v-if="exploreStore.schema"
+                :height="320"
+                :table-height="280"
+              />
+            </q-card-section>
+          </q-card>
+        </div>
+        <div class="col-12 col-md-6">
+          <q-card flat bordered class="full-height">
+            <q-card-section class="q-pb-none">
+              <div class="text-subtitle1 text-bold">
+                {{ t('plots.exceedance_over_time') }}
+              </div>
+              <div class="text-caption text-grey-7">
+                {{ t('plots.exceedance_over_time_hint') }}
+              </div>
+            </q-card-section>
+            <q-card-section>
+              <ExceedanceChart v-if="exploreStore.schema" :height="600" />
+            </q-card-section>
+          </q-card>
+        </div>
       </div>
     </div>
   </q-page>
@@ -122,6 +216,12 @@
 <script setup lang="ts">
 import MetadataBarChart from '@/components/plots/MetadataBarChart.vue';
 import CoverageBarChart from '@/components/plots/CoverageBarChart.vue';
+import MonthlyRecordsChart from '@/components/plots/MonthlyRecordsChart.vue';
+import MeasurementPeriodChart from '@/components/plots/MeasurementPeriodChart.vue';
+import DescriptiveStatsChart from '@/components/plots/DescriptiveStatsChart.vue';
+import BenchmarkChart from '@/components/plots/BenchmarkChart.vue';
+import TrendChart from '@/components/plots/TrendChart.vue';
+import ExceedanceChart from '@/components/plots/ExceedanceChart.vue';
 
 const { t } = useI18n();
 const exploreStore = useExploreStore();

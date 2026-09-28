@@ -5,13 +5,23 @@
  */
 import { api } from '@/boot/api';
 import type { ExploreFilter, ExploreParams, ExploreResult, ExploreSchema } from '@/models';
-import { DEFAULT_ALTITUDES, DEFAULT_CONSTRUCTION_YEARS, useFiltersStore } from '@/stores/filters';
+import {
+  DEFAULT_ALTITUDES,
+  DEFAULT_CONSTRUCTION_YEARS,
+  DEFAULT_MEASUREMENT_YEARS,
+  useFiltersStore,
+} from '@/stores/filters';
 import { withRange } from '@/utils/numbers';
 
 export type ExploreRoute = 'metadata' | 'measurements' | 'relationships';
 
 function nonEmpty(values: string[] | null | undefined): string[] | undefined {
   return values && values.length ? [...values].sort() : undefined;
+}
+
+/** The store keeps cities as "City, CC"; filters and bucket keys use the bare name. */
+export function cityName(entry: string): string {
+  return entry.substring(0, entry.length - 4);
 }
 
 export function studyCriteria() {
@@ -36,8 +46,7 @@ export function buildingCriteria() {
   )
     ? [{ altitude: { $gte: filters.altitudes.min } }, { altitude: { $lte: filters.altitudes.max } }]
     : [];
-  // the store keeps cities as "City, CC"
-  const cities = (filters.cities || []).map((city) => city.substring(0, city.length - 4));
+  const cities = (filters.cities || []).map(cityName);
   return {
     $and: constructionYears.length || altitudes.length ? [...constructionYears, ...altitudes] : undefined,
     type: nonEmpty(filters.building_types),
@@ -62,6 +71,19 @@ export function exploreFilter(): ExploreFilter {
     ...studyCriteria(),
     $building: buildingCriteria(),
     $space: spaceCriteria(),
+  };
+}
+
+/**
+ * The measurement time range, as `from` (inclusive) and `to` (exclusive)
+ * dates: whole years, none at the default bounds. Only the measurement
+ * routes filter rows by it.
+ */
+export function exploreRange(): Pick<ExploreParams, 'from' | 'to'> {
+  const { min, max } = useFiltersStore().measurement_years;
+  return {
+    ...(min > DEFAULT_MEASUREMENT_YEARS.min ? { from: `${min}-01-01` } : {}),
+    ...(max < DEFAULT_MEASUREMENT_YEARS.max ? { to: `${max + 1}-01-01` } : {}),
   };
 }
 
