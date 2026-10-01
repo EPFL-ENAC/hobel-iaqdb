@@ -410,9 +410,7 @@ async def notify(session: AsyncSession, request: DownloadRequest) -> None:
     except PERMANENT_SMTP_ERRORS as e:
         if isinstance(e, smtplib.SMTPDataError) and e.smtp_code < 500:
             raise
-        log.warning(
-            "download %s: email to %s failed: %s", request.id, request.email, e
-        )
+        log.warning("download %s: email to %s failed: %s", request.id, request.email, e)
         request.error = f"email not sent: {type(e).__name__}: {e}"
     request.notified_at = now
     session.add(request)
