@@ -51,6 +51,14 @@ services:
       - S3_REGION=${S3_REGION}
       - S3_BUCKET=${S3_BUCKET}
       - S3_PATH_PREFIX=${S3_PATH_PREFIX}
+      - APP_URL=${APP_URL:-http://localhost}
+      - DOWNLOAD_MAX_RECORDS=${DOWNLOAD_MAX_RECORDS:-200000000}
+      - DOWNLOAD_MAX_CONCURRENT=${DOWNLOAD_MAX_CONCURRENT:-2}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_FROM=${SMTP_FROM:-noreply@epfl.ch}
     expose:
       - 8000
     ports:

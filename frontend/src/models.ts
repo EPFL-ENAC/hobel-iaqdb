@@ -261,6 +261,28 @@ export interface ExploreParams {
   method?: 'pearson' | 'spearman';
 }
 
+/** The Explore selection a download covers (filter as JSON). */
+export interface DownloadSelection {
+  filter?: string;
+  parameters?: string[];
+  from?: string;
+  to?: string;
+}
+
+export interface DownloadForm extends DownloadSelection {
+  email: string;
+  title: string;
+  description: string;
+}
+
+export interface DownloadEstimate {
+  /** upper bound: building and space criteria are not counted */
+  n_records: number;
+  n_datasets: number;
+  n_embargoed_studies: number;
+  max_records: number;
+}
+
 export interface ExploreStats {
   mean: number;
   sd?: number;

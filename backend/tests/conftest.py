@@ -18,6 +18,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 TEST_DB_PORT = 5433
 CATALOG_TABLES = (
+    "download_request",
     "measurement",
     "dataset_parameter",
     "variable",
