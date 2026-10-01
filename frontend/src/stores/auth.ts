@@ -9,7 +9,12 @@ export const useAuthStore = defineStore('auth', () => {
   const realmRoles = ref<string[]>([]);
   const isAuthenticated = computed(() => profile.value !== undefined);
   const isAdmin = computed(() => realmRoles.value.includes('admin'));
-  const accessToken = computed(() => keycloak.token);
+
+  // keycloak is a plain (non-reactive) Keycloak instance, so a `computed`
+  // reading keycloak.token would never invalidate: Vue has nothing to track
+  // and the value freezes at whatever it was on first access, even after
+  // updateToken() refreshes the underlying token. Track it explicitly instead.
+  const accessToken = ref<string | undefined>(keycloak.token)
 
   async function init() {
     if (isAuthenticated.value) return Promise.resolve(true);
@@ -21,6 +26,11 @@ export const useAuthStore = defineStore('auth', () => {
       if (authenticated) {
         realmRoles.value = keycloak.tokenParsed?.realm_access?.roles || [];
         profile.value = await keycloak.loadUserProfile();
+        accessToken.value = keycloak.token
+        keycloak.onTokenExpired = () => void updateToken().catch(() => undefined)
+        keycloak.onAuthRefreshSuccess = () => {
+          accessToken.value = keycloak.token
+        }
         return authenticated;
       } else {
         return authenticated;
@@ -41,11 +51,18 @@ export const useAuthStore = defineStore('auth', () => {
     }).then(() => {
       profile.value = undefined;
       realmRoles.value = [];
+      accessToken.value = undefined
     });
   }
 
   async function updateToken() {
     return await keycloak.updateToken(30)
+      .then((refreshed: boolean) => {
+        if (refreshed) {
+          accessToken.value = keycloak.token
+        }
+        return refreshed;
+      })
       .catch(() => {
         console.error('Failed to refresh token');
         return logout().finally(() => { throw new Error('Failed to refresh token'); });
