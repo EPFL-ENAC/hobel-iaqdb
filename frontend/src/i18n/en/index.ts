@@ -26,6 +26,17 @@ export default {
     ready: 'Ready',
     failed: 'Failed',
     loads_search: 'Study, dataset or error',
+    loads_columns: {
+      study: 'Study',
+      name: 'Dataset',
+      summary_status: 'Status',
+      summary_error: 'Error',
+      loaded: 'Loaded',
+      rejected: 'Rejected',
+      load_started_at: 'Started',
+      duration: 'Duration',
+      report: 'Report',
+    },
   },
   study: {
     label: 'Study',

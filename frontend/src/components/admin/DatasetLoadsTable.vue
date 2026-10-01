@@ -150,47 +150,50 @@ function duration(row: DatasetLoad) {
 const columns = [
   {
     name: 'study',
-    label: 'Study',
+    label: t('admin.loads_columns.study'),
     align: 'left' as const,
     field: 'study_identifier',
     style: 'max-width: 400px; white-space: normal',
   },
-  { name: 'name', label: 'Dataset', align: 'left' as const, field: 'name' },
-  { name: 'summary_status', label: 'Status', align: 'left' as const, field: 'summary_status' },
-  { name: 'summary_error', label: 'Error', align: 'left' as const, field: 'summary_error' },
+  { name: 'name', label: t('admin.loads_columns.name'), align: 'left' as const, field: 'name' },
+  { name: 'summary_status', label: t('admin.loads_columns.summary_status'), align: 'left' as const, field: 'summary_status' },
+  { name: 'summary_error', label: t('admin.loads_columns.summary_error'), align: 'left' as const, field: 'summary_error' },
   {
     name: 'loaded',
-    label: 'Loaded',
+    label: t('admin.loads_columns.loaded'),
     align: 'right' as const,
     field: (row: DatasetLoad) => row.load_report?.loaded,
     format: formatCount,
   },
   {
     name: 'rejected',
-    label: 'Rejected',
+    label: t('admin.loads_columns.rejected'),
     align: 'right' as const,
     field: (row: DatasetLoad) => rejected(row.load_report),
     format: formatCount,
   },
   {
     name: 'load_started_at',
-    label: 'Started',
+    label: t('admin.loads_columns.load_started_at'),
     align: 'left' as const,
     field: 'load_started_at',
     format: toDatetimeString,
   },
   {
     name: 'duration',
-    label: 'Duration',
+    label: t('admin.loads_columns.duration'),
     align: 'right' as const,
     field: duration,
     format: (v?: number) => (v === undefined ? '-' : `${v.toFixed(1)} s`),
   },
-  { name: 'report', label: 'Report', align: 'center' as const, field: 'load_report' },
+  { name: 'report', label: t('admin.loads_columns.report'), align: 'center' as const, field: 'load_report' },
 ];
+
+let requestId = 0;
 
 function onRequest(props: { pagination: Pagination }) {
   const { page, rowsPerPage } = props.pagination;
+  const id = ++requestId;
   loading.value = true;
   listLoads({
     ...(status.value !== 'all' ? { status: status.value } : {}),
@@ -200,11 +203,15 @@ function onRequest(props: { pagination: Pagination }) {
     limit: rowsPerPage,
   })
     .then((result) => {
+      // a newer request was sent meanwhile: drop this stale response
+      if (id !== requestId) return;
       rows.value = result.data;
       pagination.value = { page, rowsPerPage, rowsNumber: result.total };
     })
     .catch(notifyError)
-    .finally(() => (loading.value = false));
+    .finally(() => {
+      if (id === requestId) loading.value = false;
+    });
 }
 
 function loadStudyOptions() {
