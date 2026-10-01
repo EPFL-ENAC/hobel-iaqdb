@@ -26,6 +26,9 @@ stop-db:
 down-db:
 	docker compose down postgres
 
+connect-db:
+	docker compose exec postgres psql -U postgres
+
 # setup and run when deploying on server
 setup:
 	echo "nothing to see here"
