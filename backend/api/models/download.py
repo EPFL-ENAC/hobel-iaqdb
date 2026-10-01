@@ -5,7 +5,9 @@ from datetime import date, datetime
 from typing import Dict, Optional
 
 from enacit4r_sql.models.query import ListResult
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict
+from pydantic import Field as PydanticField
+from pydantic import field_validator
 from sqlalchemy import TIMESTAMP, BigInteger
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Column, Field, SQLModel
@@ -50,14 +52,15 @@ class DownloadSelection(BaseModel):
 
     filter: Optional[str] = None
     parameters: list[str] = []
-    from_: Optional[date] = Field(default=None, alias="from")
+    # sqlmodel's Field drops the alias on a plain pydantic model
+    from_: Optional[date] = PydanticField(default=None, alias="from")
     to: Optional[date] = None
 
 
 class DownloadForm(DownloadSelection):
-    email: str = Field(max_length=320)
-    title: str = Field(min_length=1, max_length=200)
-    description: str = Field(min_length=1, max_length=2000)
+    email: str = PydanticField(max_length=320)
+    title: str = PydanticField(min_length=1, max_length=200)
+    description: str = PydanticField(min_length=1, max_length=2000)
 
     @field_validator("email")
     @classmethod

@@ -488,7 +488,11 @@ def measurement_statement(query: ExploreQuery, filter: dict, dataset_id: int):
             .outerjoin(Instrument, col(Instrument.id) == m.c.instrument_id)
         )
         .where(m.c.dataset_id == dataset_id)
-        .order_by(m.c.parameter, m.c.ts)
+        # not `parameter, ts`: when its statistics make the planner consider
+        # sorting inside compressed chunks, TimescaleDB fails to plan a sort
+        # led by the varchar segmentby column ("missing operator
+        # 1(1043,1043) in opfamily 1994"), even on an empty dataset
+        .order_by(m.c.ts, m.c.parameter)
     )
     return fact.where(statement, query, filter, query.parameters)
 

@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 from api.config import config
 from api.models.catalog import Contribution
-from api.models.download import DownloadRequest
+from api.models.download import DownloadForm, DownloadRequest
 from api.services import download
 from tests.expected import series_of
 from tests.test_stats_metadata import loaded_fixture
@@ -209,3 +209,26 @@ async def test_list_requests(client, session, clean_db):
     assert "token_hash" not in result.data[0].model_dump()
     # admins only
     assert (await client.get("/downloads")).status_code in (401, 403)
+
+
+async def test_all_parameters_and_from(session, clean_db, tmp_path, storage):
+    """`from` survives the request round trip; no parameter filter exports
+    them all (the ordering bug it once hit needs production planner
+    statistics, see measurement_statement)."""
+    archives, mails = storage
+    fx = await loaded_fixture(session, clean_db, tmp_path)
+    form = DownloadForm.model_validate({**FORM, "from": "2023-03-03"})
+    assert form.from_ is not None
+    request = await download.create_request(session, form, None)
+    assert request.query["from"] == "2023-03-03"
+    assert await download.claim_and_run(clean_db) is True
+    await session.refresh(request)
+    assert request.status == "ready", request.error
+    expected = sum(
+        1
+        for slug in ("co2", "air_temperature", "pm2_5")
+        for p in series_of(fx, slug)
+        for t, _ in p
+        if t >= datetime(2023, 3, 3)
+    )
+    assert request.n_records == expected
