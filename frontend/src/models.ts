@@ -283,6 +283,31 @@ export interface DownloadEstimate {
   max_records: number;
 }
 
+export interface DownloadRequest {
+  id: number;
+  email: string;
+  title: string;
+  description: string;
+  query: DownloadSelection;
+  status: 'pending' | 'running' | 'ready' | 'failed' | 'expired';
+  error?: string;
+  attempts: number;
+  n_records: number;
+  size?: number;
+  client_ip?: string;
+  created_at: string;
+  ready_at?: string;
+  notified_at?: string;
+  expires_at?: string;
+}
+
+export interface DownloadRequestsResult {
+  total: number;
+  skip: number;
+  limit: number;
+  data: DownloadRequest[];
+}
+
 export interface ExploreStats {
   mean: number;
   sd?: number;

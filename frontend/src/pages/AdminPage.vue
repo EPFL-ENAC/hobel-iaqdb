@@ -19,13 +19,29 @@
         <q-spinner-dots size="md" color="primary" />
       </div>
       <div v-else-if="authStore.isAdmin">
-        <div class="text-h6">
-          {{ t('admin.contributions') }}
-        </div>
-        <div class="text-help q-mb-md">
-          {{ t('admin.contributions_info') }}
-        </div>
-        <study-drafts-table />
+        <q-tabs
+          dense
+          no-caps
+          align="left"
+          active-color="secondary"
+          indicator-color="secondary"
+          class="text-grey q-mb-md"
+        >
+          <q-route-tab to="/admin" exact :label="t('admin.contributions')" />
+          <q-route-tab to="/admin/downloads" exact :label="t('admin.downloads')" />
+        </q-tabs>
+        <template v-if="route.path === '/admin/downloads'">
+          <div class="text-help q-mb-md">
+            {{ t('admin.downloads_info') }}
+          </div>
+          <download-requests-table />
+        </template>
+        <template v-else>
+          <div class="text-help q-mb-md">
+            {{ t('admin.contributions_info') }}
+          </div>
+          <study-drafts-table />
+        </template>
       </div>
       <div v-else>
         <q-card class="bg-negative text-white">
@@ -40,9 +56,11 @@
 
 <script setup lang="ts">
 import StudyDraftsTable from '@/components/admin/StudyDraftsTable.vue';
+import DownloadRequestsTable from '@/components/admin/DownloadRequestsTable.vue';
 
 const { t } = useI18n();
 const authStore = useAuthStore();
+const route = useRoute();
 
 onMounted(() => {
    void authStore.init().then(() => {

@@ -25,6 +25,8 @@ from api.models.download import (
     DownloadEstimate,
     DownloadForm,
     DownloadRequest,
+    DownloadRequestRead,
+    DownloadRequestsResult,
     DownloadSelection,
 )
 from api.models.explore import ExploreQuery
@@ -238,6 +240,28 @@ async def check_rate_limits(
         raise HTTPException(
             status_code=429, detail="too many downloads requested today"
         )
+
+
+async def list_requests(
+    session: AsyncSession, skip: int, limit: int
+) -> DownloadRequestsResult:
+    """Most recent first, for the admin page."""
+    total = (await session.exec(select(func.count(DownloadRequest.id)))).one()
+    statement = (
+        select(DownloadRequest)
+        .order_by(
+            col(DownloadRequest.created_at).desc(), col(DownloadRequest.id).desc()
+        )
+        .offset(skip)
+        .limit(limit)
+    )
+    rows = (await session.exec(statement)).all()
+    return DownloadRequestsResult(
+        total=total,
+        skip=skip,
+        limit=limit,
+        data=[DownloadRequestRead.model_validate(r) for r in rows],
+    )
 
 
 def hash_token(token: str) -> str:

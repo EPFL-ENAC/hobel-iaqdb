@@ -4,11 +4,13 @@ request (built in the background, link sent by email), then the link."""
 import re
 from datetime import datetime, timezone
 
+from api.auth import User, kc_service
 from api.db import get_engine, get_session
 from api.models.download import (
     DownloadAccepted,
     DownloadEstimate,
     DownloadForm,
+    DownloadRequestsResult,
     DownloadSelection,
 )
 from api.services.download import (
@@ -16,14 +18,26 @@ from api.services.download import (
     create_request,
     estimate,
     find_by_token,
+    list_requests,
     stream_archive,
 )
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 router = APIRouter()
+
+
+@router.get("", response_model=DownloadRequestsResult)
+async def get_downloads(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=200),
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(kc_service.require_admin()),
+):
+    """Download requests, most recent first (admin)."""
+    return await list_requests(session, skip, limit)
 
 
 @router.post("/estimate", response_model=DownloadEstimate)

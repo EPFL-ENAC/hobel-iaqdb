@@ -187,3 +187,25 @@ async def test_limits(client, session, clean_db, tmp_path, storage, monkeypatch)
     assert response.status_code == 429
     response = await client.post("/downloads", json={**FORM, "email": "nope"})
     assert response.status_code == 422
+
+
+async def test_list_requests(client, session, clean_db):
+    for i in range(3):
+        session.add(
+            DownloadRequest(
+                email=FORM["email"],
+                title=f"t{i}",
+                description="d",
+                query={},
+                n_records=i,
+                token_hash="secret" if i == 0 else None,
+                created_at=datetime.now(timezone.utc) + timedelta(minutes=i),
+            )
+        )
+    await session.commit()
+    result = await download.list_requests(session, skip=1, limit=1)
+    assert result.total == 3
+    assert [r.title for r in result.data] == ["t1"]
+    assert "token_hash" not in result.data[0].model_dump()
+    # admins only
+    assert (await client.get("/downloads")).status_code in (401, 403)

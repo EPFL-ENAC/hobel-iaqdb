@@ -4,6 +4,7 @@ request row per job, built in the background, delivered by email."""
 from datetime import date, datetime
 from typing import Dict, Optional
 
+from enacit4r_sql.models.query import ListResult
 from pydantic import BaseModel, ConfigDict, field_validator
 from sqlalchemy import TIMESTAMP, BigInteger
 from sqlalchemy.dialects.postgresql import JSONB
@@ -88,3 +89,29 @@ class DownloadAccepted(BaseModel):
     id: int
     status: str
     n_records: int
+
+
+class DownloadRequestRead(BaseModel):
+    """A request as admins see it: everything but the token hash."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    email: str
+    title: str
+    description: str
+    query: Dict
+    status: str
+    error: Optional[str]
+    attempts: int
+    n_records: int
+    size: Optional[int]
+    client_ip: Optional[str]
+    created_at: datetime
+    ready_at: Optional[datetime]
+    notified_at: Optional[datetime]
+    expires_at: Optional[datetime]
+
+
+class DownloadRequestsResult(ListResult):
+    data: list[DownloadRequestRead]

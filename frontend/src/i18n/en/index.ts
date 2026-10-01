@@ -15,6 +15,8 @@ export default {
   admin: {
     contributions: 'Contributions',
     contributions_info: 'List of contributions to the database. You can approve or reject them.',
+    downloads: 'Downloads',
+    downloads_info: 'Data downloads requested from the Explore page, most recent first.',
   },
   study: {
     label: 'Study',
