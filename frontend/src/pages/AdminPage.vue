@@ -30,8 +30,15 @@
         >
           <q-tab name="contributions" :label="t('admin.contributions')" />
           <q-tab name="downloads" :label="t('admin.downloads')" />
+          <q-tab name="ingestion" :label="t('admin.ingestion')" />
         </q-tabs>
-        <template v-if="tab === 'downloads'">
+        <template v-if="tab === 'ingestion'">
+          <div class="text-help q-mb-md">
+            {{ t('admin.ingestion_info') }}
+          </div>
+          <dataset-loads-table />
+        </template>
+        <template v-else-if="tab === 'downloads'">
           <div class="text-help q-mb-md">
             {{ t('admin.downloads_info') }}
           </div>
@@ -58,6 +65,7 @@
 <script setup lang="ts">
 import StudyDraftsTable from '@/components/admin/StudyDraftsTable.vue';
 import DownloadRequestsTable from '@/components/admin/DownloadRequestsTable.vue';
+import DatasetLoadsTable from '@/components/admin/DatasetLoadsTable.vue';
 
 const { t } = useI18n();
 const authStore = useAuthStore();
@@ -67,8 +75,8 @@ const router = useRouter();
 // the tab and the panel follow the path only, whatever query or hash the
 // login redirect leaves on the URL
 const tab = computed({
-  get: () => (route.path.startsWith('/admin/downloads') ? 'downloads' : 'contributions'),
-  set: (value: string) => void router.push(value === 'downloads' ? '/admin/downloads' : '/admin'),
+  get: () => ['downloads', 'ingestion'].find((name) => route.path.startsWith(`/admin/${name}`)) ?? 'contributions',
+  set: (value: string) => void router.push(value === 'contributions' ? '/admin' : `/admin/${value}`),
 });
 
 onMounted(() => {
