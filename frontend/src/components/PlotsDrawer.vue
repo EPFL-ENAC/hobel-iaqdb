@@ -9,11 +9,11 @@
       </q-item-label>
     </q-list>
     <div class="text-caption text-bold q-ml-md">{{ t('plots.building_type') }}</div>
-    <BuildingTypesChart :features="features" />
+    <MetadataTreemapChart entity="buildings" by="building_type" :options="buildingTypeOptions" :colors="['#00441b', '#b7e2b1']" />
     <div class="text-caption text-bold q-ml-md q-mt-sm">{{ t('plots.building_country') }}</div>
-    <BuildingCountriesChart :features="features" />
+    <MetadataTreemapChart entity="buildings" by="country" :options="countryOptions" :colors="['#08306b', '#93c3df']" />
     <div class="text-caption text-bold q-ml-md q-mt-sm">{{ t('plots.building_ventilation') }}</div>
-    <BuildingMechanicalVentilationsChart :features="features" />
+    <MetadataTreemapChart entity="buildings" by="ventilation" :options="yesNoOptions" :colors="['#3f007d', '#bcbddc']" />
     <q-list>
       <q-item-label header>
         <span class="text-h6">
@@ -23,43 +23,21 @@
       </q-item-label>
     </q-list>
     <div class="text-caption text-bold q-ml-md q-mt-sm">{{ t('plots.space_type') }}</div>
-    <SpaceTypesChart />
+    <MetadataTreemapChart entity="spaces" by="space_type" :options="spaceTypeOptions" :colors="['#800026', '#ffefa5']" />
     <div class="text-caption text-bold q-ml-md q-mt-sm">{{ t('plots.space_ventilation_type') }}</div>
-    <SpaceMechanicalVentilationsChart />
+    <MetadataTreemapChart entity="spaces" by="ventilation_type" :options="mechanicalVentilationTypeOptions" :colors="['#7f2704', '#fdd0a2']" />
   </div>
 </template>
 
 <script setup lang="ts">
-import type {
-  Feature,
-  GeoJsonProperties,
-  Geometry,
-} from 'geojson';
-import BuildingTypesChart from '@/components/plots/BuildingTypesChart.vue';
-import BuildingCountriesChart from '@/components/plots/BuildingCountriesChart.vue';
-import BuildingMechanicalVentilationsChart from '@/components/plots/BuildingMechanicalVentilationsChart.vue';
-import SpaceTypesChart from '@/components/plots/SpaceTypesChart.vue';
-import SpaceMechanicalVentilationsChart from '@/components/plots/SpaceMechanicalVentilationsChart.vue';
-import type { BuildingsLayerManager } from '@/layers/buildings';
-
+import MetadataTreemapChart from '@/components/plots/MetadataTreemapChart.vue';
+import {
+  buildingTypeOptions,
+  countryOptions,
+  mechanicalVentilationTypeOptions,
+  spaceTypeOptions,
+  yesNoOptions,
+} from '@/utils/options';
 
 const { t } = useI18n();
-const mapStore = useMapStore();
-
-const features = ref<Feature<Geometry, GeoJsonProperties>[]>([]);
-
-watch(
-  () => mapStore.filtersApplied,
-  () => {
-    console.log('Filters updated, fetching buildings...');
-    const manager = mapStore.getLayerManager('buildings') as BuildingsLayerManager;
-    if (manager) {
-      features.value = manager.filteredData ? [...manager.filteredData.features] : [];
-      
-    }
-  },
-  { immediate: true }
-);
-
-
 </script>

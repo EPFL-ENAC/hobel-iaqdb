@@ -14,6 +14,14 @@ from api.models.catalog import (  # noqa: F401
     Study,
     Variable,
 )
+from api.models.download import DownloadRequest  # noqa: F401
+from api.models.measurement import (  # noqa: F401
+    Benchmark,
+    CatalogVersion,
+    DatasetParameter,
+    Parameter,
+    measurement,
+)
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config

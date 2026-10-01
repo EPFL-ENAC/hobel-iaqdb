@@ -1,4 +1,4 @@
-import { defineStore } from 'pinia';
+import { defineStore, type StateTree } from 'pinia';
 import { withRange } from '@/utils/numbers';
 
 export type FilterParams = {
@@ -18,6 +18,40 @@ export type FilterParams = {
 
 export const DEFAULT_CONSTRUCTION_YEARS = { min: 1800, max: new Date().getFullYear() };
 export const DEFAULT_ALTITUDES = { min: 0, max: 2500 };
+export const DEFAULT_MEASUREMENT_YEARS = { min: 2000, max: new Date().getFullYear() };
+
+/** The store keeps cities as "City, CC"; filters and bucket keys use the bare name. */
+export function cityName(entry: string): string {
+  return entry.substring(0, entry.length - 4);
+}
+
+/**
+ * Ranges whose default max is the current year. At its default a max means
+ * "no upper bound", so it is stored as null: an untouched range saved last
+ * year must not become "until last year" once the year turns.
+ */
+const YEAR_RANGES: Record<string, { max: number }> = {
+  construction_years: DEFAULT_CONSTRUCTION_YEARS,
+  measurement_years: DEFAULT_MEASUREMENT_YEARS,
+};
+
+function serialize(state: StateTree): string {
+  const stored = { ...state };
+  for (const [field, defaults] of Object.entries(YEAR_RANGES)) {
+    const range = state[field] as { max: number } | undefined;
+    if (range?.max === defaults.max) stored[field] = { ...range, max: null };
+  }
+  return JSON.stringify(stored);
+}
+
+function deserialize(value: string): StateTree {
+  const state = JSON.parse(value) as StateTree;
+  for (const [field, defaults] of Object.entries(YEAR_RANGES)) {
+    const range = state[field] as { max: number | null } | undefined;
+    if (range && range.max === null) state[field] = { ...range, max: defaults.max };
+  }
+  return state;
+}
 
 export const useFiltersStore = defineStore(
   'filters',
@@ -26,6 +60,7 @@ export const useFiltersStore = defineStore(
     const cities = ref<string[]>([]);
     const construction_years = ref({ ...DEFAULT_CONSTRUCTION_YEARS });
     const altitudes = ref({ ...DEFAULT_ALTITUDES });
+    const measurement_years = ref({ ...DEFAULT_MEASUREMENT_YEARS });
     const climate_zones = ref<string[]>([]);
     const study_ids = ref<string[]>([]);
     const building_types = ref<string[]>([]);
@@ -42,6 +77,7 @@ export const useFiltersStore = defineStore(
       cities.value = [];
       construction_years.value = { ...DEFAULT_CONSTRUCTION_YEARS };
       altitudes.value = { ...DEFAULT_ALTITUDES };
+      measurement_years.value = { ...DEFAULT_MEASUREMENT_YEARS };
       climate_zones.value = [];
       study_ids.value = [];
       building_types.value = [];
@@ -80,6 +116,7 @@ export const useFiltersStore = defineStore(
       cities,
       construction_years,
       altitudes,
+      measurement_years,
       climate_zones,
       study_ids,
       building_types,
@@ -94,5 +131,5 @@ export const useFiltersStore = defineStore(
       notifyUpdate,
     };
   },
-  { persist: true },
+  { persist: { serializer: { serialize, deserialize } } },
 );

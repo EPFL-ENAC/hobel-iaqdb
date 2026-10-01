@@ -304,7 +304,14 @@ class DatasetBase(SQLModel):
     )
 
 
-class Dataset(DatasetBase, table=True):
+class DatasetLoadState(SQLModel):
+    # measurement load state: pending | ready | failed (see MeasurementService)
+    summary_status: str = Field(default="pending")
+    summary_error: Optional[str] = Field(default=None)
+    load_report: Dict | None = Field(sa_column=Column(JSON), default=None)
+
+
+class Dataset(DatasetBase, DatasetLoadState, table=True):
     __table_args__ = (UniqueConstraint("id"),)
     id: int = Field(
         default=None,
@@ -347,7 +354,7 @@ class Variable(VariableBase, table=True):
     dataset: Optional[Dataset] = Relationship(back_populates="variables")
 
 
-class DatasetRead(DatasetBase):
+class DatasetRead(DatasetBase, DatasetLoadState):
     id: int
     variables: List[Variable] = []
 
@@ -420,16 +427,6 @@ class DatasetsResult(ListResult):
 
 class StudyDraftsResult(ListResult):
     data: List[StudyDraft]
-
-
-class GroupByCount(BaseModel):
-    value: str | None
-    count: int
-
-
-class GroupByResult(BaseModel):
-    field: str
-    counts: List[GroupByCount]
 
 
 class ContributionsResult(ListResult):

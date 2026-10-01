@@ -26,6 +26,16 @@ stop-db:
 down-db:
 	docker compose down postgres
 
+# dev SMTP server, web UI at http://localhost:8025
+run-mail:
+	docker compose up -d --pull=always mailpit
+
+stop-mail:
+	docker compose stop mailpit
+
+connect-db:
+	docker compose exec postgres psql -U postgres
+
 # setup and run when deploying on server
 setup:
 	echo "nothing to see here"

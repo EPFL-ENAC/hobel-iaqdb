@@ -38,9 +38,9 @@
             <div class="q-mt-md text-grey-8">{{ t('measurement_year') }}</div>
             <div class="q-pl-md q-pr-md">
               <q-range
-                v-model="measurementYear"
-                :min="2000"
-                :max="new Date().getFullYear()"
+                v-model="filtersStore.measurement_years"
+                :min="DEFAULT_MEASUREMENT_YEARS.min"
+                :max="DEFAULT_MEASUREMENT_YEARS.max"
                 :step="1"
                 label
                 snap
@@ -50,49 +50,11 @@
               />
             </div>
             <q-select
-              v-model="particles"
-              :options="particleOptions"
-              :label="t('particles')"
-              multiple
-              use-chips
-              emit-value
-              map-options
-              @update:model-value="onUpdatedFilter"
-            />
-            <q-select
-              v-model="vocs"
-              :options="vocOptions"
-              :label="t('voc')"
-              multiple
-              use-chips
-              emit-value
-              map-options
-              @update:model-value="onUpdatedFilter"
-            />
-            <q-select
-              v-model="inorganicGases"
-              :options="inorganicGasesOptions"
-              :label="t('inorganic_gases')"
-              multiple
-              use-chips
-              emit-value
-              map-options
-              @update:model-value="onUpdatedFilter"
-            />
-            <q-select
-              v-model="biocontaminants"
-              :options="biocontaminantsOptions"
-              :label="t('biocontaminants')"
-              multiple
-              use-chips
-              emit-value
-              map-options
-              @update:model-value="onUpdatedFilter"
-            />
-            <q-select
-              v-model="otherPollutants"
-              :options="otherPollutantsOptions"
-              :label="t('other_pollutants')"
+              v-model="exploreStore.parameters"
+              :options="exploreStore.parameterOptions"
+              :label="t('plots.parameters')"
+              :hint="t('plots.parameters_hint')"
+              :loading="!exploreStore.schema"
               multiple
               use-chips
               emit-value
@@ -280,7 +242,7 @@
 </template>
 
 <script setup lang="ts">
-import { DEFAULT_CONSTRUCTION_YEARS, DEFAULT_ALTITUDES } from '@/stores/filters';
+import { DEFAULT_CONSTRUCTION_YEARS, DEFAULT_ALTITUDES, DEFAULT_MEASUREMENT_YEARS } from '@/stores/filters';
 import {
   climateOptions,
   mechanicalVentilationTypeOptions,
@@ -288,11 +250,6 @@ import {
   ageGroupOptions,
   socioeconomicStatusOptions,
   outdoorEnvOptions,
-  vocOptions,
-  particleOptions,
-  inorganicGasesOptions,
-  biocontaminantsOptions,
-  otherPollutantsOptions,
   countryOptions,
 } from '@/utils/options';
 import type { StudySummary } from '@/models';
@@ -303,15 +260,10 @@ const mapStore = useMapStore();
 const catalogStore = useCatalogStore();
 const helpStore = useHelpStore();
 const filtersStore = useFiltersStore();
+const exploreStore = useExploreStore();
 const route = useRoute();
 
 const tab = ref('geography');
-const measurementYear = ref({ min: 2000, max: new Date().getFullYear() });
-const particles = ref([]);
-const inorganicGases = ref([]);
-const biocontaminants = ref([]);
-const otherPollutants = ref([]);
-const vocs = ref([]);
 const studySummaries = ref<StudySummary[]>([]);
 const climateZoneLayerVisible = ref(false);
 
@@ -423,6 +375,7 @@ const climateZonesColors = [
 ];
 
 onMounted(() => {
+  void exploreStore.loadSchema();
   void catalogStore.loadStudySummaries(0, 1000, false).then((res) => {
     studySummaries.value = res.data;
   });
@@ -439,11 +392,7 @@ function onToggleClimateZonesLayer() {
 
 function onResetFilters() {
   filtersStore.reset();
-  vocs.value = [];
-  particles.value = [];
-  inorganicGases.value = [];
-  biocontaminants.value = [];
-  otherPollutants.value = [];
+  exploreStore.resetParameters();
   onUpdatedFilter();
 }
 

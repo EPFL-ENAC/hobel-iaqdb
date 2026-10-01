@@ -10,14 +10,11 @@ import type {
   BuildingsResult,
   SpacesResult,
   StudySummariesResult,
-  GroupByResult,
 } from '@/models';
-import { DEFAULT_ALTITUDES, DEFAULT_CONSTRUCTION_YEARS } from './filters';
-import { withRange } from '@/utils/numbers';
+import { buildingCriteria, spaceCriteria, studyCriteria } from '@/api/explore';
 
 export const useCatalogStore = defineStore('catalog', () => {
   const authStore = useAuthStore();
-  const filterStore = useFiltersStore();
 
   const study = ref<Study>();
   const buildings = ref<Building[]>([]);
@@ -97,95 +94,25 @@ export const useCatalogStore = defineStore('catalog', () => {
 
   function getStudyFilter() {
     return {
-      ...getStudyCriteria(),
-      $building: getBuildingCriteria(),
-      $space: getSpaceCriteria(),
+      ...studyCriteria(),
+      $building: buildingCriteria(),
+      $space: spaceCriteria(),
     };
   }
-  
+
   function getBuildingFilter() {
     return {
-      ...getBuildingCriteria(),
-      $study: getStudyCriteria(),
-      $space: getSpaceCriteria(),
+      ...buildingCriteria(),
+      $study: studyCriteria(),
+      $space: spaceCriteria(),
     };
   }
 
   function getSpaceFilter() {
     return {
-      ...getSpaceCriteria(),
-      $study: getStudyCriteria(),
-      $building: getBuildingCriteria(),
-    };
-  }
-
-  function getStudyCriteria() {
-    return {
-      identifier: filterStore.study_ids && filterStore.study_ids.length
-        ? filterStore.study_ids
-        : undefined
-    };
-  }
-
-  function getBuildingCriteria() {
-    const construction_years = withRange(
-      [filterStore.construction_years.min, filterStore.construction_years.max], 
-      [DEFAULT_CONSTRUCTION_YEARS.min, DEFAULT_CONSTRUCTION_YEARS.max]) ? [
-      { construction_year: { $gte: filterStore.construction_years.min } },
-      { construction_year: { $lte: filterStore.construction_years.max } },
-    ] : [];
-    const altitudes = withRange(
-      [filterStore.altitudes.min, filterStore.altitudes.max], 
-      [DEFAULT_ALTITUDES.min, DEFAULT_ALTITUDES.max]) ? [
-      { altitude: { $gte: filterStore.altitudes.min } },
-      { altitude: { $lte: filterStore.altitudes.max } },
-    ] : [];
-    // strip out the country code
-    const cities = filterStore.cities ? filterStore.cities.map((city: string) => (city.substring(0, city.length - 4))) : [];
-    return {
-      $and: construction_years.length || altitudes.length ? [
-        ...construction_years,
-        ...altitudes,
-      ] : undefined,
-      type:
-        filterStore.building_types && filterStore.building_types.length
-          ? filterStore.building_types
-          : undefined,
-      country:
-        filterStore.countries && filterStore.countries.length
-          ? filterStore.countries
-          : undefined,
-      city:
-        cities && cities.length
-          ? cities
-          : undefined,
-      socioeconomic_status:
-        filterStore.socioeconomic_status && filterStore.socioeconomic_status.length
-          ? filterStore.socioeconomic_status
-          : undefined,
-      age_group:
-        filterStore.age_groups && filterStore.age_groups.length
-          ? filterStore.age_groups
-          : undefined,
-      outdoor_env:
-        filterStore.outdoor_envs && filterStore.outdoor_envs.length
-          ? filterStore.outdoor_envs
-          : undefined,
-      mechanical_ventilation:
-        filterStore.mechanical_ventilation || undefined,
-      climate_zone:
-        filterStore.climate_zones && filterStore.climate_zones.length
-          ? filterStore.climate_zones
-          : undefined,
-    };
-  }
-
-  function getSpaceCriteria() {
-    return {
-      mechanical_ventilation_type:
-        filterStore.mechanical_ventilation_types && filterStore.mechanical_ventilation_types.length
-          ? filterStore.mechanical_ventilation_types
-          : undefined,
+      ...spaceCriteria(),
+      $study: studyCriteria(),
+      $building: buildingCriteria(),
     };
   }
 
@@ -243,57 +170,6 @@ export const useCatalogStore = defineStore('catalog', () => {
       });
   }
 
-  async function countStudies(
-    by: string,
-    filtered = true
-  ): Promise<GroupByResult> {
-    return api
-      .get('/stats/frequencies/studies', {
-        params: {
-          by,
-          filter: filtered ? JSON.stringify(getStudyFilter()) : undefined,
-        },
-        paramsSerializer: {
-          indexes: null, // no brackets at all
-        },
-      })
-      .then((response) => response.data);
-  }
-  
-  async function countBuildings(
-    by: string,
-    filtered = true
-  ): Promise<GroupByResult> {
-    return api
-      .get('/stats/frequencies/buildings', {
-        params: {
-          by,
-          filter: filtered ? JSON.stringify(getBuildingFilter()) : undefined,
-        },
-        paramsSerializer: {
-          indexes: null, // no brackets at all
-        },
-      })
-      .then((response) => response.data);
-  }
-  
-  async function countSpaces(
-    by: string,
-    filtered = true
-  ): Promise<GroupByResult> {
-    return api
-      .get('/stats/frequencies/spaces', {
-        params: {
-          by,
-          filter: filtered ? JSON.stringify(getSpaceFilter()) : undefined,
-        },
-        paramsSerializer: {
-          indexes: null, // no brackets at all
-        },
-      })
-      .then((response) => response.data);
-  }
-
   return {
     loadStudySummaries,
     deleteStudy,
@@ -301,9 +177,6 @@ export const useCatalogStore = defineStore('catalog', () => {
     loadBuildings,
     loadSpaces,
     loadStudy,
-    countStudies,
-    countBuildings,
-    countSpaces,
     study,
     buildings,
     spaces,

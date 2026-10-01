@@ -112,3 +112,25 @@ You will always have this right. If needed, you can place an **embargo** on your
 Under the Open Data Commons Public Domain Dedication and License (PDDL), you dedicate your submitted data to the public domain. If you have the necessity to remove your data already published in the IAQ DB, we will assist you. However, retraction requests must be formalized based on legal issues or following the retraction of the related publication. Data already downloaded and used by end users cannot be retrieved.
 
 </details>
+
+## How to Get Started
+
+Click the “Start” button below to begin contributing your dataset. Alternatively, you can follow these simple steps:
+
+**Step 1: Fill out the Getting Started Form**
+
+Please take a few minutes to complete the Getting Started Form to tell us about the study or project behind your dataset:
+
+➡️ [Getting Started Form – Fill out form](https://forms.office.com/e/60ydR6rRNE)
+
+**Step 2: Prepare Your Datasets**
+
+Prepare the metadata and IAQ datasets according to the requirements outlined above on this page.
+
+**Step 3: Upload Your Datasets**
+
+Once your files are ready, upload the metadata and IAQ datasets using the link below:
+
+➡️ [Upload your datasets](https://kdrive.infomaniak.com/app/collaborate/3621431/67bc9418-cf03-46ec-89fb-a5b9766e032e)
+
+This upload link will also be shown after you submit the Getting Started Form.

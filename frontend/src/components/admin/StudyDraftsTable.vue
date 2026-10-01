@@ -9,6 +9,22 @@
       :loading="loading"
       row-key="identifier"
     >
+      <template v-slot:top-left>
+        <div class="q-gutter-x-sm">
+          <q-btn
+            v-for="value in ['all', 'published', 'not_published'] as const"
+            :key="value"
+            :label="t(`admin.${value}`)"
+            no-caps
+            rounded
+            unelevated
+            size="sm"
+            :color="publishedFilter === value ? 'secondary' : 'grey-3'"
+            :text-color="publishedFilter === value ? 'white' : 'grey-8'"
+            @click="publishedFilter = value"
+          />
+        </div>
+      </template>
       <template v-slot:body-cell-identifier="props">
         <q-td :props="props">
           <q-badge class="q-pa-xs" color="secondary">{{ props.value }}</q-badge>
@@ -104,7 +120,10 @@ watch(() => authStore.isAuthenticated, () => {
   }
 });
 
-const rows = computed(() => studyBundles.value || []);
+const publishedFilter = ref<'all' | 'published' | 'not_published'>('all');
+
+const rows = computed(() => (studyBundles.value || []).filter((bundle) =>
+  publishedFilter.value === 'all' || !!bundle.contribution?.published_at === (publishedFilter.value === 'published')));
 
 const columns = computed(() => [
   {

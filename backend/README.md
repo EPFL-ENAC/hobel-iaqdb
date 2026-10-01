@@ -36,6 +36,42 @@ Run Locally
 make install; make run
 ```
 
+## Database
+
+The API needs a TimescaleDB instance (Postgres 15 with the `timescaledb`
+extension preloaded). The compose file provides one:
+
+```
+docker compose up -d postgres   # from the repository root
+make db-upgrade                 # apply the Alembic migrations
+make run
+```
+
+`make run` does not run migrations (the container image does, via
+`start.sh`), so run `make db-upgrade` after pulling a branch that adds one.
+A startup error such as `relation "parameter" does not exist` means the
+schema is behind. If the `postgres` volume was initialised by a plain
+Postgres image, `CREATE EXTENSION timescaledb` fails with "must be
+preloaded": either recreate the volume or run
+`ALTER SYSTEM SET shared_preload_libraries = 'timescaledb'` and restart
+the container.
+
+Seeding loads the study metadata and the measurements from `SEED_DATA`
+into the hypertable (`make seed`, or `make seed <identifier>...` for a
+subset; `make seed-check` reports without writing). Design and load
+budgets are in `docs/129-explore-charts-api.md`.
+
+## Tests
+
+Tests run against a throwaway TimescaleDB on port 5433 and refuse any
+other port, so they never touch the development database:
+
+```
+make test-db   # start (or reset) the container
+make test      # or: make test args="-k metadata"
+make lint      # pre-commit: black, flake8, isort
+```
+
 Swagger docs
 ```
 http://localhost:8000/docs
