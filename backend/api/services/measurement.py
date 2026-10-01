@@ -13,6 +13,7 @@ path calls (design §3, updated).
 
 import asyncio
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterator
 
@@ -289,7 +290,7 @@ class MeasurementService:
         try:
             classification = await self._copy(dataset, paths, parameters, maps, bulk)
         except Exception as e:
-            await self.fail(dataset_id, f"{type(e).__name__}: {e}")
+            await self._finish(dataset_id, None, "failed", f"{type(e).__name__}: {e}")
             raise
         report = classification.report
         if report.loaded == 0:
@@ -299,8 +300,9 @@ class MeasurementService:
         return report
 
     async def fail(self, dataset_id: int, error: str) -> None:
-        """Record a failure that happened before or outside `load`."""
-        await self._finish(dataset_id, None, "failed", error)
+        """Record a failure that happened before or outside `load`: the
+        attempt starts and finishes now."""
+        await self._finish(dataset_id, None, "failed", error, started=True)
 
     async def _catalog_maps(self, session: AsyncSession, study_id: int) -> CatalogMaps:
         maps = CatalogMaps()
@@ -329,6 +331,8 @@ class MeasurementService:
         dataset.summary_status = "pending"
         dataset.summary_error = None
         dataset.load_report = None
+        dataset.load_started_at = datetime.now(timezone.utc)
+        dataset.load_finished_at = None
         session.add(dataset)
         await session.exec(
             delete(DatasetParameter).where(
@@ -410,10 +414,18 @@ class MeasurementService:
             await session.commit()
 
     async def _finish(
-        self, dataset_id: int, report: LoadReport | None, status: str, error: str | None
+        self,
+        dataset_id: int,
+        report: LoadReport | None,
+        status: str,
+        error: str | None,
+        started: bool = False,
     ) -> None:
         async with AsyncSession(self.engine) as session:
             dataset = await session.get(Dataset, dataset_id)
+            dataset.load_finished_at = datetime.now(timezone.utc)
+            if started:
+                dataset.load_started_at = dataset.load_finished_at
             dataset.summary_status = status
             dataset.summary_error = error
             dataset.load_report = report.model_dump() if report else None

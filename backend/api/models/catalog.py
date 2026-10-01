@@ -78,7 +78,7 @@ class StudyRead(StudyBase):
     contributors: List["Person"] = []
     buildings: List["Building"] = []
     instruments: List["Instrument"] = []
-    datasets: List["Dataset"] = []
+    datasets: List["DatasetSummaryRead"] = []
 
 
 class StudyDraft(StudyRead):
@@ -307,11 +307,21 @@ class DatasetBase(SQLModel):
 class DatasetLoadState(SQLModel):
     # measurement load state: pending | ready | failed (see MeasurementService)
     summary_status: str = Field(default="pending")
+
+
+class DatasetLoadDetail(DatasetLoadState):
+    # admin only: not part of the public read models
     summary_error: Optional[str] = Field(default=None)
     load_report: Dict | None = Field(sa_column=Column(JSON), default=None)
+    load_started_at: Optional[datetime] = Field(
+        default=None, sa_column=Column(TIMESTAMP(timezone=True))
+    )
+    load_finished_at: Optional[datetime] = Field(
+        default=None, sa_column=Column(TIMESTAMP(timezone=True))
+    )
 
 
-class Dataset(DatasetBase, DatasetLoadState, table=True):
+class Dataset(DatasetBase, DatasetLoadDetail, table=True):
     __table_args__ = (UniqueConstraint("id"),)
     id: int = Field(
         default=None,
@@ -354,8 +364,11 @@ class Variable(VariableBase, table=True):
     dataset: Optional[Dataset] = Relationship(back_populates="variables")
 
 
-class DatasetRead(DatasetBase, DatasetLoadState):
+class DatasetSummaryRead(DatasetBase, DatasetLoadState):
     id: int
+
+
+class DatasetRead(DatasetSummaryRead):
     variables: List[Variable] = []
 
 
@@ -423,6 +436,18 @@ class InstrumentsResult(ListResult):
 
 class DatasetsResult(ListResult):
     data: List[DatasetRead]
+
+
+class DatasetLoadRead(DatasetLoadDetail):
+    id: int
+    name: str
+    study_id: int
+    study_identifier: str
+    study_name: Optional[str] = None
+
+
+class DatasetLoadsResult(ListResult):
+    data: List[DatasetLoadRead]
 
 
 class StudyDraftsResult(ListResult):

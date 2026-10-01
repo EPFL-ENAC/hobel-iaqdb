@@ -167,9 +167,41 @@ export interface Dataset extends DBModel {
   folder: FileNode;
   variables?: Variable[];
   // measurement load state, set by the backend after publish
-  summary_status?: 'pending' | 'ready' | 'failed';
+  summary_status?: LoadStatus;
+}
+
+export type LoadStatus = 'pending' | 'ready' | 'failed';
+
+/** Where every row of a dataset's files went (backend LoadReport). */
+export interface LoadReport {
+  loaded: number;
+  missing: number;
+  statistical: number;
+  unknown_parameter: Record<string, number>;
+  unknown_unit: Record<string, number>;
+  unparseable_value: Record<string, number>;
+  unparseable_timestamp: number;
+  unlinked_building: number;
+  unlinked_space: number;
+  unlinked_instrument: number;
+}
+
+/** Measurement load state of a dataset (admin). */
+export interface DatasetLoad {
+  id: number;
+  name: string;
+  study_id: number;
+  study_identifier: string;
+  study_name?: string;
+  summary_status: LoadStatus;
   summary_error?: string;
-  load_report?: Record<string, unknown>;
+  load_report?: LoadReport;
+  load_started_at?: string;
+  load_finished_at?: string;
+}
+
+export interface DatasetLoadsResult extends ListResult {
+  data: DatasetLoad[];
 }
 
 export interface FileNode {
