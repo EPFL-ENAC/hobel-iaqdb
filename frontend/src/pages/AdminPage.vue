@@ -20,6 +20,7 @@
       </div>
       <div v-else-if="authStore.isAdmin">
         <q-tabs
+          v-model="tab"
           dense
           no-caps
           align="left"
@@ -27,10 +28,10 @@
           indicator-color="secondary"
           class="text-grey q-mb-md"
         >
-          <q-route-tab to="/admin" exact :label="t('admin.contributions')" />
-          <q-route-tab to="/admin/downloads" exact :label="t('admin.downloads')" />
+          <q-tab name="contributions" :label="t('admin.contributions')" />
+          <q-tab name="downloads" :label="t('admin.downloads')" />
         </q-tabs>
-        <template v-if="route.path === '/admin/downloads'">
+        <template v-if="tab === 'downloads'">
           <div class="text-help q-mb-md">
             {{ t('admin.downloads_info') }}
           </div>
@@ -61,6 +62,14 @@ import DownloadRequestsTable from '@/components/admin/DownloadRequestsTable.vue'
 const { t } = useI18n();
 const authStore = useAuthStore();
 const route = useRoute();
+const router = useRouter();
+
+// the tab and the panel follow the path only, whatever query or hash the
+// login redirect leaves on the URL
+const tab = computed({
+  get: () => (route.path.startsWith('/admin/downloads') ? 'downloads' : 'contributions'),
+  set: (value: string) => void router.push(value === 'downloads' ? '/admin/downloads' : '/admin'),
+});
 
 onMounted(() => {
    void authStore.init().then(() => {
