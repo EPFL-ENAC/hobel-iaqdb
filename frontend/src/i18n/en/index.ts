@@ -16,6 +16,9 @@ export default {
     contributions: 'Contributions',
     contributions_info: 'List of contributions to the database. You can approve or reject them.',
     downloads: 'Downloads',
+    all: 'All',
+    published: 'Published',
+    not_published: 'Not published',
     downloads_info: 'Data downloads requested from the Explore page, most recent first.',
   },
   study: {
