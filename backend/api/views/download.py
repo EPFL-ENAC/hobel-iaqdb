@@ -3,6 +3,7 @@ request (built in the background, link sent by email), then the link."""
 
 import re
 from datetime import datetime, timezone
+from urllib.parse import quote
 
 from api.auth import User, kc_service
 from api.db import get_engine, get_session
@@ -19,6 +20,7 @@ from api.services.download import (
     estimate,
     find_by_token,
     list_requests,
+    safe_name,
     stream_archive,
 )
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request
@@ -58,7 +60,7 @@ async def post_download(
     engine: AsyncEngine = Depends(get_engine),
 ):
     """Queue a download; the link is emailed when the archive is ready.
-    Behind a proxy, run uvicorn with --proxy-headers for the client IP."""
+    Behind a proxy, set FORWARDED_ALLOW_IPS to it for the client IP."""
     client_ip = request.client.host if request.client else None
     download = await create_request(session, form, client_ip)
     # start on this pod now; any pod's poll picks it up otherwise
@@ -76,12 +78,15 @@ async def get_download(token: str, session: AsyncSession = Depends(get_session))
     expired = download.expires_at and download.expires_at < datetime.now(timezone.utc)
     if download.status != "ready" or expired:
         raise HTTPException(status_code=410, detail="this download link has expired")
-    name = re.sub(r"[^\w.-]+", "_", download.title).strip("_") or "download"
+    # headers are latin-1: an ASCII fallback, the unicode name in filename*
+    name = safe_name(download.title)
+    ascii_name = re.sub(r"[^\w.-]+", "_", name, flags=re.ASCII).strip("_") or "download"
     return StreamingResponse(
         stream_archive(download.s3_key),
         media_type="application/zip",
         headers={
-            "Content-Disposition": f'attachment; filename="{name}.zip"',
+            "Content-Disposition": f'attachment; filename="{ascii_name}.zip";'
+            f" filename*=UTF-8''{quote(name)}.zip",
             "Content-Length": str(download.size),
         },
     )

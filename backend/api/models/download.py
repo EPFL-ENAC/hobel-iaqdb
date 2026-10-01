@@ -1,6 +1,7 @@
 """Download of the raw measurements matching an Explore selection: a
 request row per job, built in the background, delivered by email."""
 
+import re
 from datetime import date, datetime
 from typing import Dict, Optional
 
@@ -11,6 +12,9 @@ from pydantic import field_validator
 from sqlalchemy import TIMESTAMP, BigInteger
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Column, Field, SQLModel
+
+# control characters (newlines included) would break the email headers
+CONTROL = re.compile(r"[\x00-\x1f\x7f]")
 
 
 class DownloadRequest(SQLModel, table=True):
@@ -67,7 +71,7 @@ class DownloadForm(DownloadSelection):
     def check_email(cls, value: str) -> str:
         value = value.strip()
         local, _, domain = value.rpartition("@")
-        if not local or "." not in domain or " " in value:
+        if not local or "." not in domain or " " in value or CONTROL.search(value):
             raise ValueError("not an email address")
         return value
 
@@ -77,6 +81,13 @@ class DownloadForm(DownloadSelection):
         if not value.strip():
             raise ValueError("must not be blank")
         return value.strip()
+
+    @field_validator("title")
+    @classmethod
+    def single_line(cls, value: str) -> str:
+        if CONTROL.search(value):
+            raise ValueError("must be a single line")
+        return value
 
 
 class DownloadEstimate(BaseModel):

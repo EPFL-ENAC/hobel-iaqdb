@@ -51,9 +51,18 @@ MAX_ATTEMPTS = 3
 # rate limits, per email and per client IP
 MAX_ACTIVE = 2
 MAX_DAILY = 10
+# jobs waiting or running, all requesters together
+MAX_QUEUED = 50
 # advisory lock namespaces (pg_try_advisory_lock(int, int))
 JOB_NS, SLOT_NS = 0x1A0D, 0x1A0E
 S3_FOLDER = "downloads"
+# errors of the message itself, retrying will not fix (SMTPDataError: 5xx
+# only); auth, sender or connection errors are the relay's and are retried
+PERMANENT_SMTP_ERRORS = (
+    smtplib.SMTPRecipientsRefused,
+    smtplib.SMTPDataError,
+    ValueError,
+)
 UPLOAD_PART_SIZE = 64 << 20
 
 EMBARGOED_STUDIES = text(
@@ -214,6 +223,14 @@ async def check_rate_limits(
 ) -> None:
     active = ("pending", "running")
     r = DownloadRequest
+    n_queued = (
+        await session.exec(select(func.count()).where(col(r.status).in_(active)))
+    ).one()
+    if n_queued >= MAX_QUEUED:
+        raise HTTPException(
+            status_code=429,
+            detail="too many downloads are being prepared, try again later",
+        )
     who = [func.lower(r.email) == email.lower()]
     if client_ip:
         who.append(col(r.client_ip) == client_ip)
@@ -290,8 +307,13 @@ async def claim_and_run(engine: AsyncEngine) -> bool:
                 if await pg.fetchval(
                     "SELECT pg_try_advisory_lock($1, $2)", JOB_NS, request_id
                 ):
-                    if await run_job(engine, pg, request_id):
-                        return True
+                    try:
+                        if await run_job(engine, pg, request_id):
+                            return True
+                    except Exception:
+                        # e.g. SMTP down: retried by the next poll, and the
+                        # jobs behind this one are not held up meanwhile
+                        log.exception("download %s: job failed", request_id)
                     await pg.execute(
                         "SELECT pg_advisory_unlock($1, $2)", JOB_NS, request_id
                     )
@@ -371,7 +393,8 @@ async def build(session: AsyncSession, pg, request: DownloadRequest) -> None:
 async def notify(session: AsyncSession, request: DownloadRequest) -> None:
     """Email the outcome. The token only exists from here: a crash between
     build and notify leaves the job to the next poll, which sends the link.
-    A failed send is retried by the next poll, a refused address is not."""
+    A failed send is retried by the next poll, a permanent failure (refused
+    address, 5xx reply, unencodable header) is not."""
     now = datetime.now(timezone.utc)
     try:
         if request.status == "ready":
@@ -384,8 +407,13 @@ async def notify(session: AsyncSession, request: DownloadRequest) -> None:
             request.token_hash = hash_token(token)
         else:
             await send_mail(request.email, *failed_email(request))
-    except smtplib.SMTPRecipientsRefused:
-        log.warning("download %s: address %s refused", request.id, request.email)
+    except PERMANENT_SMTP_ERRORS as e:
+        if isinstance(e, smtplib.SMTPDataError) and e.smtp_code < 500:
+            raise
+        log.warning(
+            "download %s: email to %s failed: %s", request.id, request.email, e
+        )
+        request.error = f"email not sent: {type(e).__name__}: {e}"
     request.notified_at = now
     session.add(request)
     await session.commit()
@@ -713,7 +741,6 @@ def ready_email(
 The data you requested from the IAQ database Explore page is ready.
 
   {request.title}
-  {request.description}
 
 Records: {request.n_records}
 Size: {size_mb:.1f} MB

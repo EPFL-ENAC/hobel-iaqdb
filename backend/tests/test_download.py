@@ -2,6 +2,7 @@ import asyncio
 import csv
 import io
 import re
+import smtplib
 import zipfile
 from datetime import datetime, timedelta, timezone
 
@@ -232,3 +233,92 @@ async def test_all_parameters_and_from(session, clean_db, tmp_path, storage):
         if t >= datetime(2023, 3, 3)
     )
     assert request.n_records == expected
+
+
+def ready_job(title: str) -> DownloadRequest:
+    return DownloadRequest(
+        email=FORM["email"],
+        title=title,
+        description="d",
+        query={},
+        status="ready",
+        n_records=1,
+        size=1,
+        s3_key=f"downloads/{title}.zip",
+        created_at=datetime.now(timezone.utc),
+    )
+
+
+async def test_failed_email_holds_up_no_other_job(
+    session, clean_db, storage, monkeypatch
+):
+    archives, mails = storage
+    for title in ("down", "bad", "fine"):
+        session.add(ready_job(title))
+    await session.commit()
+
+    async def send_mail(to, subject, body):
+        if subject.endswith(": down"):
+            raise smtplib.SMTPServerDisconnected("relay down")
+        if subject.endswith(": bad"):
+            raise ValueError("unencodable header")
+        mails.append((to, subject, body))
+
+    monkeypatch.setattr(download, "send_mail", send_mail)
+    while await download.claim_and_run(clean_db):
+        pass
+    assert [subject for _, subject, _ in mails] == [
+        "Your IAQ data download is ready: fine"
+    ]
+    rows = {
+        r.title: r for r in (await session.exec(DownloadRequest.__table__.select()))
+    }
+    # transient: retried by the next poll; permanent: given up, with the reason
+    assert rows["down"].notified_at is None
+    assert rows["bad"].notified_at is not None and "ValueError" in rows["bad"].error
+    assert rows["bad"].token_hash is None
+
+
+async def test_unicode_title_download(client, session, clean_db, storage):
+    archives, mails = storage
+    session.add(ready_job("Données CO₂ 北京"))
+    await session.commit()
+    archives["downloads/Données CO₂ 北京.zip"] = b"zip"
+    assert await download.claim_and_run(clean_db) is True
+    response = await client.get(f"/downloads/{token_of(mails[0][2])}")
+    assert response.status_code == 200, response.text
+    disposition = response.headers["content-disposition"]
+    assert 'filename="Donn_es_CO.zip"' in disposition
+    assert (
+        "filename*=UTF-8''Donn%C3%A9es_CO%E2%82%82_%E5%8C%97%E4%BA%AC.zip"
+        in disposition
+    )
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [("email", "a\nb@example.org"), ("title", "CO2\nBcc: x@example.org")],
+)
+def test_form_rejects_line_breaks(field, value):
+    with pytest.raises(ValueError):
+        DownloadForm.model_validate({**FORM, field: value})
+
+
+async def test_queue_cap(client, session, clean_db, tmp_path, storage, monkeypatch):
+    await loaded_fixture(session, clean_db, tmp_path)
+    monkeypatch.setattr(download, "MAX_QUEUED", 1)
+    session.add(
+        DownloadRequest(
+            email="other@example.org",
+            title="t",
+            description="d",
+            query={},
+            n_records=1,
+            client_ip="10.0.0.9",
+            created_at=datetime.now(timezone.utc),
+        )
+    )
+    await session.commit()
+    response = await client.post("/downloads", json=FORM)
+    assert response.status_code == 429
+    assert "try again later" in response.text
