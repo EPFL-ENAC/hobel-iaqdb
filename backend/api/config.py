@@ -35,6 +35,23 @@ class Config(BaseSettings):
     S3_BUCKET: str
     S3_PATH_PREFIX: str
 
+    # Public URL of the app, for the links sent by email
+    APP_URL: str = "http://localhost:8000"
+
+    # Explore downloads
+    DOWNLOAD_MAX_RECORDS: int = 200_000_000
+    # running download jobs across all backend pods
+    DOWNLOAD_MAX_CONCURRENT: int = 2
+    DOWNLOAD_TMP_DIR: str | None = None  # system temp dir when unset
+
+    # SMTP relay; when SMTP_HOST is empty, emails are logged instead of sent
+    SMTP_HOST: str = "mail.epfl.ch"
+    SMTP_PORT: int = 25
+    SMTP_USER: str | None = None
+    SMTP_PASSWORD: str | None = None
+    SMTP_FROM: str = "noreply+iaqdb@epfl.ch"
+    SMTP_STARTTLS: bool = True
+
     @model_validator(mode="before")
     def form_db_url(cls, values: dict) -> dict:
         """Form the DB URL from the settings"""

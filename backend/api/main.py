@@ -1,11 +1,14 @@
+import asyncio
 from contextlib import asynccontextmanager
 from logging import INFO, basicConfig
 
 from api.config import config
 from api.db import AsyncSession, get_engine, get_session
+from api.services.download import poll as poll_downloads
 from api.services.parameter import ParameterService
 from api.views.catalog import router as catalog_router
 from api.views.contribute import router as contribute_router
+from api.views.download import router as download_router
 from api.views.files import router as files_router
 from api.views.map import router as map_router
 from api.views.stats import router as stats_router
@@ -23,7 +26,10 @@ async def lifespan(app: FastAPI):
     async with AsyncSession(get_engine(), expire_on_commit=False) as session:
         await ParameterService(session).sync()
         await session.commit()
+    # every pod polls for download jobs: those left by dead pods, expiries
+    poller = asyncio.create_task(poll_downloads(get_engine()))
     yield
+    poller.cancel()
 
 
 app = FastAPI(root_path=config.PATH_PREFIX, lifespan=lifespan)
@@ -91,6 +97,12 @@ app.include_router(
     map_router,
     prefix="/map",
     tags=["Map"],
+)
+
+app.include_router(
+    download_router,
+    prefix="/downloads",
+    tags=["Downloads"],
 )
 
 app.include_router(

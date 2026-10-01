@@ -14,6 +14,7 @@ from api.models.catalog import (  # noqa: F401
     Study,
     Variable,
 )
+from api.models.download import DownloadRequest  # noqa: F401
 from api.models.measurement import (  # noqa: F401
     Benchmark,
     CatalogVersion,

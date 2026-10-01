@@ -11,7 +11,16 @@
           >GitHub issue <q-icon name="arrow_outward" /></a
         >.
       </div>
+      <q-space />
+      <q-btn
+        outline
+        no-caps
+        icon="download"
+        :label="t('explore_download.button')"
+        @click="showDownload = true"
+      />
     </q-toolbar>
+    <DownloadDialog v-model="showDownload" />
     <div class="q-pa-md">
       <div class="row q-col-gutter-md">
         <div class="col-12 col-md-6">
@@ -344,9 +353,11 @@ import RelationshipChart from '@/components/plots/RelationshipChart.vue';
 import GroupMedianChart from '@/components/plots/GroupMedianChart.vue';
 import CorrelationMatrixChart from '@/components/plots/CorrelationMatrixChart.vue';
 import CustomRelationshipChart from '@/components/plots/CustomRelationshipChart.vue';
+import DownloadDialog from '@/components/DownloadDialog.vue';
 
 const { t } = useI18n();
 const exploreStore = useExploreStore();
+const showDownload = ref(false);
 
 onMounted(() => {
   void exploreStore.loadSchema();
