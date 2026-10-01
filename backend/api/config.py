@@ -44,12 +44,12 @@ class Config(BaseSettings):
     DOWNLOAD_MAX_CONCURRENT: int = 2
     DOWNLOAD_TMP_DIR: str | None = None  # system temp dir when unset
 
-    # SMTP relay; when SMTP_HOST is unset, emails are logged instead of sent
-    SMTP_HOST: str | None = None
-    SMTP_PORT: int = 587
+    # SMTP relay; when SMTP_HOST is empty, emails are logged instead of sent
+    SMTP_HOST: str = "mail.epfl.ch"
+    SMTP_PORT: int = 25
     SMTP_USER: str | None = None
     SMTP_PASSWORD: str | None = None
-    SMTP_FROM: str = "noreply@epfl.ch"
+    SMTP_FROM: str = "noreply+iaqdb@epfl.ch"
     SMTP_STARTTLS: bool = True
 
     @model_validator(mode="before")

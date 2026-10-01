@@ -54,11 +54,13 @@ services:
       - APP_URL=${APP_URL:-http://localhost}
       - DOWNLOAD_MAX_RECORDS=${DOWNLOAD_MAX_RECORDS:-200000000}
       - DOWNLOAD_MAX_CONCURRENT=${DOWNLOAD_MAX_CONCURRENT:-2}
-      - SMTP_HOST=${SMTP_HOST:-}
-      - SMTP_PORT=${SMTP_PORT:-587}
+      # dev default: the mailpit service below catches every email
+      - SMTP_HOST=${SMTP_HOST:-mailpit}
+      - SMTP_PORT=${SMTP_PORT:-1025}
+      - SMTP_STARTTLS=${SMTP_STARTTLS:-false}
       - SMTP_USER=${SMTP_USER:-}
       - SMTP_PASSWORD=${SMTP_PASSWORD:-}
-      - SMTP_FROM=${SMTP_FROM:-noreply@epfl.ch}
+      - SMTP_FROM=${SMTP_FROM:-noreply+iaqdb@epfl.ch}
     expose:
       - 8000
     ports:
@@ -71,6 +73,7 @@ services:
     restart: "no"
     links:
       - postgres
+      - mailpit
   postgres:
     image: timescale/timescaledb:latest-pg18
     networks:
@@ -85,6 +88,17 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
       - POSTGRES_HOST=postgres
+  # dev SMTP server: emails are caught, browse them at http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:latest
+    networks:
+      - iaqdb
+    expose:
+      - 1025
+    ports:
+      - '1025:1025'
+      - '8025:8025'
+    restart: "no"
 volumes:
   postgres:
     driver: local
