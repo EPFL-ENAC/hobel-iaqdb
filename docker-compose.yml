@@ -54,10 +54,11 @@ services:
       - APP_URL=${APP_URL:-http://localhost}
       - DOWNLOAD_MAX_RECORDS=${DOWNLOAD_MAX_RECORDS:-200000000}
       - DOWNLOAD_MAX_CONCURRENT=${DOWNLOAD_MAX_CONCURRENT:-2}
-      # dev default: the mailpit service below catches every email
-      - SMTP_HOST=${SMTP_HOST:-mailpit}
-      - SMTP_PORT=${SMTP_PORT:-1025}
-      - SMTP_STARTTLS=${SMTP_STARTTLS:-false}
+      # the mailpit service below catches every email; not read from .env,
+      # whose SMTP_HOST=localhost is for a backend run outside compose
+      - SMTP_HOST=mailpit
+      - SMTP_PORT=1025
+      - SMTP_STARTTLS=false
       - SMTP_USER=${SMTP_USER:-}
       - SMTP_PASSWORD=${SMTP_PASSWORD:-}
       - SMTP_FROM=${SMTP_FROM:-noreply+iaqdb@epfl.ch}
