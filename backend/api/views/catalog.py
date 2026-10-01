@@ -4,7 +4,7 @@ from api.models.catalog import (
     Building,
     BuildingRead,
     BuildingsResult,
-    Dataset,
+    DatasetRead,
     DatasetsResult,
     Instrument,
     InstrumentsResult,
@@ -314,12 +314,12 @@ async def get_datasets(
     return res
 
 
-@router.get("/dataset/{id}", response_model=Dataset)
+@router.get("/dataset/{id}", response_model=DatasetRead)
 async def get_dataset(
     session: AsyncSession = Depends(get_session),
     *,
     id: int,
-) -> Dataset:
+) -> DatasetRead:
     """Get a dataset by id"""
     service = DatasetService(session)
     res = await service.get(id)

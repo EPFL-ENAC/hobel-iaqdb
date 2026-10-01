@@ -20,6 +20,12 @@ export default {
     published: 'Published',
     not_published: 'Not published',
     downloads_info: 'Data downloads requested from the Explore page, most recent first.',
+    ingestion: 'Ingestion',
+    ingestion_info: 'Measurement load of the published datasets. A load runs in the background after a study is published.',
+    pending: 'Pending',
+    ready: 'Ready',
+    failed: 'Failed',
+    loads_search: 'Study, dataset or error',
   },
   study: {
     label: 'Study',

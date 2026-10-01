@@ -1,4 +1,5 @@
 from importlib.resources import files
+from typing import Literal
 
 from api.auth import User, kc_service
 from api.config import config
@@ -6,6 +7,7 @@ from api.db import AsyncSession, get_engine, get_session
 from api.models.catalog import (
     Contribution,
     ContributionsResult,
+    DatasetLoadsResult,
     Study,
     StudyBundle,
     StudyBundlesResult,
@@ -16,6 +18,7 @@ from api.models.catalog import (
 )
 from api.services.catalog_version import CatalogVersionService
 from api.services.contribution import ContributionService
+from api.services.dataset import DatasetService
 from api.services.publish import load_published_study
 from api.services.study import StudyService
 from api.services.study_draft import StudyDraftService
@@ -182,6 +185,20 @@ async def publish_study_draft(
     await session.commit()
     background_tasks.add_task(load_published_study, engine, study.id)
     return study
+
+
+@router.get("/dataset-loads", response_model=DatasetLoadsResult)
+async def get_dataset_loads(
+    status: Literal["pending", "ready", "failed"] | None = Query(None),
+    study_id: int | None = Query(None),
+    q: str | None = Query(None, max_length=200),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(25, ge=1, le=200),
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(kc_service.require_admin()),
+) -> DatasetLoadsResult:
+    """Measurement load state of the published datasets (admin)."""
+    return await DatasetService(session).find_loads(status, study_id, q, skip, limit)
 
 
 @router.put("/study-draft/{identifier}/_reinstate", response_model=StudyRead)

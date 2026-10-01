@@ -1,10 +1,18 @@
 from api.db import AsyncSession
-from api.models.catalog import Dataset, DatasetsResult, Study, Variable
+from api.models.catalog import (
+    Dataset,
+    DatasetLoadRead,
+    DatasetLoadsResult,
+    DatasetsResult,
+    Study,
+    Variable,
+)
 from enacit4r_sql.utils.query import QueryBuilder
 from fastapi import HTTPException
+from sqlalchemy import func, or_
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql import text
-from sqlmodel import select
+from sqlmodel import col, select
 
 
 class DatasetQueryBuilder(QueryBuilder):
@@ -88,4 +96,63 @@ class DatasetService:
 
         return DatasetsResult(
             total=total_count, skip=start, limit=end - start + 1, data=datasets
+        )
+
+    async def find_loads(
+        self,
+        status: str | None,
+        study_id: int | None,
+        q: str | None,
+        skip: int,
+        limit: int,
+    ) -> DatasetLoadsResult:
+        """Measurement load state of the datasets, for the admin page."""
+        clauses = []
+        if status:
+            clauses.append(Dataset.summary_status == status)
+        if study_id is not None:
+            clauses.append(Dataset.study_id == study_id)
+        if q:
+            clauses.append(
+                or_(
+                    *[
+                        col(column).icontains(q, autoescape=True)
+                        for column in (
+                            Dataset.name,
+                            Dataset.summary_error,
+                            Study.name,
+                            Study.identifier,
+                        )
+                    ]
+                )
+            )
+        total = (
+            await self.session.exec(
+                select(func.count(Dataset.id))
+                .join(Study, Study.id == Dataset.study_id)
+                .where(*clauses)
+            )
+        ).one()
+        rows = (
+            await self.session.exec(
+                select(Dataset, Study.identifier, Study.name)
+                .join(Study, Study.id == Dataset.study_id)
+                .where(*clauses)
+                .order_by(Study.name, Dataset.name, Dataset.id)
+                .offset(skip)
+                .limit(limit)
+            )
+        ).all()
+        return DatasetLoadsResult(
+            total=total,
+            skip=skip,
+            limit=limit,
+            data=[
+                DatasetLoadRead(
+                    **dataset.model_dump(),
+                    study_identifier=identifier,
+                    study_name=name,
+                )
+                for dataset, identifier, name in rows
+            ],
         )

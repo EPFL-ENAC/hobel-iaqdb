@@ -31,6 +31,7 @@ async def test_report_bins(session, clean_db, tmp_path):
     await session.refresh(dataset)
     assert dataset.summary_status == "ready"
     assert dataset.load_report["unlinked_space"] == 1
+    assert dataset.load_started_at <= dataset.load_finished_at
 
 
 async def test_rows_and_units(session, clean_db, tmp_path):
@@ -191,6 +192,7 @@ async def test_compression_and_empty_file(session, clean_db, tmp_path):
     await session.refresh(dataset)
     assert dataset.summary_status == "failed"
     assert dataset.summary_error == "no row loaded"
+    assert dataset.load_started_at <= dataset.load_finished_at
     n = (
         await session.exec(
             text("SELECT count(*) FROM measurement WHERE dataset_id = :id").bindparams(

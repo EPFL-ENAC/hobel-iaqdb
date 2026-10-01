@@ -109,6 +109,7 @@ async def test_publish_loads_from_s3_and_refreshes(
     await session.refresh(d2)
     assert d2.summary_status == "failed"
     assert d2.summary_error == "no CSV file in the dataset folder"
+    assert d2.load_started_at == d2.load_finished_at is not None
     hours = (await session.exec(text("SELECT count(*) FROM measurement_hour"))).scalar()
     assert hours > 0
     # the version is bumped once the aggregates are refreshed, even on failure
