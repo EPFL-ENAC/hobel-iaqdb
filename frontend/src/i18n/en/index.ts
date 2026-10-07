@@ -500,6 +500,7 @@ export default {
   resources: 'Resources',
   search: 'Search',
   search_catalog: 'Search Catalog',
+  contact_information: 'Contact information',
   source_code: 'Source Code',
   spaces: 'Spaces',
   spaces_count: 'No spaces | space | spaces',

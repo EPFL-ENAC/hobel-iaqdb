@@ -14,15 +14,19 @@ See detailed [guidelines for contributing data](/Data_preperation_and_contributi
 
 ## Recognition and Benefits for Contributors
 
-We value your contribution and aim to recognize it meaningfully:
+We greatly value the researchers and institutions who contribute data to the Global Indoor Air Quality Database.
 
-* **Early Access**: Contributors will receive exclusive access to the full database prior to public release.
+* **Early Access**: Contributors receive early access to the full database before public release.
 
-* **Visibility and Impact**: Your data will be clearly attributed and made visible through a globally accessible platform. This increases the reuse and citation of your work and fosters further collaboration.
+* **Visibility and Recognition**: Contributed datasets will be appropriately attributed, helping increase the visibility, reuse, and impact of the original work.
 
-* **Co-Authorship Opportunities**: Contributors of major datasets may be invited to co-author the flagship publication describing the database, its structure, and key findings: some contributors may receive invitations to collaboratively explore compelling research questions that emerge from the contributed data. This enables co-authorship opportunities on follow-up scientific publications and ensures mutual benefit from joint intellectual input.
+* **Co-Authorship on the Initial Publication**: Researchers who make a substantial contribution to the development and scope of the database may be invited to co-author the initial publication describing the database itself. This may include contributing substantial or particularly valuable datasets, providing datasets from multiple projects, or helping secure access to additional datasets that belong to others.
 
-* **Contribution to the Field**: By contributing, you help advance indoor air quality science and support evidence-based policy, design, and research across sectors.
+  Co-authorship will also require active involvement in the publication, such as contributing expertise, reviewing or drafting parts of the manuscript, approving the final version, and taking responsibility for the published work. Data contribution alone does not automatically confer authorship.
+
+* **Future Research Collaborations**: Contributors may also be invited to participate in dedicated working groups exploring research questions that emerge from the global dataset. Authorship on these publications will be based on substantive intellectual contributions to the specific study.
+
+* **Contribution to the Field**: By contributing, you help build a shared global resource that can support open science, new collaborations, evidence-based practice and policy, and healthier indoor environments.
 
 ## Privacy, Licensing, Ethics, And Legal Considerations
 
