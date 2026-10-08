@@ -12,9 +12,4 @@ Our approach:
 * **Ensures robust quality control and harmonization across diverse data sources**
 * **Provides user-friendly tools for data exploration, access, and download**
 
-Join us in this global effort to unlock the full potential of IAQ data for healthier, more sustainable indoor environments! 
-
-**Contact information**
-
-* [Dr. Chenxi Liao](https://people.epfl.ch/chenxi.liao)
-* [Prof. Dusan Licina](https://people.epfl.ch/dusan.licina)
+Join us in this global effort to unlock the full potential of IAQ data for healthier, more sustainable indoor environments!

@@ -42,8 +42,8 @@ export default {
     label: 'Study',
     identifier: 'Identifier',
     identifier_hint: 'Unique identifier of the study draft.',
-    name: 'Name',
-    name_hint: 'Name of the project',
+    name: 'Name of the project',
+    name_hint: 'Shown publicly wherever the study appears.',
     description: 'Description',
     description_hint:
       'Detailed description of the project and of its motivations.',
@@ -500,6 +500,7 @@ export default {
   resources: 'Resources',
   search: 'Search',
   search_catalog: 'Search Catalog',
+  contact_information: 'Contact information',
   source_code: 'Source Code',
   spaces: 'Spaces',
   spaces_count: 'No spaces | space | spaces',
