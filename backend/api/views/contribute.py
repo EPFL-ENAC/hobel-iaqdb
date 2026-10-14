@@ -9,7 +9,6 @@ from api.models.catalog import (
     ContributionsResult,
     DatasetLoadsResult,
     Study,
-    StudyBundle,
     StudyBundlesResult,
     StudyDraft,
     StudyDraftParseResult,
@@ -21,7 +20,7 @@ from api.services.contribution import ContributionService
 from api.services.dataset import DatasetService
 from api.services.publish import load_published_study
 from api.services.study import StudyService
-from api.services.study_draft import StudyDraftService
+from api.services.study_draft import BundleSort, StudyDraftService
 from api.services.study_parser import StudyParser
 from api.utils.files import file_checker
 from enacit4r_sql.utils.query import paramAsArray, paramAsDict
@@ -79,32 +78,20 @@ async def read_study_from_excel(
 
 @router.get("/study-bundles", response_model=StudyBundlesResult)
 async def get_study_bundles(
+    q: str | None = Query(None, max_length=200),
+    published: bool | None = Query(None),
+    sort: BundleSort = Query("identifier"),
+    desc: bool = Query(False),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(25, ge=1, le=200),
     session: AsyncSession = Depends(get_session),
     user: User = Depends(kc_service.require_admin()),
 ) -> StudyBundlesResult:
-    """Get all study bundles"""
-    service = StudyDraftService(session)
-    studies = await service.list()
-    if not studies:
-        return StudyBundlesResult(total=0, skip=0, limit=None, data=[])
-    # Convert StudyDraft to StudyBundle
-    contribService = ContributionService(session)
-    bundles = []
-    contributions = await contribService.find(
-        filter={"study_identifier": [study.get("identifier") for study in studies]},
-        sort=[],
-        range=[],
+    """Study drafts with their contribution, filtered by study identifier,
+    name or contributors (`q`), paged and sorted (admin)."""
+    return await StudyDraftService(session).find_bundles(
+        q, published, sort, desc, skip, limit
     )
-    contributions_map = {
-        contribution.study_identifier: contribution
-        for contribution in contributions.data
-    }
-    for study in studies:
-        bundle = StudyBundle(
-            study=study, contribution=contributions_map.get(study.get("identifier"))
-        )
-        bundles.append(bundle)
-    return StudyBundlesResult(total=len(studies), skip=0, limit=None, data=bundles)
 
 
 @router.get("/study-drafts", response_model=StudyDraftsResult)

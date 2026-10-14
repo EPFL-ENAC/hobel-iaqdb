@@ -407,3 +407,12 @@ export interface StudyBundle {
   study: Study;
   contribution?: Contribution;
 }
+
+export interface StudyBundlesQuery {
+  q?: string;
+  published?: boolean;
+  sort?: string;
+  desc?: boolean;
+  skip: number;
+  limit: number;
+}

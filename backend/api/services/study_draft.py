@@ -1,14 +1,25 @@
 import json
 import urllib.parse
 import uuid
+from typing import Literal
 
 from api.db import AsyncSession
-from api.models.catalog import StudyDraftDocument
+from api.models.catalog import (
+    Contribution,
+    StudyBundle,
+    StudyBundlesResult,
+    StudyDraftDocument,
+)
 from api.services.s3 import copy_objects, delete_objects, s3_client
 from api.services.study_file import StudyFileService
 from fastapi import HTTPException
+from sqlalchemy import func, literal_column, or_
 from sqlalchemy.dialects.postgresql import insert
-from sqlmodel import select
+from sqlmodel import col, select
+
+BundleSort = Literal[
+    "identifier", "name", "data_embargo", "created_at", "updated_at", "published_at"
+]
 
 
 def check_identifier(identifier: str) -> None:
@@ -106,6 +117,80 @@ class StudyDraftService:
             select(StudyDraftDocument.document).order_by(StudyDraftDocument.identifier)
         )
         return list(res.all())
+
+    async def find_bundles(
+        self,
+        q: str | None,
+        published: bool | None,
+        sort: BundleSort,
+        desc: bool,
+        skip: int,
+        limit: int,
+    ) -> StudyBundlesResult:
+        """Study drafts with their contribution, for the admin page."""
+        document = col(StudyDraftDocument.document)
+        clauses = []
+        if q:
+            # names and emails of the contributors, as JSON arrays text
+            contributors = func.concat(
+                *(
+                    func.jsonb_path_query_array(
+                        document, literal_column(f"'$.contributors[*].{f}'::jsonpath")
+                    )
+                    for f in ("name", "email")
+                )
+            )
+            clauses.append(
+                or_(
+                    col(StudyDraftDocument.identifier).icontains(q, autoescape=True),
+                    document["name"].astext.icontains(q, autoescape=True),
+                    contributors.icontains(q, autoescape=True),
+                )
+            )
+        if published is not None:
+            published_at = col(Contribution.published_at)
+            clauses.append(
+                published_at.is_not(None) if published else published_at.is_(None)
+            )
+        join = (
+            Contribution,
+            Contribution.study_identifier == StudyDraftDocument.identifier,
+        )
+        total = (
+            await self.session.exec(
+                select(func.count(StudyDraftDocument.identifier))
+                .outerjoin(*join)
+                .where(*clauses)
+            )
+        ).one()
+        order = {
+            "identifier": col(StudyDraftDocument.identifier),
+            "name": document["name"].astext,
+            "data_embargo": col(Contribution.data_embargo),
+            "created_at": col(Contribution.created_at),
+            "updated_at": col(Contribution.updated_at),
+            "published_at": col(Contribution.published_at),
+        }[sort]
+        order = (order.desc() if desc else order.asc()).nulls_last()
+        rows = (
+            await self.session.exec(
+                select(StudyDraftDocument.document, Contribution)
+                .outerjoin(*join)
+                .where(*clauses)
+                .order_by(order, StudyDraftDocument.identifier)
+                .offset(skip)
+                .limit(limit)
+            )
+        ).all()
+        return StudyBundlesResult(
+            total=total,
+            skip=skip,
+            limit=limit,
+            data=[
+                StudyBundle(study=study, contribution=contribution)
+                for study, contribution in rows
+            ],
+        )
 
     async def reinstate(self, identifier: str) -> None:
         """Replace the study draft by the published study and its files."""

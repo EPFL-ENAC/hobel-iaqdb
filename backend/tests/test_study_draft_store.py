@@ -6,6 +6,7 @@ from api.models.catalog import StudyDraft
 from api.scripts import import_s3_drafts
 from api.services import study as study_module
 from api.services import study_draft as draft_module
+from api.services.contribution import ContributionService
 from api.services.s3 import s3_client
 from api.services.study import StudyService
 from api.services.study_draft import StudyDraftService
@@ -114,8 +115,54 @@ async def test_import_reads_drafts_and_files(monkeypatch):
     monkeypatch.setattr(s3_client, "get_file", get_file)
     monkeypatch.setattr(s3_client, "close", close)
     drafts, files = await import_s3_drafts.read_s3()
-    assert drafts == [{"identifier": "s1", "document": {"identifier": "s1", "name": "A"}}]
-    assert files == [
-        {"key": root + "draft/s1/files/D1/a.csv", "study_identifier": "s1", "area": "draft"},
-        {"key": root + "pub/s2/files/D1/b.csv", "study_identifier": "s2", "area": "pub"},
+    assert drafts == [
+        {"identifier": "s1", "document": {"identifier": "s1", "name": "A"}}
     ]
+    assert files == [
+        {
+            "key": root + "draft/s1/files/D1/a.csv",
+            "study_identifier": "s1",
+            "area": "draft",
+        },
+        {
+            "key": root + "pub/s2/files/D1/b.csv",
+            "study_identifier": "s2",
+            "area": "pub",
+        },
+    ]
+
+
+async def test_find_bundles_filters_pages_and_sorts(session):
+    service = StudyDraftService(session)
+    contributions = ContributionService(session)
+    for identifier, name, contributor in [
+        ("s1", "Alpha", {"name": "Ann Lee", "email": "ann@x.org"}),
+        ("s2", "Beta 100%", {"name": "Bob", "email": "bob@y.org"}),
+        ("s3", "Gamma", None),
+    ]:
+        doc = {"identifier": identifier, "name": name}
+        if contributor:
+            doc["contributors"] = [contributor]
+        await service.createOrUpdate(doc)
+        await contributions.touch_by_identifier(identifier)
+    await contributions.publish_by_identifier("s2")
+
+    async def ids(**kwargs):
+        args = {"q": None, "published": None, "sort": "identifier", "desc": False}
+        res = await service.find_bundles(**{**args, **kwargs}, skip=0, limit=10)
+        return [bundle.study["identifier"] for bundle in res.data]
+
+    assert await ids() == ["s1", "s2", "s3"]
+    assert await ids(q="S3") == ["s3"]  # identifier
+    assert await ids(q="100%") == ["s2"]  # name, escaped
+    assert await ids(q="ann lee") == ["s1"]  # contributor name
+    assert await ids(q="y.org") == ["s2"]  # contributor email
+    assert await ids(published=True) == ["s2"]
+    assert await ids(published=False) == ["s1", "s3"]
+    assert await ids(sort="name", desc=True) == ["s3", "s2", "s1"]
+    assert (await ids(sort="published_at", desc=True))[0] == "s2"
+
+    page = await service.find_bundles(None, None, "identifier", False, 1, 1)
+    assert page.total == 3
+    assert [bundle.study["identifier"] for bundle in page.data] == ["s2"]
+    assert page.data[0].contribution.published_at is not None
