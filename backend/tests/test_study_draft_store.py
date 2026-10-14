@@ -48,17 +48,19 @@ async def test_draft_round_trip_and_files_index(session, monkeypatch):
     assert saved["datasets"][0]["folder"]["name"] == "D1"
     assert await files.keys("s1", "draft") == [a]
 
-    # raw JSON is kept, and an update only adds to the index
+    # raw JSON is kept, and files no longer referenced are deleted
     await service.createOrUpdate(document("s1", b))
     got = await service.get("s1")
     assert got["unknown"] == {"kept": True}
-    assert await files.keys("s1", "draft") == [a, b]
+    assert await files.keys("s1", "draft") == [b]
+    assert deleted == [a]
+    deleted.clear()
     assert [d["identifier"] for d in await service.list()] == ["s1"]
 
     await service.delete("s1")
     assert not await service.exists("s1")
     assert await files.keys("s1", "draft") == []
-    assert sorted(deleted) == [a, b]
+    assert deleted == [b]
 
 
 async def test_publish_copies_indexed_files(session, monkeypatch):
@@ -81,14 +83,63 @@ async def test_publish_copies_indexed_files(session, monkeypatch):
     assert await StudyFileService(session).keys("s1", "pub") == [pub]
 
 
-async def test_api_drafts_are_not_validated(client):
-    body = {"identifier": "s2", "start_year": "not a year", "buildings": "?"}
+async def test_reinstate_keeps_draft_until_copied(session, monkeypatch):
+    deleted, copied = [], []
+    a, b = draft_key("s3", "a.csv"), draft_key("s3", "b.csv")
+    pub = document("s3", b.replace("/draft/", "/pub/"))
+    pub["datasets"][0]["folder"]["path"] = "pub/s3/files/D1"
+
+    async def fake_get_file(path):
+        return json.dumps(pub), "application/json"
+
+    async def fake_delete(keys):
+        deleted.extend(keys)
+
+    async def failed_copy(pairs):
+        raise RuntimeError("S3 down")
+
+    async def fake_copy(pairs):
+        copied.extend(pairs)
+
+    monkeypatch.setattr(s3_client, "get_file", fake_get_file)
+    monkeypatch.setattr(draft_module, "delete_objects", fake_delete)
+    service = StudyDraftService(session)
+    files = StudyFileService(session)
+    await service.createOrUpdate(document("s3", a))
+    await files.add("s3", "pub", [b.replace("/draft/", "/pub/")])
+    await session.commit()
+
+    # a failed copy leaves the draft and its files
+    monkeypatch.setattr(draft_module, "copy_objects", failed_copy)
+    try:
+        await service.reinstate("s3")
+    except RuntimeError:
+        await session.rollback()
+    assert await files.keys("s3", "draft") == [a]
+    assert deleted == []
+
+    monkeypatch.setattr(draft_module, "copy_objects", fake_copy)
+    await service.reinstate("s3")
+    assert copied == [(b.replace("/draft/", "/pub/"), b)]
+    assert await files.keys("s3", "draft") == [b]
+    assert deleted == [a]
+    got = await service.get("s3")
+    assert got["datasets"][0]["folder"]["children"][0]["path"] == b
+
+
+async def test_api_drafts_are_validated(client):
+    res = await client.post(
+        "/contribute/study-draft", json={"identifier": "s2", "buildings": "?"}
+    )
+    assert res.status_code == 422
+    body = {"identifier": "s2", "name": "S2"}
     res = await client.post("/contribute/study-draft", json=body)
     assert res.status_code == 200, res.text
     res = await client.post("/contribute/study-draft", json=body)
     assert res.status_code == 409
     res = await client.get("/contribute/study-draft/s2")
-    assert res.json()["start_year"] == "not a year"
+    assert res.json()["name"] == "S2"
+    assert res.json()["datasets"] == []
     res = await client.put("/contribute/study-draft/other", json=body)
     assert res.status_code == 400
     res = await client.get("/contribute/study-draft/missing")

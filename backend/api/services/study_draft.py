@@ -74,8 +74,6 @@ class StudyDraftService:
                 urllib.parse.quote(f"{s3_folder}/files/{dataset['name']}")
             )
 
-        # TODO Remove files that are not linked to a dataset
-
         statement = insert(StudyDraftDocument).values(
             identifier=identifier, document=document
         )
@@ -85,8 +83,17 @@ class StudyDraftService:
                 set_={"document": statement.excluded.document},
             )
         )
-        await self.files.add(identifier, "draft", referenced_keys(identifier, document))
+        # Index the files of the datasets, forget and delete the others
+        referenced = referenced_keys(identifier, document)
+        stale = [
+            key
+            for key in await self.files.keys(identifier, "draft")
+            if key not in referenced
+        ]
+        await self.files.add(identifier, "draft", referenced)
+        await self.files.remove(identifier, "draft", stale)
         await self.session.commit()
+        await delete_objects(stale)
         return document
 
     async def delete(self, identifier: str) -> None:
@@ -193,16 +200,14 @@ class StudyDraftService:
         )
 
     async def reinstate(self, identifier: str) -> None:
-        """Replace the study draft by the published study and its files."""
+        """Replace the study draft by the published study and its files. The
+        draft is left as is until the published files are copied."""
         content, _ = await s3_client.get_file(f"pub/{identifier}/study.json")
         if not content:
             raise HTTPException(
                 status_code=404, detail=f"Published study {identifier} not found."
             )
         document = json.loads(content)
-
-        if await self.exists(identifier):
-            await self.delete(identifier)
 
         pairs = [
             (key, key.replace("/pub/", "/draft/"))
@@ -218,4 +223,5 @@ class StudyDraftService:
             folder["path"] = folder["path"].replace("/pub/", "/draft/")
             for file in folder.get("children") or []:
                 file["path"] = file["path"].replace("/pub/", "/draft/")
+        # also deletes the draft files that the published study does not have
         await self.createOrUpdate(document)

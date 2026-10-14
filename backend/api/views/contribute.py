@@ -105,26 +105,26 @@ async def get_study_drafts(
     return StudyDraftsResult(total=len(studies), skip=0, limit=None, data=studies)
 
 
-@router.post("/study-draft")
+@router.post("/study-draft", response_model=StudyDraft)
 async def create_study_draft(
-    study: dict = Body(...),
+    study: StudyDraft = Body(...),
     session: AsyncSession = Depends(get_session),
     user: User = Depends(kc_service.get_user_info(required=False)),
 ) -> dict:
-    """Create a study draft: raw JSON, validated on publish"""
+    """Create a study draft"""
     service = StudyDraftService(session)
-    identifier = study.get("identifier")
+    identifier = study.identifier
     if identifier and identifier != "_draft" and await service.exists(identifier):
         raise HTTPException(
             status_code=409,
             detail=f"Study with identifier {identifier} already exists.",
         )
-    study = await service.createOrUpdate(study)
-    await ContributionService(session).touch_by_identifier(study["identifier"], user)
-    return study
+    document = await service.createOrUpdate(study.model_dump(mode="json"))
+    await ContributionService(session).touch_by_identifier(document["identifier"], user)
+    return document
 
 
-@router.get("/study-draft/{identifier}")
+@router.get("/study-draft/{identifier}", response_model=StudyDraft)
 async def get_study_draft(
     identifier: str,
     session: AsyncSession = Depends(get_session),
@@ -133,22 +133,24 @@ async def get_study_draft(
     return await StudyDraftService(session).get(identifier)
 
 
-@router.put("/study-draft/{identifier}")
+@router.put("/study-draft/{identifier}", response_model=StudyDraft)
 async def update_study_draft(
     identifier: str,
-    study: dict = Body(...),
+    study: StudyDraft = Body(...),
     session: AsyncSession = Depends(get_session),
     user: User = Depends(kc_service.get_user_info(required=False)),
 ) -> dict:
-    """Update a study draft: raw JSON, validated on publish"""
-    if identifier != study.get("identifier"):
+    """Update a study draft"""
+    if identifier != study.identifier:
         raise HTTPException(
             status_code=400,
             detail="Identifier in URL does not match identifier in body",
         )
-    study = await StudyDraftService(session).createOrUpdate(study)
-    await ContributionService(session).touch_by_identifier(identifier, user)
-    return study
+    document = await StudyDraftService(session).createOrUpdate(
+        study.model_dump(mode="json")
+    )
+    await ContributionService(session).touch_by_identifier(document["identifier"], user)
+    return document
 
 
 @router.put("/study-draft/{identifier}/_publish", response_model=StudyRead)

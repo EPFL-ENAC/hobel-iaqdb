@@ -57,10 +57,9 @@ from api.services.measurement import (
     measurement_write_lock,
 )
 from api.services.parameter import ParameterService, read_parameters
-from api.services.s3 import delete_objects, s3_client
+from api.services.s3 import s3_client
 from api.services.study import StudyService
 from api.services.study_draft import StudyDraftService
-from api.services.study_file import StudyFileService
 from botocore.exceptions import ClientError
 from enacit4r_files.models.files import FileRef
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -383,18 +382,6 @@ async def dataset_folders(
     return folders, skipped
 
 
-async def delete_stale_draft_files(
-    session: AsyncSession, identifier: str, keep: set[str]
-) -> None:
-    """Remove draft files of a previous run that are not part of this import,
-    so they are not published."""
-    files = StudyFileService(session)
-    stale = [key for key in await files.keys(identifier, "draft") if key not in keep]
-    await files.remove(identifier, "draft", stale)
-    await session.commit()
-    await delete_objects(stale)
-
-
 def draft_maps(draft: StudyDraft) -> CatalogMaps:
     """Catalog maps of a draft, with positional ids: enough to count the
     rows that would not link, without a database."""
@@ -441,16 +428,6 @@ async def publish(engine, seed: SeedStudy, cache: Md5Cache) -> Outcome:
     its measurements."""
     identifier = seed.draft.identifier
     async with AsyncSession(engine, expire_on_commit=False) as session:
-        await delete_stale_draft_files(
-            session,
-            identifier,
-            keep={
-                draft_file_key(identifier, dataset, path)
-                for dataset, files in seed.dataset_files
-                for path in files
-            },
-        )
-
         # Only datasets with a matched file are published, with the processed files
         folders, skipped = await dataset_folders(identifier, seed, cache)
         seed.draft.datasets = []
@@ -458,6 +435,7 @@ async def publish(engine, seed: SeedStudy, cache: Md5Cache) -> Outcome:
             dataset.folder = folders[id(dataset)]
             seed.draft.datasets.append(dataset)
 
+        # also deletes the draft files of a previous run, so they are not published
         document = await StudyDraftService(session).createOrUpdate(
             seed.draft.model_dump(mode="json")
         )
