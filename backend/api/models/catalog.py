@@ -404,8 +404,25 @@ class Contribution(ContributionBase, table=True):
     )
 
 
+class StudyDraftDocument(SQLModel, table=True):
+    """A study draft as the contributor left it: raw JSON, validated on publish."""
+
+    __tablename__ = "study_draft"
+    identifier: str = Field(primary_key=True)
+    document: Dict = Field(sa_column=Column(JSON, nullable=False))
+
+
+class StudyFile(SQLModel, table=True):
+    """Index of the S3 files of a study, so that S3 folders are never listed."""
+
+    __tablename__ = "study_file"
+    key: str = Field(primary_key=True)  # full S3 key
+    study_identifier: str = Field(index=True)
+    area: str  # draft | pub
+
+
 class StudyBundle(BaseModel):
-    study: Optional[StudyDraft] = Field(default=None)
+    study: Optional[Dict] = Field(default=None)
     contribution: Optional[Contribution] = Field(default=None)
 
 
@@ -451,7 +468,7 @@ class DatasetLoadsResult(ListResult):
 
 
 class StudyDraftsResult(ListResult):
-    data: List[StudyDraft]
+    data: List[Dict]
 
 
 class ContributionsResult(ListResult):

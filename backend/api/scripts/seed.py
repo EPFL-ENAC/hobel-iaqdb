@@ -57,9 +57,10 @@ from api.services.measurement import (
     measurement_write_lock,
 )
 from api.services.parameter import ParameterService, read_parameters
-from api.services.s3 import s3_client
+from api.services.s3 import delete_objects, s3_client
 from api.services.study import StudyService
 from api.services.study_draft import StudyDraftService
+from api.services.study_file import StudyFileService
 from botocore.exceptions import ClientError
 from enacit4r_files.models.files import FileRef
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -382,12 +383,16 @@ async def dataset_folders(
     return folders, skipped
 
 
-async def delete_stale_draft_files(identifier: str, keep: set[str]) -> None:
+async def delete_stale_draft_files(
+    session: AsyncSession, identifier: str, keep: set[str]
+) -> None:
     """Remove draft files of a previous run that are not part of this import,
-    so they are not published. study.json is overwritten by the draft service."""
-    for key in await s3_client.list_files(f"draft/{identifier}/"):
-        if key not in keep and not key.endswith("/study.json"):
-            await s3_client.delete_file(key)
+    so they are not published."""
+    files = StudyFileService(session)
+    stale = [key for key in await files.keys(identifier, "draft") if key not in keep]
+    await files.remove(identifier, "draft", stale)
+    await session.commit()
+    await delete_objects(stale)
 
 
 def draft_maps(draft: StudyDraft) -> CatalogMaps:
@@ -435,25 +440,28 @@ async def publish(engine, seed: SeedStudy, cache: Md5Cache) -> Outcome:
     """Replace the study draft with SEED_DATA content, publish it and load
     its measurements."""
     identifier = seed.draft.identifier
-    await delete_stale_draft_files(
-        identifier,
-        keep={
-            draft_file_key(identifier, dataset, path)
-            for dataset, files in seed.dataset_files
-            for path in files
-        },
-    )
-
-    # Only datasets with a matched file are published, with the processed files
-    folders, skipped = await dataset_folders(identifier, seed, cache)
-    seed.draft.datasets = []
-    for dataset, _ in seed.dataset_files:
-        dataset.folder = folders[id(dataset)]
-        seed.draft.datasets.append(dataset)
-
-    draft = await StudyDraftService().createOrUpdate(seed.draft)
     async with AsyncSession(engine, expire_on_commit=False) as session:
-        study = await StudyService(session).save(draft)
+        await delete_stale_draft_files(
+            session,
+            identifier,
+            keep={
+                draft_file_key(identifier, dataset, path)
+                for dataset, files in seed.dataset_files
+                for path in files
+            },
+        )
+
+        # Only datasets with a matched file are published, with the processed files
+        folders, skipped = await dataset_folders(identifier, seed, cache)
+        seed.draft.datasets = []
+        for dataset, _ in seed.dataset_files:
+            dataset.folder = folders[id(dataset)]
+            seed.draft.datasets.append(dataset)
+
+        document = await StudyDraftService(session).createOrUpdate(
+            seed.draft.model_dump(mode="json")
+        )
+        study = await StudyService(session).save(StudyDraft.model_validate(document))
     outcome = await load_measurements(engine, seed, study)
     outcome.skipped = skipped
     return outcome

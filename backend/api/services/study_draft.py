@@ -1,124 +1,136 @@
 import json
-import logging
-import os
-import tempfile
 import urllib.parse
 import uuid
 
-from api.models.catalog import Study, StudyDraft
-from api.services.s3 import s3_client
+from api.db import AsyncSession
+from api.models.catalog import StudyDraftDocument
+from api.services.s3 import copy_objects, delete_objects, s3_client
+from api.services.study_file import StudyFileService
+from fastapi import HTTPException
+from sqlalchemy.dialects.postgresql import insert
+from sqlmodel import select
+
+
+def check_identifier(identifier: str) -> None:
+    """The identifier is part of the S3 keys of the study."""
+    if not isinstance(identifier, str) or "/" in identifier or ".." in identifier:
+        raise HTTPException(status_code=400, detail="Invalid study identifier")
+
+
+def referenced_keys(identifier: str, document: dict) -> set[str]:
+    """S3 keys of the draft folder that the document's datasets refer to."""
+    folder = s3_client.to_s3_key(f"draft/{identifier}/")
+    keys = {
+        s3_client.to_s3_key(file.get("path") or "")
+        for dataset in document.get("datasets") or []
+        for file in (dataset.get("folder") or {}).get("children") or []
+    }
+    return {key for key in keys if key.startswith(folder)}
 
 
 class StudyDraftService:
-    async def createOrUpdate(self, study: Study) -> Study:
-        if (
-            study.identifier is None
-            or study.identifier == ""
-            or study.identifier == "_draft"
-        ):
-            study.identifier = str(uuid.uuid4())
+    """Study drafts are raw JSON documents in the database, validated only on
+    publish; their files are in S3, indexed by StudyFileService."""
+
+    def __init__(self, session: AsyncSession):
+        self.session = session
+        self.files = StudyFileService(session)
+
+    async def createOrUpdate(self, document: dict) -> dict:
+        identifier = document.get("identifier")
+        if not identifier or identifier == "_draft":
+            identifier = str(uuid.uuid4())
+            document["identifier"] = identifier
+        check_identifier(identifier)
 
         # Destination folder in s3
-        s3_folder = f"draft/{study.identifier}"
+        s3_folder = f"draft/{identifier}"
 
         # Move tmp files to their final location
-        if study.datasets is not None:
-            for dataset in study.datasets:
-                if "children" in dataset.folder:
-                    for i, file in enumerate(dataset.folder["children"]):
-                        if "/tmp/" in file["path"]:
-                            dataset_file_path = (
-                                f"{s3_folder}/files/{dataset.name}/{file['name']}"
-                            )
-                            new_key = await s3_client.move_file(
-                                file["path"], dataset_file_path
-                            )
-                            file["path"] = urllib.parse.quote(new_key)
-                            dataset.folder["children"][i] = file
-                dataset.folder["name"] = dataset.name
-                dataset.folder["path"] = s3_client.to_s3_path(
-                    urllib.parse.quote(f"{s3_folder}/files/{dataset.name}")
-                )
+        for dataset in document.get("datasets") or []:
+            folder = dataset.get("folder")
+            if not folder:
+                continue
+            for file in folder.get("children") or []:
+                if "/tmp/" in file["path"]:
+                    dataset_file_path = (
+                        f"{s3_folder}/files/{dataset['name']}/{file['name']}"
+                    )
+                    new_key = await s3_client.move_file(file["path"], dataset_file_path)
+                    file["path"] = urllib.parse.quote(new_key)
+            folder["name"] = dataset["name"]
+            folder["path"] = s3_client.to_s3_path(
+                urllib.parse.quote(f"{s3_folder}/files/{dataset['name']}")
+            )
 
         # TODO Remove files that are not linked to a dataset
 
-        # Create a temporary directory to dump JSON
-        with tempfile.TemporaryDirectory() as temp_dir:
-            logging.debug(f"Temporary directory created at: {temp_dir}")
-
-            # Use the temporary directory for file operations
-            temp_file_path = os.path.join(temp_dir, "study.json")
-
-            # Convert SQLModel object to dictionary
-            study_dict = study.model_dump()
-            with open(temp_file_path, "w") as temp_file:
-                json.dump(study_dict, temp_file, indent=2)
-            await s3_client.upload_local_file(
-                temp_dir, "study.json", s3_folder=s3_folder
+        statement = insert(StudyDraftDocument).values(
+            identifier=identifier, document=document
+        )
+        await self.session.exec(
+            statement.on_conflict_do_update(
+                index_elements=[StudyDraftDocument.identifier],
+                set_={"document": statement.excluded.document},
             )
+        )
+        await self.files.add(identifier, "draft", referenced_keys(identifier, document))
+        await self.session.commit()
+        return document
 
-        return study
-
-    async def delete(self, identifier: str):
-        exists = await self.exists(identifier)
-        if not exists:
-            raise Exception(f"Study with identifier {identifier} does not exist.")
-
-        await s3_client.delete_files(f"draft/{identifier}")
+    async def delete(self, identifier: str) -> None:
+        draft = await self.session.get(StudyDraftDocument, identifier)
+        if not draft:
+            raise HTTPException(
+                status_code=404, detail=f"Study draft {identifier} does not exist."
+            )
+        keys = await self.files.remove(identifier, "draft")
+        await self.session.delete(draft)
+        await self.session.commit()
+        await delete_objects(keys)
 
     async def exists(self, identifier: str) -> bool:
-        return await s3_client.path_exists(f"draft/{identifier}/study.json")
+        return await self.session.get(StudyDraftDocument, identifier) is not None
 
-    async def get(self, identifier: str) -> StudyDraft:
-        exists = await self.exists(identifier)
-        if not exists:
-            raise Exception(f"Study with identifier {identifier} does not exist.")
+    async def get(self, identifier: str) -> dict:
+        draft = await self.session.get(StudyDraftDocument, identifier)
+        if not draft:
+            raise HTTPException(
+                status_code=404, detail=f"Study draft {identifier} does not exist."
+            )
+        return draft.document
 
-        file_path = f"draft/{identifier}/study.json"
-        content, mime_type = await s3_client.get_file(file_path)
-        study_dict = json.loads(content)
-        return StudyDraft(**study_dict)
-
-    async def list(self) -> list[StudyDraft]:
-        """List all studies"""
-        folder_path = "draft/"
-        files = [
-            study_file
-            for study_file in await s3_client.list_files(folder_path)
-            if study_file.endswith("/study.json")
-        ]
-
-        study_drafts = []
-        for file in files:
-            content, mime_type = await s3_client.get_file(file)
-            study_dict = json.loads(content)
-            study_drafts.append(StudyDraft(**study_dict))
-
-        return study_drafts
+    async def list(self) -> list[dict]:
+        """List all study drafts"""
+        res = await self.session.exec(
+            select(StudyDraftDocument.document).order_by(StudyDraftDocument.identifier)
+        )
+        return list(res.all())
 
     async def reinstate(self, identifier: str) -> None:
-        """Reinstate a study draft by checking if it exists."""
+        """Replace the study draft by the published study and its files."""
+        content, _ = await s3_client.get_file(f"pub/{identifier}/study.json")
+        if not content:
+            raise HTTPException(
+                status_code=404, detail=f"Published study {identifier} not found."
+            )
+        document = json.loads(content)
 
-        pub_folder = f"pub/{identifier}"
-
-        exists = await self.exists(identifier)
-        if exists:
+        if await self.exists(identifier):
             await self.delete(identifier)
 
-        # Copy all study draft files to pub folder
-        study_files = [file for file in await s3_client.list_files(pub_folder)]
-        if study_files:
-            # Copy the study files to the draft folder
-            for file in study_files:
-                new_file = file.replace("/pub/", "/draft/")
-                await s3_client.copy_file(file, new_file)
+        pairs = [
+            (key, key.replace("/pub/", "/draft/"))
+            for key in await self.files.keys(identifier, "pub")
+        ]
+        await copy_objects(pairs)
+        await self.files.add(identifier, "draft", [draft for _, draft in pairs])
 
-        # Rewrite the study.json file in the draft folder
-        study_draft = await self.get(identifier)
-        for dataset in study_draft.datasets:
-            dataset.folder["path"] = dataset.folder["path"].replace("/pub/", "/draft/")
-            if "children" in dataset.folder:
-                for i, file in enumerate(dataset.folder["children"]):
-                    file["path"] = file["path"].replace("/pub/", "/draft/")
-                    dataset.folder["children"][i] = file
-        await self.createOrUpdate(study_draft)
+        for dataset in document.get("datasets") or []:
+            folder = dataset.get("folder")
+            if not folder:
+                continue
+            folder["path"] = folder["path"].replace("/pub/", "/draft/")
+            for file in folder.get("children") or []:
+                file["path"] = file["path"].replace("/pub/", "/draft/")
+        await self.createOrUpdate(document)

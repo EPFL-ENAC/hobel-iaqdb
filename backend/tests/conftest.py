@@ -30,6 +30,8 @@ CATALOG_TABLES = (
     "building",
     "person",
     "contribution",
+    "study_draft",
+    "study_file",
     "study",
 )
 
@@ -41,7 +43,10 @@ def migrated_db():
             f"tests truncate the database: refusing DB_PORT={config.DB_PORT},"
             f" expected {TEST_DB_PORT} (see `make test-db`)"
         )
-    subprocess.run([sys.executable, "-m", "alembic", "upgrade", "head"], check=True)
+    subprocess.run(
+        [sys.executable, "-m", "alembic", "-x", "no_s3=1", "upgrade", "head"],
+        check=True,
+    )
 
 
 @pytest_asyncio.fixture(scope="session")
