@@ -53,3 +53,8 @@ logs:
 
 psql:
 	psql -h localhost -p 5432 -U postgres
+
+# Bump app versions: make bump-patch | bump-minor | bump-major
+bump-%:
+	cd backend && uv version --bump $* --no-sync
+	cd frontend && npm version $* --no-git-tag-version
