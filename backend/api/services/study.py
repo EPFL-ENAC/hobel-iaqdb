@@ -46,7 +46,14 @@ class StudyQueryBuilder(QueryBuilder):
         if "$building" in filter:
             query = query.join(Building, Study.id == Building.study_id)
         if "$space" in filter:
-            query = query.join(Space, Study.id == Space.study_id)
+            # through the building when both are filtered, otherwise the rows are
+            # the product of the study's buildings and spaces
+            on = (
+                Building.id == Space.building_id
+                if "$building" in filter
+                else Study.id == Space.study_id
+            )
+            query = query.join(Space, on)
         query = query.distinct()
         return query
 
