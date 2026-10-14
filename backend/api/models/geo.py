@@ -56,3 +56,16 @@ class TimeZone(BaseModel):
     name: str
     lon: float
     lat: float
+
+
+class Location(BaseModel):
+    long: float
+    lat: float
+    altitude: int | None = None
+    climate_zone: str | None = None
+    timezone: str | None = None
+
+
+class LocationQuery(BaseModel):
+    city: str | None = None
+    country: str | None = None

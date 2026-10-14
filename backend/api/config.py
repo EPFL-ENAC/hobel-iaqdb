@@ -26,6 +26,7 @@ class Config(BaseSettings):
     PATH_PREFIX: str = "/api"
 
     ELEVATION_URL: str = "https://api.open-elevation.com/api/v1/lookup"
+    GEOCODER_URL: str = "https://nominatim.openstreetmap.org/search"
 
     S3_ENDPOINT_PROTOCOL: str
     S3_ENDPOINT_HOSTNAME: str

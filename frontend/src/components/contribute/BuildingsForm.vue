@@ -141,6 +141,8 @@ onMounted(() => {
   if (contrib.study.buildings?.length) {
     selected.value = 0;
   }
+  // buildings imported or saved without geolocation
+  contrib.locateBuildings().catch(console.error);
 });
 
 function onDuplicate(i: number) {

@@ -404,7 +404,6 @@ import {
   countryOptions,
   yesNoOptions,
 } from '@/utils/options';
-import { geocoderApi } from '@/utils/geocoder';
 import type { Building, Certification } from '@/models';
 import SpaceForm from '@/components/contribute/SpaceForm.vue';
 import { notifyInfo } from '@/utils/notify';
@@ -423,13 +422,13 @@ const loadingGeo = ref(false);
 const loadingAlt = ref(false);
 
 onMounted(() => {
-  void onInitLocation();
+  building.value.postcode = undefined; // Reset postcode as it is not used anymore
   onGreenCertifiedUpdated();
 });
 
 watch(() => props.modelValue, (val) => {
   building.value = val;
-  void onInitLocation();
+  building.value.postcode = undefined;
   onGreenCertifiedUpdated();
 });
 
@@ -440,59 +439,22 @@ const hasLongLat = computed(
   () => building.value.long && building.value.lat,
 );
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function isNumber(value: any): boolean {
-  return typeof value === 'number' && !isNaN(value);
-}
-
-async function onInitLocation() {
-  building.value.postcode = undefined; // Reset postcode as it is not used anymore
-  if (!hasCityCountry.value) {
-    building.value.long = undefined;
-    building.value.lat = undefined;
-    onLongLatUpdated();
-    return;
-  } else {
-    // check if country is an option label instead of value
-    const countryOpt = countryOptions.find((c) => c.label === building.value.country);
-    if (countryOpt) {
-      building.value.country = countryOpt.value;
-      await onLocationUpdated();
-    } else if (!isNumber(building.value.long) || !isNumber(building.value.lat)) {
-      await onLocationUpdated();
-    }
-  }
-}
-
 async function onLocationUpdated() {
-  if (!hasCityCountry.value) {
-    building.value.long = undefined;
-    building.value.lat = undefined;
-    onLongLatUpdated();
-    return;
-  }
+  building.value.long = undefined;
+  building.value.lat = undefined;
+  building.value.altitude = undefined;
+  building.value.climate_zone = undefined;
+  building.value.timezone = undefined;
+  if (!hasCityCountry.value) return;
   try {
     loadingGeo.value = true;
-    const res = await geocoderApi.forwardGeocode({
-      query: building.value.city,
-      limit: 1,
-      countries: building.value.country,
-    });
-    if (res.features && res.features.length > 0 && res.features[0]?.geometry.type === 'Point') {
-      building.value.long = res.features[0].geometry.coordinates[0];
-      building.value.lat = res.features[0].geometry.coordinates[1];
-    } else {
-      building.value.long = undefined;
-      building.value.lat = undefined;
-    }
+    const loc = await contrib.locate(building.value.city, building.value.country);
+    if (loc) Object.assign(building.value, loc);
   } catch (err) {
     console.error(err);
-    building.value.long = undefined;
-    building.value.lat = undefined;
   } finally {
     loadingGeo.value = false;
   }
-  onLongLatUpdated();
 }
 
 function onLongLatUpdated() {
