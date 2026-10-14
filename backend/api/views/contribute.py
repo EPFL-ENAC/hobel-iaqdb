@@ -26,6 +26,7 @@ from api.services.study_parser import StudyParser
 from api.utils.files import file_checker
 from enacit4r_sql.utils.query import paramAsArray, paramAsDict
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Query
+from fastapi.concurrency import run_in_threadpool
 from fastapi.datastructures import UploadFile
 from fastapi.param_functions import File
 from fastapi.responses import FileResponse, Response
@@ -68,7 +69,8 @@ async def read_study_from_excel(
 ):
     try:
         parser = StudyParser()
-        study = parser.parse(files.file._file)
+        # parsing geolocates buildings with blocking calls
+        study = await run_in_threadpool(parser.parse, files.file._file)
         return StudyDraftParseResult(study=study, errors=parser.errors)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

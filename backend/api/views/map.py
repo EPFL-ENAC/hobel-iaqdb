@@ -6,13 +6,16 @@ from api.models.geo import (
     ClimateZone,
     Elevation,
     Geometry,
+    Location,
+    LocationQuery,
     TimeZone,
 )
 from api.services.building import BuildingService
 from api.services.geo import GeoService
 from api.services.study import StudyService
 from api.utils.colors import string_to_color
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Body, Depends, Query
+from fastapi.concurrency import run_in_threadpool
 from timezonefinder import TimezoneFinder
 
 router = APIRouter()
@@ -80,7 +83,7 @@ async def getBuildings(
 
 @router.get("/climate-zone")
 async def getClimateZone(
-    lon: float = Query(0), lat: float = Query(0), precise: bool = Query(False)
+    lon: float = Query(0), lat: float = Query(0), precise: bool = Query(True)
 ) -> ClimateZone:
     service = GeoService()
     return service.readClimateZone(lon, lat, precise)
@@ -90,6 +93,24 @@ async def getClimateZone(
 async def getElevation(lon: float = Query(0), lat: float = Query(0)) -> Elevation:
     service = GeoService()
     return service.queryElevation(lon, lat)
+
+
+@router.get("/locate")
+async def getLocation(
+    city: str = Query(), country: str = Query(description="ISO2 country code")
+) -> Location | None:
+    return await run_in_threadpool(GeoService().locate, city, country)
+
+
+@router.post("/locate")
+async def getLocations(
+    queries: list[LocationQuery] = Body(max_length=500),
+) -> list[Location | None]:
+    """Geolocate several city/country pairs, results in the same order"""
+    service = GeoService()
+    return await run_in_threadpool(
+        lambda: [service.locate(q.city, q.country) for q in queries]
+    )
 
 
 @router.get("/timezone")
