@@ -168,7 +168,11 @@ async def get_study_building_spaces(
 ) -> SpacesResult:
     """Get a study spaces by id"""
     service = SpaceService(session)
-    res = await service.find({"study_id": id, "building_id": building_id}, paramAsArray(sort), paramAsArray(range))
+    res = await service.find(
+        {"study_id": id, "building_id": building_id},
+        paramAsArray(sort),
+        paramAsArray(range),
+    )
     return res
 
 
