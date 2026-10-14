@@ -11,12 +11,16 @@
       />
     </div>
     <q-table
+      ref="tableRef"
       flat
       responsive
-      :rows="buildings"
+      :rows="rows"
       :columns="columms"
       v-model:pagination="pagination"
+      :rows-per-page-options="[10, 25, 50, 100]"
+      :loading="loading"
       row-key="id"
+      @request="onRequest"
     >
       <template v-slot:header="props">
         <q-tr :props="props">
@@ -72,6 +76,7 @@ import MaplibreMap from '@/components/MaplibreMap.vue';
 import type { Map } from 'maplibre-gl';
 import type { Building, Space } from '@/models';
 import { outdoorEnvOptions, type OptionItem } from '@/utils/options';
+import { useStudyItemsTable } from '@/composables/useStudyItemsTable';
 
 interface Props {
   showMap?: boolean;
@@ -84,14 +89,7 @@ const catalogStore = useCatalogStore();
 const mapStore = useMapStore();
 const { t } = useI18n();
 
-const pagination = ref({
-  sortBy: 'identifier',
-  descending: false,
-  page: 1,
-  rowsPerPage: 25,
-});
-
-const buildings = computed(() => catalogStore.buildings || []);
+const { tableRef, rows, loading, pagination, onRequest } = useStudyItemsTable<Building>('buildings');
 
 const columms = computed(() => {
   return [
@@ -127,7 +125,7 @@ const columms = computed(() => {
       },
     },
     {
-      name: 'construction_renovation_years',
+      name: 'construction_year',
       label: t('study.building.construction_renovation_years'),
       align: 'left' as const,
       sortable: true,
@@ -139,7 +137,6 @@ const columms = computed(() => {
       name: 'spaces',
       label: t('spaces'),
       align: 'left' as const,
-      sortable: true,
       field: 'spaces',
       format: (v: Space[]) => {
         return v?.length || 0;
