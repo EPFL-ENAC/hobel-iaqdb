@@ -42,6 +42,7 @@ import time
 import traceback
 import urllib.parse
 import zipfile
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -49,7 +50,12 @@ from api.config import config
 from api.models.catalog import DatasetDraft, Study, StudyDraft
 from api.models.measurement import Parameter
 from api.services.catalog_version import CatalogVersionService
-from api.services.measurement import CatalogMaps, MeasurementReader, MeasurementService
+from api.services.measurement import (
+    CatalogMaps,
+    MeasurementReader,
+    MeasurementService,
+    measurement_write_lock,
+)
 from api.services.parameter import ParameterService, read_parameters
 from api.services.s3 import s3_client
 from api.services.study import StudyService
@@ -477,30 +483,32 @@ async def run(check_only: bool, identifiers: list[str]) -> list[tuple[str, str]]
     engine = create_async_engine(config.DB_URL)
     cache = Md5Cache(MD5_CACHE)
     parameters = read_parameters()
-    if not check_only:
-        await begin_bulk(engine)
     failures = []
-    folders = study_folders(identifiers)
-    for i, folder in enumerate(folders, start=1):
-        print(f"[{i}/{len(folders)}] {folder.name} ...", flush=True)
-        try:
-            seed = load_study(folder)
-            if check_only:
-                outcome = Outcome(reports=check_measurements(seed, parameters))
-            else:
-                outcome = await publish(engine, seed, cache)
-            report_study(seed, outcome)
-            if outcome.errors:
-                raise RuntimeError(f"{len(outcome.errors)} dataset load(s) failed")
-        except Exception as e:
-            traceback.print_exc()
-            failures.append((folder.name, f"{type(e).__name__}: {e}"))
-            print(f"    FAILED: {failures[-1][1]}")
-        finally:
-            if not check_only:
-                cache.save()
-    if not check_only:
-        await end_bulk(engine)
+    # the API's publish loads wait meanwhile (indexes dropped, chunks recompressed)
+    async with nullcontext() if check_only else measurement_write_lock(engine):
+        if not check_only:
+            await begin_bulk(engine)
+        folders = study_folders(identifiers)
+        for i, folder in enumerate(folders, start=1):
+            print(f"[{i}/{len(folders)}] {folder.name} ...", flush=True)
+            try:
+                seed = load_study(folder)
+                if check_only:
+                    outcome = Outcome(reports=check_measurements(seed, parameters))
+                else:
+                    outcome = await publish(engine, seed, cache)
+                report_study(seed, outcome)
+                if outcome.errors:
+                    raise RuntimeError(f"{len(outcome.errors)} dataset load(s) failed")
+            except Exception as e:
+                traceback.print_exc()
+                failures.append((folder.name, f"{type(e).__name__}: {e}"))
+                print(f"    FAILED: {failures[-1][1]}")
+            finally:
+                if not check_only:
+                    cache.save()
+        if not check_only:
+            await end_bulk(engine)
     await engine.dispose()
     await s3_client.close()
     return failures

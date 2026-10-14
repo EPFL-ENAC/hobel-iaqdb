@@ -1,5 +1,6 @@
 """The seed's dry run and the publish background load, on the fixture files."""
 
+import asyncio
 import json
 import shutil
 from pathlib import Path
@@ -121,6 +122,37 @@ async def test_publish_loads_from_s3_and_refreshes(
     hours = (await session.exec(text("SELECT count(*) FROM measurement_hour"))).scalar()
     assert hours == 0
     assert await CatalogVersionService(session).get() == 3
+
+
+async def test_concurrent_publish_loads_are_serialized(
+    session, clean_db, tmp_path, monkeypatch
+):
+    """Several publishes at once: their background loads must not interleave
+    (DELETE/COPY/refresh/compress of one racing another's)."""
+    fx = await make_catalog(session)
+    local = write_csv(tmp_path / "d1_long.csv", d1_rows(fx))
+    for name in ("D1", "D2"):
+        dataset = await session.get(Dataset, fx.datasets[name])
+        dataset.folder = {"children": [{"name": "d.csv", "path": f"k/{name}.csv"}]}
+        session.add(dataset)
+    await session.commit()
+
+    async def fake_download(key: str, path: Path) -> Path:
+        await asyncio.sleep(0)
+        shutil.copy(local, path)
+        return path
+
+    monkeypatch.setattr(publish, "download_object", fake_download)
+    await asyncio.gather(
+        *(publish.load_published_study(clean_db, fx.study_id) for _ in range(4))
+    )
+    count = "SELECT count(*) FROM measurement WHERE dataset_id = :id"
+    for name in ("D1", "D2"):
+        dataset = await session.get(Dataset, fx.datasets[name])
+        await session.refresh(dataset)
+        assert dataset.summary_status == "ready", dataset.summary_error
+        n = (await session.exec(text(count).bindparams(id=dataset.id))).scalar()
+        assert n == dataset.load_report["loaded"] > 0
 
 
 def test_csv_keys_unquote_and_filter():

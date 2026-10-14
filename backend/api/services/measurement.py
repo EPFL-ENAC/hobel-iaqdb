@@ -12,6 +12,7 @@ path calls (design §3, updated).
 """
 
 import asyncio
+from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -53,6 +54,9 @@ NO_UNIT = ("", "not applicable", "unknown")
 # trailing UTC offset or Z after a time of day: dropped, the wall clock is kept
 TZ_SUFFIX = r"(\d{2}:\d{2}(:\d{2}(\.\d+)?)?)(Z|[+-]\d{2}:?\d{2})$"
 DECIMAL_COMMA = r"^-?\d+,\d+$"
+# advisory lock (pg_advisory_lock(int)) serializing every measurement writer
+WRITE_LOCK = 0x1A0F
+_local_write_lock = asyncio.Lock()
 BINS = (
     "statistical",
     "unknown_parameter",
@@ -265,6 +269,22 @@ def _summarize(rows: list[tuple]) -> Classification:
             counter = getattr(report, bin_)
             counter[slug] = counter.get(slug, 0) + n
     return Classification(report, missing, first_at, last_at)
+
+
+@asynccontextmanager
+async def measurement_write_lock(engine: AsyncEngine):
+    """One measurement writer at a time, cluster-wide (pods, seed): TimescaleDB
+    rejects a concurrent aggregate refresh, and concurrent DELETE/COPY/compress
+    on shared chunks deadlock. The local lock keeps queued writers from each
+    holding a pool connection while they wait.
+    ponytail: one global writer, per-chunk locking if publish throughput matters"""
+    async with _local_write_lock, engine.connect() as conn:
+        pg = (await conn.get_raw_connection()).driver_connection
+        await pg.execute(f"SELECT pg_advisory_lock({WRITE_LOCK})")
+        try:
+            yield
+        finally:
+            await pg.execute(f"SELECT pg_advisory_unlock({WRITE_LOCK})")
 
 
 class MeasurementService:

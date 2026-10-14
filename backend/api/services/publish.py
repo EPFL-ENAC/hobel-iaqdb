@@ -8,7 +8,7 @@ from pathlib import Path
 
 from api.models.catalog import Dataset
 from api.services.catalog_version import CatalogVersionService
-from api.services.measurement import MeasurementService
+from api.services.measurement import MeasurementService, measurement_write_lock
 from api.services.s3 import download_object
 from sqlalchemy.ext.asyncio import AsyncEngine
 from sqlmodel import select
@@ -58,12 +58,13 @@ async def load_published_study(engine: AsyncEngine, study_id: int) -> None:
         ).all()
     service = MeasurementService(engine)
     errors = []
-    for dataset in datasets:
-        try:
-            await load_dataset(service, dataset)
-        except Exception as e:
-            errors.append(f"{dataset.name}: {e}")
-    await refresh_and_bump(engine)
+    async with measurement_write_lock(engine):
+        for dataset in datasets:
+            try:
+                await load_dataset(service, dataset)
+            except Exception as e:
+                errors.append(f"{dataset.name}: {e}")
+        await refresh_and_bump(engine)
     if errors:
         raise RuntimeError(
             f"study {study_id}: {len(errors)} dataset(s) failed: {errors}"
@@ -73,4 +74,5 @@ async def load_published_study(engine: AsyncEngine, study_id: int) -> None:
 async def refresh_after_delete(engine: AsyncEngine) -> None:
     """Deleting catalog rows cascades to `measurement`; the continuous
     aggregates only follow on refresh."""
-    await refresh_and_bump(engine)
+    async with measurement_write_lock(engine):
+        await refresh_and_bump(engine)
