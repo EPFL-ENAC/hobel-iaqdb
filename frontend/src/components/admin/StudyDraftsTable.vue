@@ -6,11 +6,13 @@
       :rows="rows"
       :columns="columns"
       v-model:pagination="pagination"
+      :rows-per-page-options="[10, 25, 50, 100]"
       :loading="loading"
-      row-key="identifier"
+      :row-key="(row: StudyBundle) => row.study.identifier"
+      @request="onRequest"
     >
       <template v-slot:top-left>
-        <div class="q-gutter-x-sm">
+        <div class="row items-center q-gutter-sm">
           <q-btn
             v-for="value in ['all', 'published', 'not_published'] as const"
             :key="value"
@@ -23,7 +25,23 @@
             :text-color="publishedFilter === value ? 'white' : 'grey-8'"
             @click="publishedFilter = value"
           />
+          <q-input
+            v-model="text"
+            :placeholder="t('admin.contributions_search')"
+            debounce="300"
+            clearable
+            dense
+            outlined
+            style="min-width: 300px"
+          >
+            <template v-slot:prepend>
+              <q-icon name="search" />
+            </template>
+          </q-input>
         </div>
+      </template>
+      <template v-slot:top-right>
+        <q-btn flat dense round icon="refresh" color="grey-8" @click="fetchStudyBundles()" />
       </template>
       <template v-slot:body-cell-identifier="props">
         <q-td :props="props">
@@ -93,15 +111,25 @@ const { t } = useI18n();
 const authStore = useAuthStore();
 const contrib = useContributeStore();
 
+interface Pagination {
+  sortBy: string | null;
+  descending: boolean;
+  page: number;
+  rowsPerPage: number;
+  rowsNumber?: number;
+}
+
 const tableRef = ref();
 const loading = ref(true);
-const studyBundles = ref<StudyBundle[]>([]);
-  const pagination = ref({
+const rows = ref<StudyBundle[]>([]);
+const pagination = ref<Pagination>({
   sortBy: 'identifier',
   descending: false,
   page: 1,
   rowsPerPage: 25,
+  rowsNumber: 0,
 });
+const text = ref<string | null>(null);
 const showDialog = ref(false);
 const showUpload = ref(false);
 const showDelete = ref(false);
@@ -116,14 +144,13 @@ watch(() => authStore.isAuthenticated, () => {
   if (authStore.isAuthenticated) {
     void fetchStudyBundles();
   } else {
-    studyBundles.value = [];
+    rows.value = [];
   }
 });
 
 const publishedFilter = ref<'all' | 'published' | 'not_published'>('all');
 
-const rows = computed(() => (studyBundles.value || []).filter((bundle) =>
-  publishedFilter.value === 'all' || !!bundle.contribution?.published_at === (publishedFilter.value === 'published')));
+watch([publishedFilter, text], () => onRequest({ pagination: { ...pagination.value, page: 1 } }));
 
 const columns = computed(() => [
   {
@@ -134,7 +161,6 @@ const columns = computed(() => [
     format: (v: Study) => v.identifier,
     style: 'width: 360px',
     sortable: true,
-    sort: (a: Study, b: Study) => a.identifier.localeCompare(b.identifier),
   },
   {
     name: 'name',
@@ -143,7 +169,6 @@ const columns = computed(() => [
     field: 'study',
     format: (v: Study) => v.name,
     sortable: true,
-    sort: (a: Study, b: Study) => a.name.localeCompare(b.name),
   },
   {
     name: 'contributors',
@@ -151,12 +176,6 @@ const columns = computed(() => [
     align: 'left' as const,
     field: 'study',
     format: (v: Study) => v.contributors,
-    sortable: true,
-    sort: (a: Study, b: Study) => {
-      const aContribs = a.contributors?.map((c) => `${c.name} <${c.email}>`).join(',') || '';
-      const bContribs = b.contributors?.map((c) => `${c.name} <${c.email}>`).join(',') || '';
-      return aContribs.localeCompare(bContribs);
-    },
   },
   {
     name: 'buildings',
@@ -164,12 +183,6 @@ const columns = computed(() => [
     align: 'left' as const,
     field: 'study',
     format: (v: Study) => v.buildings?.length,
-    sortable: true,
-    sort: (a: Study, b: Study) => {
-      const aCount = a.buildings?.length || 0;
-      const bCount = b.buildings?.length || 0;
-      return aCount - bCount;
-    },
   },
   {
     name: 'instruments',
@@ -177,12 +190,6 @@ const columns = computed(() => [
     align: 'left' as const,
     field: 'study',
     format: (v: Study) => v.instruments?.length,
-    sortable: true,
-    sort: (a: Study, b: Study) => {
-      const aCount = a.instruments?.length || 0;
-      const bCount = b.instruments?.length || 0;
-      return aCount - bCount;
-    },
   },
   {
     name: 'datasets',
@@ -190,12 +197,6 @@ const columns = computed(() => [
     align: 'left' as const,
     field: 'study',
     format: (v: Study) => v.datasets?.length,
-    sortable: true,
-    sort: (a: Study, b: Study) => {
-      const aCount = a.datasets?.length || 0;
-      const bCount = b.datasets?.length || 0;
-      return aCount - bCount;
-    },
   },
   {
     name: 'data_embargo',
@@ -204,11 +205,6 @@ const columns = computed(() => [
     field: 'contribution',
     format: (v: Contribution) => getDataEmbargoLabel(v?.data_embargo),
     sortable: true,
-    sort: (a: Contribution, b: Contribution) => {
-      const aEmbargo = a.data_embargo || '';
-      const bEmbargo = b.data_embargo || '';
-      return aEmbargo.localeCompare(bEmbargo);
-    },
   },
   {
     name: 'created_at',
@@ -217,11 +213,6 @@ const columns = computed(() => [
     field: 'contribution',
     format: (v: Contribution) => toDatetimeString(v?.created_at),
     sortable: true,
-    sort: (a: Contribution, b: Contribution) => {
-      const aDate = a.created_at ? new Date(a.created_at).getTime() : 0;
-      const bDate = b.created_at ? new Date(b.created_at).getTime() : 0;
-      return aDate - bDate;
-    },
   },
   {
     name: 'updated_at',
@@ -230,11 +221,6 @@ const columns = computed(() => [
     field: 'contribution',
     format: (v: Contribution) => toDatetimeString(v?.updated_at),
     sortable: true,
-    sort: (a: Contribution, b: Contribution) => {
-      const aDate = a.updated_at ? new Date(a.updated_at).getTime() : 0;
-      const bDate = b.updated_at ? new Date(b.updated_at).getTime() : 0;
-      return aDate - bDate;
-    },
   },
   {
     name: 'published_at',
@@ -243,11 +229,6 @@ const columns = computed(() => [
     field: 'contribution',
     format: (v: Contribution) => toDatetimeString(v?.published_at),
     sortable: true,
-    sort: (a: Contribution, b: Contribution) => {
-      const aDate = a.published_at ? new Date(a.published_at).getTime() : 0;
-      const bDate = b.published_at ? new Date(b.published_at).getTime() : 0;
-      return aDate - bDate;
-    },
   },
 ]);
 
@@ -255,17 +236,36 @@ function getDataEmbargoLabel(dataEmbargo: string | null | undefined): string {
   return dataEmbargo ? dataEmbargoOptions.find(option => option.value === dataEmbargo)?.label || dataEmbargo : '-';
 }
 
-async function fetchStudyBundles() {
+let requestId = 0;
+
+function onRequest(props: { pagination: Pagination }) {
   if (!authStore.isAuthenticated || !authStore.isAdmin) {
     return Promise.resolve();
   }
+  const { page, rowsPerPage, sortBy, descending } = props.pagination;
+  const id = ++requestId;
   loading.value = true;
-  // fetch study drafts in bundles
-  return contrib.getBundles().then((bundles) => {
-    studyBundles.value = bundles.data;
-  }).finally(() => {
-    loading.value = false;
-  });
+  return contrib.getBundles({
+    ...(text.value ? { q: text.value } : {}),
+    ...(publishedFilter.value !== 'all' ? { published: publishedFilter.value === 'published' } : {}),
+    ...(sortBy ? { sort: sortBy, desc: descending } : {}),
+    skip: (page - 1) * rowsPerPage,
+    limit: rowsPerPage,
+  })
+    .then((result) => {
+      // a newer request was sent meanwhile: drop this stale response
+      if (id !== requestId) return;
+      rows.value = result.data;
+      pagination.value = { page, rowsPerPage, sortBy, descending, rowsNumber: result.total };
+    })
+    .catch(notifyError)
+    .finally(() => {
+      if (id === requestId) loading.value = false;
+    });
+}
+
+function fetchStudyBundles() {
+  return onRequest({ pagination: pagination.value });
 }
 
 function onShowEdit(row: StudyBundle) {

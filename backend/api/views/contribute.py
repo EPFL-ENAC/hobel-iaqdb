@@ -9,7 +9,6 @@ from api.models.catalog import (
     ContributionsResult,
     DatasetLoadsResult,
     Study,
-    StudyBundle,
     StudyBundlesResult,
     StudyDraft,
     StudyDraftParseResult,
@@ -21,7 +20,7 @@ from api.services.contribution import ContributionService
 from api.services.dataset import DatasetService
 from api.services.publish import load_published_study
 from api.services.study import StudyService
-from api.services.study_draft import StudyDraftService
+from api.services.study_draft import BundleSort, StudyDraftService
 from api.services.study_parser import StudyParser
 from api.utils.files import file_checker
 from enacit4r_sql.utils.query import paramAsArray, paramAsDict
@@ -30,6 +29,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.datastructures import UploadFile
 from fastapi.param_functions import File
 from fastapi.responses import FileResponse, Response
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 router = APIRouter()
@@ -78,40 +78,29 @@ async def read_study_from_excel(
 
 @router.get("/study-bundles", response_model=StudyBundlesResult)
 async def get_study_bundles(
+    q: str | None = Query(None, max_length=200),
+    published: bool | None = Query(None),
+    sort: BundleSort = Query("identifier"),
+    desc: bool = Query(False),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(25, ge=1, le=200),
     session: AsyncSession = Depends(get_session),
     user: User = Depends(kc_service.require_admin()),
 ) -> StudyBundlesResult:
-    """Get all study bundles"""
-    service = StudyDraftService()
-    studies = await service.list()
-    if not studies:
-        return StudyBundlesResult(total=0, skip=0, limit=None, data=[])
-    # Convert StudyDraft to StudyBundle
-    contribService = ContributionService(session)
-    bundles = []
-    contributions = await contribService.find(
-        filter={"study_identifier": [study.identifier for study in studies]},
-        sort=[],
-        range=[],
+    """Study drafts with their contribution, filtered by study identifier,
+    name or contributors (`q`), paged and sorted (admin)."""
+    return await StudyDraftService(session).find_bundles(
+        q, published, sort, desc, skip, limit
     )
-    contributions_map = {
-        contribution.study_identifier: contribution
-        for contribution in contributions.data
-    }
-    for study in studies:
-        bundle = StudyBundle(
-            study=study, contribution=contributions_map.get(study.identifier, None)
-        )
-        bundles.append(bundle)
-    return StudyBundlesResult(total=len(studies), skip=0, limit=None, data=bundles)
 
 
 @router.get("/study-drafts", response_model=StudyDraftsResult)
 async def get_study_drafts(
+    session: AsyncSession = Depends(get_session),
     user: User = Depends(kc_service.require_admin()),
 ) -> StudyDraftsResult:
     """Get all study drafts"""
-    service = StudyDraftService()
+    service = StudyDraftService(session)
     studies = await service.list()
     return StudyDraftsResult(total=len(studies), skip=0, limit=None, data=studies)
 
@@ -121,33 +110,27 @@ async def create_study_draft(
     study: StudyDraft = Body(...),
     session: AsyncSession = Depends(get_session),
     user: User = Depends(kc_service.get_user_info(required=False)),
-) -> StudyDraft:
+) -> dict:
     """Create a study draft"""
-    service = StudyDraftService()
-    if (
-        study.identifier is not None
-        and study.identifier != ""
-        and study.identifier != "_draft"
-    ):
-        exists = await service.exists(study.identifier)
-        if exists:
-            raise Exception(f"Study with identifier {study.identifier} already exists.")
-    study = await service.createOrUpdate(StudyDraft.model_validate(study))
-    await ContributionService(session).touch_by_identifier(study.identifier, user)
-    return study
+    service = StudyDraftService(session)
+    identifier = study.identifier
+    if identifier and identifier != "_draft" and await service.exists(identifier):
+        raise HTTPException(
+            status_code=409,
+            detail=f"Study with identifier {identifier} already exists.",
+        )
+    document = await service.createOrUpdate(study.model_dump(mode="json"))
+    await ContributionService(session).touch_by_identifier(document["identifier"], user)
+    return document
 
 
 @router.get("/study-draft/{identifier}", response_model=StudyDraft)
 async def get_study_draft(
     identifier: str,
-) -> StudyDraft:
+    session: AsyncSession = Depends(get_session),
+) -> dict:
     """Get a study draft"""
-    service = StudyDraftService()
-    try:
-        study = await service.get(identifier)
-        return study
-    except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    return await StudyDraftService(session).get(identifier)
 
 
 @router.put("/study-draft/{identifier}", response_model=StudyDraft)
@@ -156,14 +139,18 @@ async def update_study_draft(
     study: StudyDraft = Body(...),
     session: AsyncSession = Depends(get_session),
     user: User = Depends(kc_service.get_user_info(required=False)),
-) -> StudyDraft:
+) -> dict:
     """Update a study draft"""
     if identifier != study.identifier:
-        raise Exception("Identifier in URL does not match identifier in body")
-    service = StudyDraftService()
-    study = await service.createOrUpdate(StudyDraft.model_validate(study))
-    await ContributionService(session).touch_by_identifier(study.identifier, user)
-    return study
+        raise HTTPException(
+            status_code=400,
+            detail="Identifier in URL does not match identifier in body",
+        )
+    document = await StudyDraftService(session).createOrUpdate(
+        study.model_dump(mode="json")
+    )
+    await ContributionService(session).touch_by_identifier(document["identifier"], user)
+    return document
 
 
 @router.put("/study-draft/{identifier}/_publish", response_model=StudyRead)
@@ -178,8 +165,14 @@ async def publish_study_draft(
     the background (each dataset's `summary_status` reports the outcome).
     The version is bumped here for the catalog change and again by the
     background task once the aggregates hold the loaded measurements."""
-    service = StudyDraftService()
-    study_draft = await service.get(identifier)
+    document = await StudyDraftService(session).get(identifier)
+    try:
+        study_draft = StudyDraft.model_validate(document)
+    except ValidationError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=e.errors(include_url=False, include_context=False),
+        )
     study_service = StudyService(session)
     study = await study_service.save(study_draft)
     await ContributionService(session).publish_by_identifier(study.identifier, user)
@@ -218,8 +211,7 @@ async def reinstate_study_draft(
         raise HTTPException(
             status_code=404, detail=f"Study with identifier {identifier} not found"
         )
-    service = StudyDraftService()
-    await service.reinstate(identifier)
+    await StudyDraftService(session).reinstate(identifier)
     return Response(
         content="Study reinstated in draft",
         status_code=200,
@@ -232,11 +224,11 @@ async def reinstate_study_draft(
 @router.delete("/study-draft/{identifier}")
 async def delete_study_draft(
     identifier: str,
+    session: AsyncSession = Depends(get_session),
     user: User = Depends(kc_service.require_admin()),
 ) -> None:
     """Delete a study draft"""
-    service = StudyDraftService()
-    await service.delete(identifier)
+    await StudyDraftService(session).delete(identifier)
 
 
 @router.get("/contributions", response_model=ContributionsResult)

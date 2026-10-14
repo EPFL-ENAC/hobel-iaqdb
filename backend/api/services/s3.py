@@ -92,3 +92,14 @@ async def download_object(key: str, path: Path) -> Path:
             async for chunk in response["Body"].iter_chunks(1 << 20):
                 stream.write(chunk)
     return path
+
+
+async def delete_objects(keys: list[str]) -> None:
+    """Delete objects, given full S3 keys, concurrently."""
+    semaphore = asyncio.Semaphore(COPY_CONCURRENCY)
+
+    async def delete_one(key: str) -> None:
+        async with semaphore, s3_client._client() as client:
+            await client.delete_object(Bucket=s3_client.bucket, Key=key)
+
+    await asyncio.gather(*(delete_one(key) for key in keys))

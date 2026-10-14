@@ -19,6 +19,7 @@ import type {
   FileNode,
   ParseError,
   StudyDraftParseResult,
+  StudyBundlesQuery,
   Location,
 } from '@/models';
 
@@ -383,10 +384,11 @@ export const useContributeStore = defineStore(
       study.value.identifier = identifier;
     }
 
-    async function getBundles() {
+    async function getBundles(params: StudyBundlesQuery) {
       if (!authStore.isAuthenticated) return Promise.reject(new Error('Not authenticated'));
       return authStore.updateToken().then(() =>
         api.get('/contribute/study-bundles', {
+          params,
           headers: {
             Authorization: `Bearer ${authStore.accessToken}`,
           },
