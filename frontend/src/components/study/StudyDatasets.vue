@@ -1,12 +1,16 @@
 <template>
   <div>
     <q-table
+      ref="tableRef"
       flat
       responsive
-      :rows="datasets"
+      :rows="rows"
       :columns="columms"
       v-model:pagination="pagination"
+      :rows-per-page-options="[10, 25, 50, 100]"
+      :loading="loading"
       row-key="id"
+      @request="onRequest"
     >
       <template v-slot:header="props">
         <q-tr :props="props">
@@ -45,20 +49,13 @@
 </template>
 
 <script setup lang="ts">
-import type { Variable } from '@/models';
+import type { Dataset, Variable } from '@/models';
 import { truncateString } from '@/utils/strings';
+import { useStudyItemsTable } from '@/composables/useStudyItemsTable';
 
-const catalogStore = useCatalogStore();
 const { t } = useI18n();
 
-const pagination = ref({
-  sortBy: 'id',
-  descending: false,
-  page: 1,
-  rowsPerPage: 25,
-});
-
-const datasets = computed(() => catalogStore.datasets || []);
+const { tableRef, rows, loading, pagination, onRequest } = useStudyItemsTable<Dataset>('datasets', 'id');
 
 const columms = computed(() => {
   return [
@@ -83,7 +80,6 @@ const columms = computed(() => {
       name: 'variables',
       label: t('study.dataset.variables'),
       align: 'left' as const,
-      sortable: true,
       field: 'variables',
       format: (v: Variable[]) => {
         return v?.length || 0;

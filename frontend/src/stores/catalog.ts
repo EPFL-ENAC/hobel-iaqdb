@@ -2,10 +2,6 @@ import { defineStore } from 'pinia';
 import { api } from '@/boot/api';
 import type {
   Study,
-  Building,
-  Space,
-  Instrument,
-  Dataset,
   StudiesResult,
   BuildingsResult,
   SpacesResult,
@@ -17,10 +13,6 @@ export const useCatalogStore = defineStore('catalog', () => {
   const authStore = useAuthStore();
 
   const study = ref<Study>();
-  const buildings = ref<Building[]>([]);
-  const spaces = ref<Space[]>([]);
-  const instruments = ref<Instrument[]>([]);
-  const datasets = ref<Dataset[]>([]);
   const showStudyDetails = ref(false);
   
   async function loadStudySummaries(
@@ -130,44 +122,24 @@ export const useCatalogStore = defineStore('catalog', () => {
     study.value = undefined;
     return api.get(`/catalog/study/${id}`).then((response) => {
       study.value = response.data;
-      return Promise.all([loadStudyBuildings(), loadStudySpaces(), loadStudyInstruments(), loadStudyDatasets()]);
     });
   }
 
-  async function loadStudyBuildings() {
-    buildings.value = [];
+  async function loadStudyItems<T>(
+    items: 'buildings' | 'spaces' | 'instruments' | 'datasets',
+    skip: number,
+    limit: number,
+    sortBy?: string,
+    descending = false,
+  ): Promise<{ total: number; data: T[] }> {
     return api
-      .get(`/catalog/study/${study.value?.id}/buildings`)
-      .then((response) => {
-        buildings.value = response.data?.data || [];
-      });
-  }
-
-  async function loadStudySpaces() {
-    spaces.value = [];
-    return api
-      .get(`/catalog/study/${study.value?.id}/spaces`)
-      .then((response) => {
-        spaces.value = response.data?.data || [];
-      });
-  }
-
-  async function loadStudyInstruments() {
-    instruments.value = [];
-    return api
-      .get(`/catalog/study/${study.value?.id}/instruments`)
-      .then((response) => {
-        instruments.value = response.data?.data || [];
-      });
-  }
-
-  async function loadStudyDatasets() {
-    datasets.value = [];
-    return api
-      .get(`/catalog/study/${study.value?.id}/datasets`)
-      .then((response) => {
-        datasets.value = response.data?.data || [];
-      });
+      .get(`/catalog/study/${study.value?.id}/${items}`, {
+        params: {
+          range: JSON.stringify([skip, limit + skip - 1]),
+          sort: sortBy ? JSON.stringify([sortBy, descending ? 'DESC' : 'ASC']) : undefined,
+        },
+      })
+      .then((response) => response.data);
   }
 
   return {
@@ -177,11 +149,8 @@ export const useCatalogStore = defineStore('catalog', () => {
     loadBuildings,
     loadSpaces,
     loadStudy,
+    loadStudyItems,
     study,
-    buildings,
-    spaces,
-    instruments,
-    datasets,
     showStudyDetails,
   };
 });

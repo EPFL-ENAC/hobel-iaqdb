@@ -1,12 +1,16 @@
 <template>
   <div>
     <q-table
+      ref="tableRef"
       flat
       responsive
-      :rows="instruments"
+      :rows="rows"
       :columns="columms"
       v-model:pagination="pagination"
+      :rows-per-page-options="[10, 25, 50, 100]"
+      :loading="loading"
       row-key="id"
+      @request="onRequest"
     >
       <template v-slot:header="props">
         <q-tr :props="props">
@@ -45,20 +49,13 @@
 </template>
 
 <script setup lang="ts">
-import type { InstrumentParameter } from '@/models';
+import type { Instrument, InstrumentParameter } from '@/models';
 import { equipmentGradeOptions, placementOptions } from '@/utils/options';
+import { useStudyItemsTable } from '@/composables/useStudyItemsTable';
 
-const catalogStore = useCatalogStore();
 const { t } = useI18n();
 
-const pagination = ref({
-  sortBy: 'identifier',
-  descending: false,
-  page: 1,
-  rowsPerPage: 25,
-});
-
-const instruments = computed(() => catalogStore.instruments || []);
+const { tableRef, rows, loading, pagination, onRequest } = useStudyItemsTable<Instrument>('instruments');
 
 const columms = computed(() => {
   return [
@@ -103,7 +100,6 @@ const columms = computed(() => {
       name: 'parameters',
       label: t('study.instrument.parameters'),
       align: 'left' as const,
-      sortable: true,
       field: 'parameters',
       format: (v: InstrumentParameter[]) => {
         return v?.length || 0;

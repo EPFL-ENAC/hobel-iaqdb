@@ -131,30 +131,36 @@ async def delete_study(
 
 @router.get("/study/{id}/buildings", response_model=BuildingsResult)
 async def get_study_buildings(
+    sort: str = Query(None),
+    range: str = Query(None),
     session: AsyncSession = Depends(get_session),
     *,
     id: int,
 ) -> BuildingsResult:
     """Get a study buildings by id"""
     service = BuildingService(session)
-    res = await service.find({"study_id": id}, [], [])
+    res = await service.find({"study_id": id}, paramAsArray(sort), paramAsArray(range))
     return res
 
 
 @router.get("/study/{id}/spaces", response_model=SpacesResult)
 async def get_study_spaces(
+    sort: str = Query(None),
+    range: str = Query(None),
     session: AsyncSession = Depends(get_session),
     *,
     id: int,
 ) -> SpacesResult:
     """Get a study spaces by id"""
     service = SpaceService(session)
-    res = await service.find({"study_id": id}, [], [])
+    res = await service.find({"study_id": id}, paramAsArray(sort), paramAsArray(range))
     return res
 
 
 @router.get("/study/{id}/building/{building_id}/spaces", response_model=SpacesResult)
 async def get_study_building_spaces(
+    sort: str = Query(None),
+    range: str = Query(None),
     session: AsyncSession = Depends(get_session),
     *,
     id: int,
@@ -162,31 +168,35 @@ async def get_study_building_spaces(
 ) -> SpacesResult:
     """Get a study spaces by id"""
     service = SpaceService(session)
-    res = await service.find({"study_id": id, "building_id": building_id}, [], [])
+    res = await service.find({"study_id": id, "building_id": building_id}, paramAsArray(sort), paramAsArray(range))
     return res
 
 
 @router.get("/study/{id}/instruments", response_model=InstrumentsResult)
 async def get_study_instruments(
+    sort: str = Query(None),
+    range: str = Query(None),
     session: AsyncSession = Depends(get_session),
     *,
     id: int,
 ) -> InstrumentsResult:
     """Get a study instruments by id"""
     service = InstrumentService(session)
-    res = await service.find({"study_id": id}, [], [])
+    res = await service.find({"study_id": id}, paramAsArray(sort), paramAsArray(range))
     return res
 
 
 @router.get("/study/{id}/datasets", response_model=DatasetsResult)
 async def get_study_datasets(
+    sort: str = Query(None),
+    range: str = Query(None),
     session: AsyncSession = Depends(get_session),
     *,
     id: int,
 ) -> DatasetsResult:
     """Get a study instruments by id"""
     service = DatasetService(session)
-    res = await service.find({"study_id": id}, [], [])
+    res = await service.find({"study_id": id}, paramAsArray(sort), paramAsArray(range))
     return res
 
 
