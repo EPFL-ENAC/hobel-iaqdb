@@ -377,11 +377,17 @@ class StudyParser:
         # To explicitly convert NaN to None
         df = df.replace({np.nan: None})
         if "country" in df.columns:
+            # coco.convert() reloads its data on every call: use one converter
+            # and convert each distinct value once
+            cc = coco.CountryConverter()
+            iso2 = {}
 
             def convert_country(x, row_index):
                 if x is None:
                     return None
-                result = coco.convert(names=x, to="ISO2", not_found=None)
+                if x not in iso2:
+                    iso2[x] = cc.convert(names=x, to="ISO2", not_found=None)
+                result = iso2[x]
                 if result is None:
                     self.errors.append(
                         ParseError(
