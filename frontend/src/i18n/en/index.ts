@@ -26,6 +26,7 @@ export default {
     ready: 'Ready',
     failed: 'Failed',
     loads_search: 'Study, dataset or error',
+    contributions_search: 'Study identifier, name or contributor',
     loads_columns: {
       study: 'Study',
       name: 'Dataset',

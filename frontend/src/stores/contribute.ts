@@ -4,6 +4,7 @@ import {
   mechanicalVentilationTypeOptions,
   physicalParameterOptions,
   yesNoOptions,
+  countryOptions,
 } from '@/utils/options';
 import { defineStore } from 'pinia';
 import { api, baseUrl } from '@/boot/api';
@@ -18,6 +19,8 @@ import type {
   FileNode,
   ParseError,
   StudyDraftParseResult,
+  StudyBundlesQuery,
+  Location,
 } from '@/models';
 
 import type { DataFile } from '@/components/models';
@@ -324,6 +327,39 @@ export const useContributeStore = defineStore(
       return res.data;
     }
 
+    async function locate(city: string, country: string): Promise<Location | null> {
+      const res = await api.get('/map/locate', { params: { city, country } });
+      return res.data;
+    }
+
+    /**
+     * Fill missing coordinates, altitude, climate zone and timezone of all buildings
+     * from their city/country, with one request.
+     */
+    async function locateBuildings() {
+      const todo = (study.value.buildings || []).filter((b) => {
+        // legacy drafts may have the country label instead of its code
+        const opt = countryOptions.find((c) => c.label === b.country);
+        if (opt) b.country = opt.value;
+        return b.city && b.country && (typeof b.long !== 'number' || typeof b.lat !== 'number');
+      });
+      const key = (b: Building) => `${b.city.trim().toLowerCase()}|${b.country}`;
+      const queries = [...new Map(todo.map((b) => [key(b), b])).values()]
+        .map((b) => ({ city: b.city, country: b.country }));
+      if (queries.length === 0) return;
+      const res = await api.post('/map/locate', queries);
+      const locations = new Map<string, Location | null>(
+        queries.map((q, i) => [key(q as Building), res.data[i]]),
+      );
+      todo.forEach((b) => {
+        const loc = locations.get(key(b));
+        if (!loc) return;
+        (Object.keys(loc) as (keyof Location)[]).forEach((k) => {
+          if (b[k] === undefined || b[k] === null) Object.assign(b, { [k]: loc[k] });
+        });
+      });
+    }
+
     async function readExcel(file: File) {
       parseErrors.value = [];
       let identifier = study.value.identifier;
@@ -348,10 +384,11 @@ export const useContributeStore = defineStore(
       study.value.identifier = identifier;
     }
 
-    async function getBundles() {
+    async function getBundles(params: StudyBundlesQuery) {
       if (!authStore.isAuthenticated) return Promise.reject(new Error('Not authenticated'));
       return authStore.updateToken().then(() =>
         api.get('/contribute/study-bundles', {
+          params,
           headers: {
             Authorization: `Bearer ${authStore.accessToken}`,
           },
@@ -537,6 +574,8 @@ export const useContributeStore = defineStore(
       downloadFile,
       fetchAltitude,
       fetchClimateZone,
+      locate,
+      locateBuildings,
       readExcel,
       saveOrUpdateDraft,
       publishDraft,

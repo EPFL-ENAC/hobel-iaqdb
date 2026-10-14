@@ -15,12 +15,20 @@ export interface Certification extends DBModel {
   level: string;
 }
 
+export interface Location {
+  long: number;
+  lat: number;
+  altitude?: number | undefined;
+  climate_zone?: string | undefined;
+  timezone?: string | undefined;
+}
+
 export interface Building extends DBModel {
   identifier: string;
   country: string;
   city: string;
   postcode?: string | undefined;
-  timezone?: string;
+  timezone?: string | undefined;
   long?: number | undefined;
   lat?: number | undefined;
   altitude?: number | undefined;
@@ -398,4 +406,13 @@ export interface Contribution extends DBModel {
 export interface StudyBundle {
   study: Study;
   contribution?: Contribution;
+}
+
+export interface StudyBundlesQuery {
+  q?: string;
+  published?: boolean;
+  sort?: string;
+  desc?: boolean;
+  skip: number;
+  limit: number;
 }

@@ -17,7 +17,8 @@ from api.models.catalog import (
     StudyDraft,
     Variable,
 )
-from api.services.s3 import copy_objects, s3_client
+from api.services.s3 import copy_objects, delete_objects, s3_client
+from api.services.study_file import StudyFileService
 from enacit4r_sql.utils.query import QueryBuilder
 from fastapi import HTTPException
 from sqlalchemy.orm import selectinload
@@ -46,7 +47,14 @@ class StudyQueryBuilder(QueryBuilder):
         if "$building" in filter:
             query = query.join(Building, Study.id == Building.study_id)
         if "$space" in filter:
-            query = query.join(Space, Study.id == Space.study_id)
+            # through the building when both are filtered, otherwise the rows are
+            # the product of the study's buildings and spaces
+            on = (
+                Building.id == Space.building_id
+                if "$building" in filter
+                else Study.id == Space.study_id
+            )
+            query = query.join(Space, on)
         query = query.distinct()
         return query
 
@@ -115,13 +123,13 @@ class StudyService:
         if not study:
             raise HTTPException(status_code=404, detail="Study not found")
 
-        # Delete the study
+        # Delete the study and its public files
         await self.session.delete(study)
+        keys = await StudyFileService(self.session).remove(study.identifier, "pub")
         await self.session.commit()
-
-        # Delete the public folder in S3
-        pub_folder = f"pub/{study.identifier}"
-        await s3_client.delete_files(pub_folder)
+        await delete_objects(
+            keys + [s3_client.to_s3_key(f"pub/{study.identifier}/study.json")]
+        )
 
         return study
 
@@ -155,7 +163,7 @@ class StudyService:
         """Save the study draft in the database, replacing the existing study
         if one with same identifier exists."""
 
-        draft_folder = f"draft/{study_draft.identifier}"
+        files = StudyFileService(self.session)
         pub_folder = f"pub/{study_draft.identifier}"
 
         contributor_drafts = study_draft.contributors
@@ -174,8 +182,9 @@ class StudyService:
         if existing_study:
             # delete existing study
             await self.session.delete(existing_study)
+            keys = await files.remove(study_draft.identifier, "pub")
             await self.session.commit()
-            await s3_client.delete_files(pub_folder)
+            await delete_objects(keys)
 
         study = Study(**study_draft.model_dump())
         study.id = None
@@ -185,14 +194,13 @@ class StudyService:
         study_dict = study.model_dump()
 
         # Copy all study draft files to pub folder
-        study_files = [
-            file
-            for file in await s3_client.list_files(draft_folder)
-            if not file.endswith("/study.json")
+        pairs = [
+            (key, key.replace("/draft/", "/pub/"))
+            for key in await files.keys(study_draft.identifier, "draft")
         ]
-        await copy_objects(
-            [(file, file.replace("/draft/", "/pub/")) for file in study_files]
-        )
+        await copy_objects(pairs)
+        await files.add(study_draft.identifier, "pub", [pub for _, pub in pairs])
+        await self.session.commit()
 
         # Contributors
         study_dict["contributors"] = []

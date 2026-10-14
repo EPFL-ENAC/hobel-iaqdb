@@ -42,6 +42,7 @@ import time
 import traceback
 import urllib.parse
 import zipfile
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -49,7 +50,12 @@ from api.config import config
 from api.models.catalog import DatasetDraft, Study, StudyDraft
 from api.models.measurement import Parameter
 from api.services.catalog_version import CatalogVersionService
-from api.services.measurement import CatalogMaps, MeasurementReader, MeasurementService
+from api.services.measurement import (
+    CatalogMaps,
+    MeasurementReader,
+    MeasurementService,
+    measurement_write_lock,
+)
 from api.services.parameter import ParameterService, read_parameters
 from api.services.s3 import s3_client
 from api.services.study import StudyService
@@ -376,14 +382,6 @@ async def dataset_folders(
     return folders, skipped
 
 
-async def delete_stale_draft_files(identifier: str, keep: set[str]) -> None:
-    """Remove draft files of a previous run that are not part of this import,
-    so they are not published. study.json is overwritten by the draft service."""
-    for key in await s3_client.list_files(f"draft/{identifier}/"):
-        if key not in keep and not key.endswith("/study.json"):
-            await s3_client.delete_file(key)
-
-
 def draft_maps(draft: StudyDraft) -> CatalogMaps:
     """Catalog maps of a draft, with positional ids: enough to count the
     rows that would not link, without a database."""
@@ -429,25 +427,19 @@ async def publish(engine, seed: SeedStudy, cache: Md5Cache) -> Outcome:
     """Replace the study draft with SEED_DATA content, publish it and load
     its measurements."""
     identifier = seed.draft.identifier
-    await delete_stale_draft_files(
-        identifier,
-        keep={
-            draft_file_key(identifier, dataset, path)
-            for dataset, files in seed.dataset_files
-            for path in files
-        },
-    )
-
-    # Only datasets with a matched file are published, with the processed files
-    folders, skipped = await dataset_folders(identifier, seed, cache)
-    seed.draft.datasets = []
-    for dataset, _ in seed.dataset_files:
-        dataset.folder = folders[id(dataset)]
-        seed.draft.datasets.append(dataset)
-
-    draft = await StudyDraftService().createOrUpdate(seed.draft)
     async with AsyncSession(engine, expire_on_commit=False) as session:
-        study = await StudyService(session).save(draft)
+        # Only datasets with a matched file are published, with the processed files
+        folders, skipped = await dataset_folders(identifier, seed, cache)
+        seed.draft.datasets = []
+        for dataset, _ in seed.dataset_files:
+            dataset.folder = folders[id(dataset)]
+            seed.draft.datasets.append(dataset)
+
+        # also deletes the draft files of a previous run, so they are not published
+        document = await StudyDraftService(session).createOrUpdate(
+            seed.draft.model_dump(mode="json")
+        )
+        study = await StudyService(session).save(StudyDraft.model_validate(document))
     outcome = await load_measurements(engine, seed, study)
     outcome.skipped = skipped
     return outcome
@@ -477,30 +469,32 @@ async def run(check_only: bool, identifiers: list[str]) -> list[tuple[str, str]]
     engine = create_async_engine(config.DB_URL)
     cache = Md5Cache(MD5_CACHE)
     parameters = read_parameters()
-    if not check_only:
-        await begin_bulk(engine)
     failures = []
-    folders = study_folders(identifiers)
-    for i, folder in enumerate(folders, start=1):
-        print(f"[{i}/{len(folders)}] {folder.name} ...", flush=True)
-        try:
-            seed = load_study(folder)
-            if check_only:
-                outcome = Outcome(reports=check_measurements(seed, parameters))
-            else:
-                outcome = await publish(engine, seed, cache)
-            report_study(seed, outcome)
-            if outcome.errors:
-                raise RuntimeError(f"{len(outcome.errors)} dataset load(s) failed")
-        except Exception as e:
-            traceback.print_exc()
-            failures.append((folder.name, f"{type(e).__name__}: {e}"))
-            print(f"    FAILED: {failures[-1][1]}")
-        finally:
-            if not check_only:
-                cache.save()
-    if not check_only:
-        await end_bulk(engine)
+    # the API's publish loads wait meanwhile (indexes dropped, chunks recompressed)
+    async with nullcontext() if check_only else measurement_write_lock(engine):
+        if not check_only:
+            await begin_bulk(engine)
+        folders = study_folders(identifiers)
+        for i, folder in enumerate(folders, start=1):
+            print(f"[{i}/{len(folders)}] {folder.name} ...", flush=True)
+            try:
+                seed = load_study(folder)
+                if check_only:
+                    outcome = Outcome(reports=check_measurements(seed, parameters))
+                else:
+                    outcome = await publish(engine, seed, cache)
+                report_study(seed, outcome)
+                if outcome.errors:
+                    raise RuntimeError(f"{len(outcome.errors)} dataset load(s) failed")
+            except Exception as e:
+                traceback.print_exc()
+                failures.append((folder.name, f"{type(e).__name__}: {e}"))
+                print(f"    FAILED: {failures[-1][1]}")
+            finally:
+                if not check_only:
+                    cache.save()
+        if not check_only:
+            await end_bulk(engine)
     await engine.dispose()
     await s3_client.close()
     return failures

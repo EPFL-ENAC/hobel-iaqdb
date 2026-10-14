@@ -13,6 +13,7 @@ from api.models.catalog import (
     Space,
     Study,
 )
+from api.services.geo import GeoService
 from pydantic import ValidationError
 
 
@@ -377,11 +378,17 @@ class StudyParser:
         # To explicitly convert NaN to None
         df = df.replace({np.nan: None})
         if "country" in df.columns:
+            # coco.convert() reloads its data on every call: use one converter
+            # and convert each distinct value once
+            cc = coco.CountryConverter()
+            iso2 = {}
 
             def convert_country(x, row_index):
                 if x is None:
                     return None
-                result = coco.convert(names=x, to="ISO2", not_found=None)
+                if x not in iso2:
+                    iso2[x] = cc.convert(names=x, to="ISO2", not_found=None)
+                result = iso2[x]
                 if result is None:
                     self.errors.append(
                         ParseError(
@@ -435,7 +442,32 @@ class StudyParser:
                     space.building_id = index
                     space.study_id = 0
             buildings.append(building)
+        self.locate_buildings(buildings)
         return buildings
+
+    def locate_buildings(self, buildings: List[Building]):
+        """Fill missing coordinates, altitude, climate zone and timezone
+        from city/country (lookups are cached per location)"""
+        service = GeoService()
+        for building in buildings:
+            if building.long is not None and building.lat is not None:
+                continue
+            if not building.city or not building.country:
+                continue
+            location = service.locate(building.city, building.country)
+            if location is None:
+                self.errors.append(
+                    ParseError(
+                        loc=f"building[{building.id}].city",
+                        msg=f"Location '{building.city}, {building.country}' "
+                        "not found, coordinates not set",
+                        severity="warning",
+                    )
+                )
+                continue
+            for key, value in location.model_dump().items():
+                if getattr(building, key) is None:
+                    setattr(building, key, value)
 
     def read_spaces(self, io) -> Dict[str, List[Space]]:
         df = pd.read_excel(io, sheet_name="Space")
