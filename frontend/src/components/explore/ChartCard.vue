@@ -1,33 +1,44 @@
 <template>
-  <article class="chart-card">
-    <header class="chart-card__header">
-      <div class="chart-card__top">
+  <article class="chart-card" :class="{ 'chart-card--split': $slots.panel }">
+    <div class="chart-card__lead">
+      <header class="chart-card__header">
         <div class="chart-card__eyebrow">{{ eyebrow }}</div>
-        <div v-if="$slots.aside" class="chart-card__aside">
-          <slot name="aside" />
+        <h3 class="chart-card__title">{{ title }}</h3>
+      </header>
+      <template v-if="$slots.panel">
+        <div class="chart-card__panel">
+          <slot name="panel" />
         </div>
-      </div>
-      <h3 class="chart-card__title">{{ title }}</h3>
-    </header>
+        <div v-if="$slots.footer" class="figure-footer" :class="{ 'figure-footer--blank': footerBlank }">
+          <slot name="footer" />
+        </div>
+      </template>
+    </div>
     <div class="chart-card__body">
       <slot />
     </div>
-    <div v-if="$slots.footer" class="figure-footer">
+    <div v-if="!$slots.panel && $slots.footer" class="figure-footer" :class="{ 'figure-footer--blank': footerBlank }">
       <slot name="footer" />
     </div>
   </article>
 </template>
 
 <script setup lang="ts">
-/** A figure of an explore chapter: what it counts, the question it answers, the chart, then its footer. */
+/**
+ * A figure of an explore chapter: what it counts, the question it answers,
+ * the chart, then its footer. With a `panel`, the heading, the panel and the
+ * footer stand left of the chart on wide screens.
+ */
 interface Props {
   /** what is counted, e.g. "Datasets by country" */
   eyebrow: string;
   /** the question the figure answers */
   title: string;
+  /** the footer has nothing to show this time: it keeps its place, without its rule */
+  footerBlank?: boolean;
 }
 
-defineProps<Props>();
+withDefaults(defineProps<Props>(), { footerBlank: false });
 </script>
 
 <style scoped lang="scss">
@@ -50,15 +61,9 @@ defineProps<Props>();
   margin-bottom: 40px;
 }
 
-// the eyebrow on the left, the aside on the right; on narrow cards the
-// aside wraps under the eyebrow, never beside the title
-.chart-card__top {
+.chart-card__lead {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 4px 24px;
-  margin-bottom: 12px;
+  flex-direction: column;
 }
 
 .chart-card__body {
@@ -67,11 +72,33 @@ defineProps<Props>();
   flex: 1;
 }
 
+.chart-card__panel {
+  margin-bottom: 32px;
+}
+
+@media (min-width: $breakpoint-md-min) {
+  .chart-card--split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    column-gap: 48px;
+
+    .chart-card__panel {
+      flex: 1;
+    }
+
+    .chart-card__body {
+      padding-left: 48px;
+      border-left: 1px solid $grey-4;
+    }
+  }
+}
+
 .chart-card__eyebrow {
   font-size: 0.8125rem;
   letter-spacing: 0.02em;
   text-transform: uppercase;
   color: $grey-10;
+  margin-bottom: 12px;
 }
 
 .chart-card__title {
@@ -80,10 +107,5 @@ defineProps<Props>();
   line-height: 1.3;
   color: $grey-10;
   margin: 0;
-}
-
-.chart-card__aside {
-  font-size: 0.875rem;
-  white-space: nowrap;
 }
 </style>

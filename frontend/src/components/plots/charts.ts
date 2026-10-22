@@ -36,6 +36,10 @@ export const GRID = '#e0e0e0';
 export const FIGURE_ACCENT = '#4aa39a';
 /** the rest, behind the accent */
 export const FIGURE_REST = '#d9d9d9';
+/** to check before relying on it */
+export const FIGURE_CHECK = '#2e6b75';
+/** too sparse to rely on */
+export const FIGURE_GAP = '#e5392b';
 
 /**
  * https://echarts.apache.org/en/api.html#echarts.init

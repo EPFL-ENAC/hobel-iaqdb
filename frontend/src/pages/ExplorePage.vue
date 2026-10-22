@@ -64,6 +64,15 @@
         />
       </FigureGrid>
     </ExploreChapter>
+    <ExploreChapter
+      :title="t('explore_chapters.completeness.title')"
+      :lead="t('explore_chapters.completeness.lead')"
+    >
+      <AvailabilityFigure
+        :eyebrow="t('explore_figures.metadata_availability.eyebrow')"
+        :title="t('explore_figures.metadata_availability.title')"
+      />
+    </ExploreChapter>
     <q-toolbar class="bg-accent text-white">
       <div>
         This section is under construction. For suggestions of useful plots and
@@ -87,24 +96,6 @@
     <DownloadDialog v-model="showDownload" />
     <div class="q-pa-md">
       <div class="row q-col-gutter-md">
-        <div class="col-12 col-md-6">
-          <q-card flat bordered class="full-height">
-            <q-card-section class="q-pb-none">
-              <div class="text-subtitle1 text-bold">
-                {{ t('plots.metadata_availability') }}
-              </div>
-              <div class="text-caption text-grey-7">
-                {{ t('plots.metadata_availability_hint') }}
-              </div>
-            </q-card-section>
-            <q-card-section>
-              <MetadataAvailabilityChart
-                v-if="exploreStore.schema"
-                :height="600"
-              />
-            </q-card-section>
-          </q-card>
-        </div>
         <div class="col-12 col-md-6">
           <q-card flat bordered class="full-height">
             <q-card-section class="q-pb-none">
@@ -274,7 +265,6 @@
 </template>
 
 <script setup lang="ts">
-import MetadataAvailabilityChart from '@/components/plots/MetadataAvailabilityChart.vue';
 import DescriptiveStatsChart from '@/components/plots/DescriptiveStatsChart.vue';
 import BenchmarkChart from '@/components/plots/BenchmarkChart.vue';
 import TrendChart from '@/components/plots/TrendChart.vue';
@@ -291,6 +281,7 @@ import MetadataFigure from '@/components/explore/MetadataFigure.vue';
 import CoverageFigure from '@/components/explore/CoverageFigure.vue';
 import PeriodFigure from '@/components/explore/PeriodFigure.vue';
 import MonthlyFigure from '@/components/explore/MonthlyFigure.vue';
+import AvailabilityFigure from '@/components/explore/AvailabilityFigure.vue';
 
 const { t } = useI18n();
 const exploreStore = useExploreStore();
