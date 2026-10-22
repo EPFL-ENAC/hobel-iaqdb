@@ -238,6 +238,23 @@ export default {
     data_embargo: 'Data embargo',
     data_embargo_hint: 'The period of time before the data is made publicly available.',
   },
+  explore_hero: {
+    eyebrow: 'Explore the collection',
+    title: 'Indoor air, measured in {datasets} across {countries}',
+    title_loading: 'Indoor air, measured across the collection',
+    title_empty: 'No indoor air measurements match these filters',
+    lead: 'Start with what the collection holds, check which fields you can rely on, then see how CO₂ compares to the reference and what goes with higher levels.',
+    datasets: '{count} dataset | {count} datasets',
+    countries: '{count} country | {count} countries',
+    error: 'Could not load the collection summary',
+    stats: {
+      datasets: 'dataset | datasets',
+      countries: 'country | countries',
+      records: 'record | records',
+      parameters: 'parameter measured | parameters measured',
+      years: 'measurement years',
+    },
+  },
   explore_download: {
     button: 'Download data',
     title: 'Download data',
