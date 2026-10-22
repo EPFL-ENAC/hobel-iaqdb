@@ -133,3 +133,21 @@ p:last-child {
   font-size: 0.875rem;
   line-height: 1.5;
 }
+
+/* Nothing to say this time: the line keeps its place, without the rule */
+.figure-footer--blank {
+  border-top-color: transparent;
+}
+
+/* A link-looking button in a figure, e.g. "Show all" */
+.figure-link {
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: $figure-accent-strong;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  cursor: pointer;
+}

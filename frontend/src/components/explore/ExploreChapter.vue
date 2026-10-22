@@ -27,6 +27,13 @@ const headingId = useId();
   border-top: 1px solid $grey-4;
 }
 
+// chapters run on as one grey area: only the hero is set apart, and the
+// previous chapter's bottom padding is the only gap between two of them
+.explore-chapter + .explore-chapter {
+  border-top: 0;
+  padding-top: 0;
+}
+
 .explore-chapter__title {
   font-size: clamp(1.5rem, 1.2rem + 1vw, 2.25rem);
   font-weight: 400;

@@ -1,6 +1,6 @@
 """`GET /stats/metadata`: group-by over catalog rows."""
 
-from api.models.catalog import Building, Dataset, Space, Study
+from api.models.catalog import Building, Dataset, Space, Study, Variable
 from api.models.explore import Availability, Bucket, ExploreQuery, ExploreResult, Meta
 from api.models.measurement import DatasetParameter
 from api.services.explore.dimensions import Frame, resolve
@@ -16,12 +16,20 @@ from sqlalchemy import func
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-ROOTS = {"studies": Study, "buildings": Building, "spaces": Space, "datasets": Dataset}
+ROOTS = {
+    "studies": Study,
+    "buildings": Building,
+    "spaces": Space,
+    "datasets": Dataset,
+    # the columns of a dataset's files: their unit, format and reference
+    "variables": Variable,
+}
 ENTITY_OF = {
     "studies": "study",
     "buildings": "building",
     "spaces": "space",
     "datasets": "dataset",
+    "variables": "variable",
 }
 # columns a client never asks the availability of
 IDENTITY_FIELDS = {
@@ -61,6 +69,22 @@ def metadata_frame(entity: str) -> Frame:
             "study": (Study, col(Study.id) == col(Space.study_id), ()),
             "dataset": (Dataset, col(Dataset.study_id) == col(Space.study_id), ()),
             "parameter": parameter,
+        }
+    elif entity == "variables":
+        available = {
+            "study": (Study, col(Study.id) == col(Variable.study_id), ()),
+            "dataset": (Dataset, col(Dataset.id) == col(Variable.dataset_id), ()),
+            "building": (
+                Building,
+                col(Building.study_id) == col(Variable.study_id),
+                (),
+            ),
+            "space": (Space, col(Space.study_id) == col(Variable.study_id), ()),
+            "parameter": (
+                DatasetParameter,
+                col(DatasetParameter.dataset_id) == col(Variable.dataset_id),
+                (),
+            ),
         }
     else:
         available = {

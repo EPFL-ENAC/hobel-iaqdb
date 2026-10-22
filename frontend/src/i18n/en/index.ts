@@ -256,12 +256,40 @@ export default {
     },
   },
   explore_chapters: {
+    completeness: {
+      title: 'How complete is it',
+      lead: 'The share of records where each descriptive field is filled in. Use it before comparing groups: a chart split by a sparse field only speaks for the records that have it.',
+    },
     collection: {
       title: 'What’s in the collection',
       lead: 'Where the datasets come from, which pollutants they measure, and how complete those records are. Drill into a country to see its cities and studies.',
     },
   },
   explore_figures: {
+    metadata_availability: {
+      eyebrow: 'Metadata availability',
+      title: 'Which descriptive fields you can rely on',
+      score_fields_of: 'Score the fields of',
+      field_availability: 'Field availability',
+      reliability: 'Reliability',
+      all: 'All',
+      all_hint: 'Average over {count} fields | Average over {count} fields',
+      filled: 'Filled in for {present} of {total}',
+      datasets_note: 'Datasets are scored on the variables of their files.',
+      variable_fields: {
+        unit: 'Unit',
+        format: 'Format',
+        reference: 'Parameter reference',
+      },
+      bands: {
+        reliable: 'Reliable',
+        reliable_range: '80% and up',
+        check: 'Check first',
+        check_range: '70–79%',
+        gap: 'Gap',
+        gap_range: 'under 70%',
+      },
+    },
     datasets_by_country: {
       eyebrow: 'Datasets by country',
       title: 'Where the datasets come from',
@@ -297,6 +325,7 @@ export default {
       buildings: 'Buildings',
       spaces: 'Spaces',
       datasets: 'Datasets',
+      variables: 'Variables',
     },
     level_names: {
       country: 'country | countries',

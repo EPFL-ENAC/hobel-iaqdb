@@ -20,7 +20,10 @@
       v-for="entry in entries"
       :key="entry.key"
       class="ranked-table__row"
-      :class="{ 'ranked-table__row--clickable': entry.row?.clickable }"
+      :class="{
+        'ranked-table__row--clickable': entry.row?.clickable,
+        'ranked-table__row--summary': entry.summary,
+      }"
       role="row"
       :type="entry.row?.clickable ? 'button' : undefined"
       :title="entry.title"
@@ -28,7 +31,7 @@
     >
       <span class="ranked-table__label" role="rowheader" :title="entry.label">{{ entry.label }}</span>
       <span class="ranked-table__track" role="cell">
-        <span class="ranked-table__bar" :class="entry.barClass" :style="`width: ${entry.width};`" />
+        <span class="ranked-table__bar" :class="entry.barClass" :style="entry.barStyle" />
       </span>
       <span class="ranked-table__value" role="cell">{{ entry.value }}</span>
       <span v-for="(cell, i) in entry.cells" :key="i" class="ranked-table__value" role="cell">{{ cell }}</span>
@@ -53,7 +56,10 @@
       v-for="entry in entries"
       :key="entry.key"
       class="ranked-stack__row"
-      :class="{ 'ranked-table__row--clickable': entry.row?.clickable }"
+      :class="{
+        'ranked-table__row--clickable': entry.row?.clickable,
+        'ranked-table__row--summary': entry.summary,
+      }"
       role="row"
       :type="entry.row?.clickable ? 'button' : undefined"
       :title="entry.title"
@@ -67,7 +73,7 @@
         </span>
       </span>
       <span class="ranked-stack__track" aria-hidden="true">
-        <span class="ranked-table__bar" :class="entry.barClass" :style="`width: ${entry.width};`" />
+        <span class="ranked-table__bar" :class="entry.barClass" :style="entry.barStyle" />
       </span>
     </component>
     <div v-for="i in fillers" :key="`filler-${i}`" class="ranked-stack__row ranked-table__filler" aria-hidden="true">
@@ -82,11 +88,13 @@
  * Rows of horizontal bars on one scale, each with its value and extra cells,
  * then optionally one hatched row standing for the rows left out.
  */
-import type { RankedColumn, RankedRow } from '@/components/explore/ranked';
+import type { RankedColumn, RankedRow, RankedSummary } from '@/components/explore/ranked';
 
 interface Props {
   /** in the order shown */
   rows: RankedRow<T>[];
+  /** a line above the rows standing for all of them */
+  summary?: RankedSummary | null | undefined;
   /** the rows summed into the hatched row; none when absent */
   other?: { rows: RankedRow<T>[]; value: number } | null;
   labelHeader?: string;
@@ -113,6 +121,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   other: null,
+  summary: null,
   labelHeader: '',
   barHeader: '',
   valueHeader: '',
@@ -127,7 +136,9 @@ const props = withDefaults(defineProps<Props>(), {
 const emit = defineEmits<{ select: [row: RankedRow<T>] }>();
 const { t } = useI18n();
 
-const max = computed(() => Math.max(0, ...props.rows.map((row) => row.value), props.other?.value ?? 0));
+const max = computed(() =>
+  Math.max(0, ...props.rows.map((row) => row.value), props.other?.value ?? 0, props.summary?.value ?? 0),
+);
 
 const highlightedKeys = computed(() => (props.highlighted ? new Set(props.highlighted) : null));
 
@@ -142,45 +153,69 @@ interface Entry {
   label: string;
   value: string;
   cells: string[];
-  width: string;
+  barStyle: Record<string, string>;
   barClass: Record<string, boolean>;
   title: string | undefined;
+  summary: boolean;
   /** absent on the hatched line */
   row: RankedRow<T> | undefined;
 }
 
+function barStyle(value: number, color: string | undefined): Record<string, string> {
+  return color ? { width: widthOf(value), background: color } : { width: widthOf(value) };
+}
+
 const entries = computed<Entry[]>(() => {
-  const lines: Entry[] = props.rows.map((row) => ({
-    key: row.key,
-    label: row.label,
-    value: display(row.value),
-    cells: props.columns.map((column) => column.format([row])),
-    width: widthOf(row.value),
-    barClass: { 'ranked-table__bar--muted': !isHighlighted(row) },
-    title: undefined,
-    row,
-  }));
+  const lines: Entry[] = [];
+  const summary = props.summary;
+  if (summary)
+    lines.push({
+      // row keys are data keys, which never start with a space
+      key: ' summary',
+      label: summary.label,
+      value: summary.value === null ? '' : display(summary.value),
+      cells: props.columns.map((column) => (props.rows.length ? column.format(props.rows) : '')),
+      barStyle: barStyle(summary.value ?? 0, summary.color),
+      barClass: { 'ranked-table__bar--blank': summary.value === null },
+      title: summary.title,
+      summary: true,
+      row: undefined,
+    });
+  for (const row of props.rows)
+    lines.push({
+      key: row.key,
+      label: row.label,
+      value: display(row.value),
+      cells: props.columns.map((column) => column.format([row])),
+      barStyle: barStyle(row.value, row.color),
+      barClass: { 'ranked-table__bar--muted': !row.color && !isHighlighted(row) },
+      title: row.title,
+      summary: false,
+      row,
+    });
   const other = props.other;
   if (other)
     lines.push({
-      // row keys are data keys, which never start with a space
       key: ' other',
       label: props.otherLabel || t('ranked_bars.other'),
       value: display(other.value),
       cells: props.columns.map((column) => column.format(other.rows)),
-      width: widthOf(other.value),
+      barStyle: barStyle(other.value, undefined),
       barClass: {
         'ranked-table__bar--other': true,
-        // grey when the rows it stands for are all left out of the highlight
-        'ranked-table__bar--other-muted': !other.rows.some(isHighlighted),
+        // grey when the rows it stands for have colours of their own, or
+        // are all left out of the highlight
+        'ranked-table__bar--other-muted': other.rows.some((row) => row.color) || !other.rows.some(isHighlighted),
       },
       title: t('ranked_bars.other_hint', other.rows.length),
+      summary: false,
       row: undefined,
     });
   return lines;
 });
 
-const fillers = computed(() => Math.max(0, props.minRows - entries.value.length));
+// the summary line is on top of `minRows`, not one of them
+const fillers = computed(() => Math.max(0, props.minRows - entries.value.filter((entry) => !entry.summary).length));
 
 function display(value: number): string {
   return props.formatValue ? props.formatValue(value) : value.toLocaleString();
@@ -229,6 +264,17 @@ function isHighlighted(row: RankedRow<T>): boolean {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: $grey-7;
+}
+
+// the line standing for every row, set apart from them
+.ranked-table__row--summary {
+  margin-bottom: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid $grey-4;
+
+  .ranked-table__value {
+    font-weight: 600;
+  }
 }
 
 .ranked-table__row--clickable {
@@ -322,7 +368,8 @@ function isHighlighted(row: RankedRow<T>): boolean {
   gap: 16px;
 }
 
-.ranked-table__filler {
+.ranked-table__filler,
+.ranked-table__bar--blank {
   visibility: hidden;
 }
 
