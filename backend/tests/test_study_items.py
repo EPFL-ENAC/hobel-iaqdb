@@ -2,6 +2,7 @@
 
 import json
 
+from api.models.catalog import Building
 from tests.fixtures import make_catalog
 
 
@@ -17,3 +18,16 @@ async def test_study_buildings_paged_and_sorted(session, client):
 
     res = await client.get(f"/catalog/study/{fx.study_id}/datasets")
     assert res.json()["total"] == 2 and len(res.json()["data"]) == 2
+
+
+async def test_study_summaries_skip_buildings_without_country(session, client):
+    fx = await make_catalog(session)
+    session.add(Building(identifier="B3", study_id=fx.study_id))
+    await session.commit()
+    res = await client.get(
+        "/catalog/study-summaries", params={"range": json.dumps([0, 9])}
+    )
+    assert res.status_code == 200
+    (summary,) = res.json()["data"]
+    assert summary["name"] == "Study A"
+    assert sorted(summary["countries"]) == ["CH", "DE"]

@@ -1,6 +1,6 @@
 <template>
-  <section class="explore-hero">
-    <div class="explore-hero__inner">
+  <section class="explore-hero explore-section">
+    <div class="explore-container">
       <div class="explore-hero__eyebrow">{{ t('explore_hero.eyebrow') }}</div>
       <h1 class="explore-hero__title">{{ title }}</h1>
       <p class="explore-hero__lead">{{ t('explore_hero.lead') }}</p>
@@ -151,16 +151,6 @@ const stats = computed(() => [
 <style scoped lang="scss">
 .explore-hero {
   background: white;
-  padding: 48px 24px;
-
-  @media (max-width: $breakpoint-xs-max) {
-    padding: 32px 16px;
-  }
-}
-
-.explore-hero__inner {
-  max-width: 1400px;
-  margin: 0 auto;
 }
 
 .explore-hero__eyebrow {

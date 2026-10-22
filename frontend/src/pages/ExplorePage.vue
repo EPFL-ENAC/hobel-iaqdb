@@ -1,6 +1,69 @@
 <template>
   <q-page>
     <ExploreHero />
+    <ExploreChapter
+      :title="t('explore_chapters.collection.title')"
+      :lead="t('explore_chapters.collection.lead')"
+    >
+      <FigureGrid>
+        <MetadataFigure
+          v-if="exploreStore.schema"
+          :eyebrow="t('explore_figures.datasets_by_country.eyebrow')"
+          :title="t('explore_figures.datasets_by_country.title')"
+          entity="datasets"
+          :path="['country', 'city', 'study']"
+          :with-parameters="false"
+        />
+        <CoverageFigure
+          v-if="exploreStore.schema"
+          :eyebrow="t('explore_figures.records_by_pollutant.eyebrow')"
+          :title="t('explore_figures.records_by_pollutant.title')"
+        />
+      </FigureGrid>
+      <FigureGrid :columns="3">
+        <MetadataFigure
+          v-if="exploreStore.schema"
+          :eyebrow="t('explore_figures.datasets_by_building_type.eyebrow')"
+          :title="t('explore_figures.datasets_by_building_type.title')"
+          entity="datasets"
+          :path="['building_type', 'country', 'city', 'study']"
+          layout="stacked"
+          :limit="4"
+          :with-parameters="false"
+        />
+        <MetadataFigure
+          v-if="exploreStore.schema"
+          :eyebrow="t('explore_figures.datasets_by_climate_zone.eyebrow')"
+          :title="t('explore_figures.datasets_by_climate_zone.title')"
+          entity="datasets"
+          :path="['climate_zone', 'country', 'city', 'study']"
+          layout="stacked"
+          :limit="4"
+          :with-parameters="false"
+        />
+        <MetadataFigure
+          v-if="exploreStore.schema"
+          :eyebrow="t('explore_figures.datasets_by_ventilation.eyebrow')"
+          :title="t('explore_figures.datasets_by_ventilation.title')"
+          entity="datasets"
+          :path="['ventilation', 'ventilation_type', 'space_type', 'study']"
+          layout="stacked"
+          :limit="4"
+          :with-parameters="false"
+        />
+      </FigureGrid>
+      <FigureGrid>
+        <PeriodFigure
+          :eyebrow="t('explore_figures.measurement_period.eyebrow')"
+          :title="t('explore_figures.measurement_period.title')"
+        />
+        <MonthlyFigure
+          v-if="exploreStore.schema"
+          :eyebrow="t('explore_figures.records_by_month.eyebrow')"
+          :title="t('explore_figures.records_by_month.title')"
+        />
+      </FigureGrid>
+    </ExploreChapter>
     <q-toolbar class="bg-accent text-white">
       <div>
         This section is under construction. For suggestions of useful plots and
@@ -24,136 +87,6 @@
     <DownloadDialog v-model="showDownload" />
     <div class="q-pa-md">
       <div class="row q-col-gutter-md">
-        <div class="col-12 col-md-6">
-          <q-card flat bordered class="full-height">
-            <q-card-section class="q-pb-none">
-              <div class="text-subtitle1 text-bold">
-                {{ t('plots.datasets_by_country') }}
-              </div>
-              <div class="text-caption text-grey-7">
-                {{ t('plots.datasets_by_country_hint') }}
-              </div>
-            </q-card-section>
-            <q-card-section>
-              <MetadataBarChart
-                v-if="exploreStore.schema"
-                entity="datasets"
-                by="country"
-                :depth="1"
-                :height="600"
-              />
-            </q-card-section>
-          </q-card>
-        </div>
-        <div class="col-12 col-md-6">
-          <q-card flat bordered class="full-height">
-            <q-card-section class="q-pb-none">
-              <div class="text-subtitle1 text-bold">
-                {{ t('plots.records_by_pollutant') }}
-              </div>
-              <div class="text-caption text-grey-7">
-                {{ t('plots.records_by_pollutant_hint') }}
-              </div>
-            </q-card-section>
-            <q-card-section>
-              <CoverageBarChart v-if="exploreStore.schema" :height="600" />
-            </q-card-section>
-          </q-card>
-        </div>
-        <div class="col-12 col-md-6">
-          <q-card flat bordered class="full-height">
-            <q-card-section class="q-pb-none">
-              <div class="text-subtitle1 text-bold">
-                {{ t('plots.datasets_by_building_type') }}
-              </div>
-              <div class="text-caption text-grey-7">
-                {{ t('plots.datasets_by_building_type_hint') }}
-              </div>
-            </q-card-section>
-            <q-card-section>
-              <MetadataBarChart
-                v-if="exploreStore.schema"
-                entity="datasets"
-                by="building_type"
-                click="none"
-                :height="600"
-              />
-            </q-card-section>
-          </q-card>
-        </div>
-        <div class="col-12 col-md-6">
-          <q-card flat bordered class="full-height">
-            <q-card-section class="q-pb-none">
-              <div class="text-subtitle1 text-bold">
-                {{ t('plots.datasets_by_ventilation') }}
-              </div>
-              <div class="text-caption text-grey-7">
-                {{ t('plots.datasets_by_ventilation_hint') }}
-              </div>
-            </q-card-section>
-            <q-card-section>
-              <MetadataBarChart
-                v-if="exploreStore.schema"
-                entity="datasets"
-                by="ventilation"
-                orientation="vertical"
-                :depth="1"
-                :height="600"
-              />
-            </q-card-section>
-          </q-card>
-        </div>
-        <div class="col-12 col-md-6">
-          <q-card flat bordered class="full-height">
-            <q-card-section class="q-pb-none">
-              <div class="text-subtitle1 text-bold">
-                {{ t('plots.datasets_by_climate_zone') }}
-              </div>
-              <div class="text-caption text-grey-7">
-                {{ t('plots.datasets_by_climate_zone_hint') }}
-              </div>
-            </q-card-section>
-            <q-card-section>
-              <MetadataBarChart
-                v-if="exploreStore.schema"
-                entity="datasets"
-                by="climate_zone"
-                :depth="1"
-                :height="600"
-              />
-            </q-card-section>
-          </q-card>
-        </div>
-        <div class="col-12 col-md-6">
-          <q-card flat bordered class="full-height">
-            <q-card-section class="q-pb-none">
-              <div class="text-subtitle1 text-bold">
-                {{ t('plots.records_by_month') }}
-              </div>
-              <div class="text-caption text-grey-7">
-                {{ t('plots.records_by_month_hint') }}
-              </div>
-            </q-card-section>
-            <q-card-section>
-              <MonthlyRecordsChart v-if="exploreStore.schema" :height="600" />
-            </q-card-section>
-          </q-card>
-        </div>
-        <div class="col-12 col-md-6">
-          <q-card flat bordered class="full-height">
-            <q-card-section class="q-pb-none">
-              <div class="text-subtitle1 text-bold">
-                {{ t('plots.measurement_period') }}
-              </div>
-              <div class="text-caption text-grey-7">
-                {{ t('plots.measurement_period_hint') }}
-              </div>
-            </q-card-section>
-            <q-card-section>
-              <MeasurementPeriodChart v-if="exploreStore.schema" :height="600" />
-            </q-card-section>
-          </q-card>
-        </div>
         <div class="col-12 col-md-6">
           <q-card flat bordered class="full-height">
             <q-card-section class="q-pb-none">
@@ -341,10 +274,6 @@
 </template>
 
 <script setup lang="ts">
-import MetadataBarChart from '@/components/plots/MetadataBarChart.vue';
-import CoverageBarChart from '@/components/plots/CoverageBarChart.vue';
-import MonthlyRecordsChart from '@/components/plots/MonthlyRecordsChart.vue';
-import MeasurementPeriodChart from '@/components/plots/MeasurementPeriodChart.vue';
 import MetadataAvailabilityChart from '@/components/plots/MetadataAvailabilityChart.vue';
 import DescriptiveStatsChart from '@/components/plots/DescriptiveStatsChart.vue';
 import BenchmarkChart from '@/components/plots/BenchmarkChart.vue';
@@ -355,7 +284,13 @@ import GroupMedianChart from '@/components/plots/GroupMedianChart.vue';
 import CorrelationMatrixChart from '@/components/plots/CorrelationMatrixChart.vue';
 import CustomRelationshipChart from '@/components/plots/CustomRelationshipChart.vue';
 import DownloadDialog from '@/components/DownloadDialog.vue';
-import ExploreHero from '@/components/ExploreHero.vue';
+import ExploreHero from '@/components/explore/ExploreHero.vue';
+import ExploreChapter from '@/components/explore/ExploreChapter.vue';
+import FigureGrid from '@/components/explore/FigureGrid.vue';
+import MetadataFigure from '@/components/explore/MetadataFigure.vue';
+import CoverageFigure from '@/components/explore/CoverageFigure.vue';
+import PeriodFigure from '@/components/explore/PeriodFigure.vue';
+import MonthlyFigure from '@/components/explore/MonthlyFigure.vue';
 
 const { t } = useI18n();
 const exploreStore = useExploreStore();
