@@ -1,5 +1,6 @@
 <template>
   <q-page>
+    <ExploreHero />
     <q-toolbar class="bg-accent text-white">
       <div>
         This section is under construction. For suggestions of useful plots and
@@ -354,6 +355,7 @@ import GroupMedianChart from '@/components/plots/GroupMedianChart.vue';
 import CorrelationMatrixChart from '@/components/plots/CorrelationMatrixChart.vue';
 import CustomRelationshipChart from '@/components/plots/CustomRelationshipChart.vue';
 import DownloadDialog from '@/components/DownloadDialog.vue';
+import ExploreHero from '@/components/ExploreHero.vue';
 
 const { t } = useI18n();
 const exploreStore = useExploreStore();
