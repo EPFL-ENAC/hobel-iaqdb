@@ -118,6 +118,21 @@ export function benchmarkOf(schema: ExploreSchema | null, slug: string | null): 
   return listed ?? PLACEHOLDER_BENCHMARKS[slug] ?? null;
 }
 
+/**
+ * About `count` ticks at a round step (1, 2 or 5 times a power of ten)
+ * covering [min, max]: the first and last are the axis bounds.
+ */
+export function niceTicks(min: number, max: number, count = 6): number[] {
+  const span = max - min || Math.abs(max) || 1;
+  const raw = span / count;
+  const power = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 5, 10].map((m) => m * power).find((s) => s >= raw) ?? 10 * power;
+  const first = Math.floor(min / step);
+  const last = Math.ceil(max / step);
+  // whole multiples of the step: no float drift (0.1 + 0.2)
+  return Array.from({ length: last - first + 1 }, (_, i) => Number(((first + i) * step).toPrecision(12)));
+}
+
 /** 463 → 450 (floor) or 500 (ceil): a readable axis bound, to half a magnitude. */
 export function roundBound(value: number, round: (v: number) => number): number {
   const step = 10 ** Math.floor(Math.log10(Math.abs(value) || 1)) / 2;

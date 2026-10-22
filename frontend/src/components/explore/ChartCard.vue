@@ -2,8 +2,14 @@
   <article class="chart-card" :class="{ 'chart-card--split': $slots.panel }">
     <div class="chart-card__lead">
       <header class="chart-card__header">
-        <div class="chart-card__eyebrow">{{ eyebrow }}</div>
-        <h3 class="chart-card__title">{{ title }}</h3>
+        <div class="chart-card__heading">
+          <div class="chart-card__eyebrow">{{ eyebrow }}</div>
+          <h3 class="chart-card__title">{{ title }}</h3>
+        </div>
+        <!-- menus that change what the figure shows, e.g. its context -->
+        <div v-if="$slots.actions" class="chart-card__actions">
+          <slot name="actions" />
+        </div>
       </header>
       <template v-if="$slots.panel">
         <div class="chart-card__panel">
@@ -57,8 +63,22 @@ withDefaults(defineProps<Props>(), { footerBlank: false });
   }
 }
 
+// the heading on the left, the menus on the right; on narrow cards the
+// menus wrap under the title
 .chart-card__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px 32px;
   margin-bottom: 40px;
+}
+
+.chart-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
 }
 
 .chart-card__lead {
