@@ -1,86 +1,45 @@
 <template>
-  <div>
-    <div class="row items-center no-wrap q-mb-xs">
-      <span class="text-caption text-grey-8">{{ rangeLabel }}</span>
-      <q-space />
-      <span v-if="summary" class="text-caption text-grey-7">{{ summary }}</span>
-    </div>
-    <div v-if="error" class="text-negative text-caption">
-      {{ t('plots.error') }}: {{ error }}
-    </div>
-    <div v-else-if="empty" class="text-grey-7 text-caption">
-      {{
-        parameterLabels
-          ? t('plots.no_data_for', { parameters: parameterLabels })
-          : t('plots.no_data')
-      }}
-    </div>
-    <div v-else :style="`height: ${height}px;`">
-      <e-charts
-        autoresize
-        :init-options="initOptions"
-        :option="option"
-        :update-options="updateOptions"
-        :loading="loading"
-      />
-    </div>
-  </div>
+  <ChartCard :eyebrow="eyebrow" :title="title">
+    <FigureFrame :height="height" :loading="loading" :error="error" :empty="empty ? t('plots.no_data') : ''">
+      <e-charts autoresize :init-options="initOptions" :option="option" :update-options="updateOptions" />
+    </FigureFrame>
+  </ChartCard>
 </template>
 
 <script setup lang="ts">
+/** Datasets so far, year by year: each dataset counts from the year of its first measurement. */
 import ECharts from 'vue-echarts';
 import type { EChartsOption } from 'echarts';
 import { use } from 'echarts/core';
 import { LineChart } from 'echarts/charts';
 import { SVGRenderer } from 'echarts/renderers';
 import { GridComponent, TooltipComponent } from 'echarts/components';
-import {
-  GRID,
-  MUTED,
-  TEXT,
-  initOptions,
-  updateOptions,
-} from '@/components/plots/charts';
+import ChartCard from '@/components/explore/ChartCard.vue';
+import FigureFrame from '@/components/explore/FigureFrame.vue';
+import { FIGURE_ACCENT, GRID, MUTED, initOptions, updateOptions } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';
 import { useExploreRequest } from '@/composables/useExploreQuery';
-import type { ExploreParams } from '@/models';
 
 use([SVGRenderer, LineChart, GridComponent, TooltipComponent]);
 
 interface Props {
+  eyebrow: string;
+  title: string;
   /** height of the plot area */
   height?: number;
 }
 
-withDefaults(defineProps<Props>(), { height: 400 });
+withDefaults(defineProps<Props>(), { height: 260 });
 const { t } = useI18n();
-const { formatCount, rangeLabel } = useChartFormat();
+const { formatCount } = useChartFormat();
 const filtersStore = useFiltersStore();
-const exploreStore = useExploreStore();
 
-const LINE_COLOR = '#2f5596';
-
-function params(): ExploreParams | null {
-  if (!exploreStore.dimension('dataset')) return null;
-  const next: ExploreParams = {
-    agg: 'coverage',
-    by: ['dataset'],
-    filter: exploreFilter(),
-    ...exploreRange(),
-  };
-  // none selected: every pollutant
-  if (exploreStore.parameters.length)
-    next.parameters = [...exploreStore.parameters];
-  return next;
-}
-
-const { result, loading, error, empty, load } =
-  useExploreRequest('measurements');
+const { result, loading, error, empty, load } = useExploreRequest('measurements');
 
 /** Load the chart: on mount and when the filters are applied. */
 function reload(): void {
-  void load(params());
+  void load({ agg: 'coverage', by: ['dataset'], filter: exploreFilter(), ...exploreRange() });
 }
 
 onMounted(reload);
@@ -116,25 +75,9 @@ const cumulative = computed(() => {
   return years.value.map((year) => (total += added.value.get(year) ?? 0));
 });
 
-const parameterLabels = computed(() =>
-  exploreStore.parameters.map(exploreStore.parameterLabel).join(', '),
-);
-
-/** total datasets and the span of years they cover */
-const summary = computed(() => {
-  const total = cumulative.value[cumulative.value.length - 1] ?? 0;
-  if (!total) return '';
-  return `${t('datasets_with_count', total)} · ${t('plots.year_span', {
-    count: years.value.length,
-  })}`;
-});
-
 const option = computed<EChartsOption>(() => {
   const labels = years.value;
-  const totals = cumulative.value;
-  if (!labels.length) {
-    return {};
-  }
+  if (!labels.length) return {};
   return {
     tooltip: {
       trigger: 'axis',
@@ -145,42 +88,50 @@ const option = computed<EChartsOption>(() => {
         return [
           `<b>${year}</b>`,
           `${t('plots.datasets')}: <b>${formatCount(Number(item.value))}</b>`,
-          t('plots.added_in_year', {
-            count: formatCount(added.value.get(year) ?? 0),
-          }),
+          t('plots.added_in_year', { count: formatCount(added.value.get(year) ?? 0) }),
         ].join('<br/>');
       },
     },
-    grid: { left: 8, right: 24, top: 24, bottom: 8, containLabel: true },
+    grid: { left: 0, right: 8, top: 12, bottom: 0, containLabel: true },
     xAxis: {
       type: 'category',
       boundaryGap: false,
       data: labels.map(String),
       axisLine: { lineStyle: { color: GRID } },
       axisTick: { show: false },
-      axisLabel: { color: TEXT },
+      axisLabel: { color: MUTED, fontSize: 11 },
     },
     yAxis: {
       type: 'value',
-      name: t('plots.datasets').toLowerCase(),
-      nameLocation: 'middle',
-      nameGap: 40,
-      nameTextStyle: { color: MUTED },
       minInterval: 1,
+      splitNumber: 2,
       axisLine: { show: false },
       axisTick: { show: false },
-      axisLabel: { color: MUTED },
+      axisLabel: { color: MUTED, fontSize: 11 },
       splitLine: { lineStyle: { color: GRID, width: 1 } },
     },
     series: [
       {
         type: 'line',
-        data: totals,
-        symbol: 'circle',
-        symbolSize: 7,
+        data: cumulative.value,
+        smooth: 0.4,
+        showSymbol: false,
         cursor: 'default',
-        lineStyle: { color: LINE_COLOR, width: 2.5 },
-        itemStyle: { color: LINE_COLOR },
+        lineStyle: { color: FIGURE_ACCENT, width: 2 },
+        itemStyle: { color: FIGURE_ACCENT },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: 'rgba(74, 163, 154, 0.95)' },
+              { offset: 1, color: 'rgba(74, 163, 154, 0.25)' },
+            ],
+          },
+        },
       },
     ],
   };

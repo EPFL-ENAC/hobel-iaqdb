@@ -63,7 +63,15 @@ async def get_study_summaries(
             identifier=study.identifier,
             name=study.name,
             description=study.description,
-            countries=list(set([building.country for building in study.buildings])),
+            countries=list(
+                set(
+                    [
+                        building.country
+                        for building in study.buildings
+                        if building.country
+                    ]
+                )
+            ),
             cities=list(
                 set(
                     [
