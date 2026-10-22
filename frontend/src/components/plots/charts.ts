@@ -32,6 +32,11 @@ export const TEXT = '#424242';
 export const MUTED = '#757575';
 export const GRID = '#e0e0e0';
 
+/** Explore figure colours, as `$figure-*` in quasar.variables.scss */
+export const FIGURE_ACCENT = '#4aa39a';
+/** the rest, behind the accent */
+export const FIGURE_REST = '#d9d9d9';
+
 /**
  * https://echarts.apache.org/en/api.html#echarts.init
  */

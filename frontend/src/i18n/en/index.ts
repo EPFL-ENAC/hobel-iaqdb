@@ -255,6 +255,76 @@ export default {
       years: 'measurement years',
     },
   },
+  explore_chapters: {
+    collection: {
+      title: 'What’s in the collection',
+      lead: 'Where the datasets come from, which pollutants they measure, and how complete those records are. Drill into a country to see its cities and studies.',
+    },
+  },
+  explore_figures: {
+    datasets_by_country: {
+      eyebrow: 'Datasets by country',
+      title: 'Where the datasets come from',
+    },
+    records_by_pollutant: {
+      eyebrow: 'Records by pollutant',
+      title: 'What is measured, and how completely',
+    },
+    datasets_by_building_type: {
+      eyebrow: 'Datasets by building type',
+      title: 'Which kinds of buildings are covered',
+    },
+    datasets_by_climate_zone: {
+      eyebrow: 'Datasets by climate zone',
+      title: 'Which climates are covered',
+    },
+    datasets_by_ventilation: {
+      eyebrow: 'Datasets by ventilation system',
+      title: 'How the measured spaces are ventilated',
+    },
+    measurement_period: {
+      eyebrow: 'Measurement period',
+      title: 'When were datasets measured',
+    },
+    records_by_month: {
+      eyebrow: 'Records by calendar month',
+      title: 'When in the year records are taken',
+    },
+    all_parameters: 'All parameters',
+    other_parameters: 'All other parameters',
+    entities: {
+      studies: 'Studies',
+      buildings: 'Buildings',
+      spaces: 'Spaces',
+      datasets: 'Datasets',
+    },
+    level_names: {
+      country: 'country | countries',
+      city: 'city | cities',
+      study: 'study | studies',
+      dataset: 'dataset | datasets',
+      climate_zone: 'climate zone | climate zones',
+      building_type: 'building type | building types',
+      ventilation: 'ventilation status | ventilation statuses',
+      ventilation_type: 'ventilation type | ventilation types',
+      space_type: 'space type | space types',
+      parameter: 'pollutant | pollutants',
+    },
+    drill_path: 'Drill levels',
+    drill_back: 'Back to {level}',
+    hint_drill: 'Click a bar to drill down',
+    hint_open: 'Click a bar to open it',
+    hint_filter: 'Click a bar to filter by it',
+    parameters: 'Parameters',
+    records: 'Records',
+    complete: 'Complete',
+  },
+  ranked_bars: {
+    other: 'Other',
+    other_hint: '{count} more, summed | {count} more, summed',
+    show_all: 'Show all {count}',
+    close: 'Close',
+  },
   explore_download: {
     button: 'Download data',
     title: 'Download data',
