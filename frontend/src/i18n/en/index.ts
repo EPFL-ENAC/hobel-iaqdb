@@ -256,6 +256,10 @@ export default {
     },
   },
   explore_chapters: {
+    reference: {
+      title: 'How levels compare to the reference',
+      lead: 'Each value is a daily mean for one space. The red line is the reference; the dashed line is the median of the whole database, so you can see whether a group sits above or below everyone else.',
+    },
     completeness: {
       title: 'How complete is it',
       lead: 'The share of records where each descriptive field is filled in. Use it before comparing groups: a chart split by a sparse field only speaks for the records that have it.',
@@ -266,6 +270,37 @@ export default {
     },
   },
   explore_figures: {
+    distribution: {
+      eyebrow: 'Distribution by group',
+      title: 'How each group compares to the reference',
+      context: 'Context',
+      pollutant: 'Pollutant',
+      periods: {
+        day: 'days',
+        hour: 'hours',
+      },
+      share_header: '{periods} at or below {value}',
+      tip_median: 'Median {value}',
+      tip_middle: 'Middle half {low} – {high}',
+      tip_range: '5th–95th percentile {low} – {high}',
+      tip_count: '{count} {periods}',
+      legend_reference: 'Red: reference {value}',
+      legend_median: 'dashed: database median {value}',
+      legend_box: 'box: middle half, whiskers: 5th–95th percentile',
+    },
+    pattern: {
+      eyebrow: 'Monthly pattern',
+      title: 'How levels move through the year',
+      pollutant: 'Pollutant',
+      year: 'Year',
+      reference: 'Reference {value}',
+      share_above: 'Share of {periods} above {value}',
+      tip_above: '{share} of {periods} above {value}',
+      median: 'Median',
+      middle: 'Middle half',
+      hint_drill: 'Click a month to see its days',
+      back: 'Back to {year}',
+    },
     metadata_availability: {
       eyebrow: 'Metadata availability',
       title: 'Which descriptive fields you can rely on',
