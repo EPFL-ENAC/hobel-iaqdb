@@ -24,26 +24,12 @@
         <slot name="hint" />
       </span>
     </div>
-    <q-dialog v-model="showAll">
-      <q-card class="ranked-bars__dialog">
-        <q-card-section class="row items-start no-wrap q-pb-sm">
-          <div class="col">
-            <div v-if="dialogEyebrow" class="ranked-bars__eyebrow">{{ dialogEyebrow }}</div>
-            <div class="ranked-bars__title">{{ dialogTitle }}</div>
-          </div>
-          <q-btn
-            class="q-ml-md" v-close-popup flat round dense icon="close" :aria-label="t('ranked_bars.close')" />
-        </q-card-section>
-        <q-card-section class="ranked-bars__scroll" :class="{ 'ranked-bars--loading': loading }">
-          <RankedTable v-bind="tableProps" :rows="rows" @select="(row) => emit('select', row)">
-            <template v-if="$slots['label-header']" #label-header><slot name="label-header" /></template>
-          </RankedTable>
-        </q-card-section>
-        <q-card-section v-if="$slots.hint" class="ranked-bars__dialog-hint">
-          <slot name="hint" />
-        </q-card-section>
-      </q-card>
-    </q-dialog>
+    <FigureDialog v-model="showAll" :eyebrow="dialogEyebrow" :title="dialogTitle" :loading="loading">
+      <RankedTable v-bind="tableProps" :rows="rows" @select="(row) => emit('select', row)">
+        <template v-if="$slots['label-header']" #label-header><slot name="label-header" /></template>
+      </RankedTable>
+      <template v-if="$slots.hint" #footer><slot name="hint" /></template>
+    </FigureDialog>
   </div>
 </template>
 
@@ -52,6 +38,7 @@
  * A ranked list of horizontal bars: the first `limit` rows, then the others
  * summed into one hatched row; "Show all" lists every row in a dialog.
  */
+import FigureDialog from '@/components/explore/FigureDialog.vue';
 import RankedTable from '@/components/explore/RankedTable.vue';
 import type { RankedColumn, RankedRow, RankedSummary } from '@/components/explore/ranked';
 
@@ -185,38 +172,6 @@ const tableProps = computed(() => ({
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: $grey-9;
-}
-
-.ranked-bars__dialog {
-  width: 760px;
-  max-width: 92vw;
-  border-radius: 0;
-}
-
-.ranked-bars__eyebrow {
-  font-size: 0.8125rem;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: $grey-10;
-  margin-bottom: 8px;
-}
-
-.ranked-bars__title {
-  font-size: 1.375rem;
-  line-height: 1.3;
-  color: $grey-10;
-}
-
-.ranked-bars__scroll {
-  max-height: 65vh;
-  overflow-y: auto;
-  padding-top: 0;
-}
-
-.ranked-bars__dialog-hint {
-  border-top: 1px solid $grey-4;
-  font-size: 0.875rem;
   color: $grey-9;
 }
 </style>

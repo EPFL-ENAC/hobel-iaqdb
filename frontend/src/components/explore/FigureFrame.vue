@@ -1,5 +1,5 @@
 <template>
-  <div class="figure-frame" :style="`min-height: ${height}px;`">
+  <div class="figure-frame" :class="`figure-frame--${fit}`" :style="`min-height: ${height}px;`">
     <slot />
     <div v-if="message" class="figure-frame__message text-caption" :class="error ? 'text-negative' : 'text-grey-7'">
       {{ message }}
@@ -19,6 +19,11 @@ interface Props {
   error?: string | null;
   /** said when the load came back empty */
   empty?: string;
+  /**
+   * `fill` (default): the content is sized to the frame, as a chart needs
+   * a box with a definite size; `content`: the frame is as tall as its content
+   */
+  fit?: 'fill' | 'content';
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -26,6 +31,7 @@ const props = withDefaults(defineProps<Props>(), {
   loading: false,
   error: null,
   empty: '',
+  fit: 'fill',
 });
 const { t } = useI18n();
 
@@ -36,16 +42,14 @@ const message = computed(() => (props.error ? `${t('plots.error')}: ${props.erro
 // at least `height`, and the rest of the card when a neighbour makes it taller
 .figure-frame {
   position: relative;
-  display: flex;
   flex: 1 0 auto;
-  flex-direction: column;
-
 }
 
-// the chart, from the figure using the frame
-:slotted(*) {
-  flex: 1;
-  min-height: 0;
+// a chart reads its box's size once mounted: it gets the frame's exact box,
+// not a percentage of a height the layout has not settled
+.figure-frame--fill > :slotted(*) {
+  position: absolute;
+  inset: 0;
 }
 
 .figure-frame__message {
