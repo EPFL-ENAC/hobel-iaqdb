@@ -1,8 +1,9 @@
 import json
 
+from api.models.catalog import Variable
 from api.services.explore.cache import cache
 from api.services.measurement import MeasurementService
-from tests.fixtures import make_fixture
+from tests.fixtures import make_catalog, make_fixture
 
 
 async def loaded_fixture(session, engine, tmp_path):
@@ -137,6 +138,53 @@ async def test_availability(client, session, clean_db, tmp_path):
     )
     keys = {b["key"][0] for b in response.json()["buckets"]}
     assert "occupancy_density" in keys and "id" not in keys and "identifier" not in keys
+
+
+async def test_variable_availability(client, session, clean_db):
+    cache.clear()
+    fx = await make_catalog(session)
+    d1, d2 = fx.datasets["D1"], fx.datasets["D2"]
+    session.add_all(
+        [
+            Variable(
+                name="co2",
+                type="float",
+                unit="ppm",
+                reference="co2",
+                study_id=fx.study_id,
+                dataset_id=d1,
+            ),
+            Variable(
+                name="t",
+                type="float",
+                reference="air_temperature",
+                study_id=fx.study_id,
+                dataset_id=d1,
+            ),
+            Variable(name="pm", type="float", study_id=fx.study_id, dataset_id=d2),
+        ]
+    )
+    await session.commit()
+    response = await client.get(
+        "/stats/metadata", params={"entity": "variables", "agg": "availability"}
+    )
+    assert response.status_code == 200
+    availability = {b["key"][0]: b["availability"] for b in response.json()["buckets"]}
+    assert availability == {
+        "unit": {"present": 1, "total": 3},
+        "format": {"present": 0, "total": 3},
+        "reference": {"present": 2, "total": 3},
+    }
+    # the study's filters reach its variables
+    response = await client.get(
+        "/stats/metadata",
+        params={
+            "entity": "variables",
+            "agg": "availability",
+            "filter": json.dumps({"$building": {"country": "FR"}}),
+        },
+    )
+    assert {b["availability"]["total"] for b in response.json()["buckets"]} == {0}
 
 
 async def test_validation_errors(client, session, clean_db, tmp_path):

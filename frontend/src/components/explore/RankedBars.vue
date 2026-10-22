@@ -16,8 +16,8 @@
       </div>
       <q-inner-loading :showing="loading && !rows.length && !$slots.message" color="grey-7" />
     </div>
-    <div class="figure-footer">
-      <button v-if="hidden.length" type="button" class="ranked-bars__toggle" @click="showAll = true">
+    <div v-if="footer" class="figure-footer" :class="{ 'figure-footer--blank': !hidden.length && !$slots.hint }">
+      <button v-if="hidden.length" type="button" class="figure-link" @click="showAll = true">
         {{ t('ranked_bars.show_all', { count: rows.length }) }}
       </button>
       <span class="ranked-bars__hint" :title="hintText">
@@ -53,7 +53,7 @@
  * summed into one hatched row; "Show all" lists every row in a dialog.
  */
 import RankedTable from '@/components/explore/RankedTable.vue';
-import type { RankedColumn, RankedRow } from '@/components/explore/ranked';
+import type { RankedColumn, RankedRow, RankedSummary } from '@/components/explore/ranked';
 
 interface Props {
   /** in the order shown */
@@ -74,6 +74,12 @@ interface Props {
   layout?: 'inline' | 'stacked' | undefined;
   /** in the inline layout, the share of the width the labels get */
   labelWidth?: string | undefined;
+  /** a line above the rows standing for all of them */
+  summary?: RankedSummary | null | undefined;
+  /** how the rows left out make the "Other" value: their sum, or their mean */
+  combine?: 'sum' | 'mean' | undefined;
+  /** the "Show all" link and the hint under the list; without it, the parent opens the dialog */
+  footer?: boolean | undefined;
   /** heading of the full list dialog */
   dialogEyebrow?: string;
   dialogTitle?: string;
@@ -92,6 +98,9 @@ const props = withDefaults(defineProps<Props>(), {
   formatValue: undefined,
   layout: 'inline',
   labelWidth: '30%',
+  summary: null,
+  combine: 'sum',
+  footer: true,
   dialogEyebrow: '',
   dialogTitle: '',
   loading: false,
@@ -100,7 +109,8 @@ const emit = defineEmits<{ select: [row: RankedRow<T>] }>();
 const { t } = useI18n();
 
 const slots = useSlots();
-const showAll = ref(false);
+/** the dialog listing every row */
+const showAll = defineModel<boolean>('showAll', { default: false });
 
 /** the hint in full, for when the footer cuts it short */
 const hintText = computed(() =>
@@ -117,9 +127,12 @@ const lines = computed(() => props.limit + 1);
 const collapses = computed(() => props.rows.length > props.limit + 1);
 const visible = computed(() => (collapses.value ? props.rows.slice(0, props.limit) : props.rows));
 const hidden = computed(() => (collapses.value ? props.rows.slice(props.limit) : []));
-const other = computed(() =>
-  hidden.value.length ? { rows: hidden.value, value: hidden.value.reduce((sum, row) => sum + row.value, 0) } : null,
-);
+const other = computed(() => {
+  const rows = hidden.value;
+  if (!rows.length) return null;
+  const sum = rows.reduce((total, row) => total + row.value, 0);
+  return { rows, value: props.combine === 'mean' ? sum / rows.length : sum };
+});
 
 /** what the list and the dialog draw alike */
 const tableProps = computed(() => ({
@@ -132,6 +145,7 @@ const tableProps = computed(() => ({
   formatValue: props.formatValue,
   layout: props.layout,
   labelWidth: props.labelWidth,
+  summary: props.summary,
 }));
 </script>
 
@@ -163,18 +177,6 @@ const tableProps = computed(() => ({
   padding: 16px;
   background: white;
   text-align: center;
-}
-
-.ranked-bars__toggle {
-  flex-shrink: 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  font: inherit;
-  color: $figure-accent-strong;
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-  cursor: pointer;
 }
 
 .ranked-bars__hint {

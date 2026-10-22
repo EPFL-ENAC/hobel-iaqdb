@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-Entity = Literal["studies", "buildings", "spaces", "datasets"]
+Entity = Literal["studies", "buildings", "spaces", "datasets", "variables"]
 Grain = Literal["day", "hour", "raw"]
 Source = Literal["metadata", "measurements", "relationships"]
 MetadataAgg = Literal["count", "availability"]
