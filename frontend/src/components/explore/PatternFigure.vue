@@ -102,7 +102,7 @@ interface Slot {
 
 withDefaults(defineProps<Props>(), { height: 380 });
 const { t, locale } = useI18n();
-const { formatValue, formatShare } = useChartFormat();
+const { formatValue, formatShare, describeReference } = useChartFormat();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
 
@@ -140,7 +140,7 @@ const emptyMessage = computed(() => {
   return statsRequest.empty.value ? noDataMessage.value : '';
 });
 
-const hint = computed(() => (byMonth.value && slots.value.length ? t('explore_figures.pattern.hint_drill') : ''));
+const hint = computed(() => (byMonth.value && slots.value.length ? t('explore_figures.hint_drill') : ''));
 
 const yearOptions = computed(() =>
   (yearsRequest.result.value?.buckets || [])
@@ -253,12 +253,7 @@ function toSlots(level: Level, { stats, exceedance }: Loaded): Slot[] {
 
 const unit = computed(() => statsRequest.result.value?.meta.unit || benchmark.value?.unit || '');
 
-const referenceText = computed(() => {
-  const b = benchmark.value;
-  if (!b) return '';
-  const value = `${formatValue(b.value)} ${b.unit}`;
-  return b.placeholder ? `${value} (${t('plots.placeholder').toLowerCase()})` : value;
-});
+const referenceText = computed(() => (benchmark.value ? describeReference(benchmark.value) : ''));
 
 const option = computed<EChartsOption>(() => {
   const items = slots.value;
@@ -370,12 +365,17 @@ const option = computed<EChartsOption>(() => {
         lineStyle: { color: FIGURE_ACCENT, width: 1.5 },
         itemStyle: { color: 'white', borderColor: FIGURE_ACCENT, borderWidth: 1.5 },
         cursor: byMonth.value ? 'pointer' : 'default',
+        // the reference's label sits above the line: not cut at the grid's edge
+        clip: false,
         markLine: {
           silent: true,
           symbol: 'none',
           lineStyle: { color: FIGURE_GAP, type: 'solid', width: 1.5 },
           label: {
             position: 'insideEndTop',
+            distance: 6,
+            padding: [2, 0, 4, 0],
+            lineHeight: 16,
             color: FIGURE_GAP,
             fontSize: 11,
             formatter: t('explore_figures.pattern.reference', { value: referenceText.value }),

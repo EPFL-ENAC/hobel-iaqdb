@@ -11,6 +11,10 @@
           <slot name="actions" />
         </div>
       </header>
+      <!-- what the figure plots, said as a sentence of menus under the title -->
+      <div v-if="$slots.controls" class="chart-card__controls">
+        <slot name="controls" />
+      </div>
       <template v-if="$slots.panel">
         <div class="chart-card__panel">
           <slot name="panel" />
@@ -72,6 +76,16 @@ withDefaults(defineProps<Props>(), { footerBlank: false });
   justify-content: space-between;
   gap: 16px 32px;
   margin-bottom: 40px;
+}
+
+.chart-card__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: -16px 0 32px;
+  font-size: 0.9375rem;
+  color: $grey-7;
 }
 
 .chart-card__actions {

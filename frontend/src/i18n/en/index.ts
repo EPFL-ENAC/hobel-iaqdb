@@ -256,6 +256,10 @@ export default {
     },
   },
   explore_chapters: {
+    relationships: {
+      title: 'Relationships with levels',
+      lead: 'Compare the selected pollutant across ventilation types, climates and building types, then explore its relationship with space characteristics and other pollutants. These are associations, not causes.',
+    },
     reference: {
       title: 'How levels compare to the reference',
       lead: 'Each value is a daily mean for one space. The red line is the reference; the dashed line is the median of the whole database, so you can see whether a group sits above or below everyone else.',
@@ -270,6 +274,49 @@ export default {
     },
   },
   explore_figures: {
+    pair: {
+      eyebrow: 'Relationship · custom pair',
+      title: 'Any two variables, hour by hour in the same space',
+      pearson: 'Pearson correlation',
+      spearman: 'Spearman correlation',
+      pairs: 'Pairs',
+      hours: '{count} hours',
+      trend: 'Trend',
+      shown: 'Shown',
+      sampled: '{count} sampled',
+      all: 'all {count}',
+      note: 'Y lists only variables measured together with X. The dots are a fixed sample; the trend line uses every pair.',
+    },
+    relationship: {
+      eyebrow: 'Relationship · {pollutant} × space metrics',
+      title: 'Explore pollutant patterns',
+      plot_mean: 'Plot mean',
+      against: 'against',
+    },
+    correlation: {
+      eyebrow: 'Multi-pollutant correlation matrix',
+      title: 'Pollutant × pollutant, measured in the same space at the same hour',
+      method: 'Method',
+      pollutants: 'No pollutants | 1 pollutant | {count} pollutants',
+      pick_two: 'Pick at least two pollutants.',
+    },
+    groups: {
+      eyebrow: 'Relationship · {pollutant} × {aspect}',
+      pollutant: 'Pollutant',
+      tip_days: '{count} days',
+      ventilation: {
+        aspect: 'ventilation',
+        title: 'Compare airflow strategies',
+      },
+      climate: {
+        aspect: 'climate',
+        title: 'Explore climate patterns',
+      },
+      building: {
+        aspect: 'building',
+        title: 'Compare building uses',
+      },
+    },
     distribution: {
       eyebrow: 'Distribution by group',
       title: 'How each group compares to the reference',
@@ -298,7 +345,6 @@ export default {
       tip_above: '{share} of {periods} above {value}',
       median: 'Median',
       middle: 'Middle half',
-      hint_drill: 'Click a month to see its days',
       back: 'Back to {year}',
     },
     metadata_availability: {
