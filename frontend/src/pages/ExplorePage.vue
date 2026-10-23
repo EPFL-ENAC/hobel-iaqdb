@@ -1,6 +1,17 @@
 <template>
   <q-page>
-    <ExploreHero />
+    <ExploreHero>
+      <template #actions>
+        <q-btn
+          outline
+          no-caps
+          icon="download"
+          color="grey-10"
+          :label="t('explore_download.button')"
+          @click="showDownload = true"
+        />
+      </template>
+    </ExploreHero>
     <ExploreChapter
       :title="t('explore_chapters.collection.title')"
       :lead="t('explore_chapters.collection.lead')"
@@ -126,67 +137,11 @@
         :title="t('explore_figures.pair.title')"
       />
     </ExploreChapter>
-    <q-toolbar class="bg-accent text-white">
-      <div>
-        This section is under construction. For suggestions of useful plots and
-        features, please file a
-        <a
-          href="https://github.com/EPFL-ENAC/hobel-iaqdb/issues"
-          target="_blank"
-          class="text-white text-bold epfl"
-          >GitHub issue <q-icon name="arrow_outward" /></a
-        >.
-      </div>
-      <q-space />
-      <q-btn
-        outline
-        no-caps
-        icon="download"
-        :label="t('explore_download.button')"
-        @click="showDownload = true"
-      />
-    </q-toolbar>
     <DownloadDialog v-model="showDownload" />
-    <div class="q-pa-md">
-      <div class="row q-col-gutter-md">
-        <div class="col-12 col-md-6">
-          <q-card flat bordered class="full-height">
-            <q-card-section class="q-pb-none">
-              <div class="text-subtitle1 text-bold">
-                {{ t('plots.descriptive_stats') }}
-              </div>
-              <div class="text-caption text-grey-7">
-                {{ t('plots.descriptive_stats_hint') }}
-              </div>
-            </q-card-section>
-            <q-card-section>
-              <DescriptiveStatsChart v-if="exploreStore.schema" :height="600" />
-            </q-card-section>
-          </q-card>
-        </div>
-        <div class="col-12 col-md-6">
-          <q-card flat bordered class="full-height">
-            <q-card-section class="q-pb-none">
-              <div class="text-subtitle1 text-bold">
-                {{ t('plots.exceedance_over_time') }}
-              </div>
-              <div class="text-caption text-grey-7">
-                {{ t('plots.exceedance_over_time_hint') }}
-              </div>
-            </q-card-section>
-            <q-card-section>
-              <ExceedanceChart v-if="exploreStore.schema" :height="600" />
-            </q-card-section>
-          </q-card>
-        </div>
-      </div>
-    </div>
   </q-page>
 </template>
 
 <script setup lang="ts">
-import DescriptiveStatsChart from '@/components/plots/DescriptiveStatsChart.vue';
-import ExceedanceChart from '@/components/plots/ExceedanceChart.vue';
 import DownloadDialog from '@/components/DownloadDialog.vue';
 import ExploreHero from '@/components/explore/ExploreHero.vue';
 import ExploreChapter from '@/components/explore/ExploreChapter.vue';

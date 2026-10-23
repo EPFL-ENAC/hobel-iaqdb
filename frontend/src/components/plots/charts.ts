@@ -27,8 +27,7 @@ export const updateOptions: SetOptionOpts = {
   notMerge: true,
 };
 
-/** Shared chart greys: labels, axis text, split lines. */
-export const TEXT = '#424242';
+/** Shared chart greys: axis text, split lines. */
 export const MUTED = '#757575';
 export const GRID = '#e0e0e0';
 
@@ -156,12 +155,6 @@ export function shortParameterName(slug: string): string {
   return SHORT_PARAMETERS[slug] ?? useExploreStore().parameterLabel(slug);
 }
 
-/** 463 → 450 (floor) or 500 (ceil): a readable axis bound, to half a magnitude. */
-export function roundBound(value: number, round: (v: number) => number): number {
-  const step = 10 ** Math.floor(Math.log10(Math.abs(value) || 1)) / 2;
-  return round(value / step) * step;
-}
-
 /**
  * Keys that name no category: missing, or coded as unknown (any case).
  * 'na' (not applicable) is a category of its own, e.g. a naturally ventilated
@@ -204,21 +197,6 @@ export function keyLabel(dimension: string, key: string): string {
   if (dimension === 'study') return useExploreStore().studyNames.get(key) || key;
   if (dimension === 'dataset') return useExploreStore().datasetNames.get(key) || key;
   return KEY_OPTIONS[dimension]?.find((opt) => opt.value === key)?.label || key;
-}
-
-/**
- * The row a click hit on a chart with one category per row: the category
- * index of a clicked label, or the one a `[value, index]` marker sits on.
- * Rows go by index since labels repeat ("Unknown", same-named cities).
- */
-export function clickedRow(event: {
-  componentType?: string;
-  dataIndex?: number;
-  data?: unknown;
-}): number | undefined {
-  return event.componentType === 'yAxis'
-    ? event.dataIndex
-    : (event.data as [unknown, number] | undefined)?.[1];
 }
 
 export type ClickKind = 'filter' | 'drill' | 'navigate';
