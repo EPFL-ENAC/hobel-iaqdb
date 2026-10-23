@@ -1,9 +1,17 @@
 <template>
   <section class="explore-hero explore-section">
     <div class="explore-container">
-      <div class="explore-hero__eyebrow">{{ t('explore_hero.eyebrow') }}</div>
-      <h1 class="explore-hero__title">{{ title }}</h1>
-      <p class="explore-hero__lead">{{ t('explore_hero.lead') }}</p>
+      <div class="explore-hero__intro">
+        <div>
+          <div class="explore-hero__eyebrow">{{ t('explore_hero.eyebrow') }}</div>
+          <h1 class="explore-hero__title">{{ title }}</h1>
+          <p class="explore-hero__lead">{{ t('explore_hero.lead') }}</p>
+        </div>
+        <!-- what can be done with the whole collection, e.g. download it -->
+        <div v-if="$slots.actions" class="explore-hero__actions">
+          <slot name="actions" />
+        </div>
+      </div>
       <div v-if="error" class="text-negative text-caption q-mb-sm">
         {{ t('explore_hero.error') }}: {{ error }}
       </div>
@@ -151,6 +159,21 @@ const stats = computed(() => [
 <style scoped lang="scss">
 .explore-hero {
   background: white;
+}
+
+// the text on the left, the actions on the right; on phones they go under it
+.explore-hero__intro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0 32px;
+}
+
+.explore-hero__actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 32px;
 }
 
 .explore-hero__eyebrow {

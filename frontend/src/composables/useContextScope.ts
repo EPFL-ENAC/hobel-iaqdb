@@ -4,21 +4,18 @@
  * with at least one known value for the chosen pollutant.
  *
  * Event based: the chart calls `refresh()` when it mounts and when the
- * filters are applied, and the `select*` handlers from its menus; each
- * resolves once the menus settled, so the chart loads its data after.
+ * filters are applied; it resolves once the menus settled, so the chart
+ * loads its data after.
  */
 import type { Ref } from 'vue';
 import {
   benchmarkOf,
   isUnknownKey,
-  keyLabel,
-  refine,
   STATS_CONTEXTS,
 } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useExploreRequest } from '@/composables/useExploreQuery';
 import { DEFAULT_PARAMETER } from '@/stores/explore';
-import type { ExploreParams } from '@/models';
 
 /**
  * The pollutants with records under the global filters, in catalog order.
@@ -248,119 +245,3 @@ export function useContextChoice(
   return { context, contextOptions, contextDimension, refresh };
 }
 
-/**
- * Pollutant and an optional context value (e.g. country = SG) a chart is
- * narrowed to, on top of the global filters. The value menu lists the
- * context's values with data.
- */
-export function useContextScope(
-  options: ParameterChoiceOptions &
-    Pick<ContextChoiceOptions, 'exclude' | 'requireKnown'> = {},
-) {
-  const { t } = useI18n();
-  const parameters = useParameterChoice(options);
-  const { parameter } = parameters;
-  const contexts = useContextChoice(parameter, {
-    optional: true,
-    exclude: options.exclude ?? [],
-    ...(options.requireKnown ? { requireKnown: options.requireKnown } : {}),
-  });
-  const { context, contextDimension } = contexts;
-  const contextValue = ref<string | null>(null);
-  const valuesRequest = useExploreRequest('measurements');
-
-  const contextLabel = computed(
-    () => contextDimension.value?.label || t('plots.context_value'),
-  );
-
-  const valueOptions = computed(() => {
-    const dimension = contextDimension.value;
-    if (!dimension) return [];
-    const keys = new Set(
-      (valuesRequest.result.value?.buckets || []).flatMap((b) =>
-        counts(b, options.requireKnown) && b.key[0] ? [b.key[0]] : [],
-      ),
-    );
-    return [...keys]
-      .map((key) => ({ value: key, label: keyLabel(dimension.key, key) }))
-      .sort((a, b) => a.label.localeCompare(b.label));
-  });
-
-  const valuesLoading = computed(() => valuesRequest.loading.value);
-
-  /** the global filters, narrowed to the chosen context value */
-  function scopedFilter(): ExploreParams {
-    const base: ExploreParams = { filter: exploreFilter() };
-    const dimension = contextDimension.value;
-    if (!dimension || !contextValue.value) return base;
-    return refine(base, dimension, contextValue.value);
-  }
-
-  /**
-   * Context values with data for the pollutant in the measurement years; a
-   * value that lost its data is dropped. A fact count, not coverage: coverage would offer
-   * every country of a study's buildings, some without data.
-   */
-  async function refreshValues(): Promise<void> {
-    if (!context.value || !parameter.value) {
-      await valuesRequest.load(null);
-      contextValue.value = null;
-      return;
-    }
-    await valuesRequest.load({
-      filter: exploreFilter(),
-      ...exploreRange(),
-      agg: 'count',
-      by: menuBy(context.value, options.requireKnown),
-      parameters: [parameter.value],
-      grain: 'day',
-    });
-    if (
-      contextValue.value &&
-      !valueOptions.value.some((o) => o.value === contextValue.value)
-    )
-      contextValue.value = null;
-  }
-
-  /** Reload every menu, pollutant first: the others depend on it. */
-  async function refresh(): Promise<void> {
-    await parameters.refresh();
-    await contexts.refresh();
-    await refreshValues();
-  }
-
-  async function selectParameter(value: string | null): Promise<void> {
-    parameter.value = value;
-    await contexts.refresh();
-    await refreshValues();
-  }
-
-  async function selectContext(value: string | null): Promise<void> {
-    context.value = value;
-    contextValue.value = null;
-    await refreshValues();
-  }
-
-  function selectValue(value: string | null): void {
-    contextValue.value = value;
-  }
-
-  return {
-    parameter,
-    parameterOptions: parameters.parameterOptions,
-    parameterLabel: parameters.parameterLabel,
-    noDataMessage: parameters.noDataMessage,
-    context,
-    contextValue,
-    contextOptions: contexts.contextOptions,
-    contextDimension,
-    contextLabel,
-    valueOptions,
-    valuesLoading,
-    scopedFilter,
-    refresh,
-    selectParameter,
-    selectContext,
-    selectValue,
-  };
-}
