@@ -36,6 +36,12 @@ export function useChartFormat() {
     return `${Math.round(value * 100)}%`;
   }
 
+  /** "800 ppm", marked "(placeholder)" while the reference is a stand-in */
+  function describeReference(b: Benchmark): string {
+    const value = `${formatValue(b.value)} ${b.unit}`;
+    return b.placeholder ? `${value} (${t('plots.placeholder').toLowerCase()})` : value;
+  }
+
   /** "WHO 2021 · 15 µg/m³ (24 h)" */
   function describeBenchmark(b: Benchmark): string {
     const note = b.note ? ` (${b.note})` : '';
@@ -62,6 +68,7 @@ export function useChartFormat() {
     formatCount,
     formatCompact,
     formatShare,
+    describeReference,
     describeBenchmark,
     rangeLabel,
   };

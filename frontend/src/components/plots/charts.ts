@@ -133,6 +133,29 @@ export function niceTicks(min: number, max: number, count = 6): number[] {
   return Array.from({ length: last - first + 1 }, (_, i) => Number(((first + i) * step).toPrecision(12)));
 }
 
+/** short names for compact labels (axes, chips); other pollutants use their label */
+const SHORT_PARAMETERS: Record<string, string> = {
+  co2: 'CO₂',
+  co: 'CO',
+  no: 'NO',
+  no2: 'NO₂',
+  nox: 'NOₓ',
+  o3: 'O₃',
+  so2: 'SO₂',
+  pm1: 'PM1',
+  pm2_5: 'PM2.5',
+  pm4: 'PM4',
+  pm10: 'PM10',
+  tvoc: 'TVOC',
+  relative_humidity: 'RH',
+  air_temperature: 'Temp.',
+};
+
+/** "CO₂" for co2, the schema label when there is no short name */
+export function shortParameterName(slug: string): string {
+  return SHORT_PARAMETERS[slug] ?? useExploreStore().parameterLabel(slug);
+}
+
 /** 463 → 450 (floor) or 500 (ceil): a readable axis bound, to half a magnitude. */
 export function roundBound(value: number, round: (v: number) => number): number {
   const step = 10 ** Math.floor(Math.log10(Math.abs(value) || 1)) / 2;
@@ -179,6 +202,7 @@ const KEY_OPTIONS: Record<string, OptionItem[]> = {
  */
 export function keyLabel(dimension: string, key: string): string {
   if (dimension === 'study') return useExploreStore().studyNames.get(key) || key;
+  if (dimension === 'dataset') return useExploreStore().datasetNames.get(key) || key;
   return KEY_OPTIONS[dimension]?.find((opt) => opt.value === key)?.label || key;
 }
 

@@ -15,6 +15,8 @@ export const useExploreStore = defineStore(
     /** study identifier to name, for chart labels; filled once by loadStudyNames */
     const studyNames = ref(new Map<string, string>());
     let studyNamesPending: Promise<void> | null = null;
+    /** dataset id to name, for chart labels; filled as charts show datasets */
+    const datasetNames = ref(new Map<string, string>());
 
     const dimensions = computed(
       () =>
@@ -81,6 +83,16 @@ export const useExploreStore = defineStore(
       return studyNamesPending;
     }
 
+    /** Load the names of the datasets not known yet; a failure leaves them to their ids. */
+    async function loadDatasetNames(ids: string[]): Promise<void> {
+      const missing = [...new Set(ids)].filter((id) => !datasetNames.value.has(id));
+      if (!missing.length) return;
+      const datasets = await useCatalogStore().loadDatasetsByIds(missing.map(Number));
+      const names = new Map(datasetNames.value);
+      for (const dataset of datasets) names.set(String(dataset.id), dataset.name);
+      datasetNames.value = names;
+    }
+
     /**
      * Event: open the pair x × y in the custom relationship chart, e.g. from a
      * correlation matrix cell. The chart listens with `$onAction`.
@@ -106,6 +118,8 @@ export const useExploreStore = defineStore(
       parameterLabel,
       studyNames,
       loadStudyNames,
+      datasetNames,
+      loadDatasetNames,
       showPair,
     };
   },

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { api } from '@/boot/api';
 import type {
+  Dataset,
   Study,
   StudiesResult,
   BuildingsResult,
@@ -31,6 +32,19 @@ export const useCatalogStore = defineStore('catalog', () => {
         },
       })
       .then((response) => response.data);
+  }
+
+  /** The datasets with these ids, whatever the filters. */
+  async function loadDatasetsByIds(ids: number[]): Promise<Dataset[]> {
+    if (!ids.length) return [];
+    return api
+      .get('/catalog/datasets', {
+        params: {
+          filter: JSON.stringify({ id: ids }),
+          range: JSON.stringify([0, ids.length - 1]),
+        },
+      })
+      .then((response) => (response.data as { data: Dataset[] }).data);
   }
 
   async function loadStudies(
@@ -144,6 +158,7 @@ export const useCatalogStore = defineStore('catalog', () => {
 
   return {
     loadStudySummaries,
+    loadDatasetsByIds,
     deleteStudy,
     loadStudies,
     loadBuildings,
