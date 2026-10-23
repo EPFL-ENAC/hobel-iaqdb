@@ -88,6 +88,44 @@
         :title="t('explore_figures.pattern.title')"
       />
     </ExploreChapter>
+    <ExploreChapter
+      :title="t('explore_chapters.relationships.title')"
+      :lead="t('explore_chapters.relationships.lead')"
+    >
+      <FigureGrid :columns="3">
+        <GroupFigure
+          v-if="exploreStore.schema"
+          :aspect="t('explore_figures.groups.ventilation.aspect')"
+          :title="t('explore_figures.groups.ventilation.title')"
+          by="ventilation_type"
+        />
+        <GroupFigure
+          v-if="exploreStore.schema"
+          :aspect="t('explore_figures.groups.climate.aspect')"
+          :title="t('explore_figures.groups.climate.title')"
+          by="climate_zone"
+        />
+        <GroupFigure
+          v-if="exploreStore.schema"
+          :aspect="t('explore_figures.groups.building.aspect')"
+          :title="t('explore_figures.groups.building.title')"
+          by="building_type"
+        />
+      </FigureGrid>
+      <FigureGrid>
+        <RelationshipFigure v-if="exploreStore.schema" :title="t('explore_figures.relationship.title')" />
+        <CorrelationFigure
+          v-if="exploreStore.schema"
+          :eyebrow="t('explore_figures.correlation.eyebrow')"
+          :title="t('explore_figures.correlation.title')"
+        />
+      </FigureGrid>
+      <PairFigure
+        v-if="exploreStore.schema"
+        :eyebrow="t('explore_figures.pair.eyebrow')"
+        :title="t('explore_figures.pair.title')"
+      />
+    </ExploreChapter>
     <q-toolbar class="bg-accent text-white">
       <div>
         This section is under construction. For suggestions of useful plots and
@@ -141,105 +179,6 @@
             </q-card-section>
           </q-card>
         </div>
-        <div class="col-12 col-md-6">
-          <q-card flat bordered class="full-height">
-            <q-card-section class="q-pb-none">
-              <div class="text-subtitle1 text-bold">
-                {{ t('plots.relationship') }}
-              </div>
-              <div class="text-caption text-grey-7">
-                {{ t('plots.relationship_hint') }}
-              </div>
-            </q-card-section>
-            <q-card-section>
-              <RelationshipChart v-if="exploreStore.schema" :height="600" />
-            </q-card-section>
-          </q-card>
-        </div>
-        <div class="col-12 col-md-6">
-          <q-card flat bordered class="full-height">
-            <q-card-section class="q-pb-none">
-              <div class="text-subtitle1 text-bold">
-                {{ t('plots.relationship_ventilation') }}
-              </div>
-              <div class="text-caption text-grey-7">
-                {{ t('plots.relationship_ventilation_hint') }}
-              </div>
-            </q-card-section>
-            <q-card-section>
-              <GroupMedianChart v-if="exploreStore.schema" :height="600" />
-            </q-card-section>
-          </q-card>
-        </div>
-        <div class="col-12 col-md-6">
-          <q-card flat bordered class="full-height">
-            <q-card-section class="q-pb-none">
-              <div class="text-subtitle1 text-bold">
-                {{ t('plots.relationship_climate') }}
-              </div>
-              <div class="text-caption text-grey-7">
-                {{ t('plots.relationship_climate_hint') }}
-              </div>
-            </q-card-section>
-            <q-card-section>
-              <GroupMedianChart
-                v-if="exploreStore.schema"
-                by="climate_zone"
-                :height="600"
-              />
-            </q-card-section>
-          </q-card>
-        </div>
-        <div class="col-12 col-md-6">
-          <q-card flat bordered class="full-height">
-            <q-card-section class="q-pb-none">
-              <div class="text-subtitle1 text-bold">
-                {{ t('plots.relationship_building_type') }}
-              </div>
-              <div class="text-caption text-grey-7">
-                {{ t('plots.relationship_building_type_hint') }}
-              </div>
-            </q-card-section>
-            <q-card-section>
-              <GroupMedianChart
-                v-if="exploreStore.schema"
-                by="building_type"
-                orientation="horizontal"
-                :height="600"
-              />
-            </q-card-section>
-          </q-card>
-        </div>
-        <div class="col-12 col-md-6">
-          <q-card flat bordered class="full-height">
-            <q-card-section class="q-pb-none">
-              <div class="text-subtitle1 text-bold">
-                {{ t('plots.correlation_matrix') }}
-              </div>
-              <div class="text-caption text-grey-7">
-                {{ t('plots.correlation_matrix_hint') }}
-              </div>
-            </q-card-section>
-            <q-card-section>
-              <CorrelationMatrixChart v-if="exploreStore.schema" :height="600" />
-            </q-card-section>
-          </q-card>
-        </div>
-        <div class="col-12 col-md-6">
-          <q-card flat bordered class="full-height">
-            <q-card-section class="q-pb-none">
-              <div class="text-subtitle1 text-bold">
-                {{ t('plots.custom_relationship') }}
-              </div>
-              <div class="text-caption text-grey-7">
-                {{ t('plots.custom_relationship_hint') }}
-              </div>
-            </q-card-section>
-            <q-card-section>
-              <CustomRelationshipChart v-if="exploreStore.schema" :height="600" />
-            </q-card-section>
-          </q-card>
-        </div>
       </div>
     </div>
   </q-page>
@@ -248,10 +187,6 @@
 <script setup lang="ts">
 import DescriptiveStatsChart from '@/components/plots/DescriptiveStatsChart.vue';
 import ExceedanceChart from '@/components/plots/ExceedanceChart.vue';
-import RelationshipChart from '@/components/plots/RelationshipChart.vue';
-import GroupMedianChart from '@/components/plots/GroupMedianChart.vue';
-import CorrelationMatrixChart from '@/components/plots/CorrelationMatrixChart.vue';
-import CustomRelationshipChart from '@/components/plots/CustomRelationshipChart.vue';
 import DownloadDialog from '@/components/DownloadDialog.vue';
 import ExploreHero from '@/components/explore/ExploreHero.vue';
 import ExploreChapter from '@/components/explore/ExploreChapter.vue';
@@ -263,6 +198,10 @@ import MonthlyFigure from '@/components/explore/MonthlyFigure.vue';
 import AvailabilityFigure from '@/components/explore/AvailabilityFigure.vue';
 import DistributionFigure from '@/components/explore/DistributionFigure.vue';
 import PatternFigure from '@/components/explore/PatternFigure.vue';
+import GroupFigure from '@/components/explore/GroupFigure.vue';
+import RelationshipFigure from '@/components/explore/RelationshipFigure.vue';
+import CorrelationFigure from '@/components/explore/CorrelationFigure.vue';
+import PairFigure from '@/components/explore/PairFigure.vue';
 
 const { t } = useI18n();
 const exploreStore = useExploreStore();

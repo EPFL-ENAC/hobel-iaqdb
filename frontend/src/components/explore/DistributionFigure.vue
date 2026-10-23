@@ -75,7 +75,7 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), { limit: 6 });
 const { t } = useI18n();
-const { formatValue, formatShare } = useChartFormat();
+const { formatValue, formatShare, describeReference } = useChartFormat();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
 
@@ -211,12 +211,7 @@ const ticks = computed(() => {
   return niceTicks(Math.min(...values), Math.max(...values), 6);
 });
 
-const referenceText = computed(() => {
-  const b = benchmark.value;
-  if (!b) return '';
-  const value = `${formatValue(b.value)} ${b.unit}`;
-  return b.placeholder ? `${value} (${t('plots.placeholder').toLowerCase()})` : value;
-});
+const referenceText = computed(() => (benchmark.value ? describeReference(benchmark.value) : ''));
 
 const shareHeader = computed(() =>
   benchmark.value
