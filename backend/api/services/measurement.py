@@ -57,6 +57,12 @@ NO_UNIT = ("", "not applicable", "unknown")
 # trailing UTC offset or Z after a time of day: dropped, the wall clock is kept
 TZ_SUFFIX = r"(\d{2}:\d{2}(:\d{2}(\.\d+)?)?)(Z|[+-]\d{2}:?\d{2})$"
 DECIMAL_COMMA = r"^-?\d+,\d+$"
+# the quote is set, not sniffed: DuckDB guesses it from the first rows only, so
+# a file whose first quoted field (e.g. a context_json) comes later is split
+CSV_OPTIONS = (
+    "header = true, all_varchar = true, union_by_name = true,"
+    " quote = '\"', escape = '\"'"
+)
 # advisory lock (pg_advisory_lock(int)) serializing every measurement writer
 WRITE_LOCK = 0x1A0F
 _local_write_lock = asyncio.Lock()
@@ -147,8 +153,7 @@ def _classified_sql(files: list[str]) -> str:
                 CASE WHEN lower(coalesce(trim(inferred_unit), '')) IN ({no_unit_sql})
                      THEN NULL ELSE trim(inferred_unit) END
             ) AS unit
-        FROM read_csv({files_sql}, header = true, all_varchar = true,
-                      union_by_name = true)
+        FROM read_csv({files_sql}, {CSV_OPTIONS})
     ),
     typed AS (
         SELECT r.*, d.factor, d.off, d.unit AS accepted_unit, k.slug AS known_slug,
@@ -209,8 +214,7 @@ class MeasurementReader:
     def _check_columns(self) -> None:
         files_sql = _files_sql(self.files)
         rows = self.con.execute(
-            f"DESCRIBE SELECT * FROM read_csv({files_sql}, header = true,"
-            " all_varchar = true, union_by_name = true)"
+            f"DESCRIBE SELECT * FROM read_csv({files_sql}, {CSV_OPTIONS})"
         ).fetchall()
         missing = sorted(set(REQUIRED_COLUMNS) - {r[0] for r in rows})
         if missing:
