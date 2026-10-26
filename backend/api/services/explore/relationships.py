@@ -2,6 +2,7 @@
 measurements (same dataset, space and time bucket)."""
 
 import math
+from itertools import combinations
 
 from api.models.catalog import Building, Space
 from api.models.explore import Bucket, ExploreQuery, ExploreResult, Fit, Meta
@@ -17,13 +18,15 @@ from api.services.explore.facts import Fact, check_raw_cap
 from api.services.explore.filters import parse_filter
 from api.services.explore.schema import METRICS
 from fastapi import HTTPException
-from sqlalchemy import and_, case, func
+from sqlalchemy import and_, func, literal, text, union_all
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 AGGS = ("pairs", "matrix", "partners")
 # points a pairs chart gets at most; the fit is always over every row
 SAMPLE = 2000
+# memory a Spearman matrix sorts in, for its transaction only
+SORT_MEMORY = "64MB"
 METRIC_MODELS = {"space": Space, "building": Building}
 
 
@@ -250,31 +253,30 @@ class RelationshipService:
         pivot = pivot.group_by(fact.c.dataset_id, fact.c.space_id, fact.time).cte(
             "pivot"
         )
-        source = pivot
+        pairs = list(combinations(range(len(slugs)), 2))
         if query.method == "spearman":
-            source = self._ranked(pivot, len(slugs))
-        cells = []
-        for i in range(len(slugs)):
-            for j in range(i + 1, len(slugs)):
-                a, b = source.c[f"p{i}"], source.c[f"p{j}"]
-                if query.method == "spearman":
-                    a, b = source.c[f"r{i}_{j}"], source.c[f"r{j}_{i}"]
-                cells.append(func.count(a).filter(b.isnot(None)))
-                cells.append(func.corr(a, b))
-        row = (await self.session.exec(select(*cells).select_from(source))).one()
+            # the rank sorts spill to disk at the default work_mem
+            await self.session.exec(text(f"SET LOCAL work_mem = '{SORT_MEMORY}'"))
+            rows = (await self.session.exec(self._ranked(pivot, pairs))).all()
+            cells = {(i, j): (n, r) for i, j, n, r in rows}
+        else:
+            stats = []
+            for i, j in pairs:
+                a, b = pivot.c[f"p{i}"], pivot.c[f"p{j}"]
+                stats.append(func.count(a).filter(b.isnot(None)))
+                stats.append(func.corr(a, b))
+            row = (await self.session.exec(select(*stats).select_from(pivot))).one()
+            cells = {pair: row[2 * k : 2 * k + 2] for k, pair in enumerate(pairs)}
         buckets = []
-        k = 0
-        for i in range(len(slugs)):
-            for j in range(i + 1, len(slugs)):
-                n, r = int(row[k]), number(row[k + 1])
-                k += 2
-                buckets.append(
-                    Bucket(
-                        key=[slugs[i], slugs[j]],
-                        n=n,
-                        fit=Fit(slope=None, intercept=None, r2=None, r=r),
-                    )
+        for i, j in pairs:
+            n, r = cells[(i, j)]
+            buckets.append(
+                Bucket(
+                    key=[slugs[i], slugs[j]],
+                    n=int(n),
+                    fit=Fit(slope=None, intercept=None, r2=None, r=number(r)),
                 )
+            )
         # a cell with no co-timed rows stays in a partial matrix (the grid
         # must be complete), but a matrix with no data at all is the empty
         # state of D3: no buckets, `available_parameters` filled
@@ -338,40 +340,36 @@ class RelationshipService:
         rows = (await self.session.exec(counts)).all()
         return [Bucket(key=[slug], n=int(n)) for slug, n in rows]
 
-    def _ranked(self, pivot, width: int):
-        """Spearman: rank each parameter within the rows where the other
-        parameter of the pair is present (ties get their average rank, as
-        Spearman's rho requires), and blank the rank wherever either value
-        is missing."""
-        values = [pivot.c[f"p{i}"] for i in range(width)]
-        pairs = [(i, j) for i in range(width) for j in range(width) if i != j]
+    def _ranked(self, pivot, pairs: list[tuple[int, int]]):
+        """Spearman: per pair, rank both parameters within the rows where
+        both are present and correlate the ranks, one (i, j, n, r) row per
+        pair. Ties get their average rank, as Spearman's rho requires:
+        rank() is the lowest rank of a tie and cume_dist() times the row
+        count its highest, both on the same sort, so a pair costs two sorts
+        over its own rows only."""
 
-        def average_rank(i: int, j: int):
-            # rank() gives ties their lowest rank; adding half the number
-            # of remaining tied rows turns it into the average rank
-            present = pivot.c[f"p{j}"].isnot(None)
-            value = pivot.c[f"p{i}"]
-            lowest = func.rank().over(partition_by=present, order_by=value)
-            tied = func.count().over(partition_by=[present, value])
-            return lowest + (tied - 1) / 2.0
+        def average_rank(value):
+            lowest = func.rank().over(order_by=value)
+            highest = func.cume_dist().over(order_by=value) * func.count().over()
+            return (lowest + highest) / 2.0
 
-        ranks = [average_rank(i, j).label(f"r{i}_{j}") for i, j in pairs]
-        ranked = select(*values, *ranks).select_from(pivot).cte("ranked")
-        masked = [
-            case(
-                (
-                    and_(ranked.c[f"p{i}"].isnot(None), ranked.c[f"p{j}"].isnot(None)),
-                    ranked.c[f"r{i}_{j}"],
-                ),
-                else_=None,
-            ).label(f"r{i}_{j}")
-            for i, j in pairs
-        ]
-        return (
-            select(*[ranked.c[f"p{i}"] for i in range(width)], *masked)
-            .select_from(ranked)
-            .cte("masked")
-        )
+        cells = []
+        for i, j in pairs:
+            a, b = pivot.c[f"p{i}"], pivot.c[f"p{j}"]
+            ranked = (
+                select(average_rank(a).label("a"), average_rank(b).label("b"))
+                .where(a.isnot(None), b.isnot(None))
+                .subquery()
+            )
+            cells.append(
+                select(
+                    literal(i),
+                    literal(j),
+                    func.count(),
+                    func.corr(ranked.c.a, ranked.c.b),
+                ).select_from(ranked)
+            )
+        return union_all(*cells)
 
 
 def attr_of(spec) -> str:

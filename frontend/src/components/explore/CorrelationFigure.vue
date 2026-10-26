@@ -16,9 +16,16 @@
         :display-value="t('explore_figures.correlation.pollutants', { count: selected.length })"
         class="correlation-figure__pollutants"
         @update:model-value="onParameters"
+        @popup-hide="onPopupHide"
       />
     </template>
-    <FigureFrame :height="height" :loading="loading" :error="error" :empty="emptyMessage">
+    <FigureFrame
+      :height="height"
+      :loading="loading"
+      :error="error"
+      :empty="emptyMessage"
+      :slow="t('explore_figures.correlation.slow')"
+    >
       <div class="correlation-figure__matrix" :style="gridStyle" role="table">
         <template v-for="(row, j) in order" :key="row">
           <span class="correlation-figure__label" :style="`grid-row: ${j + 1}; grid-column: 1;`" role="rowheader">{{
@@ -93,6 +100,8 @@ const MAX_PARAMETERS = 10;
 const DEFAULT_SET = ['co2', 'relative_humidity', 'no2', 'pm2_5', 'pm10'];
 
 const selected = ref<string[]>([]);
+/** picked in the menu since the last load */
+const picked = ref(false);
 const method = ref<Method>('spearman');
 
 const coverage = useParametersWithRecords();
@@ -171,6 +180,7 @@ function describe(a: string, b: string): string {
 }
 
 function reload(): void {
+  picked.value = false;
   void load(
     selected.value.length >= 2
       ? {
@@ -221,7 +231,12 @@ function onMethod(value: Method): void {
 function onParameters(value: string[] | null): void {
   // past the cap, the last pick is dropped
   selected.value = (value || []).slice(0, MAX_PARAMETERS);
-  reload();
+  picked.value = true;
+}
+
+/** one load once the menu closes, not one per pick */
+function onPopupHide(): void {
+  if (picked.value) reload();
 }
 
 onMounted(() => void refresh());
