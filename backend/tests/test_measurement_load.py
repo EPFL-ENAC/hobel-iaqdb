@@ -1,10 +1,24 @@
+import csv
+import json
+from datetime import timedelta
+
 import pytest
 from api.models.catalog import Dataset
 from api.models.measurement import DatasetParameter
 from api.services.measurement import MeasurementService
 from sqlalchemy import text
 from sqlmodel import select
-from tests.fixtures import CSV_COLUMNS, D1_REPORT, daily, hourly, make_fixture, mean
+from tests.fixtures import (
+    CSV_COLUMNS,
+    D1_REPORT,
+    START,
+    Row,
+    daily,
+    hourly,
+    make_fixture,
+    mean,
+    write_csv,
+)
 
 
 async def load_all(session, engine, tmp_path):
@@ -201,6 +215,36 @@ async def test_compression_and_empty_file(session, clean_db, tmp_path):
         )
     ).scalar()
     assert n == 0
+
+
+async def test_quoted_field_past_the_sniffed_rows(session, clean_db, tmp_path):
+    """DuckDB sniffs the quote from the first 20,480 rows: a quoted
+    context_json further down, with commas in it, is still one field."""
+    fx = await make_fixture(session, tmp_path)
+    rows = [
+        Row(
+            "D2",
+            "B2",
+            "S3",
+            "pm2_5",
+            "10",
+            "µg/m³",
+            timestamp=(START + timedelta(seconds=20 * i)).isoformat(),
+        )
+        for i in range(21_001)
+    ]
+    path = write_csv(tmp_path / "late_quote.csv", rows[:-1])
+    with path.open("a", newline="", encoding="utf-8") as stream:
+        context = json.dumps({"chemical_name": "formic_acid", "replicate": "1"})
+        csv.DictWriter(stream, fieldnames=CSV_COLUMNS).writerow(
+            {
+                **{c: "" for c in CSV_COLUMNS},
+                **rows[-1].as_csv(),
+                "context_json": context,
+            }
+        )
+    report = await MeasurementService(clean_db).load(fx.datasets["D2"], [path])
+    assert report.loaded == len(rows)
 
 
 FK_COLUMNS = ("dataset_id", "study_id", "building_id", "space_id", "instrument_id")
