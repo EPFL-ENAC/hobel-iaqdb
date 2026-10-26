@@ -1,9 +1,10 @@
 <template>
   <div class="distribution-table" :style="gridStyle">
-    <span class="distribution-table__head" style="grid-column: 3">{{ shareHeader }}</span>
+    <!-- a blank line without a header: the table keeps its height -->
+    <span class="distribution-table__head" style="grid-column: 3">{{ shareHeader || '\u00a0' }}</span>
 
-    <!-- the scale's gridlines and reference lines, across every row -->
-    <div class="distribution-table__overlay" aria-hidden="true">
+    <!-- the scale's gridlines and reference lines, across every row; none without rows -->
+    <div v-if="rows.length" class="distribution-table__overlay" aria-hidden="true">
       <span v-for="tick in ticks" :key="`tick-${tick}`" class="distribution-table__grid" :style="`left: ${at(tick)}%;`" />
       <span
         v-for="line in lines"
@@ -50,7 +51,12 @@
       &nbsp;
     </div>
 
-    <div class="distribution-table__axis" :style="`grid-row: ${rows.length + fillers + 2};`" aria-hidden="true">
+    <!-- hidden, not removed, without rows: the table keeps its height -->
+    <div
+      class="distribution-table__axis"
+      :style="`grid-row: ${rows.length + fillers + 2}; visibility: ${rows.length ? 'visible' : 'hidden'};`"
+      aria-hidden="true"
+    >
       <span v-for="tick in ticks" :key="tick" :style="`left: ${at(tick)}%;`">{{ tickText(tick) }}</span>
     </div>
   </div>

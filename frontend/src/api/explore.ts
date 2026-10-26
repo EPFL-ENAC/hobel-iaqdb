@@ -11,6 +11,7 @@ import {
   DEFAULT_MEASUREMENT_YEARS,
   cityName,
   useFiltersStore,
+  type FilterFields,
 } from '@/stores/filters';
 import { withRange } from '@/utils/numbers';
 
@@ -20,13 +21,11 @@ function nonEmpty(values: string[] | null | undefined): string[] | undefined {
   return values && values.length ? [...values].sort() : undefined;
 }
 
-export function studyCriteria() {
-  const filters = useFiltersStore();
+export function studyCriteria(filters: FilterFields = useFiltersStore()) {
   return { identifier: nonEmpty(filters.study_ids) };
 }
 
-export function buildingCriteria() {
-  const filters = useFiltersStore();
+export function buildingCriteria(filters: FilterFields = useFiltersStore()) {
   const constructionYears = withRange(
     [filters.construction_years.min, filters.construction_years.max],
     [DEFAULT_CONSTRUCTION_YEARS.min, DEFAULT_CONSTRUCTION_YEARS.max],
@@ -56,17 +55,16 @@ export function buildingCriteria() {
   };
 }
 
-export function spaceCriteria() {
-  const filters = useFiltersStore();
+export function spaceCriteria(filters: FilterFields = useFiltersStore()) {
   return { mechanical_ventilation_type: nonEmpty(filters.mechanical_ventilation_types) };
 }
 
-/** The study-anchored filter every explore route takes. */
-export function exploreFilter(): ExploreFilter {
+/** The study-anchored filter every explore route takes: the applied filters, or a draft's. */
+export function exploreFilter(filters: FilterFields = useFiltersStore()): ExploreFilter {
   return {
-    ...studyCriteria(),
-    $building: buildingCriteria(),
-    $space: spaceCriteria(),
+    ...studyCriteria(filters),
+    $building: buildingCriteria(filters),
+    $space: spaceCriteria(filters),
   };
 }
 
@@ -75,8 +73,8 @@ export function exploreFilter(): ExploreFilter {
  * dates: whole years, none at the default bounds. Only the measurement
  * routes filter rows by it.
  */
-export function exploreRange(): Pick<ExploreParams, 'from' | 'to'> {
-  const { min, max } = useFiltersStore().measurement_years;
+export function exploreRange(filters: FilterFields = useFiltersStore()): Pick<ExploreParams, 'from' | 'to'> {
+  const { min, max } = filters.measurement_years;
   return {
     ...(min > DEFAULT_MEASUREMENT_YEARS.min ? { from: `${min}-01-01` } : {}),
     ...(max < DEFAULT_MEASUREMENT_YEARS.max ? { to: `${max + 1}-01-01` } : {}),

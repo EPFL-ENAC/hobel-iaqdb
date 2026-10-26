@@ -1,6 +1,6 @@
 import json
 
-from api.models.catalog import Variable
+from api.models.catalog import Building, Variable
 from api.services.explore.cache import cache
 from api.services.measurement import MeasurementService
 from tests.fixtures import make_catalog, make_fixture
@@ -185,6 +185,37 @@ async def test_variable_availability(client, session, clean_db):
         },
     )
     assert {b["availability"]["total"] for b in response.json()["buckets"]} == {0}
+
+
+async def test_building_descriptor_and_band_dimensions(client, session, clean_db):
+    cache.clear()
+    fx = await make_catalog(session)
+    b1 = await session.get(Building, fx.buildings["B1"])
+    b1.outdoor_env = "urban"
+    session.add(b1)
+    await session.commit()
+
+    async def counts(by: str) -> dict:
+        response = await client.get(
+            "/stats/metadata", params={"entity": "buildings", "by": by}
+        )
+        assert response.status_code == 200
+        return {b["key"][0]: b["n"] for b in response.json()["buckets"]}
+
+    assert await counts("outdoor_env") == {"urban": 1, None: 1}
+    # B1 stands at 400 m, built in 1990; B2 has neither
+    assert await counts("altitude_band") == {"250": 1, None: 1}
+    assert await counts("construction_decade") == {"1990": 1, None: 1}
+    # a descriptor dimension is a filter too
+    response = await client.get(
+        "/stats/metadata",
+        params={
+            "entity": "buildings",
+            "by": "country",
+            "filter": json.dumps({"$building": {"outdoor_env": "urban"}}),
+        },
+    )
+    assert [b["key"] for b in response.json()["buckets"]] == [["CH"]]
 
 
 async def test_validation_errors(client, session, clean_db, tmp_path):

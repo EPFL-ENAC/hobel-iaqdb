@@ -58,6 +58,8 @@ export function useParametersWithRecords() {
 export interface ParameterChoiceOptions {
   /** list only pollutants with a benchmark, for charts that compare to one */
   withBenchmark?: boolean;
+  /** list only these pollutants, e.g. those the chart has pairs for; null lists every one */
+  among?: Ref<Set<string> | null> | undefined;
 }
 
 /**
@@ -67,6 +69,7 @@ export interface ParameterChoiceOptions {
  */
 export function useParameterChoice({
   withBenchmark = false,
+  among,
 }: ParameterChoiceOptions = {}) {
   const { t } = useI18n();
   const exploreStore = useExploreStore();
@@ -77,10 +80,12 @@ export function useParameterChoice({
   const withRecords = computed(() => {
     const selected = new Set(exploreStore.parameters);
     const withData = coverage.available.value;
+    const listed = among?.value;
     return exploreStore.parameterOptions.filter(
       (opt) =>
         (!selected.size || selected.has(opt.value)) &&
-        (!withData || withData.has(opt.value)),
+        (!withData || withData.has(opt.value)) &&
+        (!listed || listed.has(opt.value)),
     );
   });
 

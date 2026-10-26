@@ -23,7 +23,7 @@ const headingId = useId();
 
 <style scoped lang="scss">
 .explore-chapter {
-  background: $grey-1;
+  background: $grey-2;
   border-top: 1px solid $grey-4;
 }
 

@@ -178,8 +178,40 @@ async def test_partners(client, session, clean_db, tmp_path):
     assert response.json()["buckets"] == []
     for params in (
         {"agg": "partners"},
-        {"agg": "partners", "x": "space.floor_area"},
+        {"agg": "partners", "x": "space.nope"},
         {"agg": "partners", "x": "co2", "by": "country"},
+        {"agg": "partners", "x": "space.floor_area", "by": "country"},
     ):
         response = await client.get("/stats/relationships", params=params)
         assert response.status_code == 422, params
+
+
+async def test_partners_of_a_catalog_metric(client, session, clean_db, tmp_path):
+    await loaded_fixture(session, clean_db, tmp_path)
+    x = "space.occupancy_density"
+    response = await client.get(
+        "/stats/relationships", params={"agg": "partners", "x": x}
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["meta"]["grain"] == "space"
+    assert body["meta"]["parameters"] == []
+    partners = buckets_of(body)
+    # S1 and S2 have a density and CO2
+    assert partners[("co2",)]["n"] == 2
+    # each count is the number of points of the parameter's metric pairs
+    for (slug,), bucket in partners.items():
+        response = await client.get(
+            "/stats/relationships", params={"agg": "pairs", "x": x, "y": slug}
+        )
+        assert response.json()["buckets"][0]["n"] == bucket["n"], slug
+    # the filters apply: no space with a density in the German building
+    response = await client.get(
+        "/stats/relationships",
+        params={
+            "agg": "partners",
+            "x": x,
+            "filter": json.dumps({"$building": {"country": ["DE"]}}),
+        },
+    )
+    assert response.json()["buckets"] == []

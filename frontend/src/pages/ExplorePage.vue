@@ -1,17 +1,6 @@
 <template>
   <q-page>
-    <ExploreHero>
-      <template #actions>
-        <q-btn
-          outline
-          no-caps
-          icon="download"
-          color="grey-10"
-          :label="t('explore_download.button')"
-          @click="showDownload = true"
-        />
-      </template>
-    </ExploreHero>
+    <ExploreHero />
     <ExploreChapter
       :title="t('explore_chapters.collection.title')"
       :lead="t('explore_chapters.collection.lead')"
@@ -137,12 +126,10 @@
         :title="t('explore_figures.pair.title')"
       />
     </ExploreChapter>
-    <DownloadDialog v-model="showDownload" />
   </q-page>
 </template>
 
 <script setup lang="ts">
-import DownloadDialog from '@/components/DownloadDialog.vue';
 import ExploreHero from '@/components/explore/ExploreHero.vue';
 import ExploreChapter from '@/components/explore/ExploreChapter.vue';
 import FigureGrid from '@/components/explore/FigureGrid.vue';
@@ -160,7 +147,6 @@ import PairFigure from '@/components/explore/PairFigure.vue';
 
 const { t } = useI18n();
 const exploreStore = useExploreStore();
-const showDownload = ref(false);
 
 onMounted(() => {
   void exploreStore.loadSchema();

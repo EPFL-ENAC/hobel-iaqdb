@@ -151,3 +151,33 @@ p:last-child {
   text-underline-offset: 0.2em;
   cursor: pointer;
 }
+
+/* A section of the filter dialog: its groups side by side, stacked on phones */
+.filter-section {
+  display: grid;
+  grid-template-columns: repeat(var(--columns, 2), minmax(0, 1fr));
+  gap: 32px 40px;
+
+  @media (max-width: $breakpoint-sm-max) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.filter-section__heading {
+  margin-bottom: 14px;
+  font-size: 0.6875rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: $grey-8;
+}
+
+.filter-section__group + .filter-section__group {
+  margin-top: 24px;
+}
+
+.filter-section__note {
+  margin: 16px 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: $grey-8;
+}

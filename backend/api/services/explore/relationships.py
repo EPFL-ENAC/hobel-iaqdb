@@ -44,11 +44,11 @@ class RelationshipService:
                     status_code=422, detail="matrix needs 2+ parameters"
                 )
         elif agg == "partners":
-            if not query.x or query.x in METRICS:
+            if not query.x:
                 raise HTTPException(
-                    status_code=422, detail="partners needs a parameter x"
+                    status_code=422, detail="partners needs a parameter or metric x"
                 )
-            slugs = [query.x]
+            slugs = [] if query.x in METRICS else [query.x]
         else:
             if not query.x or not query.y:
                 raise HTTPException(status_code=422, detail="pairs needs x and y")
@@ -67,6 +67,9 @@ class RelationshipService:
         if agg == "matrix":
             buckets = await self._matrix(grain, query, filter, slugs)
             grain_label = grain
+        elif agg == "partners" and query.x in METRICS:
+            buckets = await self._metric_partners(grain, query, filter)
+            grain_label = "space"
         elif agg == "partners":
             buckets = await self._partners(grain, query, filter)
             grain_label = grain
@@ -306,6 +309,32 @@ class RelationshipService:
         shared = other.where(shared, query, filter, [])
         shared = shared.where(other.c.parameter != query.x).distinct().subquery()
         counts = select(shared.c.parameter, func.count()).group_by(shared.c.parameter)
+        rows = (await self.session.exec(counts)).all()
+        return [Bucket(key=[slug], n=int(n)) for slug, n in rows]
+
+    async def _metric_partners(self, grain, query, filter) -> list[Bucket]:
+        """The parameters measured with the catalog column x: per parameter,
+        the spaces with x set it was measured in, the points of its metric
+        pairs. One statement, whatever the number of parameters."""
+        if query.by:
+            raise HTTPException(status_code=422, detail="partners takes no `by`")
+        entity, attr = query.x.split(".")
+        fact = Fact(grain)
+        spaces = select(
+            fact.c.parameter, fact.c.dataset_id, fact.c.space_id, fact.c.building_id
+        )
+        spaces = fact.where(spaces, query, filter, [])
+        spaces = spaces.where(fact.c.space_id.isnot(None)).distinct().subquery()
+        metric = getattr(METRIC_MODELS[entity], attr)
+        joined = spaces.join(Space, col(Space.id) == spaces.c.space_id).outerjoin(
+            Building, col(Building.id) == spaces.c.building_id
+        )
+        counts = (
+            select(spaces.c.parameter, func.count())
+            .select_from(joined)
+            .where(col(metric).isnot(None))
+            .group_by(spaces.c.parameter)
+        )
         rows = (await self.session.exec(counts)).all()
         return [Bucket(key=[slug], n=int(n)) for slug, n in rows]
 
