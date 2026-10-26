@@ -181,3 +181,55 @@ p:last-child {
   line-height: 1.5;
   color: $grey-8;
 }
+
+/* Selects everywhere: square and grey like the figures, the brand red kept for links */
+.q-select {
+  .q-field__control {
+    color: $grey-10;
+  }
+
+  .q-select__dropdown-icon {
+    color: $grey-7;
+  }
+
+  &.q-field--outlined {
+    .q-field__control {
+      border-radius: 2px;
+
+      &:before {
+        border-color: $grey-5;
+      }
+
+      &:hover:before {
+        border-color: $grey-8;
+      }
+    }
+
+    // focused: a dark hairline, not a thick red frame
+    &.q-field--highlighted .q-field__control:after {
+      border-width: 1px;
+    }
+  }
+}
+
+/* A select's menu: a square panel with a hairline and a soft shadow */
+.q-menu {
+  border: 1px solid $grey-4;
+  border-radius: 2px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+
+  .q-virtual-scroll__content > .q-item {
+    min-height: 36px;
+    padding: 6px 16px;
+    font-size: 0.875rem;
+    color: $grey-10;
+  }
+
+  // the picked option: bold on a light grey, marked with the figure accent
+  .q-virtual-scroll__content > .q-item--active {
+    background: $grey-2;
+    box-shadow: inset 2px 0 0 $figure-accent;
+    font-weight: 500;
+    color: $grey-10;
+  }
+}
