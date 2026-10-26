@@ -38,7 +38,7 @@ voc,Volatile organic compounds,total volatile organic compounds,ppb,"{""ppb"": {
 formaldehyde,Formaldehyde,formaldehyde,µg/m³,"{""µg/m³"": {""factor"": 1}, ""ppb"": {""factor"": 1.228221}, ""ppm"": {""factor"": 1228.221}, ""mg/m³"": {""factor"": 1000}}"
 radon,Radon,radon,Bq/m³,"{""Bq/m³"": {""factor"": 1}, ""pCi/L"": {""factor"": 37}}"
 illuminance,Illuminance,illuminance,lux,"{""lux"": {""factor"": 1}, ""lx"": {""factor"": 1}}"
-sound_level,Sound level (A-weighted),sound level,dBA,"{""dBA"": {""factor"": 1}}"
+sound_level,Sound level (A-weighted),sound level,dBA,"{""dBA"": {""factor"": 1}, ""dB"": {""factor"": 1}}"
 aqi,Air quality index,air quality index,index,"{""index"": {""factor"": 1}}"
 air_quality_score,Air quality score,air quality index,index,"{""index"": {""factor"": 1}}"
 voc_index,VOC index,air quality index,index,"{""index"": {""factor"": 1}}"
@@ -104,3 +104,4 @@ limonene,Limonene,individual volatile organic compounds,µg/m³,"{""µg/m³"": {
 2_phenoxyethanol,2-Phenoxyethanol,individual volatile organic compounds,µg/m³,"{""µg/m³"": {""factor"": 1}, ""ppb"": {""factor"": 5.650716}}"
 2_propanol_1_2_methoxypropoxy,1-(2-Methoxypropoxy)-2-propanol,individual volatile organic compounds,µg/m³,"{""µg/m³"": {""factor"": 1}, ""ppb"": {""factor"": 6.06135}}"
 diethylene_glycol_monobutyl_ether_acetate,Diethylene glycol monobutyl ether acetate,individual volatile organic compounds,µg/m³,"{""µg/m³"": {""factor"": 1}, ""ppb"": {""factor"": 8.354192}}"
+biocontaminants,Biocontaminants (sequence reads),biocontaminants,sequence reads,"{""sequence reads"": {""factor"": 1}, ""reads/sample"": {""factor"": 1}}"

@@ -5,7 +5,7 @@ from datetime import timedelta
 import pytest
 from api.models.catalog import Dataset
 from api.models.measurement import DatasetParameter
-from api.services.measurement import MeasurementService
+from api.services.measurement import MeasurementService, StatisticalOnly
 from sqlalchemy import text
 from sqlmodel import select
 from tests.fixtures import (
@@ -245,6 +245,27 @@ async def test_quoted_field_past_the_sniffed_rows(session, clean_db, tmp_path):
         )
     report = await MeasurementService(clean_db).load(fx.datasets["D2"], [path])
     assert report.loaded == len(rows)
+
+
+async def test_time_series_falls_back_to_start_timestamp(session, clean_db, tmp_path):
+    fx = await make_fixture(session, tmp_path)
+    row = Row("D2", "B2", "S3", "pm2_5", "10", "µg/m³", start=START.isoformat())
+    path = write_csv(tmp_path / "start_only.csv", [row])
+    report = await MeasurementService(clean_db).load(fx.datasets["D2"], [path])
+    assert report.loaded == 1 and report.unparseable_timestamp == 0
+
+
+async def test_statistical_only_dataset(session, clean_db, tmp_path):
+    fx = await make_fixture(session, tmp_path)
+    row = Row("D2", "B2", "S3", "pm2_5", "10", "µg/m³", data_type="statistical")
+    path = write_csv(tmp_path / "stat.csv", [row])
+    with pytest.raises(StatisticalOnly, match="statistical 1"):
+        await MeasurementService(clean_db).load(fx.datasets["D2"], [path])
+    # any rejected row makes it a plain failure
+    bad = Row("D2", "B2", "S3", "occupancy", "1", "", timestamp=START.isoformat())
+    path = write_csv(tmp_path / "stat_bad.csv", [row, bad])
+    with pytest.raises(ValueError, match="no row loaded"):
+        await MeasurementService(clean_db).load(fx.datasets["D2"], [path])
 
 
 FK_COLUMNS = ("dataset_id", "study_id", "building_id", "space_id", "instrument_id")
