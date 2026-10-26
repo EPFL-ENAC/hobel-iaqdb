@@ -1,17 +1,20 @@
 import { defineStore } from 'pinia';
-import { schema as fetchSchema } from '@/api/explore';
+import { schema as fetchSchema, measurements } from '@/api/explore';
+import { setMeasurementYears } from '@/stores/filters';
 import type { ExploreDimension, ExploreSchema } from '@/models';
 import type { OptionItem } from '@/utils/options';
 
+/** the pollutant a figure showing one pollutant opens on, when it has data */
 export const DEFAULT_PARAMETER = 'co2';
 
 export const useExploreStore = defineStore(
   'explore',
   () => {
     const schema = ref<ExploreSchema | null>(null);
-    /** persisted; first visit starts on the default, an empty list means all datasets */
-    const parameters = ref<string[]>([DEFAULT_PARAMETER]);
+    /** the pollutants picked, persisted; none (the default) means every pollutant */
+    const parameters = ref<string[]>([]);
     let pending: Promise<ExploreSchema> | null = null;
+    let yearsPending: Promise<void> | null = null;
     /** study identifier to name, for chart labels; filled once by loadStudyNames */
     const studyNames = ref(new Map<string, string>());
     let studyNamesPending: Promise<void> | null = null;
@@ -33,6 +36,7 @@ export const useExploreStore = defineStore(
     );
 
     async function loadSchema(): Promise<ExploreSchema> {
+      void loadMeasurementYears();
       if (schema.value) return schema.value;
       if (!pending) {
         pending = fetchSchema()
@@ -52,13 +56,23 @@ export const useExploreStore = defineStore(
       return pending;
     }
 
-    /** Select the default parameter when the schema offers it, none otherwise. */
+    /** The first and last years holding records bound the year filter; loaded once. */
+    function loadMeasurementYears(): Promise<void> {
+      yearsPending ??= measurements({ agg: 'count', by: ['year'] })
+        .then((result) => {
+          const years = result.buckets.flatMap((b) => (b.key[0] ? [Number(b.key[0].slice(0, 4))] : []));
+          if (years.length) setMeasurementYears({ min: Math.min(...years), max: Math.max(...years) });
+        })
+        .catch(() => {
+          // try again on the next load
+          yearsPending = null;
+        });
+      return yearsPending;
+    }
+
+    /** Back to every pollutant. */
     function resetParameters(): void {
-      parameters.value = schema.value?.parameters.some(
-        (p) => p.slug === DEFAULT_PARAMETER,
-      )
-        ? [DEFAULT_PARAMETER]
-        : [];
+      parameters.value = [];
     }
 
     function dimension(key: string): ExploreDimension | undefined {
@@ -123,5 +137,6 @@ export const useExploreStore = defineStore(
       showPair,
     };
   },
-  { persist: { pick: ['parameters'] } },
+  // a key of its own: selections saved while CO₂ was the default start over on every pollutant
+  { persist: { key: 'explore-parameters', pick: ['parameters'] } },
 );

@@ -2,43 +2,36 @@
   <ChartCard :eyebrow="eyebrowText" :title="title">
     <template #controls>
       <span>{{ t('explore_figures.relationship.plot_mean') }}</span>
-      <q-btn-dropdown
-        v-if="parameterOptions.length > 1"
-        class="relationship-figure__chip"
-        :label="chipLabel"
-        no-caps
-        unelevated
-        rounded
-        dense
-        color="grey-10"
-      >
-        <q-list dense>
-          <q-item
-            v-for="opt in parameterOptions"
-            :key="opt.value"
-            v-close-popup
-            clickable
-            :active="opt.value === parameter"
-            @click="onParameter(opt.value)"
-          >
-            <q-item-section>{{ opt.label }}</q-item-section>
-          </q-item>
-        </q-list>
-      </q-btn-dropdown>
-      <span v-else class="relationship-figure__chip relationship-figure__chip--static">{{ chipLabel }}</span>
-      <span>{{ t('explore_figures.relationship.against') }}</span>
+      <!-- a pollutant fixed by the filter bar, or the only one with pairs, is said, not offered -->
       <q-select
-        :model-value="metric"
-        :options="metricOptions"
-        :loading="probing"
+        v-if="parameterOptions.length > 1"
+        :model-value="parameter"
+        :options="parameterOptions"
         emit-value
         map-options
         dense
         outlined
         options-dense
-        class="relationship-figure__metric"
-        @update:model-value="(value) => (metric = value)"
+        class="relationship-figure__select"
+        @update:model-value="onParameter"
       />
+      <span v-else class="relationship-figure__pollutant">{{ pollutantName }}</span>
+      <!-- no metric with pairs: nothing to pick, the chart says why -->
+      <template v-if="metricOptions.length">
+        <span>{{ t('explore_figures.relationship.against') }}</span>
+        <q-select
+          :model-value="metric"
+          :options="metricOptions"
+          :loading="probing"
+          emit-value
+          map-options
+          dense
+          outlined
+          options-dense
+          class="relationship-figure__select"
+          @update:model-value="(value) => (metric = value)"
+        />
+      </template>
     </template>
     <FigureFrame :height="height" :loading="loading" :error="error" :empty="emptyMessage">
       <e-charts autoresize :init-options="initOptions" :option="option" :update-options="updateOptions" />
@@ -53,7 +46,8 @@
 /**
  * A pollutant against a space characteristic, a point per space (its mean
  * over the period), with the least-squares line and the pollutant's
- * reference. Every metric is probed at once: switching only redraws.
+ * reference. Every metric is probed at once: switching only redraws. The
+ * pollutant menu lists those with pairs for at least one metric.
  */
 import ECharts from 'vue-echarts';
 import type { EChartsOption } from 'echarts';
@@ -70,7 +64,6 @@ import {
   MUTED,
   benchmarkOf,
   initOptions,
-  shortParameterName,
   updateOptions,
 } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
@@ -95,16 +88,28 @@ const { formatValue, describeReference } = useChartFormat();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
 
-const parameters = useParameterChoice();
+const metricKeys = exploreStore.schema?.metrics || [];
+
+/** one partners request per catalog metric: the pollutants measured where it is known */
+const partners = new Map(metricKeys.map((key) => [key, useExploreRequest('relationships')] as const));
+
+/** the pollutants with pairs for at least one metric; null until known */
+const paired = computed(() => {
+  const results = [...partners.values()].map((request) => request.result.value);
+  if (!results.length || results.some((result) => !result)) return null;
+  return new Set(results.flatMap((result) => (result?.buckets || []).flatMap((b) => (b.key[0] && b.n ? [b.key[0]] : []))));
+});
+
+const parameters = useParameterChoice({ among: paired });
 const { parameter, parameterOptions, parameterLabel } = parameters;
 const metric = ref<string | null>(null);
 
 /** one pairs request per catalog metric: the menu lists those with pairs */
-const probes = new Map((exploreStore.schema?.metrics || []).map((key) => [key, useExploreRequest('relationships')] as const));
+const probes = new Map(metricKeys.map((key) => [key, useExploreRequest('relationships')] as const));
 const current = computed(() => (metric.value ? probes.get(metric.value) : undefined));
 const result = computed(() => current.value?.result.value ?? null);
 const probing = computed(() => [...probes.values()].some((probe) => probe.loading.value));
-const loading = computed(() => probing.value);
+const loading = computed(() => probing.value || [...partners.values()].some((request) => request.loading.value));
 const error = computed(
   () => current.value?.error.value ?? [...probes.values()].find((probe) => probe.error.value)?.error.value ?? null,
 );
@@ -118,7 +123,7 @@ const metricOptions = computed(() =>
   [...probes.entries()].flatMap(([key, probe]) => (probe.result.value?.meta.n ? [{ value: key, label: metricName(key) }] : [])),
 );
 
-const chipLabel = computed(() => (parameter.value ? shortParameterName(parameter.value) : '–'));
+const pollutantName = computed(() => (parameter.value ? parameterLabel.value : '–'));
 
 const eyebrowText = computed(() =>
   t('explore_figures.relationship.eyebrow', {
@@ -162,8 +167,10 @@ async function probeAll(): Promise<void> {
   metric.value = keys.includes(props.defaultMetric) ? props.defaultMetric : (keys[0] ?? null);
 }
 
-/** Settle the pollutant, then probe: on mount and when the filters are applied. */
+/** Which pollutants have pairs, then settle the pollutant, then probe: on mount and when the filters are applied. */
 async function refresh(): Promise<void> {
+  const params = { agg: 'partners' as const, filter: exploreFilter(), ...exploreRange() };
+  await Promise.all([...partners].map(([key, request]) => request.load({ ...params, x: key })));
   await parameters.refresh();
   await probeAll();
 }
@@ -274,18 +281,13 @@ const option = computed<EChartsOption>(() => {
 </script>
 
 <style scoped lang="scss">
-.relationship-figure__chip {
-  padding: 2px 14px;
-  font-size: 0.9375rem;
+// as tall as a dense select: the controls keep their height without one
+.relationship-figure__pollutant {
+  line-height: 40px;
+  color: $grey-10;
 }
 
-.relationship-figure__chip--static {
-  border-radius: 999px;
-  background: $grey-10;
-  color: white;
-}
-
-.relationship-figure__metric {
+.relationship-figure__select {
   min-width: 180px;
 
   :deep(.q-field__control) {

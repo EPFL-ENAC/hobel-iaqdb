@@ -7,7 +7,11 @@
 </template>
 
 <script setup lang="ts">
-/** Datasets so far, year by year: each dataset counts from the year of its first measurement. */
+/**
+ * Datasets so far, year by year: each dataset counts from the year of its
+ * first measurement, within the selected years and of the selected pollutants.
+ * A dataset begun before the years counts from the first of them.
+ */
 import ECharts from 'vue-echarts';
 import type { EChartsOption } from 'echarts';
 import { use } from 'echarts/core';
@@ -34,12 +38,19 @@ withDefaults(defineProps<Props>(), { height: 260 });
 const { t } = useI18n();
 const { formatCount } = useChartFormat();
 const filtersStore = useFiltersStore();
+const exploreStore = useExploreStore();
 
 const { result, loading, error, empty, load } = useExploreRequest('measurements');
 
 /** Load the chart: on mount and when the filters are applied. */
 function reload(): void {
-  void load({ agg: 'coverage', by: ['dataset'], filter: exploreFilter(), ...exploreRange() });
+  void load({
+    agg: 'coverage',
+    by: ['dataset'],
+    filter: exploreFilter(),
+    ...exploreRange(),
+    ...(exploreStore.parameters.length ? { parameters: [...exploreStore.parameters] } : {}),
+  });
 }
 
 onMounted(reload);
@@ -47,25 +58,33 @@ filtersStore.$onAction(({ name, after }) => {
   if (name === 'notifyUpdate') after(reload);
 });
 
-/** datasets added per year, by the year of their first measurement */
+/** the selected years, read again when the filters are applied */
+const range = computed(() => {
+  void filtersStore.updates;
+  return { ...filtersStore.measurement_years };
+});
+
+/** datasets added per year, by the year of their first measurement, kept within the selected years */
 const added = computed(() => {
   const counts = new Map<number, number>();
+  const { min, max } = range.value;
   for (const bucket of result.value?.buckets || []) {
     const first = bucket.coverage?.first_at;
     if (!first) continue;
     // a naive timestamp: new Date() would read it as local time
-    const year = Number(first.slice(0, 4));
+    const year = Math.max(Number(first.slice(0, 4)), min);
+    if (year > max) continue;
     counts.set(year, (counts.get(year) ?? 0) + 1);
   }
   return counts;
 });
 
-/** every year from the first to the last, gaps included */
+/** every year from the first to the last selected one, gaps included */
 const years = computed(() => {
   const keys = [...added.value.keys()];
   if (!keys.length) return [];
   const first = Math.min(...keys);
-  const last = Math.max(...keys);
+  const last = range.value.max;
   return Array.from({ length: last - first + 1 }, (_, i) => first + i);
 });
 

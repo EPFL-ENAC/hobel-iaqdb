@@ -96,6 +96,20 @@ def _category(key, label, entity, attr, filter_path, drill_to) -> DimensionSpec:
     )
 
 
+def _band(key, label, entity, attr, step) -> DimensionSpec:
+    """A number in bands of `step`, keyed by their lower bound ("250"): for
+    histograms, so no filter path (the filters take ranges)."""
+    return DimensionSpec(
+        key,
+        label,
+        entity,
+        None,
+        None,
+        "category",
+        lambda f: func.floor(getattr(f.use(entity), attr) / step) * step,
+    )
+
+
 def _time(key, label, trunc, drill_to) -> DimensionSpec:
     return DimensionSpec(
         key,
@@ -148,6 +162,38 @@ DIMENSIONS: dict[str, DimensionSpec] = {
             "mechanical_ventilation_type",
             "$space.mechanical_ventilation_type",
             "space_type",
+        ),
+        _category(
+            "outdoor_env",
+            "Outdoor environment",
+            "building",
+            "outdoor_env",
+            "$building.outdoor_env",
+            None,
+        ),
+        _category(
+            "age_group",
+            "Occupant age group",
+            "building",
+            "age_group",
+            "$building.age_group",
+            None,
+        ),
+        _category(
+            "socioeconomic_status",
+            "Socioeconomic status",
+            "building",
+            "socioeconomic_status",
+            "$building.socioeconomic_status",
+            None,
+        ),
+        _band("altitude_band", "Altitude", "building", "altitude", 250),
+        _band(
+            "construction_decade",
+            "Construction decade",
+            "building",
+            "construction_year",
+            10,
         ),
         _category("space_type", "Space type", "space", "type", "$space.type", None),
         _category(

@@ -11,10 +11,13 @@ import type {
 import { useExploreStore } from '@/stores/explore';
 import { cityName, useFiltersStore } from '@/stores/filters';
 import {
+  ageGroupOptions,
   buildingTypeOptions,
   climateOptions,
   countryOptions,
   mechanicalVentilationTypeOptions,
+  outdoorEnvOptions,
+  socioeconomicStatusOptions,
   spaceTypeOptions,
   yesNoOptions,
   type OptionItem,
@@ -187,6 +190,9 @@ const KEY_OPTIONS: Record<string, OptionItem[]> = {
     { value: 'balanced mechanical ventilation', label: 'Balanced mechanical' },
   ],
   space_type: spaceTypeOptions,
+  outdoor_env: outdoorEnvOptions,
+  age_group: ageGroupOptions,
+  socioeconomic_status: socioeconomicStatusOptions,
 };
 
 /**

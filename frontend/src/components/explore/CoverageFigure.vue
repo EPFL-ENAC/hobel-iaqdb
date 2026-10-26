@@ -6,7 +6,6 @@
       :label-header="t('explore_figures.parameters')"
       :bar-header="t('explore_figures.records')"
       :columns="columns"
-      :highlighted="highlighted"
       :layout="layout"
       :format-value="formatCompact"
       :dialog-eyebrow="eyebrow"
@@ -26,7 +25,8 @@
 <script setup lang="ts">
 /**
  * Records per pollutant, ranked, with the share of the expected records that
- * are present. The selected pollutants are drawn in the accent colour.
+ * are present. Only the selected pollutants are shown, or every one when
+ * none is selected.
  */
 import ChartCard from '@/components/explore/ChartCard.vue';
 import RankedBars from '@/components/explore/RankedBars.vue';
@@ -69,11 +69,12 @@ filtersStore.$onAction(({ name, after }) => {
   if (name === 'notifyUpdate') after(reload);
 });
 
-const rows = computed<RankedRow<ExploreBucket>[]>(() =>
-  (result.value?.buckets || [])
+const rows = computed<RankedRow<ExploreBucket>[]>(() => {
+  const selected = new Set(exploreStore.parameters);
+  return (result.value?.buckets || [])
     .flatMap((bucket) => {
       const slug = bucket.key[0];
-      if (!slug) return [];
+      if (!slug || (selected.size && !selected.has(slug))) return [];
       return [
         {
           key: slug,
@@ -83,8 +84,8 @@ const rows = computed<RankedRow<ExploreBucket>[]>(() =>
         },
       ];
     })
-    .sort((a, b) => b.value - a.value),
-);
+    .sort((a, b) => b.value - a.value);
+});
 
 /** present records over expected ones, summed over the rows */
 function completeness(rows: RankedRow<ExploreBucket>[]): string {
@@ -100,9 +101,4 @@ function completeness(rows: RankedRow<ExploreBucket>[]): string {
 const columns = computed<RankedColumn<ExploreBucket>[]>(() => [
   { key: 'complete', header: t('explore_figures.complete'), format: completeness },
 ]);
-
-/** none selected means every pollutant: then every row is drawn alike */
-const highlighted = computed(() =>
-  exploreStore.parameters.length ? [...exploreStore.parameters] : undefined,
-);
 </script>

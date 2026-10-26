@@ -16,9 +16,43 @@ export type FilterParams = {
   study_ids: string[] | null;
 };
 
+/** The filters as values: the store's, or a draft being edited before it is applied. */
+export interface FilterFields {
+  countries: string[];
+  cities: string[];
+  construction_years: { min: number; max: number };
+  altitudes: { min: number; max: number };
+  measurement_years: { min: number; max: number };
+  climate_zones: string[];
+  study_ids: string[];
+  building_types: string[];
+  age_groups: string[];
+  socioeconomic_status: string[];
+  outdoor_envs: string[];
+  mechanical_ventilation: string | null;
+  mechanical_ventilation_types: string[];
+}
+
 export const DEFAULT_CONSTRUCTION_YEARS = { min: 1800, max: new Date().getFullYear() };
 export const DEFAULT_ALTITUDES = { min: 0, max: 2500 };
-export const DEFAULT_MEASUREMENT_YEARS = { min: 2000, max: new Date().getFullYear() };
+/** "All years": the first and last years holding records, once loaded (see setMeasurementYears) */
+export const DEFAULT_MEASUREMENT_YEARS = reactive({ min: 2000, max: new Date().getFullYear() });
+
+/**
+ * Bound the measurement years by the years that hold records. A range at
+ * the old bounds moves to the new ones, still meaning "all years"; one set
+ * within them is kept, clamped to them.
+ */
+export function setMeasurementYears(extent: { min: number; max: number }): void {
+  const filters = useFiltersStore();
+  const { min, max } = filters.measurement_years;
+  const clamp = (year: number) => Math.min(Math.max(year, extent.min), extent.max);
+  filters.measurement_years = {
+    min: min === DEFAULT_MEASUREMENT_YEARS.min ? extent.min : clamp(min),
+    max: max === DEFAULT_MEASUREMENT_YEARS.max ? extent.max : clamp(max),
+  };
+  Object.assign(DEFAULT_MEASUREMENT_YEARS, extent);
+}
 
 /** The store keeps cities as "City, CC"; filters and bucket keys use the bare name. */
 export function cityName(entry: string): string {

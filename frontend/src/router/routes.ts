@@ -35,7 +35,11 @@ const routes: RouteRecordRaw[] = [
       {
         path: '/explore',
         name: 'explore',
-        component: () => import('@/pages/ExplorePage.vue'),
+        // the filter bar sits in the layout's header, under the toolbar
+        components: {
+          default: () => import('@/pages/ExplorePage.vue'),
+          bar: () => import('@/components/filters/FilterBar.vue'),
+        },
       },
       {
         path: '/data-hub',
