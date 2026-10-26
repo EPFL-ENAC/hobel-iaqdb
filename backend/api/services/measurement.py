@@ -77,6 +77,10 @@ BINS = (
 )
 
 
+class StatisticalOnly(ValueError):
+    """Every row of the dataset is statistical: nothing to load yet."""
+
+
 @dataclass
 class CatalogMaps:
     """Identifier -> id of the study's catalog entities, for the CSV columns
@@ -165,7 +169,8 @@ def _classified_sql(files: list[str]) -> str:
             try_cast(regexp_replace(
                 CASE WHEN data_type = 'time_integrated'
                      THEN coalesce(start_text, timestamp_text)
-                     ELSE timestamp_text END, '{TZ_SUFFIX}', '\\1') AS TIMESTAMP) AS ts,
+                     ELSE coalesce(timestamp_text, start_text) END,
+                '{TZ_SUFFIX}', '\\1') AS TIMESTAMP) AS ts,
             try_cast(regexp_replace(start_text, '{TZ_SUFFIX}', '\\1') AS TIMESTAMP)
                 AS start_ts,
             try_cast(regexp_replace(end_text, '{TZ_SUFFIX}', '\\1') AS TIMESTAMP)
@@ -360,6 +365,9 @@ class MeasurementService:
         report = classification.report
         if report.loaded == 0:
             await self._finish(dataset_id, report, "failed", "no row loaded")
+            # ponytail: statistical rows are counted, not stored
+            if report.statistical and not report.rejected:
+                raise StatisticalOnly(f"statistical only: {report.summary()}")
             raise ValueError(f"no row loaded: {report.summary()}")
         await self._finish(dataset_id, report, "ready", None)
         return report
