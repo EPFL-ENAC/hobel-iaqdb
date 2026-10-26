@@ -342,7 +342,7 @@ export default {
       shown: 'Shown',
       sampled: '{count} sampled',
       all: 'all {count}',
-      note: 'Y lists only variables measured together with X. The dots are a fixed sample; the trend line uses every pair.',
+      note: 'X and Y list only variables measured together with the other. The dots are a fixed sample; the trend line uses every pair.',
     },
     relationship: {
       eyebrow: 'Relationship · {pollutant} × space metrics',
@@ -356,6 +356,7 @@ export default {
       method: 'Method',
       pollutants: 'No pollutants | 1 pollutant | {count} pollutants',
       pick_two: 'Pick at least two pollutants.',
+      slow: 'Correlating every pair over each shared hour: this can take a few seconds.',
     },
     groups: {
       eyebrow: 'Relationship · {pollutant} × {aspect}',

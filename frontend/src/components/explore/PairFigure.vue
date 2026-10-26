@@ -8,7 +8,7 @@
         <q-select
           :model-value="x"
           :options="xOptions"
-          :loading="coverage.loading.value"
+          :loading="coverage.loading.value || probeY.loading.value"
           :display-value="x ? shortParameterName(x) : ''"
           emit-value
           map-options
@@ -105,9 +105,14 @@ const y = ref<string | null>(null);
 const method = ref<Method>('spearman');
 /** variables measured together with x */
 const partners = ref<Set<string>>(new Set());
+/** variables measured together with y; null while there is no y */
+const partnersOfY = ref<Set<string> | null>(null);
 
 const coverage = useParametersWithRecords();
+/** the partners of x: the Y menu */
 const probe = useExploreRequest('relationships');
+/** the partners of y: the X menu */
+const probeY = useExploreRequest('relationships');
 /** the dots and the least-squares line, with Pearson's r */
 const pairsRequest = useExploreRequest('relationships');
 /** Spearman's r of the pair: a matrix of two */
@@ -117,9 +122,12 @@ const loading = computed(() => pairsRequest.loading.value || rankRequest.loading
 const error = computed(() => pairsRequest.error.value);
 const emptyMessage = computed(() => (pairsRequest.empty.value ? t('plots.no_common_hours') : ''));
 
-const xOptions = coverage.options;
+/** only the variables measured in the same space and hour as y */
+const xOptions = computed(() =>
+  coverage.options.value.filter((opt) => !partnersOfY.value || partnersOfY.value.has(opt.value)),
+);
 /** only the variables measured in the same space and hour as x */
-const yOptions = computed(() => xOptions.value.filter((opt) => partners.value.has(opt.value)));
+const yOptions = computed(() => coverage.options.value.filter((opt) => partners.value.has(opt.value)));
 
 const methodOptions = computed<{ value: Method; label: string }[]>(() => [
   { value: 'pearson', label: t('plots.pearson') },
@@ -167,21 +175,63 @@ function scope(): Pick<ExploreParams, 'filter' | 'from' | 'to'> {
   return { filter: exploreFilter(), ...exploreRange() };
 }
 
-/** Variables with records; keeps x while offered, else the default, else the first. */
-async function settleX(): Promise<void> {
-  await coverage.refresh();
-  const offered = xOptions.value.map((opt) => opt.value);
-  if (x.value && offered.includes(x.value)) return;
-  x.value = offered.includes(DEFAULT_X) ? DEFAULT_X : (offered[0] ?? null);
+/** The variables measured with `slug`; null when a later load aborted this one. */
+async function partnersOf(request: typeof probe, slug: string): Promise<Set<string> | null> {
+  const value = await request.load({ agg: 'partners', x: slug, ...scope() });
+  if (!value) return null;
+  return new Set(value.buckets.flatMap((b) => (b.n && b.key[0] ? [b.key[0]] : [])));
 }
 
-/** The variables measured with x, then y: kept while offered, else the default, else the first. */
-async function settleY(): Promise<void> {
-  const value = await probe.load(x.value ? { agg: 'partners', x: x.value, ...scope() } : null);
-  partners.value = new Set((value?.buckets || []).flatMap((b) => (b.n && b.key[0] ? [b.key[0]] : [])));
+/**
+ * Variables with records, then x: kept while offered, else the default, else
+ * the first; one measured with nothing is passed over, as its Y menu would be empty.
+ */
+async function settleX(): Promise<boolean> {
+  await coverage.refresh();
+  const offered = coverage.options.value.map((opt) => opt.value);
+  const first = x.value && offered.includes(x.value) ? x.value : offered.includes(DEFAULT_X) ? DEFAULT_X : offered[0];
+  const candidates = first ? [first, ...offered.filter((slug) => slug !== first)] : [];
+  for (const slug of candidates) {
+    const found = await partnersOf(probe, slug);
+    if (!found) return false;
+    if (!found.size) continue;
+    x.value = slug;
+    partners.value = found;
+    return true;
+  }
+  x.value = null;
+  partners.value = new Set();
+  return true;
+}
+
+/** The partners of x, for the Y menu. */
+async function loadPartners(): Promise<boolean> {
+  if (!x.value) {
+    partners.value = new Set();
+    return true;
+  }
+  const found = await partnersOf(probe, x.value);
+  if (!found) return false;
+  partners.value = found;
+  return true;
+}
+
+/** Y among the partners of x: the one asked for, else kept, else the default, else the first. */
+function settleY(preferred: string | null = null): void {
   const offered = yOptions.value.map((opt) => opt.value);
-  if (y.value && offered.includes(y.value)) return;
-  y.value = offered.includes(DEFAULT_Y) ? DEFAULT_Y : (offered[0] ?? null);
+  if (preferred && offered.includes(preferred)) y.value = preferred;
+  else if (y.value && offered.includes(y.value)) return;
+  else y.value = offered.includes(DEFAULT_Y) ? DEFAULT_Y : (offered[0] ?? null);
+}
+
+/** The partners of y, for the X menu; x is one of them, as y is a partner of x. */
+async function narrowX(): Promise<void> {
+  if (!y.value) {
+    partnersOfY.value = null;
+    return;
+  }
+  const found = await partnersOf(probeY, y.value);
+  if (found) partnersOfY.value = found;
 }
 
 function reload(): void {
@@ -196,20 +246,24 @@ function reload(): void {
 
 /** Settle both menus, then load: on mount and when the filters are applied. */
 async function refresh(): Promise<void> {
-  await settleX();
-  await settleY();
+  if (!(await settleX())) return;
+  settleY();
   reload();
+  await narrowX();
 }
 
 async function onX(value: string | null): Promise<void> {
   x.value = value;
-  await settleY();
+  if (!(await loadPartners())) return;
+  settleY();
   reload();
+  await narrowX();
 }
 
 function onY(value: string | null): void {
   y.value = value;
   reload();
+  void narrowX();
 }
 
 function onMethod(value: Method): void {
@@ -227,9 +281,11 @@ exploreStore.$onAction(({ name, args }) => {
   const [px, py] = args;
   root.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   x.value = px;
-  void settleY().then(() => {
-    if (partners.value.has(py)) y.value = py;
+  void loadPartners().then((settled) => {
+    if (!settled) return;
+    settleY(py);
     reload();
+    void narrowX();
   });
 });
 
