@@ -37,7 +37,7 @@ router = APIRouter()
 
 @router.get("/study-template")
 async def get_study_template():
-    version = "3.2.1"
+    version = "3.3.1"
     data_file_path = str(files("api") / f"data/Metadata_entry_form_v{version}.xlsm")
     return FileResponse(
         data_file_path,
