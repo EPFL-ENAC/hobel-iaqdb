@@ -186,6 +186,7 @@ export interface LoadReport {
   missing: number;
   statistical: number;
   unknown_parameter: Record<string, number>;
+  unknown_statistic: Record<string, number>;
   unknown_unit: Record<string, number>;
   unparseable_value: Record<string, number>;
   unparseable_timestamp: number;

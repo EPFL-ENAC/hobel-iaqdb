@@ -71,6 +71,18 @@ def test_data_upload_check_reports_every_bin(tmp_path: Path):
     assert "unlinked space 1" in line
 
 
+def test_data_upload_skips_csv_that_is_not_processed(tmp_path: Path):
+    from tests.fixtures import Fixture
+
+    fx = Fixture(study_id=0, buildings={}, spaces={}, datasets={}, files={})
+    folder = upload_folder(tmp_path, d1_rows(fx))
+    (folder / "META").mkdir()
+    (folder / "META" / "home.csv").write_text("ID,Country\nH01,Ireland\n")
+    study = data_upload.load_study(folder)
+    assert [d.name for d, _ in study.dataset_files] == ["D1"]
+    assert study.warnings == ["META/home.csv skipped: no `source_outer_file` column"]
+
+
 def zip_csv(csv: Path, path: Path) -> Path:
     """A zip as macOS Finder makes it: the CSV in a sub-folder, plus
     `__MACOSX/` metadata entries that are not CSVs despite their name."""

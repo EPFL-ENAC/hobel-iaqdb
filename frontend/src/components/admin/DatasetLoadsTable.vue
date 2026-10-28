@@ -125,6 +125,7 @@ function rejected(report?: LoadReport) {
   const sum = (counts: Record<string, number>) => Object.values(counts).reduce((a, b) => a + b, 0);
   return (
     sum(report.unknown_parameter) +
+    sum(report.unknown_statistic ?? {}) +
     sum(report.unknown_unit) +
     sum(report.unparseable_value) +
     report.unparseable_timestamp
@@ -162,7 +163,8 @@ const columns = [
     name: 'loaded',
     label: t('admin.loads_columns.loaded'),
     align: 'right' as const,
-    field: (row: DatasetLoad) => row.load_report?.loaded,
+    // readings and statistics both stored
+    field: (row: DatasetLoad) => row.load_report && row.load_report.loaded + row.load_report.statistical,
     format: formatCount,
   },
   {

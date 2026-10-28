@@ -5,12 +5,13 @@ from datetime import timedelta
 import pytest
 from api.models.catalog import Dataset
 from api.models.measurement import DatasetParameter
-from api.services.measurement import MeasurementService, StatisticalOnly
+from api.services.measurement import MeasurementService
 from sqlalchemy import text
 from sqlmodel import select
 from tests.fixtures import (
     CSV_COLUMNS,
     D1_REPORT,
+    DAYS,
     START,
     Row,
     daily,
@@ -139,7 +140,7 @@ async def test_continuous_aggregates_match_raw(session, clean_db, tmp_path):
             assert d.mean == pytest.approx(mean(expected_days[d.day]))
 
 
-async def test_statistical_rows_are_not_aggregated(session, clean_db, tmp_path):
+async def test_statistical_rows_are_stored_apart(session, clean_db, tmp_path):
     fx, reports = await load_all(session, clean_db, tmp_path)
     assert reports["D1"].statistical == 1
     n = (
@@ -148,6 +149,17 @@ async def test_statistical_rows_are_not_aggregated(session, clean_db, tmp_path):
         )
     ).scalar()
     assert n == 0
+    rows = (
+        await session.exec(
+            text(
+                "SELECT parameter, statistic, start_ts, end_ts, value, space_id"
+                " FROM measurement_statistic"
+            )
+        )
+    ).all()
+    assert rows == [
+        ("co2", "p95", START, START + timedelta(days=DAYS), 700.0, fx.spaces["S1"])
+    ]
 
 
 async def test_reload_is_idempotent_and_delete_cascades(session, clean_db, tmp_path):
@@ -257,15 +269,65 @@ async def test_time_series_falls_back_to_start_timestamp(session, clean_db, tmp_
 
 async def test_statistical_only_dataset(session, clean_db, tmp_path):
     fx = await make_fixture(session, tmp_path)
-    row = Row("D2", "B2", "S3", "pm2_5", "10", "µg/m³", data_type="statistical")
-    path = write_csv(tmp_path / "stat.csv", [row])
-    with pytest.raises(StatisticalOnly, match="statistical 1"):
-        await MeasurementService(clean_db).load(fx.datasets["D2"], [path])
-    # any rejected row makes it a plain failure
-    bad = Row("D2", "B2", "S3", "occupancy", "1", "", timestamp=START.isoformat())
-    path = write_csv(tmp_path / "stat_bad.csv", [row, bad])
-    with pytest.raises(ValueError, match="no row loaded"):
-        await MeasurementService(clean_db).load(fx.datasets["D2"], [path])
+    start, end = START.isoformat(), (START + timedelta(days=30)).isoformat()
+
+    def stat(parameter, value, unit, statistic, start=start):
+        return Row(
+            "D2",
+            "B2",
+            "S3",
+            parameter,
+            value,
+            unit,
+            start=start,
+            end=end,
+            data_type="statistical",
+            statistic=statistic,
+        )
+
+    rows = [
+        stat("pm2_5", "0.012", "mg/m³", "mean"),
+        stat("air_temperature", "68", "°F", "95th_percentile"),
+        # a spread converts with the factor only
+        stat("air_temperature", "9", "°F", "standard_deviation"),
+        # rejected: not a statistic of the values, no period, unknown parameter
+        stat("pm2_5", "12", "µg/m³", "count"),
+        stat("pm2_5", "10", "µg/m³", "mean", start=""),
+        stat("t", "20", "°C", "mean"),
+    ]
+    path = write_csv(tmp_path / "stat.csv", rows)
+    report = await MeasurementService(clean_db).load(fx.datasets["D2"], [path])
+    assert (report.loaded, report.statistical) == (0, 3)
+    assert report.unknown_statistic == {"count": 1}
+    assert report.unparseable_timestamp == 1
+    assert report.unknown_parameter == {"t": 1}
+    assert "statistical 3" in report.summary()
+    dataset = await session.get(Dataset, fx.datasets["D2"])
+    await session.refresh(dataset)
+    assert dataset.summary_status == "ready"
+    values = dict(
+        (
+            await session.exec(
+                text("SELECT statistic, value FROM measurement_statistic")
+            )
+        ).all()
+    )
+    assert values["mean"] == pytest.approx(12.0)
+    assert values["95th_percentile"] == pytest.approx(20.0, abs=1e-4)
+    assert values["standard_deviation"] == pytest.approx(5.0, abs=1e-4)
+    # a reload replaces them
+    await MeasurementService(clean_db).load(fx.datasets["D2"], [path])
+    n = (
+        await session.exec(text("SELECT count(*) FROM measurement_statistic"))
+    ).scalar()
+    assert n == 3
+    # and deleting the dataset cascades
+    await session.delete(dataset)
+    await session.commit()
+    n = (
+        await session.exec(text("SELECT count(*) FROM measurement_statistic"))
+    ).scalar()
+    assert n == 0
 
 
 FK_COLUMNS = ("dataset_id", "study_id", "building_id", "space_id", "instrument_id")
