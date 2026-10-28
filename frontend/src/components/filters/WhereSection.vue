@@ -74,7 +74,7 @@ const countryOptions = computed(() => toOptions(countries.counts.value, (key) =>
 const cityOptions = computed<FacetOption[]>(() =>
   toOptions(cities.counts.value, (key) => key.split('|')[0] ?? key).map((option) => ({
     ...option,
-    value: option.value.replace('|', ', '),
+    value: option.value.replaceAll('|', ', '),
   })),
 );
 
