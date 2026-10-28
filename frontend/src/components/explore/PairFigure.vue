@@ -154,7 +154,7 @@ const facts = computed(() => {
   const points = b.points?.length ?? 0;
   return [
     { label: t('explore_figures.pair.pairs'), value: t('explore_figures.pair.hours', { count: b.n.toLocaleString(locale.value) }) },
-    ...(fit?.slope !== undefined && fit.intercept !== undefined
+    ...(fit?.slope != null && fit.intercept != null
       ? [
           {
             label: t('explore_figures.pair.trend'),
@@ -185,23 +185,27 @@ async function partnersOf(request: typeof probe, slug: string): Promise<Set<stri
 /**
  * Variables with records, then x: kept while offered, else the default, else
  * the first; one measured with nothing is passed over, as its Y menu would be empty.
+ * The first pick is probed alone; past it one request names every variable
+ * measured with another, not a probe each.
  */
 async function settleX(): Promise<boolean> {
   await coverage.refresh();
   const offered = coverage.options.value.map((opt) => opt.value);
   const first = x.value && offered.includes(x.value) ? x.value : offered.includes(DEFAULT_X) ? DEFAULT_X : offered[0];
-  const candidates = first ? [first, ...offered.filter((slug) => slug !== first)] : [];
-  for (const slug of candidates) {
-    const found = await partnersOf(probe, slug);
+  if (first) {
+    const found = await partnersOf(probe, first);
     if (!found) return false;
-    if (!found.size) continue;
-    x.value = slug;
-    partners.value = found;
-    return true;
+    if (found.size) {
+      x.value = first;
+      partners.value = found;
+      return true;
+    }
   }
-  x.value = null;
-  partners.value = new Set();
-  return true;
+  const partnered = await probe.load({ agg: 'partnered', ...scope() });
+  if (!partnered) return false;
+  const withAny = new Set(partnered.buckets.flatMap((b) => (b.n && b.key[0] ? [b.key[0]] : [])));
+  x.value = offered.find((slug) => withAny.has(slug)) ?? null;
+  return loadPartners();
 }
 
 /** The partners of x, for the Y menu. */
@@ -299,7 +303,7 @@ const option = computed<EChartsOption>(() => {
   const hi = Math.max(...xs);
   const fit = b.fit;
   const line =
-    fit?.slope !== undefined && fit.intercept !== undefined
+    fit?.slope != null && fit.intercept != null
       ? [
           [lo, fit.slope * lo + fit.intercept],
           [hi, fit.slope * hi + fit.intercept],

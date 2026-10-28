@@ -22,10 +22,10 @@ from sqlalchemy import and_, func, literal, text, union_all
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-AGGS = ("pairs", "matrix", "partners")
+AGGS = ("pairs", "matrix", "partners", "partnered")
 # points a pairs chart gets at most; the fit is always over every row
 SAMPLE = 2000
-# memory a Spearman matrix sorts in, for its transaction only
+# memory a Spearman matrix sorts in, for its rank query only
 SORT_MEMORY = "64MB"
 METRIC_MODELS = {"space": Space, "building": Building}
 
@@ -52,6 +52,8 @@ class RelationshipService:
                     status_code=422, detail="partners needs a parameter or metric x"
                 )
             slugs = [] if query.x in METRICS else [query.x]
+        elif agg == "partnered":
+            slugs = []
         else:
             if not query.x or not query.y:
                 raise HTTPException(status_code=422, detail="pairs needs x and y")
@@ -65,7 +67,7 @@ class RelationshipService:
         specs = resolve(query.by, grain)
         if grain == "raw":
             # partners scans every parameter, not only x
-            scanned = [] if agg == "partners" else slugs
+            scanned = [] if agg in ("partners", "partnered") else slugs
             await check_raw_cap(self.session, filter, scanned)
         if agg == "matrix":
             buckets = await self._matrix(grain, query, filter, slugs)
@@ -75,6 +77,9 @@ class RelationshipService:
             grain_label = "space"
         elif agg == "partners":
             buckets = await self._partners(grain, query, filter)
+            grain_label = grain
+        elif agg == "partnered":
+            buckets = await self._partnered(grain, query, filter)
             grain_label = grain
         elif query.x in METRICS:
             buckets = await self._metric_pairs(grain, query, filter, specs)
@@ -258,6 +263,10 @@ class RelationshipService:
             # the rank sorts spill to disk at the default work_mem
             await self.session.exec(text(f"SET LOCAL work_mem = '{SORT_MEMORY}'"))
             rows = (await self.session.exec(self._ranked(pivot, pairs))).all()
+            # back to the default for the rest of the request: a savepoint
+            # would not do, as releasing it keeps a SET LOCAL (on an error the
+            # rollback drops it)
+            await self.session.exec(text("RESET work_mem"))
             cells = {(i, j): (n, r) for i, j, n, r in rows}
         else:
             stats = []
@@ -311,6 +320,26 @@ class RelationshipService:
         shared = other.where(shared, query, filter, [])
         shared = shared.where(other.c.parameter != query.x).distinct().subquery()
         counts = select(shared.c.parameter, func.count()).group_by(shared.c.parameter)
+        rows = (await self.session.exec(counts)).all()
+        return [Bucket(key=[slug], n=int(n)) for slug, n in rows]
+
+    async def _partnered(self, grain, query, filter) -> list[Bucket]:
+        """The parameters measured with any other: per parameter, the
+        (dataset, space, time) rows it shares with at least one. One scan
+        for every parameter, where `partners` answers for one x."""
+        if query.by:
+            raise HTTPException(status_code=422, detail="partnered takes no `by`")
+        fact = Fact(grain)
+        distinct = fact.c.parameter.distinct()
+        # per row measuring two parameters or more, one line per parameter
+        shared = (
+            select(func.unnest(func.array_agg(distinct)).label("slug"))
+            .where(fact.c.space_id.isnot(None))
+            .group_by(fact.c.dataset_id, fact.c.space_id, fact.time)
+            .having(func.count(distinct) > 1)
+        )
+        shared = fact.where(shared, query, filter, []).subquery("shared")
+        counts = select(shared.c.slug, func.count()).group_by(shared.c.slug)
         rows = (await self.session.exec(counts)).all()
         return [Bucket(key=[slug], n=int(n)) for slug, n in rows]
 

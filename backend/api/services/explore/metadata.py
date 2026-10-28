@@ -11,6 +11,7 @@ from api.services.explore.envelope import (
     key_text,
 )
 from api.services.explore.filters import apply_joined_filter, parse_filter
+from api.services.explore.tables import measurement_day
 from fastapi import HTTPException
 from sqlalchemy import func
 from sqlmodel import col, select
@@ -106,6 +107,36 @@ def _parameter_column(frame: Frame):
     return col(frame.use("parameter").parameter)
 
 
+def _measured_within(frame: Frame, statement, query: ExploreQuery):
+    """Keep the entities with a dataset measured within [from, to): a
+    `dataset_parameter` span overlapping it, as coverage reads it. With
+    `parameters` the same row must match, so a pollutant measured outside
+    the range does not count."""
+    if query.from_ is None and query.to is None:
+        return statement
+    dp = frame.use("parameter")
+    if query.from_:
+        statement = statement.where(col(dp.last_at) >= query.from_)
+    if query.to:
+        statement = statement.where(col(dp.first_at) < query.to)
+    if query.entity in ("buildings", "spaces"):
+        # the dataset joins these on the study only, so its span may come
+        # from another building: their own readings must fall in the range
+        day = measurement_day
+        own = day.c.building_id if query.entity == "buildings" else day.c.space_id
+        readings = select(1).where(
+            own == ROOTS[query.entity].id,
+            day.c.dataset_id == dp.dataset_id,
+            day.c.parameter == dp.parameter,
+        )
+        if query.from_:
+            readings = readings.where(day.c.day >= query.from_)
+        if query.to:
+            readings = readings.where(day.c.day < query.to)
+        statement = statement.where(readings.exists())
+    return statement
+
+
 class MetadataService:
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -153,6 +184,7 @@ class MetadataService:
         statement = apply_joined_filter(frame, statement, filter)
         if query.parameters:
             statement = statement.where(_parameter_column(frame).in_(query.parameters))
+        statement = _measured_within(frame, statement, query)
         statement = statement.select_from(frame.select_from).group_by(*keys)
         rows = (await self.session.exec(statement)).all()
         buckets = [
@@ -179,6 +211,7 @@ class MetadataService:
         statement = apply_joined_filter(frame, statement, filter)
         if query.parameters:
             statement = statement.where(_parameter_column(frame).in_(query.parameters))
+        statement = _measured_within(frame, statement, query)
         statement = statement.select_from(frame.select_from)
         row = (await self.session.exec(statement)).one()
         total = int(row[0])

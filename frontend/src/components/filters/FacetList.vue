@@ -19,6 +19,7 @@
       :title="option.title || option.label"
     >
       <q-checkbox
+        :aria-label="option.label"
         :model-value="modelValue.includes(option.value)"
         :disable="option.disabled"
         dense

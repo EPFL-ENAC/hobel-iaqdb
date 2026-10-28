@@ -22,7 +22,7 @@ export function facetParams(draft: FilterDraft, { by, own, count = 'datasets' }:
   const parameters = own.includes('parameters') || !scope.parameters.length ? {} : { parameters: [...scope.parameters] };
   if (count === 'records')
     return { agg: 'count', by, grain: 'day', filter: exploreFilter(scope), ...exploreRange(scope), ...parameters };
-  return { entity: 'datasets', by, filter: exploreFilter(scope), ...parameters };
+  return { entity: 'datasets', by, filter: exploreFilter(scope), ...exploreRange(scope), ...parameters };
 }
 
 function keyOf(bucket: ExploreBucket, width: number): string | null {

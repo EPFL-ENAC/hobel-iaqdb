@@ -53,7 +53,7 @@ const emit = defineEmits<{ 'update:modelValue': [value: { min: number; max: numb
 /** every band from min to max, empty ones included */
 const bars = computed(() => {
   const starts: number[] = [];
-  for (let start = Math.floor(props.min / props.width) * props.width; start < props.max; start += props.width)
+   for (let start = Math.floor(props.min / props.width) * props.width; start <= props.max; start += props.width)
     starts.push(start);
   const top = Math.max(1, ...starts.map((s) => props.bins.get(s) ?? 0));
   return starts.map((start) => {

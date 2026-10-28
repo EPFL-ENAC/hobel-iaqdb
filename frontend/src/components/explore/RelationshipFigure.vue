@@ -195,7 +195,7 @@ const option = computed<EChartsOption>(() => {
   const hi = Math.max(...xs);
   const fit = bucket.fit;
   const line =
-    fit?.slope !== undefined && fit.intercept !== undefined
+    fit?.slope != null && fit.intercept != null
       ? [
           [lo, fit.slope * lo + fit.intercept],
           [hi, fit.slope * hi + fit.intercept],

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { schema as fetchSchema, measurements } from '@/api/explore';
 import { setMeasurementYears } from '@/stores/filters';
-import type { ExploreDimension, ExploreSchema } from '@/models';
+import type { Dataset, ExploreDimension, ExploreSchema } from '@/models';
 import type { OptionItem } from '@/utils/options';
 
 /** the pollutant a figure showing one pollutant opens on, when it has data */
@@ -31,7 +31,8 @@ export const useExploreStore = defineStore(
     const parameterOptions = computed<OptionItem[]>(() =>
       (schema.value?.parameters || []).map((p) => ({
         value: p.slug,
-        label: p.unit ? `${p.label} (${p.unit})` : p.label,
+        // some labels already end with their unit, e.g. "Biocontaminants (sequence reads)"
+        label: p.unit && !p.label.endsWith(`(${p.unit})`) ? `${p.label} (${p.unit})` : p.label,
       })),
     );
 
@@ -58,10 +59,13 @@ export const useExploreStore = defineStore(
 
     /** The first and last years holding records bound the year filter; loaded once. */
     function loadMeasurementYears(): Promise<void> {
-      yearsPending ??= measurements({ agg: 'count', by: ['year'] })
+      // from the dataset summaries: no scan of the daily aggregate
+      yearsPending ??= measurements({ agg: 'coverage', by: ['parameter'] })
         .then((result) => {
-          const years = result.buckets.flatMap((b) => (b.key[0] ? [Number(b.key[0].slice(0, 4))] : []));
-          if (years.length) setMeasurementYears({ min: Math.min(...years), max: Math.max(...years) });
+          const year = (at?: string) => (at ? [Number(at.slice(0, 4))] : []);
+          const first = result.buckets.flatMap((b) => year(b.coverage?.first_at));
+          const last = result.buckets.flatMap((b) => year(b.coverage?.last_at));
+          if (first.length && last.length) setMeasurementYears({ min: Math.min(...first), max: Math.max(...last) });
         })
         .catch(() => {
           // try again on the next load
@@ -101,7 +105,13 @@ export const useExploreStore = defineStore(
     async function loadDatasetNames(ids: string[]): Promise<void> {
       const missing = [...new Set(ids)].filter((id) => !datasetNames.value.has(id));
       if (!missing.length) return;
-      const datasets = await useCatalogStore().loadDatasetsByIds(missing.map(Number));
+      let datasets: Dataset[];
+      try {
+        datasets = await useCatalogStore().loadDatasetsByIds(missing.map(Number));
+      } catch {
+        // the ids stay as they are; the next call asks again
+        return;
+      }
       const names = new Map(datasetNames.value);
       for (const dataset of datasets) names.set(String(dataset.id), dataset.name);
       datasetNames.value = names;

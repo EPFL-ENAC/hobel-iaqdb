@@ -258,7 +258,7 @@ export default {
   filter_bar: {
     showing: 'showing',
     measured: 'measured',
-    any_pollutant: 'every pollutant',
+    any_pollutant: 'every parameter',
     any_year: 'any year',
     any: {
       where: 'anywhere',

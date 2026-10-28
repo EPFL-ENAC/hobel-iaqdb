@@ -66,7 +66,7 @@ import ChartCard from '@/components/explore/ChartCard.vue';
 import RankedBars from '@/components/explore/RankedBars.vue';
 import type { RankedRow, RankedSummary } from '@/components/explore/ranked';
 import { FIGURE_ACCENT, FIGURE_CHECK, FIGURE_GAP } from '@/components/plots/charts';
-import { exploreFilter } from '@/api/explore';
+import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';
 import { useExploreRequest } from '@/composables/useExploreQuery';
 import type { ExploreBucket, ExploreEntity } from '@/models';
@@ -85,6 +85,7 @@ const i18n = useI18n();
 const { t } = i18n;
 const { formatCount, formatShare } = useChartFormat();
 const filtersStore = useFiltersStore();
+const exploreStore = useExploreStore();
 
 /** how far a field can be relied on, by its share filled in, best first */
 const BANDS = [
@@ -129,7 +130,8 @@ const { result, loading, error, load } = useExploreRequest('metadata');
 
 /** Load the fields of the entity picked: on mount, on a pick, and when the filters are applied. */
 function reload(): void {
-  void load({ entity: SCORED[entity.value], agg: 'availability', filter: exploreFilter() });
+  const parameters = exploreStore.parameters.length ? { parameters: [...exploreStore.parameters] } : {};
+  void load({ entity: SCORED[entity.value], agg: 'availability', filter: exploreFilter(), ...exploreRange(), ...parameters });
 }
 
 onMounted(reload);
