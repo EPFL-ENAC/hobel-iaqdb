@@ -5,12 +5,12 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-Entity = Literal["studies", "buildings", "spaces", "datasets"]
+Entity = Literal["studies", "buildings", "spaces", "datasets", "variables"]
 Grain = Literal["day", "hour", "raw"]
 Source = Literal["metadata", "measurements", "relationships"]
 MetadataAgg = Literal["count", "availability"]
 MeasurementAgg = Literal["coverage", "count", "stats", "exceedance"]
-RelationshipAgg = Literal["pairs", "matrix", "partners"]
+RelationshipAgg = Literal["pairs", "matrix", "partners", "partnered"]
 Method = Literal["pearson", "spearman"]
 Agg = MetadataAgg | MeasurementAgg | RelationshipAgg
 

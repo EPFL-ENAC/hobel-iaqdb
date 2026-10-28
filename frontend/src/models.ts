@@ -229,7 +229,7 @@ export interface UploadResult {
 
 // ---- Explore charts API (/stats/*), mirrors backend api/models/explore.py
 
-export type ExploreEntity = 'studies' | 'buildings' | 'spaces' | 'datasets';
+export type ExploreEntity = 'studies' | 'buildings' | 'spaces' | 'datasets' | 'variables';
 export type ExploreGrain = 'day' | 'hour' | 'raw';
 export type ExploreSource = 'metadata' | 'measurements' | 'relationships';
 export type ExploreAgg =
@@ -240,7 +240,8 @@ export type ExploreAgg =
   | 'exceedance'
   | 'pairs'
   | 'matrix'
-  | 'partners';
+  | 'partners'
+  | 'partnered';
 
 export interface ExploreDimension {
   key: string;
@@ -368,7 +369,7 @@ export interface ExploreBucket {
   exceedance?: { threshold: number; n_above: number; share: number };
   coverage?: { n_datasets: number; n_missing: number; first_at?: string; last_at?: string };
   availability?: { present: number; total: number };
-  fit?: { slope?: number; intercept?: number; r2?: number; r?: number };
+  fit?: { slope: number | null; intercept: number | null; r2: number | null; r: number | null };
   points?: [number, number][];
   sampled?: boolean;
 }

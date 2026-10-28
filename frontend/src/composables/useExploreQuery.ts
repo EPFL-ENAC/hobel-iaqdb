@@ -21,7 +21,8 @@ const inflight = new Map<string, Shared>();
 
 function join(route: ExploreRoute, params: ExploreParams, key: string): Shared {
   let shared = inflight.get(key);
-  if (!shared) {
+  // an aborted request is on its way out: a new waiter starts a fresh one
+  if (!shared || shared.controller.signal.aborted) {
     const controller = new AbortController();
     const entry: Shared = {
       controller,
@@ -58,22 +59,32 @@ export function useExploreRequest(route: ExploreRoute) {
   /** the last load had nothing to ask: its params were null */
   const skipped = ref(false);
   let controller: AbortController | null = null;
+  /** the key of the load under way, with its promise: the same load again waits on it */
+  let pending: { key: string; promise: Promise<ExploreResult | null> } | null = null;
 
   const empty = computed(() => result.value !== null && result.value.meta.n === 0);
 
   /** Resolves with the result, or null when aborted by a later load or failed. */
-  async function load(params: ExploreParams | null): Promise<ExploreResult | null> {
+  function load(params: ExploreParams | null): Promise<ExploreResult | null> {
+    // the same load again (a watcher firing twice) waits on the one under way
+    const key = params === null ? null : canonicalKey(route, params);
+    if (key !== null && pending?.key === key && controller && !controller.signal.aborted) return pending.promise;
+    const promise = start(params, key);
+    pending = key === null ? null : { key, promise };
+    return promise;
+  }
+
+  async function start(params: ExploreParams | null, key: string | null): Promise<ExploreResult | null> {
     controller?.abort();
     controller = null;
     // the aborted load no longer owns `loading`: its finally leaves it alone
     loading.value = false;
     skipped.value = params === null;
-    if (params === null) {
+    if (params === null || key === null) {
       result.value = null;
       error.value = null;
       return null;
     }
-    const key = canonicalKey(route, params);
     const cached = results.get(key);
     if (cached) {
       result.value = cached;
@@ -102,6 +113,7 @@ export function useExploreRequest(route: ExploreRoute) {
     } finally {
       own.signal.removeEventListener('abort', onAbort);
       if (controller === own) loading.value = false;
+      if (pending?.key === key && controller === own) pending = null;
     }
   }
 

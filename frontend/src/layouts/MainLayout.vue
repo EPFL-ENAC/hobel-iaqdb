@@ -1,10 +1,16 @@
 <template>
   <q-layout view="hHh lpR fFf">
     <q-header bordered class="bg-white text-grey-10">
-      <app-toolbar @toggle-left="toggleLeftDrawer" @toggle-right="toggleRightDrawer" />
+      <app-toolbar
+        :no-menu="!hasFilterDrawer"
+        @toggle-left="toggleLeftDrawer"
+        @toggle-right="toggleRightDrawer"
+      />
+      <router-view name="bar" />
     </q-header>
 
     <q-drawer
+      v-if="hasFilterDrawer"
       v-model="leftDrawerOpen"
       :mini="!leftDrawerOpen || miniStateLeft"
       show-if-above
@@ -92,6 +98,9 @@ const leftDrawerOpen = ref(false);
 const rightDrawerOpen = ref(false);
 const miniStateLeft = ref(false);
 const miniStateRight = ref(false);
+
+/** the filters side bar; explore filters from the bar in the header */
+const hasFilterDrawer = computed(() => route.path !== '/explore');
 
 const showPlots = computed(() => {
   return !helpStore.show && !catalogStore.showStudyDetails;

@@ -25,7 +25,7 @@ import { SVGRenderer } from 'echarts/renderers';
 import { TooltipComponent } from 'echarts/components';
 import Gradient from 'javascript-color-gradient';
 import { initOptions, toSeries, updateOptions } from '@/components/plots/charts';
-import { exploreFilter } from '@/api/explore';
+import { exploreFilter, exploreRange } from '@/api/explore';
 import { useExploreQuery } from '@/composables/useExploreQuery';
 import type { ExploreEntity, ExploreParams } from '@/models';
 import type { OptionItem } from '@/utils/options';
@@ -54,7 +54,7 @@ const option = ref<EChartsOption>({});
 // re-query whenever the map filters are applied
 const params = computed<ExploreParams>(() => {
   void mapStore.filtersApplied;
-  return { entity: props.entity, by: [props.by], filter: exploreFilter() };
+  return { entity: props.entity, by: [props.by], filter: exploreFilter(), ...exploreRange() };
 });
 const { result, loading, error, empty } = useExploreQuery('metadata', () => params.value);
 

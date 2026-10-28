@@ -11,10 +11,13 @@ import type {
 import { useExploreStore } from '@/stores/explore';
 import { cityName, useFiltersStore } from '@/stores/filters';
 import {
+  ageGroupOptions,
   buildingTypeOptions,
   climateOptions,
   countryOptions,
   mechanicalVentilationTypeOptions,
+  outdoorEnvOptions,
+  socioeconomicStatusOptions,
   spaceTypeOptions,
   yesNoOptions,
   type OptionItem,
@@ -27,10 +30,18 @@ export const updateOptions: SetOptionOpts = {
   notMerge: true,
 };
 
-/** Shared chart greys: labels, axis text, split lines. */
-export const TEXT = '#424242';
+/** Shared chart greys: axis text, split lines. */
 export const MUTED = '#757575';
 export const GRID = '#e0e0e0';
+
+/** Explore figure colours, as `$figure-*` in quasar.variables.scss */
+export const FIGURE_ACCENT = '#4aa39a';
+/** the rest, behind the accent */
+export const FIGURE_REST = '#d9d9d9';
+/** to check before relying on it */
+export const FIGURE_CHECK = '#2e6b75';
+/** too sparse to rely on */
+export const FIGURE_GAP = '#e5392b';
 
 /**
  * https://echarts.apache.org/en/api.html#echarts.init
@@ -109,10 +120,42 @@ export function benchmarkOf(schema: ExploreSchema | null, slug: string | null): 
   return listed ?? PLACEHOLDER_BENCHMARKS[slug] ?? null;
 }
 
-/** 463 → 450 (floor) or 500 (ceil): a readable axis bound, to half a magnitude. */
-export function roundBound(value: number, round: (v: number) => number): number {
-  const step = 10 ** Math.floor(Math.log10(Math.abs(value) || 1)) / 2;
-  return round(value / step) * step;
+/**
+ * About `count` ticks at a round step (1, 2 or 5 times a power of ten)
+ * covering [min, max]: the first and last are the axis bounds.
+ */
+export function niceTicks(min: number, max: number, count = 6): number[] {
+  const span = max - min || Math.abs(max) || 1;
+  const raw = span / count;
+  const power = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 5, 10].map((m) => m * power).find((s) => s >= raw) ?? 10 * power;
+  const first = Math.floor(min / step);
+  const last = Math.ceil(max / step);
+  // whole multiples of the step: no float drift (0.1 + 0.2)
+  return Array.from({ length: last - first + 1 }, (_, i) => Number(((first + i) * step).toPrecision(12)));
+}
+
+/** short names for compact labels (axes, chips); other pollutants use their label */
+const SHORT_PARAMETERS: Record<string, string> = {
+  co2: 'CO₂',
+  co: 'CO',
+  no: 'NO',
+  no2: 'NO₂',
+  nox: 'NOₓ',
+  o3: 'O₃',
+  so2: 'SO₂',
+  pm1: 'PM1',
+  pm2_5: 'PM2.5',
+  pm4: 'PM4',
+  pm10: 'PM10',
+  tvoc: 'TVOC',
+  relative_humidity: 'RH',
+  air_temperature: 'Temp.',
+};
+
+/** "CO₂" for co2, the schema label when there is no short name */
+export function shortParameterName(slug: string): string {
+  return SHORT_PARAMETERS[slug] ?? useExploreStore().parameterLabel(slug);
 }
 
 /**
@@ -147,6 +190,9 @@ const KEY_OPTIONS: Record<string, OptionItem[]> = {
     { value: 'balanced mechanical ventilation', label: 'Balanced mechanical' },
   ],
   space_type: spaceTypeOptions,
+  outdoor_env: outdoorEnvOptions,
+  age_group: ageGroupOptions,
+  socioeconomic_status: socioeconomicStatusOptions,
 };
 
 /**
@@ -155,22 +201,8 @@ const KEY_OPTIONS: Record<string, OptionItem[]> = {
  */
 export function keyLabel(dimension: string, key: string): string {
   if (dimension === 'study') return useExploreStore().studyNames.get(key) || key;
+  if (dimension === 'dataset') return useExploreStore().datasetNames.get(key) || key;
   return KEY_OPTIONS[dimension]?.find((opt) => opt.value === key)?.label || key;
-}
-
-/**
- * The row a click hit on a chart with one category per row: the category
- * index of a clicked label, or the one a `[value, index]` marker sits on.
- * Rows go by index since labels repeat ("Unknown", same-named cities).
- */
-export function clickedRow(event: {
-  componentType?: string;
-  dataIndex?: number;
-  data?: unknown;
-}): number | undefined {
-  return event.componentType === 'yAxis'
-    ? event.dataIndex
-    : (event.data as [unknown, number] | undefined)?.[1];
 }
 
 export type ClickKind = 'filter' | 'drill' | 'navigate';
