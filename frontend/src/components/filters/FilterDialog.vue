@@ -61,7 +61,7 @@ import PeopleSection from '@/components/filters/PeopleSection.vue';
 import SpacesSection from '@/components/filters/SpacesSection.vue';
 import WhatWhenSection from '@/components/filters/WhatWhenSection.vue';
 import WhereSection from '@/components/filters/WhereSection.vue';
-import { exploreFilter } from '@/api/explore';
+import { exploreFilter, exploreRange } from '@/api/explore';
 import {
   FILTER_DRAFT,
   FILTER_SECTIONS,
@@ -74,6 +74,7 @@ import {
 } from '@/composables/useFilterDraft';
 import { useExploreQuery } from '@/composables/useExploreQuery';
 import { useFilterSummary } from '@/composables/useFilterSummary';
+import { DEFAULT_MEASUREMENT_YEARS, rebound } from '@/stores/filters';
 
 interface Props {
   modelValue: boolean;
@@ -98,6 +99,14 @@ const draft = reactive(appliedDraft());
 provide(FILTER_DRAFT, draft);
 const current = ref<FilterSection>(props.section);
 
+// the years holding records may load after the draft was copied: it moves with them
+watch(
+  () => ({ ...DEFAULT_MEASUREMENT_YEARS }),
+  (next, previous) => {
+    draft.measurement_years = rebound(draft.measurement_years, previous, next);
+  },
+);
+
 /** Start from the applied filters, on the section asked for. */
 function open(): void {
   Object.assign(draft, appliedDraft());
@@ -111,6 +120,7 @@ const totalQuery = useExploreQuery('metadata', () =>
         entity: 'datasets',
         by: ['study'],
         filter: exploreFilter(draft),
+        ...exploreRange(draft),
         ...(draft.parameters.length ? { parameters: [...draft.parameters] } : {}),
       }
     : null,

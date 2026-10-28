@@ -1,7 +1,17 @@
 <template>
   <ChartCard :eyebrow="eyebrowText" :title="title" :footer-blank="!hasMore && !hint">
     <template #actions>
-      <DrillPath :steps="steps" @pop="popTo" />
+      <FigureMenu
+        v-if="parameterOptions.length > 1"
+        :label="t('explore_figures.groups.pollutant')"
+        :model-value="parameter"
+        :options="parameterOptions"
+        @update:model-value="onParameter"
+      />
+      <!-- a line of its own: a short level name must not move it up beside the menu -->
+      <div class="group-figure__path">
+        <DrillPath :steps="steps" @pop="popTo" />
+      </div>
     </template>
     <FigureFrame :height="0" fit="content" :loading="loading" :error="error" :empty="emptyMessage">
       <RangeList
@@ -42,6 +52,7 @@ import ChartCard from '@/components/explore/ChartCard.vue';
 import DrillPath, { type DrillStep } from '@/components/explore/DrillPath.vue';
 import FigureDialog from '@/components/explore/FigureDialog.vue';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
+import FigureMenu from '@/components/explore/FigureMenu.vue';
 import RangeList, { type RangeRow } from '@/components/explore/RangeList.vue';
 import { benchmarkOf, isUnknownKey, keyLabel, niceTicks, refine } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
@@ -85,9 +96,17 @@ const router = useRouter();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
 
-// the pollutant follows the page's selection: the default, else the first selected
-const parameters = useParameterChoice();
-const { parameter, parameterLabel, noDataMessage } = parameters;
+/** the pollutants measured in at least one known group, under the filters; null until known */
+const groupedRequest = useExploreRequest('measurements');
+const grouped = computed(() => {
+  const buckets = groupedRequest.result.value?.buckets;
+  if (!buckets) return null;
+  return new Set(buckets.flatMap((b) => (b.key[0] && !isUnknownKey(b.key[0]) && b.key[1] ? [b.key[1]] : [])));
+});
+
+// the pollutant is one of the page's selection with a known group: the default, else the first
+const parameters = useParameterChoice({ among: grouped });
+const { parameter, parameterOptions, parameterLabel, noDataMessage } = parameters;
 const showAll = ref(false);
 
 const statsRequest = useExploreRequest('measurements');
@@ -146,8 +165,25 @@ const hint = computed(() => {
 
 /** Settle the pollutant, then restart from the groups: on mount and when the filters are applied. */
 async function refresh(): Promise<void> {
+  await groupedRequest.load(
+    exploreStore.dimension(props.by)
+      ? {
+          agg: 'count',
+          by: [props.by, 'parameter'],
+          grain: 'day',
+          filter: exploreFilter(),
+          ...exploreRange(),
+          ...(exploreStore.parameters.length ? { parameters: [...exploreStore.parameters] } : {}),
+        }
+      : null,
+  );
   await parameters.refresh();
   await restart();
+}
+
+function onParameter(value: string | null): void {
+  parameter.value = value;
+  void restart();
 }
 
 onMounted(() => void refresh());
@@ -268,6 +304,10 @@ const scale = computed(() => {
 </script>
 
 <style scoped lang="scss">
+.group-figure__path {
+  flex-basis: 100%;
+}
+
 .group-figure__hint {
   min-width: 0;
   margin-left: auto;

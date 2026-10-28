@@ -109,6 +109,7 @@
     "useExploreStore": true,
     "DEFAULT_MEASUREMENT_YEARS": true,
     "cityName": true,
-    "setMeasurementYears": true
+    "setMeasurementYears": true,
+    "rebound": true
   }
 }

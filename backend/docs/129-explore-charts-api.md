@@ -230,7 +230,7 @@ shared.
 | `from`, `to` | ISO date | Half-open `[from, to)` on the time column of the chosen grain. Dates, not datetimes: charts pick years and months, and day-granular keys keep cache keys stable. |
 | `parameters` | comma-separated slugs | From `parameter.slug`. Unknown slug → 422 listing valid slugs. Max 10. |
 | `by` | comma-separated dimension keys, max 2 | From the dimension registry (§5). Time bucketing is a dimension (`month`, `year`), so there is no separate `bucket` parameter. Second key gives stacked/heatmap series. |
-| `agg` | enum per route | metadata: `count`, `availability`. measurements: `coverage`, `count`, `stats`, `exceedance`. relationships: `pairs`, `matrix`, `partners`. |
+| `agg` | enum per route | metadata: `count`, `availability`. measurements: `coverage`, `count`, `stats`, `exceedance`. relationships: `pairs`, `matrix`, `partners`, `partnered`. |
 | `grain` | `day` (default), `hour` or `raw` | Which table the statistic is computed over: `measurement_day`, `measurement_hour` or the raw `measurement` hypertable. At `day`/`hour`, percentiles are percentiles of bucket means; at `raw` they are percentiles of the readings themselves. The response echoes the grain so the label is honest. `raw` is accepted only when `dataset_parameter` says the filter covers **≤ 20 M raw records**; above that the route answers 422 with the matched count and the client falls back to `hour`. No silent downgrade. |
 | `qualifier` | comma-separated | `grain=raw` only. Keeps rows whose `value_qualifier` is in the list; default is all. |
 | `threshold` | float | `agg=exceedance` only. The UI takes it from a benchmark in `/stats/schema` or from user input; the server never invents one. |
@@ -378,6 +378,11 @@ instrument_id, ts)` so only co-located, co-timed readings pair).
   rows of `x`, joined to every other parameter's rows; one bucket per
   parameter keyed `[slug]`, `n` the shared rows (what the matrix cell with
   `x` would count). No `by`, no `fit`.
+- `agg=partnered`: which parameters were measured with any other, for chart
+  18 to pass over an x with an empty y menu without probing each in turn. One
+  scan: grouped by `(dataset_id, space_id, hour)`, the groups with two
+  parameters or more unnest their `array_agg(distinct parameter)`; one bucket
+  per parameter keyed `[slug]`, `n` the rows it shares. No `x`, no `by`, no `fit`.
 
 ## 8. Click model
 
@@ -493,7 +498,7 @@ Grain = Literal["day", "hour", "raw"]
 Source = Literal["metadata", "measurements", "relationships"]
 MetadataAgg = Literal["count", "availability"]
 MeasurementAgg = Literal["coverage", "count", "stats", "exceedance"]
-RelationshipAgg = Literal["pairs", "matrix", "partners"]
+RelationshipAgg = Literal["pairs", "matrix", "partners", "partnered"]
 Method = Literal["pearson", "spearman"]
 Agg = MetadataAgg | MeasurementAgg | RelationshipAgg
 

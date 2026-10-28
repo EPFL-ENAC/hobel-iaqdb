@@ -12,7 +12,6 @@
           :title="t('explore_figures.datasets_by_country.title')"
           entity="datasets"
           :path="['country', 'city', 'study']"
-          :with-parameters="false"
         />
         <CoverageFigure
           v-if="exploreStore.schema"
@@ -29,7 +28,6 @@
           :path="['building_type', 'country', 'city', 'study']"
           layout="stacked"
           :limit="4"
-          :with-parameters="false"
         />
         <MetadataFigure
           v-if="exploreStore.schema"
@@ -39,7 +37,6 @@
           :path="['climate_zone', 'country', 'city', 'study']"
           layout="stacked"
           :limit="4"
-          :with-parameters="false"
         />
         <MetadataFigure
           v-if="exploreStore.schema"
@@ -49,7 +46,6 @@
           :path="['ventilation', 'ventilation_type', 'space_type', 'study']"
           layout="stacked"
           :limit="4"
-          :with-parameters="false"
         />
       </FigureGrid>
       <FigureGrid>

@@ -92,6 +92,74 @@ async def test_count_datasets_with_parameter_and_filter(
     assert body["meta"]["available_parameters"] == []
 
 
+async def test_count_within_time_range(client, session, clean_db, tmp_path):
+    # every reading of the fixture falls within March 2023
+    await loaded_fixture(session, clean_db, tmp_path)
+    params = {"entity": "datasets", "by": "country"}
+    response = await client.get(
+        "/stats/metadata", params={**params, "from": "2023-01-01", "to": "2024-01-01"}
+    )
+    assert buckets_of(response.json()) == {
+        ("CH",): {"key": ["CH"], "n": 2},
+        ("DE",): {"key": ["DE"], "n": 2},
+    }
+    response = await client.get(
+        "/stats/metadata", params={**params, "from": "2024-01-01"}
+    )
+    assert response.json()["buckets"] == []
+    response = await client.get(
+        "/stats/metadata", params={**params, "to": "2023-01-01"}
+    )
+    assert response.json()["buckets"] == []
+    # the parameter and the range hold on the same dataset
+    response = await client.get(
+        "/stats/metadata",
+        params={**params, "parameters": "co2", "from": "2023-03-01"},
+    )
+    assert buckets_of(response.json()) == {
+        ("CH",): {"key": ["CH"], "n": 1},
+        ("DE",): {"key": ["DE"], "n": 1},
+    }
+    # a building or space counts by its own readings, not its study's: only
+    # S3 in B2 has pm2_5, though D2 shares the study with B1's S1 and S2
+    for entity in ("spaces", "buildings"):
+        response = await client.get(
+            "/stats/metadata",
+            params={
+                "entity": entity,
+                "by": "country",
+                "parameters": "pm2_5",
+                "from": "2023-03-01",
+            },
+        )
+        assert response.json()["buckets"] == [{"key": ["DE"], "n": 1}], entity
+    response = await client.get(
+        "/stats/metadata",
+        params={"entity": "spaces", "by": "parameter", "from": "2023-03-01"},
+    )
+    assert {b["key"][0]: b["n"] for b in response.json()["buckets"]} == {
+        "co2": 2,
+        "air_temperature": 2,
+        "pm2_5": 1,
+    }
+    response = await client.get(
+        "/stats/metadata",
+        params={
+            "entity": "buildings",
+            "agg": "availability",
+            "fields": "climate_zone",
+            "from": "2024-01-01",
+        },
+    )
+    assert response.json()["buckets"] == [
+        {
+            "key": ["climate_zone"],
+            "n": 0,
+            "availability": {"present": 0, "total": 0},
+        }
+    ]
+
+
 async def test_empty_state_lists_available_parameters(
     client, session, clean_db, tmp_path
 ):

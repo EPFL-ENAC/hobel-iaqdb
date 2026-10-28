@@ -111,8 +111,11 @@ const recordsRequest = useExploreRequest('measurements');
 /** Load the totals: on mount and when the filters are applied. */
 function reload(): void {
   const parameters = exploreStore.parameters.length ? { parameters: [...exploreStore.parameters] } : {};
-  void datasetsRequest.load({ entity: 'datasets', by: ['study'], filter: exploreFilter(), ...parameters });
-  void recordsRequest.load({ agg: 'coverage', by: ['parameter'], filter: exploreFilter(), ...exploreRange() });
+  void datasetsRequest.load({ entity: 'datasets', by: ['study'], filter: exploreFilter(), ...exploreRange(), ...parameters });
+  const range = exploreRange();
+  // coverage holds lifetime totals: within a year range, count the measured days
+  const agg = 'from' in range || 'to' in range ? 'count' : 'coverage';
+  void recordsRequest.load({ agg, by: ['parameter'], filter: exploreFilter(), ...range });
 }
 
 onMounted(() => {

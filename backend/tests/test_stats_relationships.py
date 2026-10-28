@@ -1,6 +1,9 @@
 import json
 
 import pytest
+from api.models.explore import ExploreQuery
+from api.services.explore.relationships import RelationshipService
+from sqlalchemy import text
 from tests.expected import paired_hours, regression, spearman
 from tests.fixtures import mean
 from tests.test_stats_metadata import buckets_of, loaded_fixture
@@ -184,6 +187,40 @@ async def test_partners(client, session, clean_db, tmp_path):
     ):
         response = await client.get("/stats/relationships", params=params)
         assert response.status_code == 422, params
+
+
+async def test_spearman_work_mem_is_for_its_query_only(session, clean_db, tmp_path):
+    await loaded_fixture(session, clean_db, tmp_path)
+    before = (await session.exec(text("SHOW work_mem"))).one()
+    query = ExploreQuery(
+        agg="matrix", parameters=["co2", "air_temperature"], method="spearman"
+    )
+    await RelationshipService(session).query(query, version=1)
+    # the rest of the request's transaction runs at the default again
+    assert (await session.exec(text("SHOW work_mem"))).one() == before
+
+
+async def test_partnered(client, session, clean_db, tmp_path):
+    fx = await loaded_fixture(session, clean_db, tmp_path)
+    response = await client.get("/stats/relationships", params={"agg": "partnered"})
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["meta"]["parameters"] == []
+    # co2 and air_temperature share their hours; pm2_5 is measured alone
+    expected = len(paired_hours(fx, "co2", "air_temperature", ("S1", "S2")))
+    assert buckets_of(body) == {
+        ("co2",): {"key": ["co2"], "n": expected},
+        ("air_temperature",): {"key": ["air_temperature"], "n": expected},
+    }
+    # outside the range: no one has a partner
+    response = await client.get(
+        "/stats/relationships", params={"agg": "partnered", "from": "2024-01-01"}
+    )
+    assert response.json()["buckets"] == []
+    response = await client.get(
+        "/stats/relationships", params={"agg": "partnered", "by": "country"}
+    )
+    assert response.status_code == 422
 
 
 async def test_partners_of_a_catalog_metric(client, session, clean_db, tmp_path):

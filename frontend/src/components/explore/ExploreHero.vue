@@ -28,6 +28,7 @@ import { useExploreRequest } from '@/composables/useExploreQuery';
 
 const { t, locale } = useI18n();
 const filtersStore = useFiltersStore();
+const exploreStore = useExploreStore();
 
 // the same requests as the country and coverage charts: they share the cache
 const datasetsRequest = useExploreRequest('metadata');
@@ -37,14 +38,20 @@ const coverageRequest = useExploreRequest('measurements');
 /** Load the numbers: on mount and when the filters are applied. */
 function reload(): void {
   const filter = exploreFilter();
+  const range = exploreRange();
+  const parameters = exploreStore.parameters.length ? { parameters: [...exploreStore.parameters] } : {};
   // one study per dataset: the study buckets add up to the distinct datasets
-  void datasetsRequest.load({ entity: 'datasets', by: ['study'], filter });
-  void countriesRequest.load({ entity: 'datasets', by: ['country'], filter });
+  void datasetsRequest.load({ entity: 'datasets', by: ['study'], filter, ...range, ...parameters });
+  void countriesRequest.load({ entity: 'datasets', by: ['country'], filter, ...range, ...parameters });
+  // coverage holds lifetime totals and spans: within a year range, count
+  // the measured days instead, by year for the span
   void coverageRequest.load({
-    agg: 'coverage',
-    by: ['parameter'],
+    ...('from' in range || 'to' in range
+      ? { agg: 'count', by: ['parameter', 'year'] }
+      : { agg: 'coverage', by: ['parameter'] }),
     filter,
-    ...exploreRange(),
+    ...range,
+    ...parameters,
   });
 }
 
@@ -75,15 +82,19 @@ const records = computed(() => {
   const result = coverageRequest.result.value;
   return result ? (result.meta.n_records ?? 0) : null;
 });
-const parameters = computed(() => coverageRequest.result.value?.buckets.length ?? null);
+const parameters = computed(() => {
+  const result = coverageRequest.result.value;
+  return result ? new Set(result.buckets.map((b) => b.key[0])).size : null;
+});
 
 /** first and last year measured; naive timestamps, read as text */
 const years = computed<[number, number] | null>(() => {
   let first: string | undefined;
   let last: string | undefined;
   for (const bucket of coverageRequest.result.value?.buckets || []) {
-    const from = bucket.coverage?.first_at;
-    const to = bucket.coverage?.last_at;
+    // a coverage span, or a counted year
+    const from = bucket.coverage?.first_at ?? bucket.key[1] ?? undefined;
+    const to = bucket.coverage?.last_at ?? bucket.key[1] ?? undefined;
     if (from && (!first || from < first)) first = from;
     if (to && (!last || to > last)) last = to;
   }

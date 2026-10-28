@@ -140,4 +140,3 @@ cython_debug/
 # Local study data imported by `make seed`
 SEED_DATA/
 SEED_DATA_old/
-

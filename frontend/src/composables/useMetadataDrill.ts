@@ -4,7 +4,7 @@
  * with its result, set together once a level has loaded.
  */
 import type { ShallowRef } from 'vue';
-import { exploreFilter } from '@/api/explore';
+import { exploreFilter, exploreRange } from '@/api/explore';
 import {
   hasGlobalFilter,
   keyLabel,
@@ -110,6 +110,7 @@ export function useMetadataDrill(props: MetadataDrillProps) {
       entity: props.entity,
       by: [first],
       filter: exploreFilter(),
+      ...exploreRange(),
     };
     if (props.withParameters && exploreStore.parameters.length)
       params.parameters = [...exploreStore.parameters];
@@ -126,8 +127,8 @@ export function useMetadataDrill(props: MetadataDrillProps) {
 
   /** Click a bucket of the current level, labelled `name` in the next one. */
   function select(bucket: ExploreBucket, name: string): void {
-    const level = current.value;
-    if (!clickable.value || !level) return;
+    const level = shown.value?.level;
+        if (!clickable.value || !level || level !== current.value) return;
     if (props.click === 'filter') {
       // the filters store bumps `updates`, which restarts the chart from the root
       onBucketClick(

@@ -150,7 +150,7 @@ async function reload(): Promise<void> {
     exceedanceRequest.load(base && { ...base, ...scoped, agg: 'exceedance', threshold: b?.value ?? 0 }),
     databaseRequest.load(ready ? { by: ['parameter'], parameters: [slug], grain: b.averaging, agg: 'stats' } : null),
     datasetsRequest.load(
-      ready ? { entity: 'datasets', by: [dimension.key], parameters: [slug], filter: exploreFilter() } : null,
+      ready ? { entity: 'datasets', by: [dimension.key], parameters: [slug], ...scoped } : null,
     ),
   ]);
 }
