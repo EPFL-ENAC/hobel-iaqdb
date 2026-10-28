@@ -5,6 +5,10 @@ partitions it), so it is declared as a Core table on the shared metadata
 rather than a mapped model. `measurement_hour` and `measurement_day` are
 continuous aggregates created by the migration; the query side declares them
 in `api/services/explore/tables.py`.
+
+`measurement_statistic` holds the `statistical` rows: summary statistics
+(mean, percentiles…) over a period, not readings. They are kept apart so that
+no aggregate or Explore query over `measurement` can mix them with readings.
 """
 
 from datetime import datetime
@@ -135,21 +139,80 @@ MEASUREMENT_COLUMNS = [
     "value_qualifier",
 ]
 
+# A plain table: 26 M rows in UPLOAD_DATA, small next to `measurement`.
+# ponytail: hypertable + compression if it grows past a few hundred million rows
+measurement_statistic = Table(
+    "measurement_statistic",
+    SQLModel.metadata,
+    Column(
+        "dataset_id",
+        Integer,
+        ForeignKey("dataset.id", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    Column(
+        "study_id", Integer, ForeignKey("study.id", ondelete="CASCADE"), nullable=False
+    ),
+    Column("building_id", Integer, ForeignKey("building.id", ondelete="CASCADE")),
+    Column("space_id", Integer, ForeignKey("space.id", ondelete="CASCADE")),
+    Column("instrument_id", Integer, ForeignKey("instrument.id", ondelete="CASCADE")),
+    Column(
+        "parameter",
+        String,
+        ForeignKey("parameter.slug", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    # as the CSV names it (`mean`, `95th_percentile`, `p02_5`…)
+    Column("statistic", String, nullable=False),
+    # the period the statistic covers, local wall-clock time
+    Column("start_ts", TIMESTAMP, nullable=False),
+    Column("end_ts", TIMESTAMP),
+    Column("value", Float, nullable=False),
+    Column("value_qualifier", String),
+    Index("ix_measurement_statistic_parameter_start", "parameter", "start_ts"),
+    # every cascading FK has an index on its column, as on `measurement`
+    Index("ix_measurement_statistic_dataset_id", "dataset_id"),
+    Index("ix_measurement_statistic_study_id", "study_id"),
+    Index("ix_measurement_statistic_building_id", "building_id"),
+    Index("ix_measurement_statistic_space_id", "space_id"),
+    Index("ix_measurement_statistic_instrument_id", "instrument_id"),
+)
+
+# Columns copied in, in this order (see MeasurementService.load)
+STATISTIC_COLUMNS = [
+    "dataset_id",
+    "study_id",
+    "building_id",
+    "space_id",
+    "instrument_id",
+    "parameter",
+    "statistic",
+    "start_ts",
+    "end_ts",
+    "value",
+    "value_qualifier",
+]
+
 # Indexes dropped for the bulk data upload and rebuilt after it: only the query
-# index whose leading column is not a foreign key. The FK-leading indexes stay
-# so that recreating a study (the data upload deletes and re-inserts its catalog rows)
-# keeps every cascade an index lookup instead of a scan of the hypertable.
-MEASUREMENT_BULK_INDEXES = {"ix_measurement_parameter_ts": "parameter, ts"}
+# indexes whose leading column is not a foreign key. The FK-leading indexes stay
+# so that recreating a study (the data upload deletes and re-inserts its catalog
+# rows) keeps every cascade an index lookup instead of a table scan.
+MEASUREMENT_BULK_INDEXES = {
+    "ix_measurement_parameter_ts": "parameter, ts",
+    "ix_measurement_statistic_parameter_start": "parameter, start_ts",
+}
 
 
 class LoadReport(BaseModel):
     """Where every row of a dataset's files went. Stored on the dataset and
-    printed by the data upload, so a rejected row is never silent."""
+    printed by the data upload, so a rejected row is never silent. `loaded` rows
+    went to `measurement`, `statistical` rows to `measurement_statistic`."""
 
     loaded: int = 0
     missing: int = 0
     statistical: int = 0
     unknown_parameter: Dict[str, int] = {}
+    unknown_statistic: Dict[str, int] = {}
     unknown_unit: Dict[str, int] = {}
     unparseable_value: Dict[str, int] = {}
     unparseable_timestamp: int = 0
@@ -161,6 +224,7 @@ class LoadReport(BaseModel):
     def rejected(self) -> int:
         return (
             sum(self.unknown_parameter.values())
+            + sum(self.unknown_statistic.values())
             + sum(self.unknown_unit.values())
             + sum(self.unparseable_value.values())
             + self.unparseable_timestamp
@@ -176,6 +240,11 @@ class LoadReport(BaseModel):
             parts.append(
                 f"unknown parameter {sum(self.unknown_parameter.values())} "
                 f"({len(self.unknown_parameter)} slugs)"
+            )
+        if self.unknown_statistic:
+            parts.append(
+                f"unknown statistic {sum(self.unknown_statistic.values())} "
+                f"({', '.join(sorted(self.unknown_statistic))})"
             )
         if self.unknown_unit:
             parts.append(

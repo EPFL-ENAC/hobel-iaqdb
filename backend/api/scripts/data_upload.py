@@ -9,8 +9,10 @@ Expected layout, one folder per study named by its identifier:
 where <type> is e.g. time_series, time_integrated, statistical or
 source_packages. Files are matched to the datasets of metadata.json through
 the `source_outer_file` column of the processed CSV (also inside zips), which
-names the file originally uploaded for that dataset. Datasets that no file
-refers to are dropped from the import with a warning.
+names the file originally uploaded for that dataset. CSVs without that
+column (raw copies, notes) are not processed files: they are skipped with a
+warning. Datasets that no file refers to are dropped from the import with a
+warning.
 
 Files are uploaded straight to the study draft on S3, in concurrent parts. A
 re-run only uploads what changed: the MD5 of each file is stored with the S3
@@ -18,7 +20,8 @@ object and cached locally (UPLOAD_DATA/.upload-cache.json, keyed by size and
 mtime) so unchanged files are neither read nor uploaded again.
 
 After publishing, the processed CSVs are loaded into the `measurement`
-hypertable (MeasurementService), one dataset at a time, and every row that
+hypertable and their statistical rows into `measurement_statistic`
+(MeasurementService), one dataset at a time, and every row that
 could not be loaded is reported per dataset. Publishing recreates the study,
 so measurements are always reloaded. The secondary indexes are dropped for
 the bulk load and rebuilt at the end, when chunks are compressed and the
@@ -116,12 +119,16 @@ def normalize_name(name: str) -> str:
     return re.sub(r"\s+", " ", name).strip()
 
 
+class NotProcessed(ValueError):
+    """The CSV has no `source_outer_file` column: not a processed file."""
+
+
 def first_source_file(stream) -> str | None:
     """Read `source_outer_file` from the first data row of a processed CSV,
     None if the CSV has a header but no row."""
     reader = csv.DictReader(io.TextIOWrapper(stream, encoding="utf-8-sig"))
     if reader.fieldnames is None or "source_outer_file" not in reader.fieldnames:
-        raise ValueError("no `source_outer_file` column")
+        raise NotProcessed("no `source_outer_file` column")
     row = next(reader, None)
     return None if row is None else row["source_outer_file"]
 
@@ -155,8 +162,13 @@ def match_files_to_datasets(
             )
 
     files_by_dataset: dict[int, list[Path]] = {}
+    warnings = []
     for path in files:
-        sources = source_files(path)
+        try:
+            sources = source_files(path)
+        except NotProcessed as e:
+            warnings.append(f"{path.relative_to(folder)} skipped: {e}")
+            continue
         candidates = {
             id(d): d
             for name in sources
@@ -170,7 +182,7 @@ def match_files_to_datasets(
             )
         files_by_dataset.setdefault(candidates.popitem()[0], []).append(path)
 
-    matched, warnings = [], []
+    matched = []
     for dataset in draft.datasets:
         paths = files_by_dataset.get(id(dataset))
         if paths:

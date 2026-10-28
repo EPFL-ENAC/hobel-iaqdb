@@ -117,9 +117,15 @@ Rules, all explicit and all reported by `make data-upload-check`:
   loaded nothing. `missing` is a value that is empty or `NA`; a decimal
   comma (`18,9`) is accepted, `5.2 K` is not.
 - `time_integrated` rows keep `start_ts` and `end_ts` and take
-  `ts = coalesce(start_ts, ts)`. `statistical` rows carry no timestamp in
-  99.97 % of the cases, so they **cannot enter the hypertable**: they are
-  counted in the report only, until #127 gives them a table.
+  `ts = coalesce(start_ts, ts)`. `statistical` rows go to their own plain
+  table, `measurement_statistic` (#174): `statistic`, `start_ts` (required,
+  the start of the period they cover), `end_ts`, `value` in the canonical
+  unit (a `standard_deviation` takes the factor only). They are never in
+  `measurement`, its aggregates or `dataset_parameter`, so no chart mixes
+  them with readings. `statistic` must be a statistic of the values (mean,
+  median, min, max, standard deviation, a percentile), else the row goes to
+  `unknown_statistic`. When this was first written, 99.97 % of them had no
+  timestamp; the October data gives 99 % of them a period.
 - `building_id` / `space_id` / `instrument_id` are resolved to catalog FKs by
   identifier within the study (spaces within their building). Unresolved
   rows keep `NULL` FKs, are counted in the report, and appear as a `null`
@@ -733,7 +739,7 @@ Read with §1–§14; code wins where they still disagree.
 | topic | first draft | shipped |
 | --- | --- | --- |
 | unknown slug or unit | fails the dataset | row counted in `load_report`, dataset fails only when nothing loads (§3) |
-| `statistical` rows | loaded, excluded from aggregates | not loaded (no timestamp), counted in the report (§3) |
+| `statistical` rows | loaded, excluded from aggregates | stored in `measurement_statistic`, outside every aggregate (§3, #174) |
 | source unit | `real_unit` | `coalesce(real_unit, inferred_unit)` (§3) |
 | tz offsets | not considered | stripped, wall clock kept (§3) |
 | aggregate refresh | per dataset time range | `refresh_all()` after loads and deletes; invalidation makes it cheap (§3) |

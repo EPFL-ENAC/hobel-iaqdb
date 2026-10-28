@@ -1,8 +1,10 @@
-"""Load processed long-format CSVs into the `measurement` hypertable.
+"""Load processed long-format CSVs into the `measurement` hypertable, and
+their `statistical` rows into `measurement_statistic`.
 
 Every row of every file goes to exactly one bin of the LoadReport: loaded,
-missing, statistical, unknown parameter/unit, unparseable value/timestamp.
-Nothing is guessed: a rejected row is counted and reported, never fixed.
+statistical, missing, unknown parameter/statistic/unit, unparseable
+value/timestamp. Nothing is guessed: a rejected row is counted and reported,
+never fixed.
 
 The CSV side is DuckDB (streaming, bounded memory); the database side is
 asyncpg COPY, then compression, continuous aggregate refresh and the
@@ -26,10 +28,12 @@ from api.models.catalog import Building, Dataset, Instrument, Space
 from api.models.measurement import (
     MEASUREMENT_BULK_INDEXES,
     MEASUREMENT_COLUMNS,
+    STATISTIC_COLUMNS,
     DatasetParameter,
     LoadReport,
     Parameter,
     measurement,
+    measurement_statistic,
 )
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -46,6 +50,7 @@ REQUIRED_COLUMNS = (
     "start_timestamp",
     "end_timestamp",
     "parameter",
+    "statistic",
     "value",
     "real_unit",
     "inferred_unit",
@@ -57,6 +62,15 @@ NO_UNIT = ("", "not applicable", "unknown")
 # trailing UTC offset or Z after a time of day: dropped, the wall clock is kept
 TZ_SUFFIX = r"(\d{2}:\d{2}(:\d{2}(\.\d+)?)?)(Z|[+-]\d{2}:?\d{2})$"
 DECIMAL_COMMA = r"^-?\d+,\d+$"
+# statistics of the values, in the parameter's unit. Not `count`, `*_percent`
+# or `reported_value` (a single reading labelled statistical): those are not
+# in the parameter's unit, or not statistics
+STATISTIC = (
+    r"mean|arithmetic_mean|geometric_mean|median|minimum|maximum"
+    r"|standard_deviation|\d+(st|nd|rd|th)_percentile(_median)?|p\d+(_\d+)?"
+)
+# spreads convert with the factor only: an offset cancels out
+SPREADS = ("standard_deviation",)
 # the quote is set, not sniffed: DuckDB guesses it from the first rows only, so
 # a file whose first quoted field (e.g. a context_json) comes later is split
 CSV_OPTIONS = (
@@ -67,18 +81,15 @@ CSV_OPTIONS = (
 WRITE_LOCK = 0x1A0F
 _local_write_lock = asyncio.Lock()
 BINS = (
-    "statistical",
+    "unknown_statistic",
     "unknown_parameter",
     "unknown_unit",
     "missing",
     "unparseable_value",
     "unparseable_timestamp",
+    "statistical",
     "loaded",
 )
-
-
-class StatisticalOnly(ValueError):
-    """Every row of the dataset is statistical: nothing to load yet."""
 
 
 @dataclass
@@ -144,6 +155,7 @@ def _classified_sql(files: list[str]) -> str:
         SELECT
             coalesce(trim(parameter), '') AS slug,
             coalesce(trim(data_type), '') AS data_type,
+            coalesce(trim(statistic), '') AS statistic,
             nullif(trim(building_id), '') AS building_ident,
             nullif(trim(space_id), '') AS space_ident,
             nullif(trim(instrument_id), '') AS instrument_ident,
@@ -167,7 +179,7 @@ def _classified_sql(files: list[str]) -> str:
                  THEN try_cast(replace(value_text, ',', '.') AS DOUBLE)
                  ELSE try_cast(value_text AS DOUBLE) END AS value,
             try_cast(regexp_replace(
-                CASE WHEN data_type = 'time_integrated'
+                CASE WHEN data_type IN ('time_integrated', 'statistical')
                      THEN coalesce(start_text, timestamp_text)
                      ELSE coalesce(timestamp_text, start_text) END,
                 '{TZ_SUFFIX}', '\\1') AS TIMESTAMP) AS ts,
@@ -185,13 +197,16 @@ def _classified_sql(files: list[str]) -> str:
     ),
     classified AS (
         SELECT *,
-            CASE WHEN data_type = 'statistical' THEN 'statistical'
+            CASE WHEN data_type = 'statistical'
+                      AND NOT regexp_full_match(statistic, '{STATISTIC}')
+                 THEN 'unknown_statistic'
                  WHEN known_slug IS NULL THEN 'unknown_parameter'
                  WHEN accepted_unit IS NULL THEN 'unknown_unit'
                  WHEN upper(value_text) IN ({missing_sql}) THEN 'missing'
                  WHEN value IS NULL OR isnan(value) OR isinf(value)
                  THEN 'unparseable_value'
                  WHEN ts IS NULL THEN 'unparseable_timestamp'
+                 WHEN data_type = 'statistical' THEN 'statistical'
                  ELSE 'loaded' END AS bin
         FROM typed
     )
@@ -259,13 +274,12 @@ class MeasurementReader:
         rows = self.con.execute(
             _classified_sql(self.files)
             + """
-            SELECT bin, slug, unit, count(*),
-                   count(*) FILTER (WHERE bin = 'loaded' AND building_id IS NULL),
-                   count(*) FILTER (WHERE bin = 'loaded' AND space_id IS NULL),
-                   count(*) FILTER (WHERE bin = 'loaded' AND instrument_id IS NULL),
-                   min(ts) FILTER (WHERE bin = 'loaded'),
-                   max(ts) FILTER (WHERE bin = 'loaded')
-            FROM classified GROUP BY 1, 2, 3
+            SELECT bin, slug, unit, statistic, data_type = 'statistical', count(*),
+                   count(*) FILTER (WHERE building_id IS NULL),
+                   count(*) FILTER (WHERE space_id IS NULL),
+                   count(*) FILTER (WHERE instrument_id IS NULL),
+                   min(ts), max(ts)
+            FROM classified GROUP BY 1, 2, 3, 4, 5
             """
         ).fetchall()
         return _summarize(rows)
@@ -282,34 +296,64 @@ class MeasurementReader:
             FROM classified WHERE bin = 'loaded'
             """
         )
-        while True:
-            batch = cursor.fetchmany(BATCH_SIZE)
-            if not batch:
-                return
-            yield batch
+        yield from _batches(cursor)
+
+    def statistics(self, dataset_id: int, study_id: int) -> Iterator[list[tuple]]:
+        """Batches of `measurement_statistic` rows (STATISTIC_COLUMNS order),
+        values converted to the canonical unit."""
+        spreads_sql = ", ".join(f"'{s}'" for s in SPREADS)
+        cursor = self.con.execute(
+            _classified_sql(self.files)
+            + f"""
+            SELECT {dataset_id}, {study_id}, building_id, space_id, instrument_id,
+                   slug, statistic, ts, end_ts,
+                   CASE WHEN statistic IN ({spreads_sql}) THEN value * factor
+                        ELSE value * factor + off END,
+                   value_qualifier
+            FROM classified WHERE bin = 'statistical'
+            """
+        )
+        yield from _batches(cursor)
 
     def close(self) -> None:
         self.con.close()
         self._tmp.cleanup()
 
 
+def _batches(cursor) -> Iterator[list[tuple]]:
+    while True:
+        batch = cursor.fetchmany(BATCH_SIZE)
+        if not batch:
+            return
+        yield batch
+
+
 def _summarize(rows: list[tuple]) -> Classification:
     report = LoadReport()
     missing: dict[str, int] = {}
     first_at = last_at = None
-    for bin_, slug, unit, n, no_building, no_space, no_instrument, lo, hi in rows:
-        if bin_ == "loaded":
-            report.loaded += n
+    for row in rows:
+        bin_, slug, unit, statistic, is_statistic, n = row[:6]
+        no_building, no_space, no_instrument, lo, hi = row[6:]
+        if bin_ in ("loaded", "statistical"):
             report.unlinked_building += no_building
             report.unlinked_space += no_space
             report.unlinked_instrument += no_instrument
+        if bin_ == "loaded":
+            report.loaded += n
             first_at = lo if first_at is None else min(first_at, lo)
             last_at = hi if last_at is None else max(last_at, hi)
-        elif bin_ == "missing":
-            report.missing += n
-            missing[slug] = missing.get(slug, 0) + n
         elif bin_ == "statistical":
             report.statistical += n
+        elif bin_ == "missing":
+            report.missing += n
+            # n_missing of `dataset_parameter`, which only covers `measurement`
+            if not is_statistic:
+                missing[slug] = missing.get(slug, 0) + n
+        elif bin_ == "unknown_statistic":
+            report.unknown_statistic[statistic] = (
+                report.unknown_statistic.get(statistic, 0) + n
+            )
         elif bin_ == "unparseable_timestamp":
             report.unparseable_timestamp += n
         elif bin_ == "unknown_unit":
@@ -363,11 +407,8 @@ class MeasurementService:
             await self._finish(dataset_id, None, "failed", f"{type(e).__name__}: {e}")
             raise
         report = classification.report
-        if report.loaded == 0:
+        if report.loaded == 0 and report.statistical == 0:
             await self._finish(dataset_id, report, "failed", "no row loaded")
-            # ponytail: statistical rows are counted, not stored
-            if report.statistical and not report.rejected:
-                raise StatisticalOnly(f"statistical only: {report.summary()}")
             raise ValueError(f"no row loaded: {report.summary()}")
         await self._finish(dataset_id, report, "ready", None)
         return report
@@ -412,11 +453,12 @@ class MeasurementService:
                 col(DatasetParameter.dataset_id) == dataset.id
             )
         )
-        await session.exec(
-            text("DELETE FROM measurement WHERE dataset_id = :id").bindparams(
-                id=dataset.id
+        for table in ("measurement", "measurement_statistic"):
+            await session.exec(
+                text(f"DELETE FROM {table} WHERE dataset_id = :id").bindparams(
+                    id=dataset.id
+                )
             )
-        )
         await session.commit()
 
     async def _copy(
@@ -430,8 +472,17 @@ class MeasurementService:
         reader = await asyncio.to_thread(MeasurementReader, paths, parameters, maps)
         try:
             classification = await asyncio.to_thread(reader.classify)
-            if classification.report.loaded:
-                await self._copy_batches(reader, dataset, bulk)
+            report = classification.report
+            if report.loaded:
+                batches = reader.loaded(dataset.id, dataset.study_id)
+                await self._copy_batches(
+                    "measurement", MEASUREMENT_COLUMNS, batches, bulk
+                )
+            if report.statistical:
+                batches = reader.statistics(dataset.id, dataset.study_id)
+                await self._copy_batches(
+                    "measurement_statistic", STATISTIC_COLUMNS, batches, bulk
+                )
         finally:
             reader.close()
         if not classification.report.loaded:
@@ -443,9 +494,8 @@ class MeasurementService:
         return classification
 
     async def _copy_batches(
-        self, reader: MeasurementReader, dataset: Dataset, bulk: bool
+        self, table: str, columns: list[str], batches: Iterator, bulk: bool
     ) -> None:
-        batches = reader.loaded(dataset.id, dataset.study_id)
         async with self.engine.connect() as conn:
             raw = await conn.get_raw_connection()
             pg = raw.driver_connection
@@ -455,9 +505,7 @@ class MeasurementService:
                 batch = await asyncio.to_thread(next, batches, None)
                 if batch is None:
                     break
-                await pg.copy_records_to_table(
-                    "measurement", records=batch, columns=MEASUREMENT_COLUMNS
-                )
+                await pg.copy_records_to_table(table, records=batch, columns=columns)
 
     async def _summarize(self, dataset_id: int, missing: dict[str, int]) -> None:
         """Derive `dataset_parameter` from the loaded rows, in one statement."""
@@ -556,11 +604,12 @@ class MeasurementService:
         version drops: a run aborted under an older data upload may have left more
         of them missing."""
         async with self.engine.begin() as conn:
-            for index in measurement.indexes:
-                name = index.name
-                columns = ", ".join(c.name for c in index.columns)
-                await conn.execute(
-                    text(
-                        f"CREATE INDEX IF NOT EXISTS {name} ON measurement ({columns})"
+            for table in (measurement, measurement_statistic):
+                for index in table.indexes:
+                    columns = ", ".join(c.name for c in index.columns)
+                    await conn.execute(
+                        text(
+                            f"CREATE INDEX IF NOT EXISTS {index.name}"
+                            f" ON {table.name} ({columns})"
+                        )
                     )
-                )
