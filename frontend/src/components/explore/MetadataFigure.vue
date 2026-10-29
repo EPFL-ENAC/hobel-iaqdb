@@ -83,6 +83,7 @@ const {
   shown,
   chain,
   clickable,
+  drills,
   selectedKeys,
   popTo,
   label,
@@ -109,7 +110,8 @@ const steps = computed<DrillStep[]>(() =>
 
 /**
  * One row per known key, in the order received; missing and 'unknown' keys
- * summed into a last "Unknown" row, not clickable: no filter matches both.
+ * summed into a last "Unknown" row, which drills into all of them; it opens
+ * nothing and sets no global filter, those take a single key.
  */
 const rows = computed<RankedRow<ExploreBucket>[]>(() => {
   const value = shown.value;
@@ -130,7 +132,7 @@ const rows = computed<RankedRow<ExploreBucket>[]>(() => {
       key: 'unknown',
       label: label(dimension, null),
       value: n,
-      clickable: false,
+      clickable: clickable.value && drills.value,
       data: { key: [null], n },
     });
   }

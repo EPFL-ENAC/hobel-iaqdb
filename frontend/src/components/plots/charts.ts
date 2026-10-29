@@ -267,18 +267,27 @@ export function selectedFilterKeys(path: string | null | undefined): string[] {
   return filter ? filter.selected(useFiltersStore()) : [];
 }
 
-/** Merge a bucket key into the request filter, following `filter_path`. */
-export function refine(params: ExploreParams, dimension: ExploreDimension, key: string): ExploreParams {
+/**
+ * Merge a bucket key into the request filter, following `filter_path`. A
+ * list of keys matches any of them, null matching a missing value: how the
+ * unknown keys, summed into one row, are drilled together.
+ */
+export function refine(
+  params: ExploreParams,
+  dimension: ExploreDimension,
+  key: string | (string | null)[],
+): ExploreParams {
   const path = dimension.filter_path;
   if (!path) throw new Error(`dimension ${dimension.key} cannot become a filter`);
   const next: ExploreParams = { ...params, filter: { ...(params.filter || {}) } };
-  if (path === 'parameters') {
-    next.parameters = [key];
-    return next;
-  }
-  if (path === 'from') {
-    next.from = key;
-    next.to = nextPeriod(dimension.key, key);
+  if (path === 'parameters' || path === 'from') {
+    if (Array.isArray(key)) throw new Error(`dimension ${dimension.key} cannot match several keys`);
+    if (path === 'parameters') {
+      next.parameters = [key];
+    } else {
+      next.from = key;
+      next.to = nextPeriod(dimension.key, key);
+    }
     return next;
   }
   const filter = next.filter as Record<string, unknown>;
