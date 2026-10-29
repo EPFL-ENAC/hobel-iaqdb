@@ -33,16 +33,16 @@ db-downgrade:
 db-revision:
 	uv run dotenv -f "$(env_path)" run alembic revision --autogenerate -m "$(name)"
 
-# `make seed` imports all of SEED_DATA, `make seed <identifier>...` only those studies
-seed_studies := $(filter-out seed seed-check,$(MAKECMDGOALS))
+# `make data-upload` uploads all of UPLOAD_DATA, `make data-upload <identifier>...` only those studies
+upload_studies := $(filter-out data-upload data-upload-check,$(MAKECMDGOALS))
 
-seed:
-	uv run dotenv -f "$(env_path)" run python -m api.scripts.seed $(seed_studies)
+data-upload:
+	uv run dotenv -f "$(env_path)" run python -m api.scripts.data_upload $(upload_studies)
 
-seed-check:
-	uv run dotenv -f "$(env_path)" run python -m api.scripts.seed --check $(seed_studies)
+data-upload-check:
+	uv run dotenv -f "$(env_path)" run python -m api.scripts.data_upload --check $(upload_studies)
 
-ifneq ($(filter seed seed-check,$(MAKECMDGOALS)),)
-$(seed_studies):
+ifneq ($(filter data-upload data-upload-check,$(MAKECMDGOALS)),)
+$(upload_studies):
 	@:
 endif

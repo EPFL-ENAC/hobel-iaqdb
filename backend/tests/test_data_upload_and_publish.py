@@ -1,4 +1,4 @@
-"""The seed's dry run and the publish background load, on the fixture files."""
+"""The data upload's dry run and the publish background load, on the fixture files."""
 
 import asyncio
 import json
@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 from api.models.catalog import Dataset, StudyDraft
-from api.scripts import seed
+from api.scripts import data_upload
 from api.services import publish
 from api.services.catalog_version import CatalogVersionService
 from api.services.parameter import read_parameters
@@ -15,8 +15,8 @@ from sqlalchemy import text
 from tests.fixtures import D1_REPORT, d1_rows, make_catalog, write_csv
 
 
-def seed_folder(tmp_path: Path, rows) -> Path:
-    """A SEED_DATA study folder: metadata.json plus one processed CSV whose
+def upload_folder(tmp_path: Path, rows) -> Path:
+    """An UPLOAD_DATA study folder: metadata.json plus one processed CSV whose
     `source_outer_file` names the dataset's uploaded file."""
     folder = tmp_path / "study-a"
     (folder / "time_series").mkdir(parents=True)
@@ -53,13 +53,13 @@ def seed_folder(tmp_path: Path, rows) -> Path:
     return folder
 
 
-def test_seed_check_reports_every_bin(tmp_path: Path):
+def test_data_upload_check_reports_every_bin(tmp_path: Path):
     from tests.fixtures import Fixture
 
     fx = Fixture(study_id=0, buildings={}, spaces={}, datasets={}, files={})
-    folder = seed_folder(tmp_path, d1_rows(fx))
-    study = seed.load_study(folder)
-    lines = seed.check_measurements(study, read_parameters())
+    folder = upload_folder(tmp_path, d1_rows(fx))
+    study = data_upload.load_study(folder)
+    lines = data_upload.check_measurements(study, read_parameters())
     assert len(lines) == 1
     line = lines[0]
     assert line.startswith("D1: loaded ")

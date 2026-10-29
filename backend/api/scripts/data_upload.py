@@ -1,10 +1,10 @@
-"""Bulk-import studies from SEED_DATA, following the Contribute flow:
+"""Bulk-upload studies from UPLOAD_DATA, following the Contribute flow:
 upload files to tmp -> create study draft -> publish.
 
 Expected layout, one folder per study named by its identifier:
 
-    SEED_DATA/<identifier>/metadata.json          study draft (source of truth)
-    SEED_DATA/<identifier>/<type>/**/*.csv|*.zip  processed data files
+    UPLOAD_DATA/<identifier>/metadata.json          study draft (source of truth)
+    UPLOAD_DATA/<identifier>/<type>/**/*.csv|*.zip  processed data files
 
 where <type> is e.g. time_series, time_integrated, statistical or
 source_packages. Files are matched to the datasets of metadata.json through
@@ -14,7 +14,7 @@ refers to are dropped from the import with a warning.
 
 Files are uploaded straight to the study draft on S3, in concurrent parts. A
 re-run only uploads what changed: the MD5 of each file is stored with the S3
-object and cached locally (SEED_DATA/.seed-cache.json, keyed by size and
+object and cached locally (UPLOAD_DATA/.upload-cache.json, keyed by size and
 mtime) so unchanged files are neither read nor uploaded again.
 
 After publishing, the processed CSVs are loaded into the `measurement`
@@ -25,9 +25,9 @@ the bulk load and rebuilt at the end, when chunks are compressed and the
 continuous aggregates refreshed once.
 
 Usage:
-    python -m api.scripts.seed                    import all studies
-    python -m api.scripts.seed <identifier>...    import only these studies
-    python -m api.scripts.seed --check            validate only, write nothing
+    python -m api.scripts.data_upload                    upload all studies
+    python -m api.scripts.data_upload <identifier>...    upload only these studies
+    python -m api.scripts.data_upload --check            validate only, write nothing
 """
 
 import argparse
@@ -65,10 +65,13 @@ from enacit4r_files.models.files import FileRef
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-SEED_DATA = Path(__file__).resolve().parents[2] / "SEED_DATA"
-MD5_CACHE = SEED_DATA / ".seed-cache.json"
+UPLOAD_DATA = Path(__file__).resolve().parents[2] / "UPLOAD_DATA"
+MD5_CACHE = UPLOAD_DATA / ".upload-cache.json"
 # Object metadata key holding the MD5 of the uploaded content
-MD5_METADATA = "seed-md5"
+MD5_METADATA = "upload-md5"
+# Key written before the script was renamed from `seed`, still accepted so
+# files already on S3 are not uploaded again
+LEGACY_MD5_METADATA = "seed-md5"
 # Files bigger than one part are uploaded in concurrent parts (min 5 MiB)
 PART_SIZE = 32 << 20
 # In-flight parts, all files together: bounds memory to CONCURRENCY x PART_SIZE
@@ -77,7 +80,7 @@ UPLOAD_CONCURRENCY = 8
 
 
 @dataclass
-class SeedStudy:
+class UploadStudy:
     folder: Path
     draft: StudyDraft
     dataset_files: list[tuple[DatasetDraft, list[Path]]]
@@ -179,7 +182,7 @@ def match_files_to_datasets(
     return matched, warnings
 
 
-def load_study(folder: Path) -> SeedStudy:
+def load_study(folder: Path) -> UploadStudy:
     """Read and validate one study folder, without touching DB or S3."""
     draft = StudyDraft.model_validate_json((folder / "metadata.json").read_text())
     if draft.identifier != folder.name:
@@ -191,7 +194,7 @@ def load_study(folder: Path) -> SeedStudy:
     if not files:
         raise ValueError("no data file")
     dataset_files, warnings = match_files_to_datasets(folder, draft, files)
-    return SeedStudy(
+    return UploadStudy(
         folder=folder, draft=draft, dataset_files=dataset_files, warnings=warnings
     )
 
@@ -204,7 +207,7 @@ def draft_file_key(identifier: str, dataset: DatasetDraft, path: Path) -> str:
 
 class Md5Cache:
     """MD5 of local files, invalidated by size and mtime, so a re-run does not
-    read SEED_DATA again."""
+    read UPLOAD_DATA again."""
 
     def __init__(self, file: Path):
         self.file = file
@@ -260,11 +263,10 @@ async def head_object(key: str) -> dict | None:
 async def is_uploaded(key: str, path: Path, md5: str) -> bool:
     """Whether the draft file in S3 already holds the content of `path`."""
     head = await head_object(key)
-    return (
-        head is not None
-        and head["ContentLength"] == path.stat().st_size
-        and head["Metadata"].get(MD5_METADATA) == md5
-    )
+    if head is None or head["ContentLength"] != path.stat().st_size:
+        return False
+    metadata = head["Metadata"]
+    return md5 in (metadata.get(MD5_METADATA), metadata.get(LEGACY_MD5_METADATA))
 
 
 async def upload_parts(
@@ -354,12 +356,14 @@ async def dataset_file(
 
 
 async def dataset_folders(
-    identifier: str, seed: SeedStudy, cache: Md5Cache
+    identifier: str, upload: UploadStudy, cache: Md5Cache
 ) -> tuple[dict[int, dict], int]:
     """Folder of every dataset draft, all files uploaded concurrently.
     Returns folders by dataset id and the number of skipped uploads."""
     semaphore = asyncio.Semaphore(UPLOAD_CONCURRENCY)
-    jobs = [(dataset, path) for dataset, files in seed.dataset_files for path in files]
+    jobs = [
+        (dataset, path) for dataset, files in upload.dataset_files for path in files
+    ]
     results = await asyncio.gather(
         *(dataset_file(identifier, d, p, cache, semaphore) for d, p in jobs)
     )
@@ -395,11 +399,11 @@ def draft_maps(draft: StudyDraft) -> CatalogMaps:
     return maps
 
 
-def check_measurements(seed: SeedStudy, parameters: list[Parameter]) -> list[str]:
+def check_measurements(upload: UploadStudy, parameters: list[Parameter]) -> list[str]:
     """Classify every dataset file against the dictionary and the draft."""
-    maps = draft_maps(seed.draft)
+    maps = draft_maps(upload.draft)
     lines = []
-    for dataset, paths in seed.dataset_files:
+    for dataset, paths in upload.dataset_files:
         reader = MeasurementReader(paths, parameters, maps)
         try:
             report = reader.classify().report
@@ -409,12 +413,12 @@ def check_measurements(seed: SeedStudy, parameters: list[Parameter]) -> list[str
     return lines
 
 
-async def load_measurements(engine, seed: SeedStudy, study: Study) -> Outcome:
+async def load_measurements(engine, upload: UploadStudy, study: Study) -> Outcome:
     """Load every dataset of the published study, bulk mode."""
     service = MeasurementService(engine)
     ids = {dataset.name: dataset.id for dataset in study.datasets}
     outcome = Outcome()
-    for dataset, paths in seed.dataset_files:
+    for dataset, paths in upload.dataset_files:
         try:
             report = await service.load(ids[dataset.name], paths, bulk=True)
             outcome.reports.append(f"{dataset.name}: {report.summary()}")
@@ -423,38 +427,40 @@ async def load_measurements(engine, seed: SeedStudy, study: Study) -> Outcome:
     return outcome
 
 
-async def publish(engine, seed: SeedStudy, cache: Md5Cache) -> Outcome:
-    """Replace the study draft with SEED_DATA content, publish it and load
+async def publish(engine, upload: UploadStudy, cache: Md5Cache) -> Outcome:
+    """Replace the study draft with UPLOAD_DATA content, publish it and load
     its measurements."""
-    identifier = seed.draft.identifier
+    identifier = upload.draft.identifier
     async with AsyncSession(engine, expire_on_commit=False) as session:
         # Only datasets with a matched file are published, with the processed files
-        folders, skipped = await dataset_folders(identifier, seed, cache)
-        seed.draft.datasets = []
-        for dataset, _ in seed.dataset_files:
+        folders, skipped = await dataset_folders(identifier, upload, cache)
+        upload.draft.datasets = []
+        for dataset, _ in upload.dataset_files:
             dataset.folder = folders[id(dataset)]
-            seed.draft.datasets.append(dataset)
+            upload.draft.datasets.append(dataset)
 
         # also deletes the draft files of a previous run, so they are not published
         document = await StudyDraftService(session).createOrUpdate(
-            seed.draft.model_dump(mode="json")
+            upload.draft.model_dump(mode="json")
         )
         study = await StudyService(session).save(StudyDraft.model_validate(document))
-    outcome = await load_measurements(engine, seed, study)
+    outcome = await load_measurements(engine, upload, study)
     outcome.skipped = skipped
     return outcome
 
 
 def study_folders(identifiers: list[str]) -> list[Path]:
-    """Study folders of SEED_DATA, all of them when `identifiers` is empty."""
-    if not SEED_DATA.is_dir():
-        raise FileNotFoundError(f"{SEED_DATA} does not exist")
-    folders = [p for p in visible_entries(SEED_DATA) if p.is_dir()]
+    """Study folders of UPLOAD_DATA, all of them when `identifiers` is empty."""
+    if not UPLOAD_DATA.is_dir():
+        raise FileNotFoundError(f"{UPLOAD_DATA} does not exist")
+    folders = [p for p in visible_entries(UPLOAD_DATA) if p.is_dir()]
     if not identifiers:
         return folders
     missing = set(identifiers) - {p.name for p in folders}
     if missing:
-        raise FileNotFoundError(f"no study folder in {SEED_DATA} for {sorted(missing)}")
+        raise FileNotFoundError(
+            f"no study folder in {UPLOAD_DATA} for {sorted(missing)}"
+        )
     return [p for p in folders if p.name in identifiers]
 
 
@@ -463,7 +469,7 @@ async def run(check_only: bool, identifiers: list[str]) -> list[tuple[str, str]]
     returning (folder, error) for failures."""
     if not check_only and "prod" in config.S3_PATH_PREFIX:
         raise RuntimeError(
-            f"Refusing to seed into S3_PATH_PREFIX={config.S3_PATH_PREFIX}"
+            f"Refusing to upload into S3_PATH_PREFIX={config.S3_PATH_PREFIX}"
         )
 
     engine = create_async_engine(config.DB_URL)
@@ -478,12 +484,12 @@ async def run(check_only: bool, identifiers: list[str]) -> list[tuple[str, str]]
         for i, folder in enumerate(folders, start=1):
             print(f"[{i}/{len(folders)}] {folder.name} ...", flush=True)
             try:
-                seed = load_study(folder)
+                upload = load_study(folder)
                 if check_only:
-                    outcome = Outcome(reports=check_measurements(seed, parameters))
+                    outcome = Outcome(reports=check_measurements(upload, parameters))
                 else:
-                    outcome = await publish(engine, seed, cache)
-                report_study(seed, outcome)
+                    outcome = await publish(engine, upload, cache)
+                report_study(upload, outcome)
                 if outcome.errors:
                     raise RuntimeError(f"{len(outcome.errors)} dataset load(s) failed")
             except Exception as e:
@@ -500,17 +506,17 @@ async def run(check_only: bool, identifiers: list[str]) -> list[tuple[str, str]]
     return failures
 
 
-def report_study(seed: SeedStudy, outcome: Outcome) -> None:
-    for warning in seed.warnings:
+def report_study(upload: UploadStudy, outcome: Outcome) -> None:
+    for warning in upload.warnings:
         print(f"    WARNING: {warning}")
     for line in outcome.reports:
         print(f"    {line}")
     for line in outcome.errors:
         print(f"    FAILED {line}")
-    total_files = sum(len(f) for _, f in seed.dataset_files)
+    total_files = sum(len(f) for _, f in upload.dataset_files)
     print(
-        f"    ok: {seed.draft.name} "
-        f"({len(seed.dataset_files)} dataset(s), {total_files} file(s)"
+        f"    ok: {upload.draft.name} "
+        f"({len(upload.dataset_files)} dataset(s), {total_files} file(s)"
         + (f", {outcome.skipped} already in S3" if outcome.skipped else "")
         + ")"
     )
@@ -552,7 +558,7 @@ def main() -> None:
         "identifiers",
         nargs="*",
         metavar="identifier",
-        help="only import these studies (default: all of SEED_DATA)",
+        help="only upload these studies (default: all of UPLOAD_DATA)",
     )
     args = parser.parse_args()
 
