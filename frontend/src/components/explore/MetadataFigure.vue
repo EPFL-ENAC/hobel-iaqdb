@@ -40,6 +40,7 @@ import ChartCard from '@/components/explore/ChartCard.vue';
 import DrillPath, { type DrillStep } from '@/components/explore/DrillPath.vue';
 import RankedBars from '@/components/explore/RankedBars.vue';
 import type { RankedRow } from '@/components/explore/ranked';
+import { isUnknownKey } from '@/components/plots/charts';
 import { useMetadataDrill } from '@/composables/useMetadataDrill';
 import type { ExploreBucket, ExploreDimension, ExploreEntity } from '@/models';
 
@@ -106,21 +107,34 @@ const steps = computed<DrillStep[]>(() =>
   })),
 );
 
+/**
+ * One row per known key, in the order received; missing and 'unknown' keys
+ * summed into a last "Unknown" row, not clickable: no filter matches both.
+ */
 const rows = computed<RankedRow<ExploreBucket>[]>(() => {
   const value = shown.value;
   if (!value) return [];
   const dimension = value.level.dimension;
-  return value.result.buckets.map((bucket, i) => {
-    const key = bucket.key[0];
-    return {
-      // keys are unique, null aside
-      key: key ?? `null-${i}`,
-      label: label(dimension, key),
-      value: bucket.n,
-      clickable: clickable.value && key !== null && key !== undefined,
-      data: bucket,
-    };
-  });
+  const known = value.result.buckets.filter((bucket) => !isUnknownKey(bucket.key[0]));
+  const unknown = value.result.buckets.filter((bucket) => isUnknownKey(bucket.key[0]));
+  const out: RankedRow<ExploreBucket>[] = known.map((bucket) => ({
+    key: bucket.key[0] as string,
+    label: label(dimension, bucket.key[0]),
+    value: bucket.n,
+    clickable: clickable.value,
+    data: bucket,
+  }));
+  if (unknown.length) {
+    const n = unknown.reduce((sum, bucket) => sum + bucket.n, 0);
+    out.push({
+      key: 'unknown',
+      label: label(dimension, null),
+      value: n,
+      clickable: false,
+      data: { key: [null], n },
+    });
+  }
+  return out;
 });
 
 /** in `filter` mode, the keys in the global filters; else every row */
