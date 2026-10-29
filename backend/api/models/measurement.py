@@ -72,7 +72,7 @@ class DatasetParameter(SQLModel, table=True):
 
 
 class CatalogVersion(SQLModel, table=True):
-    """Single row bumped by publish, delete and seed; keys every cache entry."""
+    """Single row bumped by publish, delete and data upload; keys every cache entry."""
 
     __tablename__ = "catalog_version"
 
@@ -135,16 +135,16 @@ MEASUREMENT_COLUMNS = [
     "value_qualifier",
 ]
 
-# Indexes dropped for the bulk seed and rebuilt after it: only the query
+# Indexes dropped for the bulk data upload and rebuilt after it: only the query
 # index whose leading column is not a foreign key. The FK-leading indexes stay
-# so that recreating a study (the seed deletes and re-inserts its catalog rows)
+# so that recreating a study (the data upload deletes and re-inserts its catalog rows)
 # keeps every cascade an index lookup instead of a scan of the hypertable.
 MEASUREMENT_BULK_INDEXES = {"ix_measurement_parameter_ts": "parameter, ts"}
 
 
 class LoadReport(BaseModel):
     """Where every row of a dataset's files went. Stored on the dataset and
-    printed by the seed, so a rejected row is never silent."""
+    printed by the data upload, so a rejected row is never silent."""
 
     loaded: int = 0
     missing: int = 0

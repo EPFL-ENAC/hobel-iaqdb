@@ -217,9 +217,9 @@ async def test_cascades_are_index_lookups_even_in_bulk_mode(
     session, clean_db, tmp_path
 ):
     """Recreating a study deletes its catalog rows one by one; each delete
-    cascades into the hypertable and must hit an index, also while the seed
+    cascades into the hypertable and must hit an index, also while the data upload
     has the query index dropped."""
-    # bulk mode as the seed runs it: chunks stay uncompressed until the end,
+    # bulk mode as the data upload runs it: chunks stay uncompressed until the end,
     # so the cascades go through the btree indexes (compressed chunks are
     # pruned by segment-by metadata instead and never show an index scan)
     fx = await make_fixture(session, tmp_path)

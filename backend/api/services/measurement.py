@@ -273,7 +273,7 @@ def _summarize(rows: list[tuple]) -> Classification:
 
 @asynccontextmanager
 async def measurement_write_lock(engine: AsyncEngine):
-    """One measurement writer at a time, cluster-wide (pods, seed): TimescaleDB
+    """One measurement writer at a time, cluster-wide (pods, data upload): TimescaleDB
     rejects a concurrent aggregate refresh, and concurrent DELETE/COPY/compress
     on shared chunks deadlock. The local lock keeps queued writers from each
     holding a pool connection while they wait.
@@ -298,8 +298,8 @@ class MeasurementService:
     ) -> LoadReport:
         """Replace the dataset's measurements with the content of `paths`.
         Idempotent. Marks the dataset ready or failed; a failure is raised.
-        `bulk` (seed) skips compression and the aggregate refresh and turns
-        synchronous commits off: the seed does them once at the end."""
+        `bulk` (data upload) skips compression and the aggregate refresh and turns
+        synchronous commits off: the data upload does them once at the end."""
         async with AsyncSession(self.engine, expire_on_commit=False) as session:
             dataset = await session.get(Dataset, dataset_id)
             if dataset is None:
@@ -492,7 +492,7 @@ class MeasurementService:
             return result.scalar_one()
 
     async def drop_bulk_indexes(self) -> None:
-        """Seed only: the bulk COPY is faster without the query index. The
+        """Data upload only: the bulk COPY is faster without the query index. The
         FK-leading indexes are kept (see MEASUREMENT_BULK_INDEXES)."""
         async with self.engine.begin() as conn:
             for name in MEASUREMENT_BULK_INDEXES:
@@ -500,7 +500,7 @@ class MeasurementService:
 
     async def create_bulk_indexes(self) -> None:
         """Recreate every secondary index of the model, not only the ones this
-        version drops: a run aborted under an older seed may have left more
+        version drops: a run aborted under an older data upload may have left more
         of them missing."""
         async with self.engine.begin() as conn:
             for index in measurement.indexes:

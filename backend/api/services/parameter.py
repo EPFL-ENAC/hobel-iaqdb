@@ -1,5 +1,5 @@
 """The parameter dictionary: versioned CSVs in api/data, mirrored into the
-`parameter` and `benchmark` tables at boot and at seed."""
+`parameter` and `benchmark` tables at boot and at data upload."""
 
 import csv
 import json
