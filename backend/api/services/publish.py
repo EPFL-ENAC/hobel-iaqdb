@@ -16,12 +16,14 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 
 
 def csv_keys(dataset: Dataset) -> list[tuple[str, str]]:
-    """(S3 key, file name) of the dataset's processed CSV files."""
+    """(S3 key, file name) of the dataset's processed CSV files, and zips of
+    them: a contributor uploads one file per dataset, so several CSVs come
+    as a zip."""
     children = (dataset.folder or {}).get("children") or []
     return [
         (urllib.parse.unquote(child["path"]), child["name"])
         for child in children
-        if child["name"].lower().endswith(".csv")
+        if child["name"].lower().endswith((".csv", ".zip"))
     ]
 
 

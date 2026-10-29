@@ -12,6 +12,9 @@ path calls (design §3, updated).
 """
 
 import asyncio
+import shutil
+import tempfile
+import zipfile
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -87,6 +90,37 @@ class Classification:
     last_at: object = None
 
 
+def zip_csv_members(archive: zipfile.ZipFile) -> list[str]:
+    """CSV members of a zip, without macOS metadata (`__MACOSX/`, `._*`)."""
+    return [
+        name
+        for name in archive.namelist()
+        if name.lower().endswith(".csv")
+        and not any(part.startswith(("__MACOSX", ".")) for part in name.split("/"))
+    ]
+
+
+def _extract_csvs(paths: list[Path], folder: Path) -> list[str]:
+    """The CSV files to read: plain CSVs as is, the CSV members of a zip
+    extracted to `folder` (DuckDB cannot read inside a zip)."""
+    files = []
+    for path in paths:
+        if path.suffix.lower() != ".zip":
+            files.append(str(path))
+            continue
+        with zipfile.ZipFile(path) as archive:
+            members = zip_csv_members(archive)
+            if not members:
+                raise ValueError(f"no CSV file in {path.name}")
+            for member in members:
+                # prefixed: members of different zips or folders may share a name
+                target = folder / f"{len(files)}_{Path(member).name}"
+                with archive.open(member) as src, target.open("wb") as dst:
+                    shutil.copyfileobj(src, dst)
+                files.append(str(target))
+    return files
+
+
 def _files_sql(files: list[str]) -> str:
     return "[" + ", ".join("'" + f.replace("'", "''") + "'" for f in files) + "]"
 
@@ -156,15 +190,21 @@ def _classified_sql(files: list[str]) -> str:
 
 class MeasurementReader:
     """DuckDB view of a dataset's files, classified against the dictionary
-    and the study's catalog. Blocking: call it from a thread."""
+    and the study's catalog. `paths` are CSVs or zips of CSVs.
+    Blocking: call it from a thread."""
 
     def __init__(
         self, paths: list[Path], parameters: list[Parameter], maps: CatalogMaps
     ):
-        self.files = [str(p) for p in paths]
+        self._tmp = tempfile.TemporaryDirectory()
         self.con = duckdb.connect()
-        self._check_columns()
-        self._register(parameters, maps)
+        try:
+            self.files = _extract_csvs(paths, Path(self._tmp.name))
+            self._check_columns()
+            self._register(parameters, maps)
+        except Exception:
+            self.close()
+            raise
 
     def _check_columns(self) -> None:
         files_sql = _files_sql(self.files)
@@ -241,6 +281,7 @@ class MeasurementReader:
 
     def close(self) -> None:
         self.con.close()
+        self._tmp.cleanup()
 
 
 def _summarize(rows: list[tuple]) -> Classification:
