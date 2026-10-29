@@ -7,6 +7,7 @@ import type { ShallowRef } from 'vue';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import {
   hasGlobalFilter,
+  isUnknownKey,
   keyLabel,
   onBucketClick,
   refine,
@@ -144,10 +145,15 @@ export function useMetadataDrill(props: MetadataDrillProps) {
       );
       return;
     }
-    const key = bucket.key[0];
+    const key = bucket.key[0] ?? null;
     const dimension = exploreStore.dimension(props.path[stack.value.length] || '');
-    if (key === null || key === undefined || !dimension) return;
-    const next = refine(level.params, level.dimension, key);
+    if (!dimension) return;
+    // an unknown key stands for every unknown key of the level, summed into one row
+    const keys =
+      key === null || isUnknownKey(key)
+        ? (shown.value?.result.buckets || []).map((b) => b.key[0] ?? null).filter(isUnknownKey)
+        : key;
+    const next = refine(level.params, level.dimension, keys);
     next.by = [dimension.key];
     void show([...stack.value, { params: next, dimension, label: name }]);
   }
