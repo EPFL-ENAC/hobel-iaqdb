@@ -55,6 +55,7 @@ from api.services.measurement import (
     MeasurementReader,
     MeasurementService,
     measurement_write_lock,
+    zip_csv_members,
 )
 from api.services.parameter import ParameterService, read_parameters
 from api.services.s3 import s3_client
@@ -130,10 +131,9 @@ def source_files(path: Path) -> set[str]:
     names = set()
     if path.suffix == ".zip":
         with zipfile.ZipFile(path) as archive:
-            for member in archive.namelist():
-                if member.endswith(".csv"):
-                    with archive.open(member) as stream:
-                        names.add(first_source_file(stream))
+            for member in zip_csv_members(archive):
+                with archive.open(member) as stream:
+                    names.add(first_source_file(stream))
     else:
         with path.open("rb") as stream:
             names.add(first_source_file(stream))

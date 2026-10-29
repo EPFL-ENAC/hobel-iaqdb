@@ -3,6 +3,7 @@
 import asyncio
 import json
 import shutil
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -68,6 +69,62 @@ def test_data_upload_check_reports_every_bin(tmp_path: Path):
     assert "unknown unit 1 (co2|mg/m³)" in line
     assert "unparseable timestamp 2" in line
     assert "unlinked space 1" in line
+
+
+def zip_csv(csv: Path, path: Path) -> Path:
+    """A zip as macOS Finder makes it: the CSV in a sub-folder, plus
+    `__MACOSX/` metadata entries that are not CSVs despite their name."""
+    with zipfile.ZipFile(path, "w") as archive:
+        archive.write(csv, f"series/{csv.name}")
+        archive.writestr(f"__MACOSX/series/._{csv.name}", b"\x00\x05\x16\x07")
+    return path
+
+
+def test_data_upload_check_reads_zips(tmp_path: Path):
+    from tests.fixtures import Fixture
+
+    fx = Fixture(study_id=0, buildings={}, spaces={}, datasets={}, files={})
+    folder = upload_folder(tmp_path, d1_rows(fx))
+    csv = folder / "time_series" / "d1_long.csv"
+    expected = data_upload.check_measurements(
+        data_upload.load_study(folder), read_parameters()
+    )
+    zip_csv(csv, folder / "time_series" / "d1_long.zip")
+    csv.unlink()
+    study = data_upload.load_study(folder)
+    assert data_upload.check_measurements(study, read_parameters()) == expected
+
+
+async def test_publish_loads_zipped_csvs(session, clean_db, tmp_path, monkeypatch):
+    fx = await make_catalog(session)
+    local = zip_csv(
+        write_csv(tmp_path / "d1_long.csv", d1_rows(fx)), tmp_path / "d1.zip"
+    )
+    empty = tmp_path / "empty.zip"
+    zipfile.ZipFile(empty, "w").close()
+    files = {"D1": local, "D2": empty}
+    for name, path in files.items():
+        dataset = await session.get(Dataset, fx.datasets[name])
+        dataset.folder = {"children": [{"name": path.name, "path": f"k/{name}.zip"}]}
+        session.add(dataset)
+    await session.commit()
+
+    async def fake_download(key: str, path: Path) -> Path:
+        shutil.copy(files[key.removeprefix("k/").removesuffix(".zip")], path)
+        return path
+
+    monkeypatch.setattr(publish, "download_object", fake_download)
+    with pytest.raises(RuntimeError, match="1 dataset\\(s\\) failed"):
+        await publish.load_published_study(clean_db, fx.study_id)
+    d1 = await session.get(Dataset, fx.datasets["D1"])
+    await session.refresh(d1)
+    assert d1.summary_status == "ready", d1.summary_error
+    assert d1.load_report["loaded"] > 0
+    assert d1.load_report["unlinked_space"] == D1_REPORT["unlinked_space"]
+    d2 = await session.get(Dataset, fx.datasets["D2"])
+    await session.refresh(d2)
+    assert d2.summary_status == "failed"
+    assert d2.summary_error == "ValueError: no CSV file in empty.zip"
 
 
 async def test_publish_loads_from_s3_and_refreshes(
@@ -163,9 +220,13 @@ def test_csv_keys_unquote_and_filter():
             "children": [
                 {"name": "a b.csv", "path": "p/a%20b.csv"},
                 {"name": "x.zip", "path": "p/x.zip"},
+                {"name": "raw.xlsx", "path": "p/raw.xlsx"},
             ]
         },
     )
-    assert publish.csv_keys(dataset) == [("p/a b.csv", "a b.csv")]
+    assert publish.csv_keys(dataset) == [
+        ("p/a b.csv", "a b.csv"),
+        ("p/x.zip", "x.zip"),
+    ]
     assert publish.csv_keys(Dataset(name="D", description="d", folder=None)) == []
     assert json.dumps(D1_REPORT)  # the report is JSON serialisable
