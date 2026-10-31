@@ -81,6 +81,9 @@ PART_SIZE = 32 << 20
 # In-flight parts, all files together: bounds memory to CONCURRENCY x PART_SIZE
 # and stays within the connection pool of the shared S3 client
 UPLOAD_CONCURRENCY = 8
+# ANSI color codes of the terminal output
+RED = "31"
+GREEN = "32"
 
 
 @dataclass
@@ -507,7 +510,7 @@ async def run(check_only: bool, identifiers: list[str]) -> list[tuple[str, str]]
             except Exception as e:
                 traceback.print_exc()
                 failures.append((folder.name, f"{type(e).__name__}: {e}"))
-                print(f"    FAILED: {failures[-1][1]}")
+                print(colored(f"    FAILED: {failures[-1][1]}", RED))
             finally:
                 if not check_only:
                     cache.save()
@@ -518,19 +521,29 @@ async def run(check_only: bool, identifiers: list[str]) -> list[tuple[str, str]]
     return failures
 
 
+def colored(text: str, color: str) -> str:
+    """`text` in color, plain when the output is not a terminal (a log file)."""
+    return f"\033[{color}m{text}\033[0m" if sys.stdout.isatty() else text
+
+
 def report_study(upload: UploadStudy, outcome: Outcome) -> None:
     for warning in upload.warnings:
         print(f"    WARNING: {warning}")
     for line in outcome.reports:
         print(f"    {line}")
     for line in outcome.errors:
-        print(f"    FAILED {line}")
+        print(colored(f"    FAILED {line}", RED))
+    if outcome.errors:
+        return
     total_files = sum(len(f) for _, f in upload.dataset_files)
     print(
-        f"    ok: {upload.draft.name} "
-        f"({len(upload.dataset_files)} dataset(s), {total_files} file(s)"
-        + (f", {outcome.skipped} already in S3" if outcome.skipped else "")
-        + ")"
+        colored(
+            f"    ok: {upload.draft.name} "
+            f"({len(upload.dataset_files)} dataset(s), {total_files} file(s)"
+            + (f", {outcome.skipped} already in S3" if outcome.skipped else "")
+            + ")",
+            GREEN,
+        )
     )
 
 
@@ -579,7 +592,7 @@ def main() -> None:
     action = "valid" if args.check else "imported"
     print(f"\n{total - len(failures)}/{total} studies {action}")
     for name, error in failures:
-        print(f"  FAILED {name}: {error}")
+        print(colored(f"  FAILED {name}: {error}", RED))
     if failures:
         sys.exit(1)
 
