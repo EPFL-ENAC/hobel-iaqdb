@@ -3,6 +3,7 @@
 import asyncio
 import json
 import shutil
+import sys
 import zipfile
 from pathlib import Path
 
@@ -81,6 +82,34 @@ def test_data_upload_skips_csv_that_is_not_processed(tmp_path: Path):
     study = data_upload.load_study(folder)
     assert [d.name for d, _ in study.dataset_files] == ["D1"]
     assert study.warnings == ["META/home.csv skipped: no `source_outer_file` column"]
+
+
+def test_report_study_colors_only_on_a_terminal(tmp_path: Path, capsys, monkeypatch):
+    from tests.fixtures import Fixture
+
+    fx = Fixture(study_id=0, buildings={}, spaces={}, datasets={}, files={})
+    study = data_upload.load_study(upload_folder(tmp_path, d1_rows(fx)))
+
+    data_upload.report_study(study, data_upload.Outcome())
+    assert capsys.readouterr().out.startswith("    ok: ")
+
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
+    data_upload.report_study(study, data_upload.Outcome())
+    assert capsys.readouterr().out.startswith("\033[32m    ok: ")
+
+
+def test_report_study_failed_dataset_is_red_and_not_ok(
+    tmp_path: Path, capsys, monkeypatch
+):
+    from tests.fixtures import Fixture
+
+    fx = Fixture(study_id=0, buildings={}, spaces={}, datasets={}, files={})
+    study = data_upload.load_study(upload_folder(tmp_path, d1_rows(fx)))
+
+    monkeypatch.setattr(sys.stdout, "isatty", lambda: True)
+    data_upload.report_study(study, data_upload.Outcome(errors=["D1: boom"]))
+    out = capsys.readouterr().out
+    assert out == "\033[31m    FAILED D1: boom\033[0m\n"
 
 
 def zip_csv(csv: Path, path: Path) -> Path:
