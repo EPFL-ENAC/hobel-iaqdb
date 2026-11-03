@@ -7,4 +7,5 @@ kc_service = KeycloakService(
     config.KEYCLOAK_API_ID,
     config.KEYCLOAK_API_SECRET,
     "admin",
+    client_roles=config.KEYCLOAK_CLIENT_ROLES,
 )
