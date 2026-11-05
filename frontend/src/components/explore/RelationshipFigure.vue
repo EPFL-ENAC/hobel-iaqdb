@@ -1,36 +1,40 @@
 <template>
   <ChartCard :eyebrow="eyebrowText" :title="title">
     <template #controls>
-      <span>{{ t('explore_figures.relationship.plot_mean') }}</span>
-      <!-- a pollutant fixed by the filter bar, or the only one with pairs, is said, not offered -->
-      <q-select
-        v-if="parameterOptions.length > 1"
-        :model-value="parameter"
-        :options="parameterOptions"
-        emit-value
-        map-options
-        dense
-        outlined
-        options-dense
-        class="relationship-figure__select"
-        @update:model-value="onParameter"
-      />
-      <span v-else class="relationship-figure__pollutant">{{ pollutantName }}</span>
-      <!-- no metric with pairs: nothing to pick, the chart says why -->
-      <template v-if="metricOptions.length">
-        <span>{{ t('explore_figures.relationship.against') }}</span>
+      <span class="figure-field">
+        <span>{{ t('explore_figures.relationship.plot_mean') }}</span>
+        <!-- a pollutant fixed by the filter bar, or the only one with pairs, is said, not offered -->
         <q-select
-          :model-value="metric"
-          :options="metricOptions"
-          :loading="probing"
+          v-if="parameterOptions.length > 1"
+          :model-value="parameter"
+          :options="parameterOptions"
           emit-value
           map-options
           dense
           outlined
           options-dense
           class="relationship-figure__select"
-          @update:model-value="(value) => (metric = value)"
+          @update:model-value="onParameter"
         />
+        <span v-else class="relationship-figure__pollutant">{{ pollutantName }}</span>
+      </span>
+      <!-- no metric with pairs: nothing to pick, the chart says why -->
+      <template v-if="metricOptions.length">
+        <span class="figure-field">
+          <span>{{ t('explore_figures.relationship.against') }}</span>
+          <q-select
+            :model-value="metric"
+            :options="metricOptions"
+            :loading="probing"
+            emit-value
+            map-options
+            dense
+            outlined
+            options-dense
+            class="relationship-figure__select"
+            @update:model-value="(value) => (metric = value)"
+          />
+        </span>
       </template>
     </template>
     <FigureFrame :height="height" :loading="loading" :error="error" :empty="emptyMessage">

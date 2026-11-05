@@ -280,6 +280,7 @@ export default {
       people: { title: 'People & surroundings', subtitle: 'Age, socioeconomic status, outdoor environment' },
     },
     clear_all: 'Clear all filters',
+    clear: 'Clear',
     clear_section: 'Clear {section}',
     show: 'Show no datasets | Show 1 dataset | Show {count} datasets',
     show_more: 'Show {count} more',
