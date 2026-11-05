@@ -435,7 +435,7 @@ export default {
     },
     records_by_pollutant: {
       eyebrow: 'Records by pollutant',
-      title: 'What is measured, and how completely',
+      title: 'What is measured, and in how many datasets',
     },
     datasets_by_building_type: {
       eyebrow: 'Datasets by building type',
@@ -485,7 +485,7 @@ export default {
     hint_filter: 'Click a bar to filter by it',
     parameters: 'Parameters',
     records: 'Records',
-    complete: 'Complete',
+    of_datasets: 'Of datasets',
   },
   ranked_bars: {
     other: 'Other',
