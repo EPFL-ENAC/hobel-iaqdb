@@ -248,6 +248,7 @@ export default {
     countries: '{count} country | {count} countries',
     error: 'Could not load the collection summary',
     stats: {
+      studies: 'study | studies',
       datasets: 'dataset | datasets',
       countries: 'country | countries',
       records: 'record | records',
