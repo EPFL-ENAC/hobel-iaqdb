@@ -24,19 +24,21 @@
         </template>
         <button v-if="changed" type="button" class="filter-bar__reset" @click="reset">{{ t('filter_bar.reset') }}</button>
       </div>
-      <div class="filter-bar__totals">
-        <div class="filter-bar__count">{{ datasetsText }}</div>
-        <div class="filter-bar__records">{{ recordsText }}</div>
+      <div class="filter-bar__actions">
+        <div class="filter-bar__totals">
+          <div class="filter-bar__count">{{ datasetsText }}</div>
+          <div class="filter-bar__records">{{ recordsText }}</div>
+        </div>
+        <q-btn
+          unelevated
+          no-caps
+          color="grey-10"
+          icon="download"
+          class="filter-bar__download"
+          :label="t('explore_download.button')"
+          @click="showDownload = true"
+        />
       </div>
-      <q-btn
-        unelevated
-        no-caps
-        color="grey-10"
-        icon="download"
-        class="filter-bar__download"
-        :label="t('explore_download.button')"
-        @click="showDownload = true"
-      />
     </div>
     <FilterDialog v-model="showDialog" :section="section" />
     <DownloadDialog v-model="showDownload" />
@@ -160,9 +162,38 @@ const recordsText = computed(() => {
   margin: 0 auto;
   padding: 10px 24px;
 
-  @media (max-width: $breakpoint-xs-max) {
+  @media (max-width: $breakpoint-sm-max) {
     flex-wrap: wrap;
-    padding: 10px 16px;
+    row-gap: 0;
+    padding-bottom: 0;
+  }
+
+  @media (max-width: $breakpoint-xs-max) {
+    padding: 10px 16px 0;
+  }
+}
+
+// the totals and download: beside the sentence on a wide screen, a band of
+// their own under it on a phone or tablet
+.filter-bar__actions {
+  display: contents;
+
+  @media (max-width: $breakpoint-sm-max) {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    // the full width of the bar, through its padding
+    flex: 0 0 calc(100% + 48px);
+    margin: 12px -24px 0;
+    padding: 8px 24px;
+    border-top: 1px solid $grey-4;
+    background: $grey-1;
+  }
+
+  @media (max-width: $breakpoint-xs-max) {
+    flex-basis: calc(100% + 32px);
+    margin: 12px -16px 0;
+    padding: 8px 16px;
   }
 }
 
@@ -174,6 +205,12 @@ const recordsText = computed(() => {
   flex: 1;
   min-width: 0;
   font-size: 1rem;
+
+  // on a phone or tablet the sentence takes the whole row, the totals and download go below
+  @media (max-width: $breakpoint-sm-max) {
+    flex-basis: 100%;
+    gap: 8px;
+  }
 }
 
 .filter-bar__pill {
@@ -189,14 +226,33 @@ const recordsText = computed(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: pointer;
+  // no double-tap zoom delay, no grey flash: the active state gives the feedback
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.1s;
 
-  &:hover {
-    background: $grey-2;
+  // a touch screen keeps the hover after a tap: hover only where there is a mouse
+  @media (hover: hover) {
+    &:hover {
+      background: $grey-2;
+    }
+  }
+
+  &:active {
+    background: $grey-3;
   }
 
   &:focus-visible {
     outline: 2px solid $figure-accent;
     outline-offset: 2px;
+  }
+
+  // a finger needs a bigger target than a mouse, and the whole width for long values
+  @media (max-width: $breakpoint-sm-max) {
+    min-height: 40px;
+    max-width: 100%;
+    padding: 6px 16px;
+    font-size: 0.9375rem;
   }
 }
 
@@ -204,13 +260,24 @@ const recordsText = computed(() => {
   background: $grey-10;
   color: white;
 
-  &:hover {
-    background: $grey-9;
+  @media (hover: hover) {
+    &:hover {
+      background: $grey-9;
+    }
+  }
+
+  &:active {
+    background: $grey-8;
   }
 }
 
 .filter-bar__dot {
   color: $grey-8;
+
+  // the dots end up alone at the end of wrapped lines: the gap separates the pills
+  @media (max-width: $breakpoint-sm-max) {
+    display: none;
+  }
 }
 
 .filter-bar__reset {
@@ -223,13 +290,21 @@ const recordsText = computed(() => {
   text-decoration: underline;
   text-underline-offset: 0.2em;
   cursor: pointer;
+  touch-action: manipulation;
+
+  @media (max-width: $breakpoint-sm-max) {
+    min-height: 40px;
+    padding: 0 8px;
+    font-size: 0.9375rem;
+  }
 }
 
 .filter-bar__totals {
   text-align: right;
   white-space: nowrap;
 
-  @media (max-width: $breakpoint-xs-max) {
+  @media (max-width: $breakpoint-sm-max) {
+    flex: 1;
     text-align: left;
   }
 }
@@ -245,5 +320,9 @@ const recordsText = computed(() => {
 
 .filter-bar__download {
   border-radius: 2px;
+
+  @media (max-width: $breakpoint-sm-max) {
+    min-height: 44px;
+  }
 }
 </style>
