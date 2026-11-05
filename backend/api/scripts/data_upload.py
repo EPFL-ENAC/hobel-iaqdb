@@ -464,27 +464,42 @@ async def publish(engine, upload: UploadStudy, cache: Md5Cache) -> Outcome:
     return outcome
 
 
-def study_folders(identifiers: list[str]) -> list[Path]:
-    """Study folders of UPLOAD_DATA, all of them when `identifiers` is empty."""
+def study_folders(identifiers: list[str]) -> list[tuple[int, Path]]:
+    """(position, folder) of the selected UPLOAD_DATA study folders, positions
+    1-based in sorted order: all of them when `identifiers` is empty, positions
+    FIRST..LAST (or FIRST to the end) when they are one or two numbers,
+    otherwise the folders with those names."""
     if not UPLOAD_DATA.is_dir():
         raise FileNotFoundError(f"{UPLOAD_DATA} does not exist")
     folders = [p for p in visible_entries(UPLOAD_DATA) if p.is_dir()]
+    numbered = list(enumerate(folders, start=1))
     if not identifiers:
-        return folders
+        return numbered
+    if all(i.isdigit() for i in identifiers):
+        if len(identifiers) > 2:
+            raise ValueError("a position range is FIRST [LAST]")
+        first = int(identifiers[0])
+        last = int(identifiers[1]) if len(identifiers) == 2 else len(folders)
+        if not 1 <= first <= last <= len(folders):
+            raise ValueError(f"positions {first}..{last} are outside 1..{len(folders)}")
+        return numbered[first - 1 : last]
     missing = set(identifiers) - {p.name for p in folders}
     if missing:
         raise FileNotFoundError(
             f"no study folder in {UPLOAD_DATA} for {sorted(missing)}"
         )
-    return [p for p in folders if p.name in identifiers]
+    return [(n, p) for n, p in numbered if p.name in identifiers]
 
 
-async def run(check_only: bool, identifiers: list[str]) -> list[tuple[str, str]]:
+async def run(
+    check_only: bool, identifiers: list[str], allow_prod: bool = False
+) -> list[tuple[str, str]]:
     """Process the selected study folders (all when `identifiers` is empty),
     returning (folder, error) for failures."""
-    if not check_only and "prod" in config.S3_PATH_PREFIX:
+    if not check_only and not allow_prod and "prod" in config.S3_PATH_PREFIX:
         raise RuntimeError(
             f"Refusing to upload into S3_PATH_PREFIX={config.S3_PATH_PREFIX}"
+            " (pass --allow-prod to upload to production on purpose)"
         )
 
     engine = create_async_engine(config.DB_URL)
@@ -496,8 +511,10 @@ async def run(check_only: bool, identifiers: list[str]) -> list[tuple[str, str]]
         if not check_only:
             await begin_bulk(engine)
         folders = study_folders(identifiers)
-        for i, folder in enumerate(folders, start=1):
-            print(f"[{i}/{len(folders)}] {folder.name} ...", flush=True)
+        # positions in the whole of UPLOAD_DATA, so a range resumes where a run stopped
+        total = sum(1 for p in visible_entries(UPLOAD_DATA) if p.is_dir())
+        for i, folder in folders:
+            print(f"[{i}/{total}] {folder.name} ...", flush=True)
             try:
                 upload = load_study(folder)
                 if check_only:
@@ -580,14 +597,20 @@ def main() -> None:
         "--check", action="store_true", help="validate only, write nothing"
     )
     parser.add_argument(
+        "--allow-prod",
+        action="store_true",
+        help="upload even when S3_PATH_PREFIX points at production",
+    )
+    parser.add_argument(
         "identifiers",
         nargs="*",
         metavar="identifier",
-        help="only upload these studies (default: all of UPLOAD_DATA)",
+        help="only upload these studies, or FIRST [LAST] positions as printed"
+        " in [n/total] (default: all of UPLOAD_DATA)",
     )
     args = parser.parse_args()
 
-    failures = asyncio.run(run(args.check, args.identifiers))
+    failures = asyncio.run(run(args.check, args.identifiers, args.allow_prod))
     total = len(study_folders(args.identifiers))
     action = "valid" if args.check else "imported"
     print(f"\n{total - len(failures)}/{total} studies {action}")

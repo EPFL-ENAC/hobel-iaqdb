@@ -1,4 +1,4 @@
-/**
+ /**
  * Number and label formatting shared by the charts, in the current locale.
  */
 import type { Benchmark } from '@/components/plots/charts';

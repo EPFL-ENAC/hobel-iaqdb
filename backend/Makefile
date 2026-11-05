@@ -33,11 +33,13 @@ db-downgrade:
 db-revision:
 	uv run dotenv -f "$(env_path)" run alembic revision --autogenerate -m "$(name)"
 
-# `make data-upload` uploads all of UPLOAD_DATA, `make data-upload <identifier>...` only those studies
+# `make data-upload` uploads all of UPLOAD_DATA, `make data-upload <identifier>...` only those studies,
+# `make data-upload 27 87` positions 27 to 87 (as printed in [n/total]), `make data-upload 27` 27 to the end;
+# add ALLOW_PROD=1 to upload when S3_PATH_PREFIX is production
 upload_studies := $(filter-out data-upload data-upload-check,$(MAKECMDGOALS))
 
 data-upload:
-	uv run dotenv -f "$(env_path)" run python -m api.scripts.data_upload $(upload_studies)
+	uv run dotenv -f "$(env_path)" run python -m api.scripts.data_upload $(if $(ALLOW_PROD),--allow-prod) $(upload_studies)
 
 data-upload-check:
 	uv run dotenv -f "$(env_path)" run python -m api.scripts.data_upload --check $(upload_studies)
