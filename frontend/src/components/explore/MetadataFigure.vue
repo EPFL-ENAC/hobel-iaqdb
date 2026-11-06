@@ -149,8 +149,9 @@ const hint = computed(() => {
   const level = shown.value?.level;
   if (!level || !clickable.value) return '';
   if (props.click === 'filter') return t('explore_figures.hint_filter');
-  // the level shown, not the one loading: the stack moves first
-  return stack.value.indexOf(level) + 1 < props.path.length
+  // the level shown, not the one loading: the stack moves first; a drill can
+  // skip a level, so where the level stands in the path, not in the stack
+  return props.path.indexOf(level.dimension.key) + 1 < props.path.length
     ? t('explore_figures.hint_drill')
     : t('explore_figures.hint_open');
 });
