@@ -7,13 +7,36 @@ queries turn each block into an `id IN (subquery)` on the fact table, so the
 fact scan never joins the catalog for filtering."""
 
 from api.models.catalog import Building, Dataset, Space, Study
-from api.services.explore.dimensions import Frame
+from api.services.explore.dimensions import KOPPEN_GROUPS, ZONE_GROUPS, Frame
 from enacit4r_sql.utils.query import QueryBuilder, paramAsDict
 from fastapi import HTTPException
+from sqlalchemy import or_
 from sqlmodel import select
 
 NESTED = {"$building": "building", "$space": "space", "$dataset": "dataset"}
 MODELS = {"study": Study, "building": Building, "space": Space, "dataset": Dataset}
+
+
+def climate_group_clause(model, groups: list[str | None]):
+    """Buildings with a zone of one of the groups; None, with no zone of the
+    mapping (null or "NA"), as the climate_group dimension buckets them."""
+    unknown = [g for g in groups if g is not None and g not in KOPPEN_GROUPS]
+    if unknown:
+        raise HTTPException(
+            status_code=422,
+            detail=f"unknown climate group {unknown}, expected one of"
+            f" {sorted(KOPPEN_GROUPS)}",
+        )
+    zone = model.climate_zone
+    zones = [z for g in groups if g is not None for z in KOPPEN_GROUPS[g]]
+    clauses = [zone.in_(zones)] if zones else []
+    if None in groups:
+        clauses.append(or_(zone.is_(None), zone.not_in(list(ZONE_GROUPS))))
+    return or_(*clauses)
+
+
+# filter fields that are no column of the model: a clause per list of values
+DERIVED_FIELDS = {Building: {"climate_group": climate_group_clause}}
 
 
 def parse_filter(raw: str | None) -> dict:
@@ -42,6 +65,14 @@ def criteria_of(filter: dict) -> dict[str, dict]:
 
 
 def apply_criteria(statement, model, criteria: dict):
+    derived = DERIVED_FIELDS.get(model, {})
+    for field in [f for f in criteria if f in derived]:
+        value = criteria[field]
+        values = value if isinstance(value, list) else [value]
+        statement = statement.where(derived[field](model, values))
+    criteria = {f: v for f, v in criteria.items() if f not in derived}
+    if not criteria:
+        return statement
     builder = QueryBuilder(model, {}, [], [])
     try:
         return builder._apply_model_filter(statement, model, criteria)

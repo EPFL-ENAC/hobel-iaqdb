@@ -334,3 +334,54 @@ async def test_cache_etag_and_version(client, session, clean_db, tmp_path):
     bumped = await client.get("/stats/metadata", params=params)
     assert bumped.headers["etag"] != etag
     assert bumped.json()["meta"]["version"] == 2
+
+
+async def test_climate_group_drills_into_its_zones(client, session, clean_db):
+    cache.clear()
+    fx = await make_catalog(session)
+    # B1 is Cfb, B2 is Dfb; "NA" (the raster at sea) is in no group
+    session.add_all(
+        [
+            Building(identifier="B3", climate_zone="Csa", study_id=fx.study_id),
+            Building(identifier="B4", climate_zone="NA", study_id=fx.study_id),
+            Building(identifier="B5", study_id=fx.study_id),
+        ]
+    )
+    await session.commit()
+
+    async def counts(by: str, filter: dict | None = None) -> dict:
+        params = {"entity": "buildings", "by": by}
+        if filter is not None:
+            params["filter"] = json.dumps({"$building": filter})
+        response = await client.get("/stats/metadata", params=params)
+        assert response.status_code == 200, response.text
+        return {b["key"][0]: b["n"] for b in response.json()["buckets"]}
+
+    assert await counts("climate_group") == {"C": 2, "D": 1, None: 2}
+    # a click on a group keeps its zones, as the drill refines the filter
+    assert await counts("climate_zone", {"climate_group": "C"}) == {
+        "Cfb": 1,
+        "Csa": 1,
+    }
+    # the null group holds what no group maps
+    assert await counts("climate_zone", {"climate_group": ["D", None]}) == {
+        "Dfb": 1,
+        "NA": 1,
+        None: 1,
+    }
+    # with a column criterion next to it
+    assert await counts("city", {"climate_group": "C", "country": "CH"}) == {
+        "Zurich": 1
+    }
+
+
+async def test_unknown_climate_group_is_refused(client, clean_db):
+    response = await client.get(
+        "/stats/metadata",
+        params={
+            "entity": "buildings",
+            "by": "climate_zone",
+            "filter": json.dumps({"$building": {"climate_group": "X"}}),
+        },
+    )
+    assert response.status_code == 422

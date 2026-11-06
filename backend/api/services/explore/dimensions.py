@@ -9,7 +9,28 @@ from typing import Any, Callable
 
 from api.models.explore import Dimension
 from fastapi import HTTPException
-from sqlalchemy import extract, func
+from sqlalchemy import case, extract, func
+
+# The Köppen-Geiger climate zones of each main group: A tropical, B dry
+# (arid and semiarid), C temperate, D continental, E polar.
+KOPPEN_GROUPS: dict[str, tuple[str, ...]] = {
+    "A": ("Af", "Am", "Aw"),
+    "B": ("BWh", "BWk", "BSh", "BSk"),
+    "C": ("Csa", "Csb", "Csc", "Cwa", "Cwb", "Cwc", "Cfa", "Cfb", "Cfc"),
+    "D": (
+        "Dsa", "Dsb", "Dsc", "Dsd",
+        "Dwa", "Dwb", "Dwc", "Dwd",
+        "Dfa", "Dfb", "Dfc", "Dfd",
+    ),  # fmt: skip
+    "E": ("ET", "EF"),
+}
+ZONE_GROUPS = {zone: group for group, zones in KOPPEN_GROUPS.items() for zone in zones}
+
+
+def climate_group_of(climate_zone: Any) -> Any:
+    """The group of a zone, from the mapping; null for a zone outside it
+    ("NA", at sea)."""
+    return case(ZONE_GROUPS, value=climate_zone)
 
 
 class Frame:
@@ -131,6 +152,16 @@ DIMENSIONS: dict[str, DimensionSpec] = {
             "country", "Country", "building", "country", "$building.country", "city"
         ),
         _category("city", "City", "building", "city", "$building.city", "study"),
+        DimensionSpec(
+            "climate_group",
+            "Climate group",
+            "building",
+            # no column of the building: see filters.DERIVED_FIELDS
+            "$building.climate_group",
+            "climate_zone",
+            "category",
+            lambda f: climate_group_of(f.use("building").climate_zone),
+        ),
         _category(
             "climate_zone",
             "Climate zone",
