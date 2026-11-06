@@ -46,7 +46,8 @@
  * A pollutant's levels per group of one dimension (ventilation type,
  * climate, building type): the middle half of the daily means, the median
  * as a dot and a number, and the pollutant's reference where it has one. A
- * click on a group shows its datasets; a click on a dataset opens its study.
+ * click on a group shows the groups of the next level of the path (a climate
+ * group, its zones), then its datasets; a click on a dataset opens its study.
  */
 import ChartCard from '@/components/explore/ChartCard.vue';
 import DrillPath, { type DrillStep } from '@/components/explore/DrillPath.vue';
@@ -66,14 +67,16 @@ interface Props {
   /** what the pollutant is crossed with, e.g. "ventilation" */
   aspect: string;
   title: string;
-  /** dimension key from /stats/schema, one row per value */
-  by: string;
+  /** dimension keys from /stats/schema, one row per value: the first level, then each drill */
+  path: string[];
   /** groups shown before the rest go to the "Show all" dialog */
   limit?: number;
 }
 
-/** The groups, or the datasets of one group. */
+/** The groups of one dimension of the path, or the datasets of one group. */
 interface Level {
+  /** the dimension of the groups, null for the datasets */
+  by: string | null;
   stats: ExploreParams;
   /**
    * the measured datasets per group, for the labels: the same rows as the
@@ -113,6 +116,9 @@ const statsRequest = useExploreRequest('measurements');
 const countsRequest = useExploreRequest('measurements');
 const shown = shallowRef<{ level: Level; loaded: Loaded } | null>(null);
 
+/** the dimension of the first level, the one the pollutant must be known in */
+const first = computed(() => props.path[0] ?? '');
+
 const { stack, current, show, popTo } = useDrillStack<Level, Loaded>({
   fetch: async (level) => {
     const [stats, counts] = await Promise.all([
@@ -146,12 +152,13 @@ const eyebrowText = computed(() =>
 
 const reference = computed(() => benchmarkOf(exploreStore.schema, parameter.value)?.value ?? null);
 
-/** the groups, then the datasets: named in the header, the one shown marked */
+/** the levels of the path, then the datasets: named in the header, the one shown marked */
 const steps = computed<DrillStep[]>(() => {
-  const dimension = exploreStore.dimension(props.by);
-  const levelKey = `explore_figures.level_names.${props.by}`;
-  const groups = i18n.te(levelKey) ? t(levelKey, 2) : (dimension?.label ?? props.by).toLowerCase();
-  const names = [groups, t('explore_figures.level_names.dataset', 2)];
+  const groups = props.path.map((by) => {
+    const levelKey = `explore_figures.level_names.${by}`;
+    return i18n.te(levelKey) ? t(levelKey, 2) : (exploreStore.dimension(by)?.label ?? by).toLowerCase();
+  });
+  const names = [...groups, t('explore_figures.level_names.dataset', 2)];
   return names.map((name, i) => ({
     label: name.charAt(0).toUpperCase() + name.slice(1),
     state: i < stack.value.length - 1 ? 'past' : i === stack.value.length - 1 ? 'current' : 'next',
@@ -166,10 +173,10 @@ const hint = computed(() => {
 /** Settle the pollutant, then restart from the groups: on mount and when the filters are applied. */
 async function refresh(): Promise<void> {
   await groupedRequest.load(
-    exploreStore.dimension(props.by)
+    exploreStore.dimension(first.value)
       ? {
           agg: 'count',
-          by: [props.by, 'parameter'],
+          by: [first.value, 'parameter'],
           grain: 'day',
           filter: exploreFilter(),
           ...exploreRange(),
@@ -193,13 +200,14 @@ filtersStore.$onAction(({ name, after }) => {
 
 function restart(): Promise<void> {
   const slug = parameter.value;
-  if (!slug || !exploreStore.dimension(props.by)) return show([]);
+  if (!slug || !exploreStore.dimension(first.value)) return show([]);
   return show([
     {
-      stats: { agg: 'stats', by: [props.by], parameters: [slug], grain: 'day', filter: exploreFilter(), ...exploreRange() },
+      by: first.value,
+      stats: { agg: 'stats', by: [first.value], parameters: [slug], grain: 'day', filter: exploreFilter(), ...exploreRange() },
       counts: {
         agg: 'count',
-        by: [props.by, 'dataset'],
+        by: [first.value, 'dataset'],
         parameters: [slug],
         grain: 'day',
         filter: exploreFilter(),
@@ -210,20 +218,32 @@ function restart(): Promise<void> {
   ]);
 }
 
-/** A group shows its datasets, each with its study; a dataset opens its study. */
+/**
+ * A group shows the groups of the next level of the path in it, after the
+ * last level its datasets, each with its study; a dataset opens its study.
+ */
 function onSelect(row: RangeRow): void {
   const level = current.value;
   if (!level) return;
-  if (level.datasets) {
+  if (level.datasets || !level.by || !level.counts) {
     const study = row.key.split('/')[0];
     if (study) void router.push({ path: '/study', query: { id: study } });
     return;
   }
-  const dimension = exploreStore.dimension(props.by);
+  const dimension = exploreStore.dimension(level.by);
   if (!dimension) return;
   const stats = refine(level.stats, dimension, row.key);
+  const next = props.path[props.path.indexOf(level.by) + 1];
+  if (next && exploreStore.dimension(next)) {
+    const counts = refine(level.counts, dimension, row.key);
+    void show([
+      ...stack.value,
+      { by: next, stats: { ...stats, by: [next] }, counts: { ...counts, by: [next, 'dataset'] }, datasets: false },
+    ]);
+    return;
+  }
   stats.by = ['study', 'dataset'];
-  void show([...stack.value, { stats, counts: null, datasets: true }]);
+  void show([...stack.value, { by: null, stats, counts: null, datasets: true }]);
 }
 
 const unit = computed(() => shown.value?.loaded.stats.meta.unit || '');
@@ -266,7 +286,7 @@ const rows = computed<RangeRow[]>(() => {
         if (!group || isUnknownKey(group)) return [];
         const count = counts.get(group);
         key = group;
-        label = keyLabel(props.by, group);
+        label = keyLabel(level.by ?? first.value, group);
         sublabel = count === undefined ? '' : t('datasets_with_count', count);
       }
       return [
