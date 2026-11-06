@@ -1,5 +1,6 @@
 <template>
   <div class="range-list">
+    <div v-if="labels && rows.length" class="range-list__header">{{ labels.value }}</div>
     <component
       :is="row.clickable ? 'button' : 'div'"
       v-for="row in rows"
@@ -27,6 +28,13 @@
       <div class="range-list__line">&nbsp;</div>
       <div class="range-list__track" />
     </div>
+    <ul v-if="labels && rows.length" class="range-list__key">
+      <li><span class="range-list__key-dot" />{{ labels.median }}</li>
+      <li><span class="range-list__key-range" />{{ labels.range }}</li>
+      <li v-if="typeof reference === 'number' && labels.reference">
+        <span class="range-list__key-reference" />{{ labels.reference }}
+      </li>
+    </ul>
   </div>
 </template>
 
@@ -47,6 +55,18 @@ export interface RangeRow {
   /** a click on the row emits `select` */
   clickable?: boolean;
 }
+
+/** What the numbers and marks stand for, said over and under the rows. */
+export interface RangeLabels {
+  /** over the values, e.g. "Median, µg/m³" */
+  value: string;
+  /** for the dot */
+  median: string;
+  /** for the bar */
+  range: string;
+  /** for the red tick, shown when there is a reference */
+  reference?: string;
+}
 </script>
 
 <script setup lang="ts">
@@ -64,9 +84,11 @@ interface Props {
   reference?: number | null | undefined;
   /** blank rows are added up to this many, so the list keeps its height */
   minRows?: number | undefined;
+  /** a header over the values and a key to the marks; none without */
+  labels?: RangeLabels | undefined;
 }
 
-const props = withDefaults(defineProps<Props>(), { reference: null, minRows: 0 });
+const props = withDefaults(defineProps<Props>(), { reference: null, minRows: 0, labels: undefined });
 const emit = defineEmits<{ select: [row: RangeRow] }>();
 
 const fillers = computed(() => Math.max(0, props.minRows - props.rows.length));
@@ -190,5 +212,57 @@ function at(value: number): number {
 
 .range-list__filler {
   visibility: hidden;
+}
+
+// over the values column: what the number at the end of each line is
+.range-list__header {
+  margin-bottom: -10px;
+  font-size: 0.75rem;
+  text-align: right;
+  color: $grey-7;
+}
+
+.range-list__key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.75rem;
+  color: $grey-8;
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    // the global `li + li` margin is for prose lists
+    margin: 0;
+  }
+}
+
+.range-list__key-dot,
+.range-list__key-range,
+.range-list__key-reference {
+  flex: none;
+  margin-right: 6px;
+}
+
+.range-list__key-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: $figure-accent;
+}
+
+.range-list__key-range {
+  width: 16px;
+  height: 6px;
+  background: rgba(74, 163, 154, 0.7);
+}
+
+.range-list__key-reference {
+  width: 0;
+  height: 14px;
+  border-left: 2px solid $figure-gap;
 }
 </style>

@@ -19,6 +19,7 @@
         :min="scale.min"
         :max="scale.max"
         :reference="reference"
+        :labels="labels"
         :min-rows="limit"
         @select="onSelect"
       />
@@ -35,7 +36,14 @@
       <div class="group-figure__dialog-path">
         <DrillPath :steps="steps" @pop="popTo" />
       </div>
-      <RangeList :rows="rows" :min="scale.min" :max="scale.max" :reference="reference" @select="onSelect" />
+      <RangeList
+        :rows="rows"
+        :min="scale.min"
+        :max="scale.max"
+        :reference="reference"
+        :labels="labels"
+        @select="onSelect"
+      />
       <template v-if="hint" #footer>{{ hint }}</template>
     </FigureDialog>
   </ChartCard>
@@ -43,9 +51,10 @@
 
 <script setup lang="ts">
 /**
- * A pollutant's levels per group of one dimension (ventilation type,
- * climate, building type): the middle half of the daily means, the median
- * as a dot and a number, and the pollutant's reference where it has one. A
+ * A pollutant's levels per group of one dimension (building type, climate,
+ * ventilation type): the middle half of the daily means, the median as a
+ * dot and a number, and the pollutant's reference where it has one, with a
+ * header over the numbers and a key to the marks. A
  * click on a group shows its datasets; a click on a dataset opens its study.
  */
 import ChartCard from '@/components/explore/ChartCard.vue';
@@ -53,7 +62,7 @@ import DrillPath, { type DrillStep } from '@/components/explore/DrillPath.vue';
 import FigureDialog from '@/components/explore/FigureDialog.vue';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
 import FigureMenu from '@/components/explore/FigureMenu.vue';
-import RangeList, { type RangeRow } from '@/components/explore/RangeList.vue';
+import RangeList, { type RangeLabels, type RangeRow } from '@/components/explore/RangeList.vue';
 import { benchmarkOf, isUnknownKey, keyLabel, niceTicks, refine } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';
@@ -91,7 +100,7 @@ interface Loaded {
 const props = withDefaults(defineProps<Props>(), { limit: 5 });
 const i18n = useI18n();
 const { t } = i18n;
-const { formatValue } = useChartFormat();
+const { formatValue, describeReference } = useChartFormat();
 const router = useRouter();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
@@ -144,7 +153,8 @@ const eyebrowText = computed(() =>
   }),
 );
 
-const reference = computed(() => benchmarkOf(exploreStore.schema, parameter.value)?.value ?? null);
+const benchmark = computed(() => benchmarkOf(exploreStore.schema, parameter.value));
+const reference = computed(() => benchmark.value?.value ?? null);
 
 /** the groups, then the datasets: named in the header, the one shown marked */
 const steps = computed<DrillStep[]>(() => {
@@ -289,6 +299,18 @@ const rows = computed<RangeRow[]>(() => {
     })
     .sort((a, b) => b.mid - a.mid);
 });
+
+/** the number at the end of each line is the median, the marks are keyed under the rows */
+const labels = computed<RangeLabels>(() => ({
+  value: unit.value
+    ? t('explore_figures.groups.value_header_unit', { unit: unit.value })
+    : t('explore_figures.groups.value_header'),
+  median: t('explore_figures.groups.key_median'),
+  range: t('explore_figures.groups.key_range'),
+  ...(benchmark.value
+    ? { reference: t('explore_figures.groups.key_reference', { value: describeReference(benchmark.value) }) }
+    : {}),
+}));
 
 const hasMore = computed(() => rows.value.length > props.limit);
 const visible = computed(() => rows.value.slice(0, props.limit));

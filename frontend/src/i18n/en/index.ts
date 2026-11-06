@@ -315,7 +315,7 @@ export default {
   explore_chapters: {
     relationships: {
       title: 'Correlation with levels',
-      lead: 'Compare the selected pollutant across ventilation types, climates and building types, then explore its relationship with space characteristics and other pollutants. These are associations, not causes.',
+      lead: 'Compare the selected pollutant across building types, climates and ventilation types, then explore its relationship with space characteristics and other pollutants. These are associations, not causes.',
     },
     reference: {
       title: 'How levels compare to the reference',
@@ -362,6 +362,11 @@ export default {
       eyebrow: 'Relationship · {pollutant} × {aspect}',
       pollutant: 'Pollutant',
       tip_days: '{count} days',
+      value_header: 'Median',
+      value_header_unit: 'Median, {unit}',
+      key_median: 'Median of daily means',
+      key_range: 'Middle half (25th–75th percentile)',
+      key_reference: 'Reference {value}',
       ventilation: {
         aspect: 'ventilation',
         title: 'Compare airflow strategies',

@@ -91,9 +91,9 @@
       <FigureGrid :columns="3">
         <GroupFigure
           v-if="exploreStore.schema"
-          :aspect="t('explore_figures.groups.ventilation.aspect')"
-          :title="t('explore_figures.groups.ventilation.title')"
-          by="ventilation_type"
+          :aspect="t('explore_figures.groups.building.aspect')"
+          :title="t('explore_figures.groups.building.title')"
+          by="building_type"
         />
         <GroupFigure
           v-if="exploreStore.schema"
@@ -103,9 +103,9 @@
         />
         <GroupFigure
           v-if="exploreStore.schema"
-          :aspect="t('explore_figures.groups.building.aspect')"
-          :title="t('explore_figures.groups.building.title')"
-          by="building_type"
+          :aspect="t('explore_figures.groups.ventilation.aspect')"
+          :title="t('explore_figures.groups.ventilation.title')"
+          by="ventilation_type"
         />
       </FigureGrid>
       <FigureGrid>
