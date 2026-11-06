@@ -414,12 +414,6 @@ export default {
       all: 'All',
       all_hint: 'Average over {count} fields | Average over {count} fields',
       filled: 'Filled in for {present} of {total}',
-      datasets_note: 'Datasets are scored on the variables of their files.',
-      variable_fields: {
-        unit: 'Unit',
-        format: 'Format',
-        reference: 'Parameter reference',
-      },
       bands: {
         reliable: 'Reliable',
         reliable_range: '80% and up',
@@ -464,7 +458,6 @@ export default {
       buildings: 'Buildings',
       spaces: 'Spaces',
       datasets: 'Datasets',
-      variables: 'Variables',
     },
     level_names: {
       country: 'country | countries',

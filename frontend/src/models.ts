@@ -230,7 +230,7 @@ export interface UploadResult {
 
 // ---- Explore charts API (/stats/*), mirrors backend api/models/explore.py
 
-export type ExploreEntity = 'studies' | 'buildings' | 'spaces' | 'datasets' | 'variables';
+export type ExploreEntity = 'studies' | 'buildings' | 'spaces' | 'datasets';
 export type ExploreGrain = 'day' | 'hour' | 'raw';
 export type ExploreSource = 'metadata' | 'measurements' | 'relationships';
 export type ExploreAgg =

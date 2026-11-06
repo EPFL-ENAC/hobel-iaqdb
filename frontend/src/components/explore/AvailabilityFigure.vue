@@ -14,10 +14,6 @@
         toggle-color="grey-10"
         toggle-text-color="white"
       />
-      <!-- kept in place on every pick, shown on one: the panel keeps its height -->
-      <div class="availability-figure__note" :class="{ invisible: entity !== 'datasets' }">
-        {{ t('explore_figures.metadata_availability.datasets_note') }}
-      </div>
       <ul class="availability-figure__legend">
         <li v-for="band in BANDS" :key="band.key">
           <span class="availability-figure__swatch" :style="`background: ${band.color};`" />
@@ -69,9 +65,10 @@ import { FIGURE_ACCENT, FIGURE_CHECK, FIGURE_GAP } from '@/components/plots/char
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';
 import { useExploreRequest } from '@/composables/useExploreQuery';
-import type { ExploreBucket, ExploreEntity } from '@/models';
+import type { ExploreBucket } from '@/models';
 
-type ScoredEntity = 'studies' | 'buildings' | 'spaces' | 'datasets';
+/** datasets are not scored: their files' unit and format apply to a few columns only */
+type ScoredEntity = 'studies' | 'buildings' | 'spaces';
 
 interface Props {
   eyebrow: string;
@@ -93,22 +90,11 @@ const BANDS = [
   { key: 'check', min: 0.7, color: FIGURE_CHECK },
   { key: 'gap', min: 0, color: FIGURE_GAP },
 ] as const;
-/**
- * What is scored for each pick: a dataset's own columns are load
- * bookkeeping, its description is in the variables of its files.
- */
-const SCORED: Record<ScoredEntity, ExploreEntity> = {
-  studies: 'studies',
-  buildings: 'buildings',
-  spaces: 'spaces',
-  datasets: 'variables',
-};
 /** where each entity's field labels live in the i18n messages */
 const LABELS: Record<ScoredEntity, string> = {
   studies: 'study',
   buildings: 'study.building',
   spaces: 'study.space',
-  datasets: 'explore_figures.metadata_availability.variable_fields',
 };
 /** fields whose message key has another name than the column */
 const LABEL_ALIASES: Partial<Record<ScoredEntity, Record<string, string>>> = {
@@ -120,7 +106,7 @@ const entity = ref<ScoredEntity>('buildings');
 const showAll = ref(false);
 
 const entityOptions = computed(() =>
-  (['studies', 'buildings', 'spaces', 'datasets'] as const).map((value) => ({
+  (['studies', 'buildings', 'spaces'] as const).map((value) => ({
     value,
     label: t(`explore_figures.entities.${value}`),
   })),
@@ -131,7 +117,7 @@ const { result, loading, error, load } = useExploreRequest('metadata');
 /** Load the fields of the entity picked: on mount, on a pick, and when the filters are applied. */
 function reload(): void {
   const parameters = exploreStore.parameters.length ? { parameters: [...exploreStore.parameters] } : {};
-  void load({ entity: SCORED[entity.value], agg: 'availability', filter: exploreFilter(), ...exploreRange(), ...parameters });
+  void load({ entity: entity.value, agg: 'availability', filter: exploreFilter(), ...exploreRange(), ...parameters });
 }
 
 onMounted(reload);
@@ -221,7 +207,6 @@ const summary = computed<RankedSummary>(() => {
 .availability-figure__toggle {
   border: 1px solid $grey-10;
   border-radius: 0;
-  max-width: 360px;
 
   :deep(.q-btn) {
     border-radius: 0;
@@ -230,12 +215,6 @@ const summary = computed<RankedSummary>(() => {
   :deep(.q-btn + .q-btn) {
     border-left: 1px solid $grey-10;
   }
-}
-
-.availability-figure__note {
-  margin-top: 12px;
-  font-size: 0.8125rem;
-  color: $grey-7;
 }
 
 .availability-figure__legend {
