@@ -13,6 +13,7 @@ import { cityName, useFiltersStore } from '@/stores/filters';
 import {
   ageGroupOptions,
   buildingTypeOptions,
+  climateGroupOptions,
   climateOptions,
   countryOptions,
   mechanicalVentilationTypeOptions,
@@ -171,6 +172,7 @@ export function isUnknownKey(key: string | null | undefined): boolean {
 export const STATS_CONTEXTS = [
   'country',
   'city',
+  'climate_group',
   'climate_zone',
   'building_type',
   'ventilation',
@@ -181,6 +183,7 @@ export const STATS_CONTEXTS = [
 /** Label lists for the dimensions whose keys are codes. */
 const KEY_OPTIONS: Record<string, OptionItem[]> = {
   country: countryOptions,
+  climate_group: climateGroupOptions,
   climate_zone: climateOptions,
   building_type: buildingTypeOptions,
   ventilation: yesNoOptions,
