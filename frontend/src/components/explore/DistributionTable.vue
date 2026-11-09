@@ -12,7 +12,11 @@
         class="distribution-table__line"
         :class="`distribution-table__line--${line.kind}`"
         :style="`left: ${at(line.value)}%;`"
-      />
+      >
+        <span class="distribution-table__line-value" :class="`distribution-table__line-value--${line.side}`">
+          {{ line.text }}
+        </span>
+      </span>
     </div>
 
     <template v-for="(row, i) in rows" :key="row.key">
@@ -93,6 +97,10 @@ interface Props {
   reference?: number | null;
   /** the median of the whole database, drawn dashed */
   median?: number | null;
+  /** written beside the reference line; its value alone when not given */
+  referenceText?: string;
+  /** written beside the median line; its value alone when not given */
+  medianText?: string;
   shareHeader?: string;
   /** blank rows are added up to this many, so the table keeps its height */
   minRows?: number | undefined;
@@ -103,6 +111,8 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   reference: null,
   median: null,
+  referenceText: '',
+  medianText: '',
   shareHeader: '',
   minRows: 0,
   formatTick: undefined,
@@ -127,10 +137,37 @@ const gridStyle = computed(() => {
   return `grid-template-rows: auto repeat(${count}, ${ROW_HEIGHT}px) auto; --rows: ${count};`;
 });
 
-const lines = computed(() => [
-  ...(props.median === null ? [] : [{ kind: 'median', value: props.median }]),
-  ...(props.reference === null ? [] : [{ kind: 'reference', value: props.reference }]),
-]);
+/**
+ * Each line carries its value, written upward beside it. With both lines,
+ * the lower value is written on its left and the higher on its right, so
+ * the two values stay apart when the lines are close.
+ */
+const lines = computed(() => {
+  const { median, reference } = props;
+  const lowerIsMedian = median !== null && reference !== null && median <= reference;
+  return [
+    ...(median === null
+      ? []
+      : [
+          {
+            kind: 'median',
+            value: median,
+            text: props.medianText || tickText(median),
+            side: lowerIsMedian ? 'left' : 'right',
+          },
+        ]),
+    ...(reference === null
+      ? []
+      : [
+          {
+            kind: 'reference',
+            value: reference,
+            text: props.referenceText || tickText(reference),
+            side: lowerIsMedian || median === null ? 'right' : 'left',
+          },
+        ]),
+  ];
+});
 
 /** a value's place on the scale, in percent, held inside it */
 function at(value: number): number {
@@ -184,6 +221,36 @@ function at(value: number): number {
 .distribution-table__line--reference {
   border-left: 2px solid $figure-gap;
   z-index: 2;
+}
+
+// above the boxes, read from bottom to top
+.distribution-table__line-value {
+  position: absolute;
+  top: 2px;
+  padding: 2px 1px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-size: 0.6875rem;
+  line-height: 1;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.distribution-table__line-value--left {
+  right: 3px;
+}
+
+.distribution-table__line-value--right {
+  left: 3px;
+}
+
+.distribution-table__line--median .distribution-table__line-value {
+  color: $grey-8;
+}
+
+.distribution-table__line--reference .distribution-table__line-value {
+  color: $figure-gap;
 }
 
 .distribution-table__label {
