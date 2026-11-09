@@ -1,23 +1,27 @@
 <template>
   <ChartCard :eyebrow="eyebrow" :title="title">
     <template #controls>
-      <span>{{ t('explore_figures.correlation.method') }}</span>
-      <FigureToggle :model-value="method" :options="methodOptions" @update:model-value="onMethod" />
-      <q-select
-        :model-value="selected"
-        :options="parameterOptions"
-        :loading="coverage.loading.value"
-        multiple
-        emit-value
-        map-options
-        dense
-        outlined
-        options-dense
-        :display-value="t('explore_figures.correlation.pollutants', { count: selected.length })"
-        class="correlation-figure__pollutants"
-        @update:model-value="onParameters"
-        @popup-hide="onPopupHide"
-      />
+      <span class="figure-field">
+        <span>{{ t('explore_figures.correlation.method') }}</span>
+        <FigureToggle :model-value="method" :options="methodOptions" @update:model-value="onMethod" />
+      </span>
+      <span class="figure-field figure-field--bare">
+        <q-select
+          :model-value="selected"
+          :options="parameterOptions"
+          :loading="coverage.loading.value"
+          multiple
+          emit-value
+          map-options
+          dense
+          outlined
+          options-dense
+          :display-value="t('explore_figures.correlation.pollutants', { count: selected.length })"
+          class="correlation-figure__pollutants"
+          @update:model-value="onParameters"
+          @popup-hide="onPopupHide"
+        />
+      </span>
     </template>
     <FigureFrame
       :height="height"

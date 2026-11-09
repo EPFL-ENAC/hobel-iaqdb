@@ -2,36 +2,42 @@
   <div ref="root">
     <ChartCard :eyebrow="eyebrow" :title="title">
       <template #actions>
-        <span class="pair-figure__label">{{ t('explore_figures.correlation.method') }}</span>
-        <FigureToggle :model-value="method" :options="methodOptions" @update:model-value="onMethod" />
-        <span class="pair-figure__label">X</span>
-        <q-select
-          :model-value="x"
-          :options="xOptions"
-          :loading="coverage.loading.value || probeY.loading.value"
-          :display-value="x ? shortParameterName(x) : ''"
-          emit-value
-          map-options
-          dense
-          outlined
-          options-dense
-          class="pair-figure__select"
-          @update:model-value="onX"
-        />
-        <span class="pair-figure__label">Y</span>
-        <q-select
-          :model-value="y"
-          :options="yOptions"
-          :loading="probe.loading.value"
-          :display-value="y ? shortParameterName(y) : ''"
-          emit-value
-          map-options
-          dense
-          outlined
-          options-dense
-          class="pair-figure__select"
-          @update:model-value="onY"
-        />
+        <span class="figure-field">
+          <span class="pair-figure__label">{{ t('explore_figures.correlation.method') }}</span>
+          <FigureToggle :model-value="method" :options="methodOptions" @update:model-value="onMethod" />
+        </span>
+        <span class="figure-field">
+          <span class="pair-figure__label">X</span>
+          <q-select
+            :model-value="x"
+            :options="xOptions"
+            :loading="coverage.loading.value || probeY.loading.value"
+            :display-value="x ? shortParameterName(x) : ''"
+            emit-value
+            map-options
+            dense
+            outlined
+            options-dense
+            class="pair-figure__select"
+            @update:model-value="onX"
+          />
+        </span>
+        <span class="figure-field">
+          <span class="pair-figure__label">Y</span>
+          <q-select
+            :model-value="y"
+            :options="yOptions"
+            :loading="probe.loading.value"
+            :display-value="y ? shortParameterName(y) : ''"
+            emit-value
+            map-options
+            dense
+            outlined
+            options-dense
+            class="pair-figure__select"
+            @update:model-value="onY"
+          />
+        </span>
       </template>
       <div class="pair-figure__body">
         <aside class="pair-figure__facts">
