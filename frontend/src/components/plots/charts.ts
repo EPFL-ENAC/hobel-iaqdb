@@ -208,6 +208,21 @@ export function keyLabel(dimension: string, key: string): string {
   return KEY_OPTIONS[dimension]?.find((opt) => opt.value === key)?.label || key;
 }
 
+/**
+ * The levels that mean nothing under a bucket key, which a drill goes past:
+ * a building without mechanical ventilation has no mechanical ventilation
+ * type, whatever its spaces record.
+ */
+const NOT_APPLICABLE_UNDER: Record<string, Record<string, string[]>> = {
+  ventilation: { no: ['ventilation_type'] },
+};
+
+/** Whether the level `next` means something under `key` of `dimension`. */
+export function appliesUnder(dimension: string, key: string | null, next: string): boolean {
+  if (key === null) return true;
+  return !NOT_APPLICABLE_UNDER[dimension]?.[key]?.includes(next);
+}
+
 export type ClickKind = 'filter' | 'drill' | 'navigate';
 
 export interface ChartClick {
