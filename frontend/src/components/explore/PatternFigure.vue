@@ -100,15 +100,18 @@ interface Slot {
   above: number | null;
 }
 
-withDefaults(defineProps<Props>(), { height: 380 });
+withDefaults(defineProps<Props>(), { height: 404 });
 const { t, locale } = useI18n();
 const { formatValue, formatShare, describeReference } = useChartFormat();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
 
-/** the levels' grid, then the shares' grid under it, in pixels from the top */
-const LEVELS = { top: 12, height: 200 };
-const SHARES = { top: 268, height: 72 };
+/**
+ * the levels' grid, then the shares' grid under it, in pixels from the top;
+ * room above the levels for the reference's label when the reference is the top tick
+ */
+const LEVELS = { top: 36, height: 200 };
+const SHARES = { top: 292, height: 72 };
 const LEFT = 48;
 
 const parameters = useParameterChoice({ withBenchmark: true });

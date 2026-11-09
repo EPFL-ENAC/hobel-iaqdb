@@ -21,6 +21,8 @@
         :ticks="ticks"
         :reference="benchmark?.value ?? null"
         :median="databaseMedian"
+        :reference-text="referenceLine"
+        :median-text="medianLine"
         :share-header="shareHeader"
         :min-rows="limit"
         :format-tick="formatValue"
@@ -39,6 +41,8 @@
         :ticks="ticks"
         :reference="benchmark?.value ?? null"
         :median="databaseMedian"
+        :reference-text="referenceLine"
+        :median-text="medianLine"
         :share-header="shareHeader"
         :format-tick="formatValue"
         :format-share="formatShare"
@@ -220,6 +224,16 @@ const shareHeader = computed(() =>
         value: referenceText.value,
       })
     : '',
+);
+
+/** written beside the two lines */
+const referenceLine = computed(() =>
+  benchmark.value ? t('explore_figures.distribution.line_reference', { value: withUnit(benchmark.value.value) }) : '',
+);
+const medianLine = computed(() =>
+  databaseMedian.value === null
+    ? ''
+    : t('explore_figures.distribution.line_median', { value: withUnit(databaseMedian.value) }),
 );
 
 /** what the lines and boxes stand for, under the figure */

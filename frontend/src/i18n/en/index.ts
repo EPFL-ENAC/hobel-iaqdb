@@ -392,6 +392,8 @@ export default {
       tip_count: '{count} {periods}',
       legend_reference: 'Red: reference {value}',
       legend_median: 'dashed: database median {value}',
+      line_reference: 'reference {value}',
+      line_median: 'database median {value}',
       legend_box: 'box: middle half, whiskers: 5th–95th percentile',
     },
     pattern: {
