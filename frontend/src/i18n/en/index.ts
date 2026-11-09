@@ -257,6 +257,7 @@ export default {
     },
   },
   filter_bar: {
+    label: 'Filters',
     showing: 'showing',
     measured: 'measured',
     any_pollutant: 'every parameter',
@@ -268,6 +269,7 @@ export default {
       people: 'any surroundings',
     },
     reset: 'reset',
+    pill_label: '{value}, change filter',
     records: '{count} {pollutant} records',
     ventilation_value: 'Mechanical ventilation: {value}',
   },
