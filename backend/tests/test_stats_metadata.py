@@ -376,12 +376,14 @@ async def test_climate_group_drills_into_its_zones(client, session, clean_db):
 
 
 async def test_unknown_climate_group_is_refused(client, clean_db):
-    response = await client.get(
-        "/stats/metadata",
-        params={
-            "entity": "buildings",
-            "by": "climate_zone",
-            "filter": json.dumps({"$building": {"climate_group": "X"}}),
-        },
-    )
-    assert response.status_code == 422
+    # a list or an object is unhashable: refused, not a 500
+    for group in ["X", [["C"]], {"a": 1}, ["C", {"a": 1}], 3]:
+        response = await client.get(
+            "/stats/metadata",
+            params={
+                "entity": "buildings",
+                "by": "climate_zone",
+                "filter": json.dumps({"$building": {"climate_group": group}}),
+            },
+        )
+        assert response.status_code == 422, group

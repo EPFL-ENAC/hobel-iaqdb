@@ -20,7 +20,11 @@ MODELS = {"study": Study, "building": Building, "space": Space, "dataset": Datas
 def climate_group_clause(model, groups: list[str | None]):
     """Buildings with a zone of one of the groups; None, with no zone of the
     mapping (null or "NA"), as the climate_group dimension buckets them."""
-    unknown = [g for g in groups if g is not None and g not in KOPPEN_GROUPS]
+    unknown = [
+        g
+        for g in groups
+        if g is not None and (not isinstance(g, str) or g not in KOPPEN_GROUPS)
+    ]
     if unknown:
         raise HTTPException(
             status_code=422,
