@@ -14,6 +14,7 @@ path calls (design §3, updated).
 """
 
 import asyncio
+import difflib
 import shutil
 import tempfile
 import zipfile
@@ -41,21 +42,31 @@ from sqlmodel import col, delete, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 BATCH_SIZE = 50_000
+# every file has these
 REQUIRED_COLUMNS = (
     "data_type",
     "building_id",
     "space_id",
     "instrument_id",
+    "parameter",
+    "value",
+    "real_unit",
+)
+# an absent one reads as empty. What a row needs is checked per row, since
+# `data_type` is per row: a time_series row its `timestamp`, a statistical
+# row its `statistic`, the others their `start_timestamp`
+OPTIONAL_COLUMNS = (
     "timestamp",
     "start_timestamp",
     "end_timestamp",
-    "parameter",
     "statistic",
-    "value",
-    "real_unit",
     "inferred_unit",
     "value_qualifier",
 )
+# a header this close to an absent column is a misspelling of it, and its
+# data would be silently dropped: rejected. Low enough for `value_qualifer`,
+# high enough for the processed CSVs' extras (`source_space_id`, `record_id`)
+MISSPELLING_CUTOFF = 0.85
 MISSING_VALUES = ("", "NA", "N/A", "NAN", "NULL", "NONE")
 # units the processed CSVs use to say "no unit"
 NO_UNIT = ("", "not applicable", "unknown")
@@ -146,28 +157,50 @@ def _files_sql(files: list[str]) -> str:
     return "[" + ", ".join("'" + f.replace("'", "''") + "'" for f in files) + "]"
 
 
-def _classified_sql(files: list[str]) -> str:
+def _check_header(header: list[str]) -> set[str]:
+    """The known columns `header` has (lowercase: DuckDB names are case
+    insensitive). Raises on a missing required column, or on a header that
+    looks like a misspelled absent optional column."""
+    names = {name.strip().lower() for name in header}
+    missing = sorted(set(REQUIRED_COLUMNS) - names)
+    if missing:
+        raise ValueError(f"missing columns {missing}")
+    known = set(REQUIRED_COLUMNS) | set(OPTIONAL_COLUMNS)
+    absent = [c for c in OPTIONAL_COLUMNS if c not in names]
+    for name in sorted(names - known):
+        close = difflib.get_close_matches(name, absent, 1, MISSPELLING_CUTOFF)
+        if close:
+            raise ValueError(f"unknown column '{name}', did you mean '{close[0]}'?")
+    return names & known
+
+
+def _classified_sql(files: list[str], columns: set[str]) -> str:
     files_sql = _files_sql(files)
     missing_sql = ", ".join(f"'{v}'" for v in MISSING_VALUES)
     no_unit_sql = ", ".join(f"'{v}'" for v in NO_UNIT)
+
+    def c(name: str) -> str:
+        return f'"{name}"' if name in columns else "NULL::VARCHAR"
+
     return f"""
     WITH raw AS (
         SELECT
             coalesce(trim(parameter), '') AS slug,
             coalesce(trim(data_type), '') AS data_type,
-            coalesce(trim(statistic), '') AS statistic,
+            coalesce(trim({c("statistic")}), '') AS statistic,
             nullif(trim(building_id), '') AS building_ident,
             nullif(trim(space_id), '') AS space_ident,
             nullif(trim(instrument_id), '') AS instrument_ident,
-            nullif(trim("timestamp"), '') AS timestamp_text,
-            nullif(trim(start_timestamp), '') AS start_text,
-            nullif(trim(end_timestamp), '') AS end_text,
+            nullif(trim({c("timestamp")}), '') AS timestamp_text,
+            nullif(trim({c("start_timestamp")}), '') AS start_text,
+            nullif(trim({c("end_timestamp")}), '') AS end_text,
             coalesce(trim(value), '') AS value_text,
-            nullif(trim(value_qualifier), '') AS value_qualifier,
+            nullif(trim({c("value_qualifier")}), '') AS value_qualifier,
             coalesce(
                 nullif(trim(real_unit), ''),
-                CASE WHEN lower(coalesce(trim(inferred_unit), '')) IN ({no_unit_sql})
-                     THEN NULL ELSE trim(inferred_unit) END
+                CASE WHEN lower(coalesce(trim({c("inferred_unit")}), ''))
+                          IN ({no_unit_sql})
+                     THEN NULL ELSE trim({c("inferred_unit")}) END
             ) AS unit
         FROM read_csv({files_sql}, {CSV_OPTIONS})
     ),
@@ -236,9 +269,10 @@ class MeasurementReader:
         rows = self.con.execute(
             f"DESCRIBE SELECT * FROM read_csv({files_sql}, {CSV_OPTIONS})"
         ).fetchall()
-        missing = sorted(set(REQUIRED_COLUMNS) - {r[0] for r in rows})
-        if missing:
-            raise ValueError(f"missing columns {missing} in {self.files}")
+        try:
+            self.columns = _check_header([r[0] for r in rows])
+        except ValueError as error:
+            raise ValueError(f"{error} in {self.files}") from None
 
     def _register(self, parameters: list[Parameter], maps: CatalogMaps) -> None:
         con = self.con
@@ -272,7 +306,7 @@ class MeasurementReader:
 
     def classify(self) -> Classification:
         rows = self.con.execute(
-            _classified_sql(self.files)
+            _classified_sql(self.files, self.columns)
             + """
             SELECT bin, slug, unit, statistic, data_type = 'statistical', count(*),
                    count(*) FILTER (WHERE building_id IS NULL),
@@ -288,7 +322,7 @@ class MeasurementReader:
         """Batches of `measurement` rows (MEASUREMENT_COLUMNS order),
         values converted to the canonical unit."""
         cursor = self.con.execute(
-            _classified_sql(self.files)
+            _classified_sql(self.files, self.columns)
             + f"""
             SELECT {dataset_id}, {study_id}, building_id, space_id, instrument_id,
                    slug, data_type, ts, start_ts, end_ts,
@@ -303,7 +337,7 @@ class MeasurementReader:
         values converted to the canonical unit."""
         spreads_sql = ", ".join(f"'{s}'" for s in SPREADS)
         cursor = self.con.execute(
-            _classified_sql(self.files)
+            _classified_sql(self.files, self.columns)
             + f"""
             SELECT {dataset_id}, {study_id}, building_id, space_id, instrument_id,
                    slug, statistic, ts, end_ts,
