@@ -267,6 +267,66 @@ async def test_time_series_falls_back_to_start_timestamp(session, clean_db, tmp_
     assert report.loaded == 1 and report.unparseable_timestamp == 0
 
 
+def write_columns(path, columns, rows):
+    """A CSV with only `columns`, from `rows` (dicts of as_csv())."""
+    with path.open("w", newline="", encoding="utf-8") as stream:
+        writer = csv.DictWriter(stream, fieldnames=columns, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(rows)
+    return path
+
+
+async def test_optional_columns_may_be_absent(session, clean_db, tmp_path):
+    """#197: a time_series file needs no statistic, start/end timestamp,
+    inferred_unit or value_qualifier column; they read as empty."""
+    fx = await make_fixture(session, tmp_path)
+    series = Row("D2", "B2", "S3", "pm2_5", "10", "µg/m³", timestamp=START.isoformat())
+    stat = Row(
+        "D2",
+        "B2",
+        "S3",
+        "pm2_5",
+        "12",
+        "µg/m³",
+        start=START.isoformat(),
+        data_type="statistical",
+        statistic="mean",
+    )
+    core = [
+        "data_type",
+        "building_id",
+        "space_id",
+        "instrument_id",
+        "timestamp",
+        "parameter",
+        "value",
+        "real_unit",
+    ]
+    path = write_columns(tmp_path / "core.csv", core, [series.as_csv()])
+    report = await MeasurementService(clean_db).load(fx.datasets["D2"], [path])
+    assert report.loaded == 1 and report.rejected == 0
+    # a statistical row still needs its statistic and start_timestamp
+    path = write_columns(
+        tmp_path / "core_stat.csv", core, [series.as_csv(), stat.as_csv()]
+    )
+    report = await MeasurementService(clean_db).load(fx.datasets["D2"], [path])
+    assert report.unknown_statistic == {"": 1}
+    with_stat = [*core, "statistic", "start_timestamp"]
+    path = write_columns(tmp_path / "stat.csv", with_stat, [stat.as_csv()])
+    report = await MeasurementService(clean_db).load(fx.datasets["D2"], [path])
+    assert report.statistical == 1 and report.rejected == 0
+
+
+async def test_misspelled_optional_column_is_rejected(session, clean_db, tmp_path):
+    fx = await make_fixture(session, tmp_path)
+    row = Row("D2", "B2", "S3", "pm2_5", "10", "µg/m³", timestamp=START.isoformat())
+    columns = [c if c != "value_qualifier" else "value_qualifer" for c in CSV_COLUMNS]
+    values = {**{c: "" for c in columns}, **row.as_csv(), "value_qualifer": "<LOD"}
+    path = write_columns(tmp_path / "typo.csv", columns, [values])
+    with pytest.raises(ValueError, match="did you mean 'value_qualifier'"):
+        await MeasurementService(clean_db).load(fx.datasets["D2"], [path])
+
+
 async def test_statistical_only_dataset(session, clean_db, tmp_path):
     fx = await make_fixture(session, tmp_path)
     start, end = START.isoformat(), (START + timedelta(days=30)).isoformat()
