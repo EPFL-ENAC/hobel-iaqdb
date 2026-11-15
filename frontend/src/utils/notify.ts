@@ -36,7 +36,7 @@ function getErrorMessage(error: any): string {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function notifyError(error: any) {
-  let message = t('unknown_error');
+  let message: string;
   if (typeof error === 'string') {
     message = t(error);
   } else {
