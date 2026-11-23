@@ -46,10 +46,19 @@
             <span class="pair-figure__r-value">{{ r === null ? '–' : r.toFixed(2) }}</span>
           </div>
           <div class="pair-figure__method">{{ methodLabel }}</div>
+          <StudySpread :within="within" />
           <dl class="pair-figure__list">
             <template v-for="fact in facts" :key="fact.label">
               <dt>{{ fact.label }}</dt>
-              <dd>{{ fact.value }}</dd>
+              <!-- the number of studies opens their list -->
+              <dd v-if="fact.studies && x && y">
+                <StudiesDialog
+                  :title="`${shortParameterName(x)} × ${shortParameterName(y)}`"
+                  v-bind="{ method, r, within, pointsLabel: t('explore_figures.studies.paired_hours') }"
+                  >{{ fact.value }}</StudiesDialog
+                >
+              </dd>
+              <dd v-else>{{ fact.value }}</dd>
             </template>
           </dl>
           <p class="pair-figure__note">{{ t('explore_figures.pair.note') }}</p>
@@ -77,6 +86,8 @@ import { GridComponent, TooltipComponent } from 'echarts/components';
 import ChartCard from '@/components/explore/ChartCard.vue';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
 import FigureToggle from '@/components/explore/FigureToggle.vue';
+import StudiesDialog from '@/components/explore/StudiesDialog.vue';
+import StudySpread from '@/components/explore/StudySpread.vue';
 import { FIGURE_ACCENT, GRID, MUTED, initOptions, shortParameterName, updateOptions } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';
@@ -157,6 +168,11 @@ const r = computed<number | null>(() => {
   return rankRequest.result.value?.buckets[0]?.fit?.r ?? null;
 });
 
+/** the r within each study, by the method of r */
+const within = computed(() =>
+  method.value === 'pearson' ? bucket.value?.within : rankRequest.result.value?.buckets[0]?.within,
+);
+
 function unitOf(slug: string | null): string {
   return exploreStore.schema?.parameters.find((p) => p.slug === slug)?.unit ?? '';
 }
@@ -168,6 +184,9 @@ const facts = computed(() => {
   const points = b.points?.length ?? 0;
   return [
     { label: t('explore_figures.pair.pairs'), value: t('explore_figures.pair.hours', { count: b.n.toLocaleString(locale.value) }) },
+    ...(b.n_studies !== undefined
+      ? [{ label: t('explore_figures.pair.studies'), value: b.n_studies.toLocaleString(locale.value), studies: true }]
+      : []),
     ...(b.n_spaces !== undefined
       ? [{ label: t('explore_figures.pair.spaces'), value: b.n_spaces.toLocaleString(locale.value) }]
       : []),

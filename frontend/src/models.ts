@@ -377,6 +377,32 @@ export interface ExploreBucket {
   n_spaces?: number;
   /** relationships: false below the minimum sample size, with no r and no fit */
   enough?: boolean;
+  /** relationships: the studies behind n */
+  n_studies?: number;
+  /** relationships: the studies behind n, and the median of their r */
+  within?: ExploreWithin;
+}
+
+/**
+ * The studies behind a relationship bucket (#229): the ones with an r first,
+ * by r ascending, then the others by n descending; the median of their r,
+ * with no median without one.
+ */
+export interface ExploreWithin {
+  median?: number;
+  studies: ExploreStudyFit[];
+}
+
+/** One study behind a relationship bucket, its pairs alone. */
+export interface ExploreStudyFit {
+  /** the identifier, as the study dimension keys a study */
+  study: string;
+  n: number;
+  n_spaces: number;
+  /** whether the study reaches the minimum sample size by itself */
+  enough: boolean;
+  /** only if enough, and if neither variable is constant in the study */
+  r?: number;
 }
 
 export interface ExploreMeta {

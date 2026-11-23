@@ -41,7 +41,15 @@
       <e-charts autoresize :init-options="initOptions" :option="option" :update-options="updateOptions" />
     </FigureFrame>
     <template #footer>
-      <span class="relationship-figure__summary">{{ summary }}</span>
+      <span class="relationship-figure__summary">
+        <template v-if="summary && studies">
+          <StudiesDialog :title="pairTitle" method="pearson" :r="bucket?.fit?.r" :within="bucket?.within">{{
+            studies
+          }}</StudiesDialog>
+          ·
+        </template>
+        {{ summary }}
+      </span>
     </template>
   </ChartCard>
 </template>
@@ -61,6 +69,7 @@ import { SVGRenderer } from 'echarts/renderers';
 import { GridComponent, MarkLineComponent, TooltipComponent } from 'echarts/components';
 import ChartCard from '@/components/explore/ChartCard.vue';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
+import StudiesDialog from '@/components/explore/StudiesDialog.vue';
 import {
   FIGURE_ACCENT,
   FIGURE_GAP,
@@ -88,7 +97,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), { height: 380, defaultMetric: 'space.occupancy_density' });
 const i18n = useI18n();
 const { t, locale } = i18n;
-const { formatValue, formatYear, describeReference } = useChartFormat();
+const { formatValue, formatYear, describeReference, describeWithin } = useChartFormat();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
 
@@ -167,14 +176,25 @@ const emptyMessage = computed(() => {
 
 const benchmark = computed(() => benchmarkOf(exploreStore.schema, parameter.value));
 
-/** spaces, correlation and fit quality, under the figure */
+const bucket = computed(() => result.value?.buckets[0]);
+
+/** the studies behind the dots, a link to their list, before the summary */
+const studies = computed(() => {
+  const n = bucket.value?.n_studies;
+  return n === undefined ? '' : t('plots.studies_count', n);
+});
+const pairTitle = computed(() => `${metric.value ? metricName(metric.value) : ''} × ${pollutantName.value}`);
+
+/** spaces, correlation and fit quality, then r within each study, under the figure */
 const summary = computed(() => {
-  const bucket = result.value?.buckets[0];
-  if (!bucket?.fit || !bucket.n) return '';
-  const spaces = t('plots.spaces_count', bucket.n);
-  if (bucket.enough === false) return `${spaces} · ${t('plots.too_little_data')}`;
-  const parts = [spaces, `r = ${formatFit(bucket.fit.r)}`, `R² = ${formatFit(bucket.fit.r2)}`];
-  if (bucket.sampled) parts.push(t('plots.sampled'));
+  const b = bucket.value;
+  if (!b?.fit || !b.n) return '';
+  const spaces = t('plots.spaces_count', b.n);
+  if (b.enough === false) return `${spaces} · ${t('plots.too_little_data')}`;
+  const parts = [spaces, `r = ${formatFit(b.fit.r)}`, `R² = ${formatFit(b.fit.r2)}`];
+  if (b.sampled) parts.push(t('plots.sampled'));
+  const within = describeWithin(b.within);
+  if (within) parts.push(within);
   return parts.join(' · ');
 });
 
@@ -210,14 +230,14 @@ filtersStore.$onAction(({ name, after }) => {
 });
 
 const option = computed<EChartsOption>(() => {
-  const bucket = result.value?.buckets[0];
-  const points = bucket?.points || [];
-  if (!bucket || !points.length) return {};
+  const shown = bucket.value;
+  const points = shown?.points || [];
+  if (!shown || !points.length) return {};
   const xs = points.map(([x]) => x);
   const ys = points.map(([, y]) => y);
   const lo = Math.min(...xs);
   const hi = Math.max(...xs);
-  const fit = bucket.fit;
+  const fit = shown.fit;
   const line =
     fit?.slope != null && fit.intercept != null
       ? [

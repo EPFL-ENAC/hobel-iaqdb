@@ -1,7 +1,7 @@
 ---
 status: accepted
 issue: 129
-last_updated: 2026-09-23
+last_updated: 2026-11-23
 summary: Three query-shaped stats endpoints over raw measurements in a TimescaleDB hypertable (continuous aggregates as a derived cache), one response envelope, and a click model where every drill-down is a filter refinement of the same request. Implemented on branch feat/129; §15 lists where the code refined the design.
 ---
 
@@ -390,6 +390,8 @@ instrument_id, ts)` so only co-located, co-timed readings pair).
   parameters or more unnest their `array_agg(distinct parameter)`; one bucket
   per parameter keyed `[slug]`, `n` the rows it shares. No `x`, no `by`, no `fit`.
 
+The buckets of `pairs` and `matrix` also give the sample behind each r. `n_spaces` and `enough` come from #226 (`226-correlation-minimum-sample.md`). Below the minimum sample size, a bucket has no `fit`. `n_studies` and `within` come from #229 (`229-studies-behind-each-r.md`). `within.studies` lists each study by identifier, with its own `n`, `n_spaces`, `enough` and r. `within.median` is the median of these r.
+
 ## 8. Click model
 
 Every click on a chart is one of three declared kinds, handled by a single
@@ -631,6 +633,10 @@ class Bucket(BaseModel):
     fit: Fit | None = None
     points: list[tuple[float, float]] | None = None
     sampled: bool | None = None
+    n_spaces: int | None = None  # relationships (#226)
+    enough: bool | None = None
+    n_studies: int | None = None  # relationships (#229)
+    within: Within | None = None  # {median, studies: [{study, n, n_spaces, enough, r}]}
 
 
 class Meta(BaseModel):
@@ -747,6 +753,7 @@ Read with §1–§14; code wins where they still disagree.
 | data upload skip | MD5 skips the load too | MD5 skips the upload only, the load always runs (§3) |
 | catalog fan-out | not considered | `coverage`, the raw cap and `metadata` with `parameters` reason at study level; `measurements`, `relationships` and the empty-state suggestion filter the fact rows themselves |
 | pairs sample | `id % step` | `row_number() % step`, `sampled` true only when sampling happened (§7) |
+| sample behind an r | `n` only | also `n_spaces`, `enough` (#226), `n_studies` and the r within each study (#229) (§7) |
 | dictionary | #107's CSV | provisional CSVs in `api/data`, synced at boot and data upload |
 | frequencies routes | deleted | deleted; the five `PlotsDrawer` charts became one `MetadataTreemapChart` over `/stats/metadata` |
 | bulk data upload indexes | drop all three secondary indexes | drop only `(parameter, ts)`; FK columns keep an index (migration `a97d374f471c`) because a re-run recreates studies and each cascaded delete scanned the hypertable (§3) |

@@ -45,15 +45,20 @@
               'correlation-figure__cell--strongest': isStrongest(row, col),
             }"
             :style="cellStyle(row, col, i, j)"
-            :disabled="row === col || cellOf(row, col)?.r === null"
-            @click="exploreStore.showPair(col, row)"
+            :disabled="row === col || !cellOf(row, col)?.n"
+            @click="onCell(row, col)"
           >
-            {{ row === col ? '–' : formatR(cellOf(row, col)?.r ?? null) }}
+            <span>{{ row === col ? '–' : formatR(cellOf(row, col)?.r ?? null) }}</span>
+            <!-- the studies behind r: one or two can make a pooled r on their own -->
+            <span v-if="row !== col && studiesOf(row, col)" class="correlation-figure__studies">{{
+              studiesOf(row, col)
+            }}</span>
             <q-tooltip v-if="row !== col">
               <div>
                 <b>{{ shortParameterName(col) }} × {{ shortParameterName(row) }}</b>
               </div>
               <div>{{ describe(row, col) }}</div>
+              <div v-if="cellOf(row, col)?.enough">{{ withinOf(row, col) }}</div>
             </q-tooltip>
           </button>
         </template>
@@ -66,6 +71,18 @@
         >
       </div>
     </FigureFrame>
+    <StudiesDialog
+      v-model="studiesOpen"
+      :title="listedTitle"
+      :method="method"
+      :r="listed?.cell.r"
+      :within="listed?.cell.within"
+      :points-label="t('explore_figures.studies.paired_hours')"
+    >
+      <template v-if="listed?.cell.r !== null" #footer>
+        <q-btn v-close-popup flat no-caps :label="t('explore_figures.studies.plot_pair')" @click="onPlot" />
+      </template>
+    </StudiesDialog>
   </ChartCard>
 </template>
 
@@ -74,15 +91,19 @@
  * How the pollutants move together: one cell per pair, the correlation of
  * their hourly means in the same space at the same hour, teal when they rise
  * together, red when one falls as the other rises. The strongest pair is
- * outlined; a click on a cell plots the pair.
+ * outlined. A click on a cell lists the studies behind its r, with a
+ * button that plots the pair.
  */
 import ChartCard from '@/components/explore/ChartCard.vue';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
 import FigureToggle from '@/components/explore/FigureToggle.vue';
+import StudiesDialog from '@/components/explore/StudiesDialog.vue';
 import { shortParameterName } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
+import { useChartFormat } from '@/composables/useChartFormat';
 import { useParametersWithRecords } from '@/composables/useContextScope';
 import { useExploreRequest } from '@/composables/useExploreQuery';
+import type { ExploreWithin } from '@/models';
 
 interface Props {
   eyebrow: string;
@@ -95,6 +116,7 @@ type Method = 'pearson' | 'spearman';
 
 withDefaults(defineProps<Props>(), { height: 380 });
 const { t, locale } = useI18n();
+const { describeWithin } = useChartFormat();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
 
@@ -125,9 +147,18 @@ const emptyMessage = computed(() => {
 /** the axis order: as the matrix returned it */
 const order = computed(() => result.value?.meta.parameters || []);
 
-/** r, paired hours and spaces of each pair, both orders */
+interface Cell {
+  r: number | null;
+  n: number;
+  spaces: number;
+  studies: number | undefined;
+  enough: boolean;
+  within: ExploreWithin | undefined;
+}
+
+/** r, paired hours, spaces and studies of each pair, both orders */
 const cells = computed(() => {
-  const map = new Map<string, { r: number | null; n: number; spaces: number; enough: boolean }>();
+  const map = new Map<string, Cell>();
   for (const bucket of result.value?.buckets || []) {
     const [a, b] = bucket.key;
     if (!a || !b) continue;
@@ -135,7 +166,9 @@ const cells = computed(() => {
       r: bucket.n ? (bucket.fit?.r ?? null) : null,
       n: bucket.n,
       spaces: bucket.n_spaces ?? 0,
+      studies: bucket.n_studies,
       enough: bucket.enough !== false,
+      within: bucket.within,
     };
     map.set(`${a}|${b}`, cell);
     map.set(`${b}|${a}`, cell);
@@ -185,11 +218,44 @@ function formatR(r: number | null): string {
 function describe(a: string, b: string): string {
   const cell = cellOf(a, b);
   if (!cell?.n) return t('plots.no_common_hours');
-  const hours = t('plots.paired_hours_count', { count: cell.n.toLocaleString(locale.value) });
+  const behind = [
+    ...(cell.studies === undefined ? [] : [t('plots.studies_count', cell.studies)]),
+    t('plots.spaces_count', cell.spaces),
+    t('plots.paired_hours_count', { count: cell.n.toLocaleString(locale.value) }),
+  ].join(' · ');
   // below the minimum sample size the cell stays blank: say why
-  if (!cell.enough) return `${t('plots.too_little_data')} · ${t('plots.spaces_count', cell.spaces)} · ${hours}`;
+  if (!cell.enough) return `${t('plots.too_little_data')} · ${behind}`;
   if (cell.r === null) return t('plots.no_common_hours');
-  return `r = ${cell.r.toFixed(2)} · ${hours}`;
+  return `r = ${cell.r.toFixed(2)} · ${behind}`;
+}
+
+/** "3 studies"; nothing for a pair never measured together */
+function studiesOf(a: string, b: string): string {
+  const cell = cellOf(a, b);
+  return cell?.n && cell.studies !== undefined ? t('plots.studies_count', cell.studies) : '';
+}
+
+/** the r within each study of the pair, in one line */
+function withinOf(a: string, b: string): string {
+  return describeWithin(cellOf(a, b)?.within);
+}
+
+/** the cell whose studies the dialog lists */
+const listed = ref<{ row: string; col: string; cell: Cell } | null>(null);
+const studiesOpen = ref(false);
+const listedTitle = computed(() =>
+  listed.value ? `${shortParameterName(listed.value.col)} × ${shortParameterName(listed.value.row)}` : '',
+);
+
+function onCell(row: string, col: string): void {
+  const cell = cellOf(row, col);
+  if (!cell) return;
+  listed.value = { row, col, cell };
+  studiesOpen.value = true;
+}
+
+function onPlot(): void {
+  if (listed.value) exploreStore.showPair(listed.value.col, listed.value.row);
 }
 
 function reload(): void {
@@ -289,6 +355,7 @@ filtersStore.$onAction(({ name, after }) => {
 
 .correlation-figure__cell {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 0;
@@ -307,6 +374,16 @@ filtersStore.$onAction(({ name, after }) => {
   &:not(:disabled):hover {
     border-color: $grey-6;
   }
+}
+
+.correlation-figure__studies {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  opacity: 0.8;
 }
 
 .correlation-figure__cell--self {

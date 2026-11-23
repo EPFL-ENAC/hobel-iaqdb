@@ -135,6 +135,28 @@ class Fit(BaseModel):
     r: float | None
 
 
+class StudyFit(BaseModel):
+    """One study behind a relationship bucket (#229), its pairs alone."""
+
+    # the identifier, as the `study` dimension keys a study
+    study: str
+    n: int
+    n_spaces: int
+    # whether the study reaches the minimum sample size by itself
+    enough: bool
+    # only if enough, and if neither variable is constant in the study
+    r: float | None = None
+
+
+class Within(BaseModel):
+    """The studies behind a relationship bucket (#229): the ones with an r
+    first, by r ascending, then the others by n descending; and the median
+    of their r, with no median without one."""
+
+    median: float | None = None
+    studies: list[StudyFit]
+
+
 class Bucket(BaseModel):
     key: list[str | None]
     n: int
@@ -150,6 +172,10 @@ class Bucket(BaseModel):
     # minimum sample size for a correlation; below it there is no r and no fit
     n_spaces: int | None = None
     enough: bool | None = None
+    # relationships (#229): the studies behind n, and the r within each study,
+    # as a pooled r can come from the differences between studies
+    n_studies: int | None = None
+    within: Within | None = None
 
 
 class Meta(BaseModel):
