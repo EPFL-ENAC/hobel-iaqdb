@@ -373,6 +373,10 @@ export interface ExploreBucket {
   fit?: { slope: number | null; intercept: number | null; r2: number | null; r: number | null };
   points?: [number, number][];
   sampled?: boolean;
+  /** relationships: the spaces behind n */
+  n_spaces?: number;
+  /** relationships: false below the minimum sample size, with no r and no fit */
+  enough?: boolean;
 }
 
 export interface ExploreMeta {

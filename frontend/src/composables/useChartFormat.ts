@@ -13,6 +13,11 @@ export function useChartFormat() {
     }).format(value);
   }
 
+  /** a year: 1995, not 1,995 */
+  function formatYear(value: number): string {
+    return new Intl.NumberFormat(locale.value, { useGrouping: false, maximumFractionDigits: 0 }).format(value);
+  }
+
   function formatCount(value: number): string {
     return value.toLocaleString(locale.value);
   }
@@ -42,6 +47,7 @@ export function useChartFormat() {
 
   return {
     formatValue,
+    formatYear,
     formatCount,
     formatCompact,
     formatShare,
