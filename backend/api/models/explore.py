@@ -146,6 +146,10 @@ class Bucket(BaseModel):
     fit: Fit | None = None
     points: list[tuple[float, float]] | None = None
     sampled: bool | None = None
+    # relationships: the spaces behind n, and whether n and n_spaces reach the
+    # minimum sample size for a correlation; below it there is no r and no fit
+    n_spaces: int | None = None
+    enough: bool | None = None
 
 
 class Meta(BaseModel):

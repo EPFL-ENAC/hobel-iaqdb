@@ -125,13 +125,18 @@ const emptyMessage = computed(() => {
 /** the axis order: as the matrix returned it */
 const order = computed(() => result.value?.meta.parameters || []);
 
-/** r and paired hours of each pair, both orders */
+/** r, paired hours and spaces of each pair, both orders */
 const cells = computed(() => {
-  const map = new Map<string, { r: number | null; n: number }>();
+  const map = new Map<string, { r: number | null; n: number; spaces: number; enough: boolean }>();
   for (const bucket of result.value?.buckets || []) {
     const [a, b] = bucket.key;
     if (!a || !b) continue;
-    const cell = { r: bucket.n ? (bucket.fit?.r ?? null) : null, n: bucket.n };
+    const cell = {
+      r: bucket.n ? (bucket.fit?.r ?? null) : null,
+      n: bucket.n,
+      spaces: bucket.n_spaces ?? 0,
+      enough: bucket.enough !== false,
+    };
     map.set(`${a}|${b}`, cell);
     map.set(`${b}|${a}`, cell);
   }
@@ -179,8 +184,12 @@ function formatR(r: number | null): string {
 
 function describe(a: string, b: string): string {
   const cell = cellOf(a, b);
-  if (!cell || cell.r === null) return t('plots.no_common_hours');
-  return `r = ${cell.r.toFixed(2)} · ${t('plots.paired_hours_count', { count: cell.n.toLocaleString(locale.value) })}`;
+  if (!cell?.n) return t('plots.no_common_hours');
+  const hours = t('plots.paired_hours_count', { count: cell.n.toLocaleString(locale.value) });
+  // below the minimum sample size the cell stays blank: say why
+  if (!cell.enough) return `${t('plots.too_little_data')} · ${t('plots.spaces_count', cell.spaces)} · ${hours}`;
+  if (cell.r === null) return t('plots.no_common_hours');
+  return `r = ${cell.r.toFixed(2)} · ${hours}`;
 }
 
 function reload(): void {

@@ -28,6 +28,30 @@ SAMPLE = 2000
 # memory a Spearman matrix sorts in, for its rank query only
 SORT_MEMORY = "64MB"
 METRIC_MODELS = {"space": Space, "building": Building}
+# below these a correlation is noise (r = 0.00 from one point, #226): the
+# bucket keeps its counts and points but gets no r and no fit
+MIN_SPACES = 3
+MIN_PAIRS = 30
+
+
+def enough(n_pairs: int, n_spaces: int) -> bool:
+    """Paired readings: enough pairs, over enough spaces."""
+    return n_pairs >= MIN_PAIRS and n_spaces >= MIN_SPACES
+
+
+def fit_bucket(row, width: int, n_spaces: int, reached: bool) -> Bucket:
+    """A pairs bucket from (*keys, n, slope, intercept, r2, r, ...)."""
+    slope, intercept, r2, r = (
+        number(v) if reached else None for v in row[width + 1 : width + 5]
+    )
+    return Bucket(
+        key=[key_text(v) for v in row[:width]],
+        n=int(row[width]),
+        n_spaces=n_spaces,
+        enough=reached,
+        fit=Fit(slope=slope, intercept=intercept, r2=r2, r=r),
+        points=[],
+    )
 
 
 class RelationshipService:
@@ -127,25 +151,17 @@ class RelationshipService:
             func.regr_intercept(y, x),
             func.regr_r2(y, x),
             func.corr(y, x),
+            func.count(a.c.space_id.distinct()),
         )
         fit = self._pair_where(fit, a, b, query, filter)
         fit = fit.select_from(frame.select_from).group_by(*keys)
         rows = [r for r in (await self.session.exec(fit)).all() if r[len(keys)]]
         width = len(keys)
-        buckets = {
-            tuple(key_text(v) for v in row[:width]): Bucket(
-                key=[key_text(v) for v in row[:width]],
-                n=int(row[width]),
-                fit=Fit(
-                    slope=number(row[width + 1]),
-                    intercept=number(row[width + 2]),
-                    r2=number(row[width + 3]),
-                    r=number(row[width + 4]),
-                ),
-                points=[],
-            )
-            for row in rows
-        }
+        buckets = {}
+        for row in rows:
+            n_spaces = int(row[width + 5])
+            bucket = fit_bucket(row, width, n_spaces, enough(row[width], n_spaces))
+            buckets[tuple(bucket.key)] = bucket
         total = sum(bucket.n for bucket in buckets.values())
         step = max(1, math.ceil(total / SAMPLE))
         order = [a.c.dataset_id, a.c.space_id, a.time]
@@ -210,6 +226,7 @@ class RelationshipService:
                 func.regr_intercept(y, x),
                 func.regr_r2(y, x),
                 func.corr(y, x),
+                func.count(sub.c.space_id.distinct()),
             )
             .select_from(joined)
             .where(x.isnot(None))
@@ -220,21 +237,13 @@ class RelationshipService:
             if r[len(keys)]
         ]
         width = len(keys)
-        buckets = {
-            tuple(key_text(v) for v in row[:width]): Bucket(
-                key=[key_text(v) for v in row[:width]],
-                n=int(row[width]),
-                fit=Fit(
-                    slope=number(row[width + 1]),
-                    intercept=number(row[width + 2]),
-                    r2=number(row[width + 3]),
-                    r=number(row[width + 4]),
-                ),
-                points=[],
-                sampled=False,
-            )
-            for row in rows
-        }
+        buckets = {}
+        for row in rows:
+            # one point per space: the spaces are the sample
+            n_spaces = int(row[width + 5])
+            bucket = fit_bucket(row, width, n_spaces, n_spaces >= MIN_SPACES)
+            bucket.sampled = False
+            buckets[tuple(bucket.key)] = bucket
         points = select(*keys, x, y).select_from(joined).where(x.isnot(None))
         for row in (
             await self.session.exec(points.order_by(sub.c.dataset_id, sub.c.space_id))
@@ -267,23 +276,33 @@ class RelationshipService:
             # would not do, as releasing it keeps a SET LOCAL (on an error the
             # rollback drops it)
             await self.session.exec(text("RESET work_mem"))
-            cells = {(i, j): (n, r) for i, j, n, r in rows}
+            cells = {(i, j): (n, s, r) for i, j, n, s, r in rows}
         else:
             stats = []
             for i, j in pairs:
                 a, b = pivot.c[f"p{i}"], pivot.c[f"p{j}"]
+                both = and_(a.isnot(None), b.isnot(None))
                 stats.append(func.count(a).filter(b.isnot(None)))
+                stats.append(func.count(pivot.c.space_id.distinct()).filter(both))
                 stats.append(func.corr(a, b))
             row = (await self.session.exec(select(*stats).select_from(pivot))).one()
-            cells = {pair: row[2 * k : 2 * k + 2] for k, pair in enumerate(pairs)}
+            cells = {pair: row[3 * k : 3 * k + 3] for k, pair in enumerate(pairs)}
         buckets = []
         for i, j in pairs:
-            n, r = cells[(i, j)]
+            n, n_spaces, r = cells[(i, j)]
+            reached = enough(n, n_spaces)
             buckets.append(
                 Bucket(
                     key=[slugs[i], slugs[j]],
                     n=int(n),
-                    fit=Fit(slope=None, intercept=None, r2=None, r=number(r)),
+                    n_spaces=int(n_spaces),
+                    enough=reached,
+                    fit=Fit(
+                        slope=None,
+                        intercept=None,
+                        r2=None,
+                        r=number(r) if reached else None,
+                    ),
                 )
             )
         # a cell with no co-timed rows stays in a partial matrix (the grid
@@ -319,9 +338,14 @@ class RelationshipService:
         )
         shared = other.where(shared, query, filter, [])
         shared = shared.where(other.c.parameter != query.x).distinct().subquery()
-        counts = select(shared.c.parameter, func.count()).group_by(shared.c.parameter)
+        counts = select(
+            shared.c.parameter, func.count(), func.count(shared.c.space_id.distinct())
+        ).group_by(shared.c.parameter)
         rows = (await self.session.exec(counts)).all()
-        return [Bucket(key=[slug], n=int(n)) for slug, n in rows]
+        return [
+            Bucket(key=[slug], n=int(n), n_spaces=int(s), enough=enough(n, s))
+            for slug, n, s in rows
+        ]
 
     async def _partnered(self, grain, query, filter) -> list[Bucket]:
         """The parameters measured with any other: per parameter, the
@@ -361,13 +385,21 @@ class RelationshipService:
             Building, col(Building.id) == spaces.c.building_id
         )
         counts = (
-            select(spaces.c.parameter, func.count())
+            select(
+                spaces.c.parameter,
+                func.count(),
+                func.count(spaces.c.space_id.distinct()),
+            )
             .select_from(joined)
             .where(col(metric).isnot(None))
             .group_by(spaces.c.parameter)
         )
         rows = (await self.session.exec(counts)).all()
-        return [Bucket(key=[slug], n=int(n)) for slug, n in rows]
+        # one point per space, as in the metric pairs
+        return [
+            Bucket(key=[slug], n=int(n), n_spaces=int(s), enough=s >= MIN_SPACES)
+            for slug, n, s in rows
+        ]
 
     def _ranked(self, pivot, pairs: list[tuple[int, int]]):
         """Spearman: per pair, rank both parameters within the rows where
@@ -386,7 +418,11 @@ class RelationshipService:
         for i, j in pairs:
             a, b = pivot.c[f"p{i}"], pivot.c[f"p{j}"]
             ranked = (
-                select(average_rank(a).label("a"), average_rank(b).label("b"))
+                select(
+                    pivot.c.space_id,
+                    average_rank(a).label("a"),
+                    average_rank(b).label("b"),
+                )
                 .where(a.isnot(None), b.isnot(None))
                 .subquery()
             )
@@ -395,6 +431,7 @@ class RelationshipService:
                     literal(i),
                     literal(j),
                     func.count(),
+                    func.count(ranked.c.space_id.distinct()),
                     func.corr(ranked.c.a, ranked.c.b),
                 ).select_from(ranked)
             )
