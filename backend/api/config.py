@@ -25,7 +25,7 @@ class Config(BaseSettings):
     # True: the admin role is a client role of the API client, in a realm shared
     # with other apps (sso2)
     # False: the admin role is a realm role, in a realm of its own
-    KEYCLOAK_CLIENT_ROLES: bool = False
+    KEYCLOAK_CLIENT_ROLES: bool = True
 
     PATH_PREFIX: str = "/api"
 
