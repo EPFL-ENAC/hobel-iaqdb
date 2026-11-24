@@ -30,11 +30,12 @@ half of the PM rows are annual means.
 
 1. The references live in the `benchmark` table only. The repository and
    the backend image hold no copy of them, and the backend only reads the
-   table. You keep the references in a benchmarks CSV outside the
-   repository, one row per reference, with the columns `id`, `parameter`,
-   `is_default`, `source`, `institution`, `year`, `region`, `limit_type`,
-   `legal_status`, `setting`, `averaging`, `period`, `value`, `unit`,
-   `qualifier`, `url` and `note`. The script
+   table. You keep the references in `data/benchmarks.csv` at the
+   repository root, a folder that git ignores. The CSV has one row per
+   reference. Its first columns are `id`, `parameter`, `is_default`,
+   `source`, `institution`, `year`, `region` and `limit_type`. The other
+   columns are `legal_status`, `setting`, `averaging`, `period`, `value`,
+   `unit`, `qualifier`, `url` and `note`. The script
    `api/scripts/import_benchmarks.py` loads the CSV into one database and
    replaces its references. A change to the references therefore needs no
    release: you load the CSV into dev or prod through a port-forward (see
@@ -62,10 +63,10 @@ half of the PM rows are annual means.
 
 The import checks every row with the backend's rules
 (`api/services/benchmark.py`), against the parameters of the target
-database. Each row needs a known parameter, the canonical unit of that
-parameter, an averaging value of `hour`, `day` or `long_term`, and a unique
-id. The target backend must have started once, so that its boot sync
-filled the dictionary. The script then replaces the whole table in one
+database. Each row needs a known parameter and the canonical unit of that
+parameter. It also needs a unique id and an averaging value of `hour`,
+`day` or `long_term`. You must start the target backend once before the
+import, so that its boot sync fills the dictionary. The script then replaces the whole table in one
 transaction and bumps the catalog version, so no cached schema keeps the
 old references. A refused CSV keeps the current references. If the table
 already holds the same references, the script writes nothing. If a release
@@ -143,16 +144,19 @@ database that the `.env` file names: `DB_HOST`, `DB_PORT`, `DB_USER`,
    `DB_HOST=localhost` and `DB_PORT` to the local port of the
    port-forward. `dotenv run` overrides the shell, so a `DB_HOST=...`
    prefix on the command line has no effect.
-3. Check the CSV against that database. This step writes nothing:
+3. Put the CSV at `data/benchmarks.csv` in the repository root. Both
+   commands read this file. To read another file, add
+   `csv=path/to/benchmarks.csv`.
+4. Check the CSV against that database. This step writes nothing:
 
    ```sh
-   make import-benchmarks-check env_path=path/to/dev.env csv=path/to/benchmarks.csv
+   make import-benchmarks-check env_path=path/to/dev.env
    ```
 
-4. Write the references:
+5. Write the references:
 
    ```sh
-   make import-benchmarks env_path=path/to/dev.env csv=path/to/benchmarks.csv
+   make import-benchmarks env_path=path/to/dev.env
    ```
 
 If `S3_PATH_PREFIX` in that file names production, the script refuses to

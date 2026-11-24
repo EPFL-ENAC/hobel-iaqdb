@@ -1,13 +1,15 @@
 """Replace the reference values of one database with a benchmarks CSV
 (see docs/202-reference-values.md).
 
-    make import-benchmarks csv=path/to/benchmarks.csv
+    make import-benchmarks
 
-The CSV has the columns of COLUMNS in api/services/benchmark.py, with each
-value in the canonical unit of its parameter. The database is the one DB_HOST,
-DB_PORT and DB_NAME name, so a port-forward reaches dev or prod. The CSV
-replaces the whole benchmark table in one transaction: a refused CSV keeps
-the current references."""
+The make target reads data/benchmarks.csv at the repository root, and
+`csv=path/to/benchmarks.csv` reads another file. The CSV has the columns of
+COLUMNS in api/services/benchmark.py, with each value in the canonical unit
+of its parameter. The database is the one DB_HOST, DB_PORT and DB_NAME
+name, so a port-forward reaches dev or prod. The CSV replaces the whole
+benchmark table in one transaction: a refused CSV keeps the current
+references."""
 
 import argparse
 import asyncio

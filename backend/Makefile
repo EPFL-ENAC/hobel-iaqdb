@@ -33,9 +33,11 @@ db-downgrade:
 db-revision:
 	uv run dotenv -f "$(env_path)" run alembic revision --autogenerate -m "$(name)"
 
-# `make import-benchmarks csv=path/to/benchmarks.csv` replaces the reference values of the database that
-# env_path names; `make import-benchmarks-check csv=...` validates only; add ALLOW_PROD=1 to write when
-# S3_PATH_PREFIX is production
+# `make import-benchmarks` replaces the reference values of the database that env_path names with
+# data/benchmarks.csv at the repository root (`csv=...` reads another file); `make import-benchmarks-check`
+# validates only; add ALLOW_PROD=1 to write when S3_PATH_PREFIX is production
+csv ?= ../data/benchmarks.csv
+
 import-benchmarks:
 	uv run dotenv -f "$(env_path)" run python -m api.scripts.import_benchmarks $(if $(ALLOW_PROD),--allow-prod) "$(csv)"
 
