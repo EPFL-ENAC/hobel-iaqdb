@@ -34,6 +34,7 @@ CATALOG_TABLES = (
     "study_draft",
     "study_file",
     "study",
+    "benchmark",
 )
 
 

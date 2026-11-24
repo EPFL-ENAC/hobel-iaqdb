@@ -1,5 +1,6 @@
-"""The parameter dictionary: versioned CSVs in api/data, mirrored into the
-`parameter` and `benchmark` tables at boot and at data upload."""
+"""The parameter dictionary: a versioned CSV in api/data, mirrored into the
+`parameter` table at boot and at data upload. The reference values are not
+in it: api/scripts/import_benchmarks.py writes them to the database."""
 
 import csv
 import json
@@ -7,14 +8,12 @@ from importlib.resources import files
 from pathlib import Path
 
 from api.db import AsyncSession
-from api.models.measurement import Benchmark, Parameter
+from api.models.measurement import Parameter
 from api.services.catalog_version import CatalogVersionService
 from sqlalchemy.dialects.postgresql import insert
-from sqlmodel import col, delete, select
+from sqlmodel import col, select
 
 PARAMETERS_CSV = Path(str(files("api") / "data/parameters.csv"))
-BENCHMARKS_CSV = Path(str(files("api") / "data/benchmarks.csv"))
-AVERAGINGS = ("hour", "day")
 
 
 def read_parameters(path: Path = PARAMETERS_CSV) -> list[Parameter]:
@@ -53,45 +52,8 @@ def _parse_parameter(path: Path, line: int, row: dict) -> Parameter:
     )
 
 
-def read_benchmarks(
-    path: Path = BENCHMARKS_CSV, parameters: dict[str, Parameter] | None = None
-) -> list[Benchmark]:
-    """Parse the benchmarks CSV; values must be in the parameter's canonical unit."""
-    parameters = parameters or {p.slug: p for p in read_parameters()}
-    benchmarks = []
-    with path.open(encoding="utf-8") as stream:
-        for line, row in enumerate(csv.DictReader(stream), start=2):
-            parameter = parameters.get(row.get("parameter", ""))
-            if parameter is None:
-                raise ValueError(
-                    f"{path.name}:{line}: unknown parameter '{row.get('parameter')}'"
-                )
-            if row.get("unit") != parameter.unit:
-                raise ValueError(
-                    f"{path.name}:{line}: unit must be '{parameter.unit}'"
-                    f" (canonical), got '{row.get('unit')}'"
-                )
-            if row.get("averaging") not in AVERAGINGS:
-                raise ValueError(f"{path.name}:{line}: averaging not in {AVERAGINGS}")
-            benchmarks.append(
-                Benchmark(
-                    parameter=parameter.slug,
-                    source=row["source"],
-                    averaging=row["averaging"],
-                    value=float(row["value"]),
-                    unit=row["unit"],
-                    note=row.get("note") or None,
-                )
-            )
-    return benchmarks
-
-
 def _parameter_key(p: Parameter) -> tuple:
     return (p.label, p.reference, p.unit, json.dumps(p.conversions, sort_keys=True))
-
-
-def _benchmark_key(b: Benchmark) -> tuple:
-    return (b.parameter, b.source, b.averaging, b.value, b.unit, b.note)
 
 
 class ParameterService:
@@ -100,13 +62,16 @@ class ParameterService:
 
     async def sync(self) -> int:
         """Upsert the CSV dictionary into the database. Parameters are never
-        deleted (measurements reference them); benchmarks are replaced. The
-        catalog version is bumped when anything changed, so cached explore
-        results (the schema carries the dictionary) do not outlive it.
-        Returns the number of parameters."""
+        deleted (measurements and benchmarks reference them). The catalog
+        version is bumped when anything changed, so cached explore results
+        (the schema carries the dictionary) do not outlive it. Returns the
+        number of parameters."""
         parameters = read_parameters()
-        benchmarks = read_benchmarks(parameters={p.slug: p for p in parameters})
-        if await self._mirrored(parameters, benchmarks):
+        stored = {p.slug: p for p in await self.all()}
+        if all(
+            p.slug in stored and _parameter_key(stored[p.slug]) == _parameter_key(p)
+            for p in parameters
+        ):
             return len(parameters)
         statement = insert(Parameter).values([p.model_dump() for p in parameters])
         statement = statement.on_conflict_do_update(
@@ -119,34 +84,11 @@ class ParameterService:
             },
         )
         await self.session.exec(statement)
-        await self.session.exec(delete(Benchmark))
-        self.session.add_all(benchmarks)
         await CatalogVersionService(self.session).bump()
         return len(parameters)
-
-    async def _mirrored(
-        self, parameters: list[Parameter], benchmarks: list[Benchmark]
-    ) -> bool:
-        """Whether the database already holds exactly the CSV contents."""
-        stored = {p.slug: p for p in await self.all()}
-        if any(
-            stored.get(p.slug) is None
-            or _parameter_key(stored[p.slug]) != _parameter_key(p)
-            for p in parameters
-        ):
-            return False
-        return sorted(map(_benchmark_key, await self.benchmarks())) == sorted(
-            map(_benchmark_key, benchmarks)
-        )
 
     async def all(self) -> list[Parameter]:
         result = await self.session.exec(
             select(Parameter).order_by(col(Parameter.slug))
-        )
-        return list(result.all())
-
-    async def benchmarks(self) -> list[Benchmark]:
-        result = await self.session.exec(
-            select(Benchmark).order_by(col(Benchmark.parameter), col(Benchmark.id))
         )
         return list(result.all())

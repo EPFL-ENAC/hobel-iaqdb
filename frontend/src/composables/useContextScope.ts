@@ -8,11 +8,7 @@
  * loads its data after.
  */
 import type { Ref } from 'vue';
-import {
-  benchmarkOf,
-  isUnknownKey,
-  STATS_CONTEXTS,
-} from '@/components/plots/charts';
+import { isUnknownKey, STATS_CONTEXTS } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useExploreRequest } from '@/composables/useExploreQuery';
 import { DEFAULT_PARAMETER } from '@/stores/explore';
@@ -91,9 +87,7 @@ export function useParameterChoice({
 
   const parameterOptions = computed(() =>
     withBenchmark
-      ? withRecords.value.filter(
-          (opt) => !!benchmarkOf(exploreStore.schema, opt.value),
-        )
+      ? withRecords.value.filter((opt) => !!exploreStore.defaultBenchmarkOf(opt.value))
       : withRecords.value,
   );
 

@@ -24,6 +24,13 @@
         @click="onClick"
       />
     </FigureFrame>
+    <ReferenceSource
+      v-if="!emptyMessage"
+      :parameter="parameter"
+      :benchmark="benchmark"
+      compared
+      @pick="onReference"
+    />
     <template #footer>
       <button v-if="drilled" type="button" class="figure-link" @click="popTo(0)">
         <q-icon name="arrow_back" size="14px" class="q-mr-xs" />{{ t('explore_figures.pattern.back', { year }) }}
@@ -39,7 +46,8 @@
 /**
  * A pollutant through one year: the monthly median and its middle half
  * against the reference, and under it the share of periods above the
- * reference; a click on a month shows its days.
+ * reference; a click on a month shows its days. A long-term reference has no
+ * share per month: it compares with one mean per space over the whole period.
  */
 import ECharts from 'vue-echarts';
 import type { EChartsOption } from 'echarts';
@@ -50,12 +58,12 @@ import { GridComponent, MarkLineComponent, TitleComponent, TooltipComponent } fr
 import ChartCard from '@/components/explore/ChartCard.vue';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
 import FigureMenu from '@/components/explore/FigureMenu.vue';
+import ReferenceSource from '@/components/explore/ReferenceSource.vue';
 import {
   FIGURE_ACCENT,
   FIGURE_GAP,
   GRID,
   MUTED,
-  benchmarkOf,
   initOptions,
   niceTicks,
   updateOptions,
@@ -65,7 +73,8 @@ import { useChartFormat } from '@/composables/useChartFormat';
 import { useParameterChoice } from '@/composables/useContextScope';
 import { useDrillStack } from '@/composables/useDrillStack';
 import { useExploreRequest } from '@/composables/useExploreQuery';
-import type { ExploreParams, ExploreResult, ExploreStats } from '@/models';
+import { useFigureReference } from '@/composables/useFigureReference';
+import type { ExploreBenchmark, ExploreParams, ExploreResult, ExploreStats } from '@/models';
 
 use([SVGRenderer, LineChart, BarChart, GridComponent, MarkLineComponent, TitleComponent, TooltipComponent]);
 
@@ -79,9 +88,9 @@ interface Props {
 /** The year by month, or a month by day: the levels and the shares above the reference. */
 interface Level {
   stats: ExploreParams;
-  exceedance: ExploreParams;
-  /** `month` or `day` */
-  by: string;
+  /** null for a long-term reference: a month has no long-term mean to compare */
+  exceedance: ExploreParams | null;
+  by: 'month' | 'day';
   from: string;
   to: string;
 }
@@ -104,7 +113,6 @@ withDefaults(defineProps<Props>(), { height: 404 });
 const { t, locale } = useI18n();
 const { formatValue, formatShare, describeReference } = useChartFormat();
 const filtersStore = useFiltersStore();
-const exploreStore = useExploreStore();
 
 /**
  * the levels' grid, then the shares' grid under it, in pixels from the top;
@@ -129,7 +137,8 @@ const { stack, current, show, popTo } = useDrillStack<Level, Loaded>({
   clear: () => (slots.value = []),
 });
 
-const benchmark = computed(() => benchmarkOf(exploreStore.schema, parameter.value));
+const { benchmark, pick } = useFigureReference(parameter);
+const longTerm = computed(() => benchmark.value?.grain === 'space');
 const drilled = computed(() => stack.value.length > 1);
 const byMonth = computed(() => current.value?.by === 'month');
 
@@ -173,6 +182,12 @@ filtersStore.$onAction(({ name, after }) => {
   if (name === 'notifyUpdate') after(() => void refresh());
 });
 
+/** another reference: the same periods, against it */
+function onReference(b: ExploreBenchmark): void {
+  pick(b);
+  void rebuild();
+}
+
 /** The years with data for the pollutant: keeps the year if still offered, else the busiest. */
 async function reloadYears(): Promise<void> {
   if (!parameter.value) {
@@ -209,7 +224,7 @@ function levelOf(by: 'month' | 'day', from: string, to: string): Level | null {
   return {
     // levels as daily means for one space; the shares at the reference's own averaging
     stats: { ...base, agg: 'stats', grain: 'day' },
-    exceedance: { ...base, agg: 'exceedance', grain: b.averaging, threshold: b.value },
+    exceedance: b.grain === 'space' ? null : { ...base, agg: 'exceedance', grain: b.grain, threshold: b.value },
     by,
     from,
     to,
@@ -221,6 +236,11 @@ function restart(): Promise<void> {
   if (year.value === null) return show([]);
   const level = levelOf('month', `${year.value}-01-01`, `${year.value + 1}-01-01`);
   return show(level ? [level] : []);
+}
+
+/** Rebuild the levels shown, drilled month included, and load the last one. */
+function rebuild(): Promise<void> {
+  return show(stack.value.flatMap((level) => levelOf(level.by, level.from, level.to) ?? []));
 }
 
 async function loadLevel(level: Level | null): Promise<Loaded | null> {
@@ -268,11 +288,14 @@ const option = computed<EChartsOption>(() => {
   const low = ticks[0] ?? 0;
   const high = ticks[ticks.length - 1] ?? 1;
   const labels = items.map((s) => s.label);
-  const periods = t(`explore_figures.distribution.periods.${b.averaging}`);
+  const periods = t(`explore_figures.distribution.periods.${b.grain}`);
   const axisLabel = { color: MUTED, fontSize: 11 };
   return {
     title: {
-      text: t('explore_figures.pattern.share_above', { periods, value: referenceText.value }).toUpperCase(),
+      // a long-term reference: the strip says why it has no bars
+      text: longTerm.value
+        ? t('explore_figures.pattern.no_share_long_term')
+        : t('explore_figures.pattern.share_above', { periods, value: referenceText.value }).toUpperCase(),
       left: LEFT,
       top: SHARES.top - 34,
       textStyle: { color: MUTED, fontSize: 11, fontWeight: 'normal' },

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { schema as fetchSchema, measurements } from '@/api/explore';
 import { setMeasurementYears } from '@/stores/filters';
-import type { Dataset, ExploreDimension, ExploreSchema } from '@/models';
+import type { Dataset, ExploreBenchmark, ExploreDimension, ExploreSchema } from '@/models';
 import type { OptionItem } from '@/utils/options';
 
 /** the pollutant a figure showing one pollutant opens on, when it has data */
@@ -125,6 +125,17 @@ export const useExploreStore = defineStore(
       return { x, y };
     }
 
+    /** The references of a pollutant: the default first, then worldwide, then by region. */
+    function benchmarksOf(slug: string | null): ExploreBenchmark[] {
+      if (!slug) return [];
+      return schema.value?.parameters.find((p) => p.slug === slug)?.benchmarks ?? [];
+    }
+
+    /** The reference a figure compares a pollutant with until the user picks another one. */
+    function defaultBenchmarkOf(slug: string | null): ExploreBenchmark | null {
+      return benchmarksOf(slug).find((b) => b.is_default) ?? null;
+    }
+
     function parameterLabel(slug: string): string {
       return (
         schema.value?.parameters.find((p) => p.slug === slug)?.label || slug
@@ -140,6 +151,8 @@ export const useExploreStore = defineStore(
       resetParameters,
       dimension,
       parameterLabel,
+      benchmarksOf,
+      defaultBenchmarkOf,
       studyNames,
       loadStudyNames,
       datasetNames,

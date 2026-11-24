@@ -23,6 +23,7 @@
         @select="onSelect"
       />
     </FigureFrame>
+    <ReferenceSource v-if="!emptyMessage" :parameter="parameter" :benchmark="benchmark" @pick="onReference" />
     <template #footer>
       <button v-if="hasMore" type="button" class="figure-link" @click="showAll = true">
         {{ t('ranked_bars.show_all', { count: rows.length }) }}
@@ -44,8 +45,10 @@
 <script setup lang="ts">
 /**
  * A pollutant's levels per group of one dimension (ventilation type,
- * climate, building type): the middle half of the daily means, the median
- * as a dot and a number, and the pollutant's reference where it has one. A
+ * climate, building type): the middle half of the means over the reference's
+ * averaging period (hours, days, or one mean per space for a long-term
+ * reference; days without a reference), the median as a dot and a number,
+ * and the reference line. A
  * click on a group shows the groups of the next level of the path (a climate
  * group, its zones), then its datasets; a click on a dataset opens its study.
  */
@@ -54,14 +57,16 @@ import DrillPath, { type DrillStep } from '@/components/explore/DrillPath.vue';
 import FigureDialog from '@/components/explore/FigureDialog.vue';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
 import FigureMenu from '@/components/explore/FigureMenu.vue';
+import ReferenceSource from '@/components/explore/ReferenceSource.vue';
 import RangeList, { type RangeRow } from '@/components/explore/RangeList.vue';
-import { benchmarkOf, isUnknownKey, keyLabel, niceTicks, refine } from '@/components/plots/charts';
+import { isUnknownKey, keyLabel, niceTicks, refine } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';
 import { useParameterChoice } from '@/composables/useContextScope';
 import { useDrillStack } from '@/composables/useDrillStack';
 import { useExploreRequest } from '@/composables/useExploreQuery';
-import type { ExploreParams, ExploreResult } from '@/models';
+import { useFigureReference } from '@/composables/useFigureReference';
+import type { ExploreBenchmark, ExploreParams, ExploreResult } from '@/models';
 
 interface Props {
   /** what the pollutant is crossed with, e.g. "ventilation" */
@@ -150,7 +155,10 @@ const eyebrowText = computed(() =>
   }),
 );
 
-const reference = computed(() => benchmarkOf(exploreStore.schema, parameter.value)?.value ?? null);
+const { benchmark, pick } = useFigureReference(parameter);
+const reference = computed(() => benchmark.value?.value ?? null);
+/** the levels are means over the reference's averaging period, so the line and the boxes agree */
+const grain = computed(() => benchmark.value?.grain ?? 'day');
 
 /** the levels of the path, then the datasets: named in the header, the one shown marked */
 const steps = computed<DrillStep[]>(() => {
@@ -193,6 +201,17 @@ function onParameter(value: string | null): void {
   void restart();
 }
 
+/**
+ * Another reference: the same drill at its averaging period. A reference
+ * with the same period only moves the line, without a request.
+ */
+function onReference(b: ExploreBenchmark): void {
+  const before = grain.value;
+  pick(b);
+  if (grain.value === before || !stack.value.length) return;
+  void show(stack.value.map((level) => ({ ...level, stats: { ...level.stats, grain: grain.value } })));
+}
+
 onMounted(() => void refresh());
 filtersStore.$onAction(({ name, after }) => {
   if (name === 'notifyUpdate') after(() => void refresh());
@@ -204,7 +223,15 @@ function restart(): Promise<void> {
   return show([
     {
       by: first.value,
-      stats: { agg: 'stats', by: [first.value], parameters: [slug], grain: 'day', filter: exploreFilter(), ...exploreRange() },
+      stats: {
+        agg: 'stats',
+        by: [first.value],
+        parameters: [slug],
+        grain: grain.value,
+        filter: exploreFilter(),
+        ...exploreRange(),
+      },
+      // the datasets are the same at every grain: the daily rows are the lightest to count
       counts: {
         agg: 'count',
         by: [first.value, 'dataset'],
@@ -247,6 +274,8 @@ function onSelect(row: RangeRow): void {
 }
 
 const unit = computed(() => shown.value?.loaded.stats.meta.unit || '');
+/** what a bucket counts: hours, days or spaces, from the grain of the levels shown */
+const periods = computed(() => t(`explore_figures.distribution.periods.${shown.value?.level.stats.grain ?? 'day'}`));
 
 function withUnit(value: number): string {
   return unit.value ? `${formatValue(value)} ${unit.value}` : formatValue(value);
@@ -302,7 +331,7 @@ const rows = computed<RangeRow[]>(() => {
           tooltip: [
             t('explore_figures.distribution.tip_median', { value: withUnit(stats.p50) }),
             t('explore_figures.distribution.tip_middle', { low: withUnit(stats.p25), high: withUnit(stats.p75) }),
-            t('explore_figures.groups.tip_days', { count: bucket.n.toLocaleString() }),
+            t('explore_figures.distribution.tip_count', { count: bucket.n.toLocaleString(), periods: periods.value }),
           ],
         },
       ];

@@ -63,6 +63,10 @@ class RelationshipService:
         if agg not in AGGS:
             raise HTTPException(status_code=422, detail=f"agg must be one of {AGGS}")
         grain = query.grain or "hour"
+        if grain == "space":
+            raise HTTPException(
+                status_code=422, detail="relationships need grain day, hour or raw"
+            )
         filter = parse_filter(query.filter)
         if agg == "matrix":
             slugs = query.parameters
