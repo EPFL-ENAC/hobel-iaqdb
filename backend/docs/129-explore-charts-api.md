@@ -99,9 +99,10 @@ measurement_day      hierarchical continuous aggregate over measurement_hour:
 
 Rules, all explicit and all reported by `make data-upload-check`:
 
-- `parameter` is seeded from versioned CSVs (`api/data/parameters.csv` and
-  `api/data/benchmarks.csv`, mirrored into the tables by
-  `ParameterService.sync` at boot and at data upload). The content shipped here is
+- `parameter` is seeded from a versioned CSV (`api/data/parameters.csv`,
+  mirrored into the table by `ParameterService.sync` at boot and at data
+  upload). The `benchmark` table is filled by `make import-benchmarks`
+  (see [202-reference-values.md](202-reference-values.md)). The content shipped here is
   **provisional**, derived from the slugs and units present in UPLOAD_DATA and
   the factors of `Dictionary_data.xlsx`; #107 replaces it as data. No
   guessing units: `value` is stored in the canonical unit, the source unit
@@ -446,7 +447,8 @@ publish and delete (the catalog changed) and **again after the background
 refresh** of the continuous aggregates (the measurement data changed), so a
 chart computed from not-yet-refreshed aggregates in between is dropped rather
 than cached under the new version. The data upload bumps once, after its refresh, and
-the dictionary sync at boot bumps when the CSVs changed since the last run.
+the dictionary sync at boot bumps when the CSV changed since the last run, and
+the benchmark import bumps when the references changed.
 Reading it is one PK lookup per request. Nothing is ever invalidated by hand,
 and no result can outlive the data it was computed on.
 
@@ -746,6 +748,6 @@ Read with §1–§14; code wins where they still disagree.
 | data upload skip | MD5 skips the load too | MD5 skips the upload only, the load always runs (§3) |
 | catalog fan-out | not considered | `coverage`, the raw cap and `metadata` with `parameters` reason at study level; `measurements`, `relationships` and the empty-state suggestion filter the fact rows themselves |
 | pairs sample | `id % step` | `row_number() % step`, `sampled` true only when sampling happened (§7) |
-| dictionary | #107's CSV | provisional CSVs in `api/data`, synced at boot and data upload |
+| dictionary | #107's CSV | provisional `parameters.csv` in `api/data`, synced at boot and data upload; references loaded into each database from a CSV by `make import-benchmarks` |
 | frequencies routes | deleted | deleted; the five `PlotsDrawer` charts became one `MetadataTreemapChart` over `/stats/metadata` |
 | bulk data upload indexes | drop all three secondary indexes | drop only `(parameter, ts)`; FK columns keep an index (migration `a97d374f471c`) because a re-run recreates studies and each cascaded delete scanned the hypertable (§3) |

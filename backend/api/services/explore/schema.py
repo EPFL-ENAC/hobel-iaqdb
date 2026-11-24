@@ -1,6 +1,7 @@
 """`GET /stats/schema`: the static descriptor a client loads once."""
 
 from api.models.explore import Benchmark, ExploreSchema, Parameter
+from api.services.benchmark import BenchmarkService
 from api.services.explore.dimensions import DIMENSIONS
 from api.services.parameter import ParameterService
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -32,9 +33,8 @@ def _menu_order(b: Benchmark) -> tuple:
 
 
 async def explore_schema(session: AsyncSession, version: int) -> ExploreSchema:
-    service = ParameterService(session)
     benchmarks: dict[str, list[Benchmark]] = {}
-    for b in await service.benchmarks():
+    for b in await BenchmarkService(session).all():
         benchmarks.setdefault(b.parameter, []).append(
             Benchmark(**b.model_dump(), grain=AVERAGING_GRAINS[b.averaging])
         )
@@ -46,7 +46,7 @@ async def explore_schema(session: AsyncSession, version: int) -> ExploreSchema:
             unit=p.unit,
             benchmarks=sorted(benchmarks.get(p.slug, []), key=_menu_order),
         )
-        for p in await service.all()
+        for p in await ParameterService(session).all()
     ]
     return ExploreSchema(
         dimensions=[d.describe() for d in DIMENSIONS.values()],

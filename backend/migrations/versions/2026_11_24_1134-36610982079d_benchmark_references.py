@@ -1,7 +1,7 @@
 """benchmark references
 
-The benchmark table mirrors api/data/benchmarks.csv and the boot sync refills
-it, so it is recreated rather than altered: the id becomes text
+The id becomes text, so the table is recreated rather than altered. It is
+left empty: `make import-benchmarks` fills it from a benchmarks CSV
 (docs/202-reference-values.md).
 
 Revision ID: 36610982079d

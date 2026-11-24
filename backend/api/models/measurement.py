@@ -45,8 +45,8 @@ class Parameter(SQLModel, table=True):
 
 class Benchmark(SQLModel, table=True):
     """A reference value (guideline, legal limit, design criterion) in the
-    parameter's canonical unit. Mirrors api/data/benchmarks.csv, which
-    api/scripts/import_benchmarks.py builds from the science team's workbook."""
+    parameter's canonical unit. api/scripts/import_benchmarks.py fills the
+    table from a benchmarks CSV; the backend only reads it."""
 
     # <sheet>-<row> in the workbook (co2-8, pm-2), or who-* for rows kept by hand
     id: str = Field(primary_key=True)
