@@ -33,6 +33,11 @@ db-downgrade:
 db-revision:
 	uv run dotenv -f "$(env_path)" run alembic revision --autogenerate -m "$(name)"
 
+# `make import-benchmarks workbook=path/to/workbook.xlsx` rebuilds api/data/benchmarks.csv
+# from the science team's benchmark workbook (docs/202-reference-values.md)
+import-benchmarks:
+	uv run dotenv -f "$(env_path)" run python -m api.scripts.import_benchmarks "$(workbook)"
+
 # `make data-upload` uploads all of UPLOAD_DATA, `make data-upload <identifier>...` only those studies,
 # `make data-upload 27 87` positions 27 to 87 (as printed in [n/total]), `make data-upload 27` 27 to the end;
 # add ALLOW_PROD=1 to upload when S3_PATH_PREFIX is production

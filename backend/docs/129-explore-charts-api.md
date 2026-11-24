@@ -1,7 +1,7 @@
 ---
 status: accepted
 issue: 129
-last_updated: 2026-09-23
+last_updated: 2026-11-24
 summary: Three query-shaped stats endpoints over raw measurements in a TimescaleDB hypertable (continuous aggregates as a derived cache), one response envelope, and a click model where every drill-down is a filter refinement of the same request. Implemented on branch feat/129; §15 lists where the code refined the design.
 ---
 
@@ -77,7 +77,9 @@ Alembic migration that also runs `CREATE EXTENSION IF NOT EXISTS timescaledb`.
 
 ```
 parameter            slug PK, label, reference (taxonomy), unit (canonical), conversions JSONB
-benchmark            id PK, parameter FK, source, averaging (hour|day), value, unit, note
+benchmark            id PK (text), parameter FK, is_default, source, institution, year, region,
+                     limit_type, legal_status, setting, averaging (hour|day|long_term), period,
+                     value, unit, qualifier, url, note   (docs/202-reference-values.md)
 dataset_parameter    dataset_id FK, parameter FK, unit, n_records, n_missing, n_unlinked,
                      n_statistical, first_at, last_at, n_buildings, n_spaces   PK(dataset_id, parameter)
 
@@ -237,7 +239,7 @@ shared.
 | `parameters` | comma-separated slugs | From `parameter.slug`. Unknown slug → 422 listing valid slugs. Max 10. |
 | `by` | comma-separated dimension keys, max 2 | From the dimension registry (§5). Time bucketing is a dimension (`month`, `year`), so there is no separate `bucket` parameter. Second key gives stacked/heatmap series. |
 | `agg` | enum per route | metadata: `count`, `availability`. measurements: `coverage`, `count`, `stats`, `exceedance`. relationships: `pairs`, `matrix`, `partners`, `partnered`. |
-| `grain` | `day` (default), `hour` or `raw` | Which table the statistic is computed over: `measurement_day`, `measurement_hour` or the raw `measurement` hypertable. At `day`/`hour`, percentiles are percentiles of bucket means; at `raw` they are percentiles of the readings themselves. The response echoes the grain so the label is honest. `raw` is accepted only when `dataset_parameter` says the filter covers **≤ 20 M raw records**; above that the route answers 422 with the matched count and the client falls back to `hour`. No silent downgrade. |
+| `grain` | `day` (default), `hour`, `raw` or `space` | Which table the statistic is computed over: `measurement_day`, `measurement_hour` or the raw `measurement` hypertable. `space` is one mean per (dataset, space) over the period, from `measurement_day`, for long-term references; time dimensions and `/stats/relationships` refuse it with 422 (docs/202-reference-values.md). At `day`/`hour`, percentiles are percentiles of bucket means; at `raw` they are percentiles of the readings themselves. The response echoes the grain so the label is honest. `raw` is accepted only when `dataset_parameter` says the filter covers **≤ 20 M raw records**; above that the route answers 422 with the matched count and the client falls back to `hour`. No silent downgrade. |
 | `qualifier` | comma-separated | `grain=raw` only. Keeps rows whose `value_qualifier` is in the list; default is all. |
 | `threshold` | float | `agg=exceedance` only. The UI takes it from a benchmark in `/stats/schema` or from user input; the server never invents one. |
 | `entity` | `studies\|buildings\|spaces\|datasets` | metadata route only. |
@@ -478,7 +480,7 @@ also carry `filter=F` unless stated.
 | 9 | Descriptive statistics | `measurements?agg=stats&parameters=P&by=<context>&grain=day&from=T&to=T` box plot | drill along the context's `drill_to` |
 | 10 | Benchmark comparison | same as 9 with `by=year`; benchmark line from `/stats/schema` | toggles benchmark; `agg=exceedance&threshold=<benchmark.value>` for the share above |
 | 11 | Trends | `measurements?agg=stats&parameters=P&by=month&from=Y-01-01&to=Y+1-01-01` → line (p50, p25–p75 band) and table from the same buckets | drill → `day` inside the clicked month |
-| 12 | Exceedance over time | `measurements?agg=exceedance&threshold=…&by=month_of_year&grain=<benchmark.averaging>` | drill → `year` |
+| 12 | Exceedance over time | `measurements?agg=exceedance&threshold=…&by=month_of_year&grain=<benchmark.grain>` | drill → `year` |
 | 13 | CO₂ × occupancy | `relationships?agg=pairs&x=space.occupancy_density&y=co2` | `navigate` → space |
 | 14 | CO₂ × ventilation | `measurements?agg=stats&parameters=co2&by=ventilation_type` | drill → `space_type` |
 | 15 | Pollutant × climate | `measurements?agg=stats&parameters=P&by=climate_zone` | drill → `country` |
@@ -486,10 +488,11 @@ also carry `filter=F` unless stated.
 | 17 | Correlation matrix | `relationships?agg=matrix&parameters=P&method=…` | cell click opens chart 18 with `x`, `y` from the cell key |
 | 18 | Custom relationship | `relationships?agg=partners&x=…` (y menu), then `relationships?agg=pairs&x=…&y=…[&by=…]` | `navigate` → entity behind the point |
 
-Benchmarks (chart 10, 12): the `benchmark` table is seeded with WHO 2021 air
-quality guideline values (PM2.5 24-h 15 µg/m³, PM10 24-h 45, NO2 24-h 25,
-O3 8-h 100, CO 24-h 4 mg/m³) marked `source = "WHO AQG 2021"`, replaceable by
-the domain expert's values as data. No random placeholder in code.
+Benchmarks (chart 10, 12): the `benchmark` table holds the references of
+the science team's benchmark workbook, many per pollutant, with one default.
+Each schema benchmark carries the `grain` to query with. The import, the
+defaults and the averaging rules are in
+[202-reference-values.md](202-reference-values.md).
 
 ## 11. Pydantic stubs (`api/models/explore.py`)
 
@@ -522,13 +525,9 @@ class Dimension(BaseModel):
 
 
 class Benchmark(BaseModel):
-    id: int
-    parameter: str
-    source: str
-    averaging: Grain
-    value: float
-    unit: str
-    note: str | None = None
+    # superseded by docs/202-reference-values.md: text id, source metadata,
+    # averaging hour|day|long_term and the query grain
+    ...
 
 
 class Parameter(BaseModel):

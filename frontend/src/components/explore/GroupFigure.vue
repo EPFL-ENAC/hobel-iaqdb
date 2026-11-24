@@ -23,6 +23,7 @@
         @select="onSelect"
       />
     </FigureFrame>
+    <ReferenceSource v-if="!emptyMessage" :parameter="parameter" />
     <template #footer>
       <button v-if="hasMore" type="button" class="figure-link" @click="showAll = true">
         {{ t('ranked_bars.show_all', { count: rows.length }) }}
@@ -54,8 +55,9 @@ import DrillPath, { type DrillStep } from '@/components/explore/DrillPath.vue';
 import FigureDialog from '@/components/explore/FigureDialog.vue';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
 import FigureMenu from '@/components/explore/FigureMenu.vue';
+import ReferenceSource from '@/components/explore/ReferenceSource.vue';
 import RangeList, { type RangeRow } from '@/components/explore/RangeList.vue';
-import { benchmarkOf, isUnknownKey, keyLabel, niceTicks, refine } from '@/components/plots/charts';
+import { isUnknownKey, keyLabel, niceTicks, refine } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';
 import { useParameterChoice } from '@/composables/useContextScope';
@@ -150,7 +152,8 @@ const eyebrowText = computed(() =>
   }),
 );
 
-const reference = computed(() => benchmarkOf(exploreStore.schema, parameter.value)?.value ?? null);
+const benchmark = computed(() => exploreStore.benchmarkOf(parameter.value));
+const reference = computed(() => benchmark.value?.value ?? null);
 
 /** the levels of the path, then the datasets: named in the header, the one shown marked */
 const steps = computed<DrillStep[]>(() => {

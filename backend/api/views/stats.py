@@ -48,8 +48,8 @@ async def get_measurements(
     query: Annotated[ExploreQuery, Query()],
     session: AsyncSession = Depends(get_session),
 ):
-    """Group-by over measurements at `grain` day (default), hour or raw:
-    `agg=coverage|count|stats|exceedance`."""
+    """Group-by over measurements at `grain` day (default), hour, raw or
+    space (the long-term mean of each space): `agg=coverage|count|stats|exceedance`."""
     version = await CatalogVersionService(session).get()
     key = canonical_key("measurements", query, version)
     service = MeasurementQueryService(session)

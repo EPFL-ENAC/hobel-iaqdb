@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { schema as fetchSchema, measurements } from '@/api/explore';
 import { setMeasurementYears } from '@/stores/filters';
-import type { Dataset, ExploreDimension, ExploreSchema } from '@/models';
+import type { Dataset, ExploreBenchmark, ExploreDimension, ExploreSchema } from '@/models';
 import type { OptionItem } from '@/utils/options';
 
 /** the pollutant a figure showing one pollutant opens on, when it has data */
@@ -13,6 +13,8 @@ export const useExploreStore = defineStore(
     const schema = ref<ExploreSchema | null>(null);
     /** the pollutants picked, persisted; none (the default) means every pollutant */
     const parameters = ref<string[]>([]);
+    /** the reference picked per pollutant, by benchmark id, persisted; a pollutant without one uses its default */
+    const references = ref<Record<string, string>>({});
     let pending: Promise<ExploreSchema> | null = null;
     let yearsPending: Promise<void> | null = null;
     /** study identifier to name, for chart labels; filled once by loadStudyNames */
@@ -48,6 +50,9 @@ export const useExploreStore = defineStore(
             parameters.value = parameters.value.filter((slug) =>
               known.has(slug),
             );
+            // and the picked references the schema no longer lists
+            const ids = new Set(value.parameters.flatMap((p) => p.benchmarks.map((b) => b.id)));
+            references.value = Object.fromEntries(Object.entries(references.value).filter(([, id]) => ids.has(id)));
             return value;
           })
           .finally(() => {
@@ -125,6 +130,24 @@ export const useExploreStore = defineStore(
       return { x, y };
     }
 
+    /** The references of a pollutant: the default first, then worldwide, then by region. */
+    function benchmarksOf(slug: string | null): ExploreBenchmark[] {
+      if (!slug) return [];
+      return schema.value?.parameters.find((p) => p.slug === slug)?.benchmarks ?? [];
+    }
+
+    /** The reference the figures compare a pollutant with: the one picked, else its default. */
+    function benchmarkOf(slug: string | null): ExploreBenchmark | null {
+      const listed = benchmarksOf(slug);
+      const picked = slug ? references.value[slug] : undefined;
+      return listed.find((b) => b.id === picked) ?? listed.find((b) => b.is_default) ?? null;
+    }
+
+    /** Event: compare a pollutant with another reference, in every figure. Figures that query with it listen with `$onAction`. */
+    function pickBenchmark(slug: string, id: string): void {
+      references.value = { ...references.value, [slug]: id };
+    }
+
     function parameterLabel(slug: string): string {
       return (
         schema.value?.parameters.find((p) => p.slug === slug)?.label || slug
@@ -140,6 +163,10 @@ export const useExploreStore = defineStore(
       resetParameters,
       dimension,
       parameterLabel,
+      references,
+      benchmarksOf,
+      benchmarkOf,
+      pickBenchmark,
       studyNames,
       loadStudyNames,
       datasetNames,
@@ -148,5 +175,5 @@ export const useExploreStore = defineStore(
     };
   },
   // a key of its own: selections saved while CO₂ was the default start over on every pollutant
-  { persist: { key: 'explore-parameters', pick: ['parameters'] } },
+  { persist: { key: 'explore-parameters', pick: ['parameters', 'references'] } },
 );

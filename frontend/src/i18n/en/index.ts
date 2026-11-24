@@ -323,7 +323,7 @@ export default {
     },
     reference: {
       title: 'How levels compare to the reference',
-      lead: 'Each value is a daily mean for one space. The red line is the reference; the dashed line is the median of the whole database, so you can see whether a group sits above or below everyone else.',
+      lead: 'Each value is a mean for one space over the averaging period of the reference: an hour, a day, or the whole selected period for a long-term reference. The red line is the reference; the dashed line is the median of the whole database, so you can see whether a group sits above or below everyone else. The reference you pick for a pollutant applies to every figure.',
     },
     completeness: {
       title: 'How complete is it',
@@ -388,6 +388,7 @@ export default {
       periods: {
         day: 'days',
         hour: 'hours',
+        space: 'spaces',
       },
       share_header: '{periods} at or below {value}',
       tip_median: 'Median {value}',
@@ -408,6 +409,7 @@ export default {
       reference: 'Reference {value}',
       share_above: 'Share of {periods} above {value}',
       tip_above: '{share} of {periods} above {value}',
+      no_share_long_term: 'No share per month: a long-term reference compares with one mean per space over the whole period',
       median: 'Median',
       middle: 'Middle half',
       back: 'Back to {year}',
@@ -478,6 +480,24 @@ export default {
       ventilation_type: 'ventilation type | ventilation types',
       space_type: 'space type | space types',
       parameter: 'pollutant | pollutants',
+    },
+    reference_menu: {
+      change: 'Pick another reference',
+      search: 'Search source, country, value…',
+      default: 'Default',
+      count: 'No references | 1 reference | {count} references',
+      back: 'Back to the regions',
+      no_match: 'No reference matches the search.',
+      note: 'References come from many countries and bodies, for different settings. The rules that apply to a given building can differ.',
+    },
+    reference_source: {
+      label: 'Reference',
+      link: 'Source',
+      compared: {
+        hour: 'Compared with hourly means.',
+        day: 'Compared with daily means.',
+        space: 'Compared with the mean of each space over the selected period. Most records are shorter than one year.',
+      },
     },
     drill_path: 'Drill levels',
     drill_back: 'Back to {level}',
@@ -566,7 +586,6 @@ export default {
     benchmark_comparison: 'Benchmark comparison',
     benchmark_comparison_hint: 'Median of the filtered datasets and of the whole database per context, against the reference value of the pollutant. The right column is the share of periods at or below it. Click a row to drill down.',
     benchmark: 'Benchmark',
-    placeholder: 'Placeholder',
     no_benchmark: 'No benchmark yet for {parameter}.',
     datasets_filtered: 'Datasets filtered',
     database_median: 'Database median',

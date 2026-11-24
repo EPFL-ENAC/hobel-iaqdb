@@ -281,5 +281,11 @@ def resolve(keys: list[str], grain: str | None) -> list[DimensionSpec]:
             raise HTTPException(
                 status_code=422, detail=f"'{key}' requires grain={spec.grain}"
             )
+        if spec.kind == "time" and grain == "space":
+            raise HTTPException(
+                status_code=422,
+                detail=f"'{key}' needs grain day, hour or raw: grain=space"
+                " has one mean per space over the whole period",
+            )
         specs.append(spec)
     return specs

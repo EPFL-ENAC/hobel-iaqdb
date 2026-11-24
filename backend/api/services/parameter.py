@@ -3,6 +3,7 @@
 
 import csv
 import json
+from collections import Counter
 from importlib.resources import files
 from pathlib import Path
 
@@ -14,7 +15,22 @@ from sqlmodel import col, delete, select
 
 PARAMETERS_CSV = Path(str(files("api") / "data/parameters.csv"))
 BENCHMARKS_CSV = Path(str(files("api") / "data/benchmarks.csv"))
-AVERAGINGS = ("hour", "day")
+# hour and day compare with hourly and daily means; long_term with the mean
+# of each space over the whole period (annual guidelines)
+AVERAGINGS = ("hour", "day", "long_term")
+BENCHMARK_REQUIRED = (
+    "id",
+    "parameter",
+    "is_default",
+    "source",
+    "institution",
+    "region",
+    "limit_type",
+    "averaging",
+    "period",
+    "value",
+    "unit",
+)
 
 
 def read_parameters(path: Path = PARAMETERS_CSV) -> list[Parameter]:
@@ -56,42 +72,66 @@ def _parse_parameter(path: Path, line: int, row: dict) -> Parameter:
 def read_benchmarks(
     path: Path = BENCHMARKS_CSV, parameters: dict[str, Parameter] | None = None
 ) -> list[Benchmark]:
-    """Parse the benchmarks CSV; values must be in the parameter's canonical unit."""
+    """Parse the benchmarks CSV: values in the parameter's canonical unit,
+    unique ids, exactly one default per parameter."""
     parameters = parameters or {p.slug: p for p in read_parameters()}
-    benchmarks = []
+    benchmarks: dict[str, Benchmark] = {}
     with path.open(encoding="utf-8") as stream:
         for line, row in enumerate(csv.DictReader(stream), start=2):
-            parameter = parameters.get(row.get("parameter", ""))
-            if parameter is None:
-                raise ValueError(
-                    f"{path.name}:{line}: unknown parameter '{row.get('parameter')}'"
-                )
-            if row.get("unit") != parameter.unit:
-                raise ValueError(
-                    f"{path.name}:{line}: unit must be '{parameter.unit}'"
-                    f" (canonical), got '{row.get('unit')}'"
-                )
-            if row.get("averaging") not in AVERAGINGS:
-                raise ValueError(f"{path.name}:{line}: averaging not in {AVERAGINGS}")
-            benchmarks.append(
-                Benchmark(
-                    parameter=parameter.slug,
-                    source=row["source"],
-                    averaging=row["averaging"],
-                    value=float(row["value"]),
-                    unit=row["unit"],
-                    note=row.get("note") or None,
-                )
+            benchmark = _parse_benchmark(path, line, row, parameters)
+            if benchmark.id in benchmarks:
+                raise ValueError(f"{path.name}:{line}: duplicate id '{benchmark.id}'")
+            benchmarks[benchmark.id] = benchmark
+    defaults = Counter(b.parameter for b in benchmarks.values() if b.is_default)
+    for slug in sorted({b.parameter for b in benchmarks.values()}):
+        if defaults[slug] != 1:
+            raise ValueError(
+                f"{path.name}: '{slug}' has {defaults[slug]} defaults, expected 1"
             )
-    return benchmarks
+    return list(benchmarks.values())
+
+
+def _parse_benchmark(
+    path: Path, line: int, row: dict, parameters: dict[str, Parameter]
+) -> Benchmark:
+    missing = [k for k in BENCHMARK_REQUIRED if not row.get(k)]
+    if missing:
+        raise ValueError(f"{path.name}:{line}: missing {missing}")
+    parameter = parameters.get(row["parameter"])
+    if parameter is None:
+        raise ValueError(f"{path.name}:{line}: unknown parameter '{row['parameter']}'")
+    if row["unit"] != parameter.unit:
+        raise ValueError(
+            f"{path.name}:{line}: unit must be '{parameter.unit}'"
+            f" (canonical), got '{row['unit']}'"
+        )
+    if row["averaging"] not in AVERAGINGS:
+        raise ValueError(f"{path.name}:{line}: averaging not in {AVERAGINGS}")
+    if row["is_default"] not in ("true", "false"):
+        raise ValueError(f"{path.name}:{line}: is_default must be true or false")
+    return Benchmark(
+        id=row["id"],
+        parameter=parameter.slug,
+        is_default=row["is_default"] == "true",
+        source=row["source"],
+        institution=row["institution"],
+        year=int(row["year"]) if row.get("year") else None,
+        region=row["region"],
+        limit_type=row["limit_type"],
+        legal_status=row.get("legal_status") or None,
+        setting=row.get("setting") or None,
+        averaging=row["averaging"],
+        period=row["period"],
+        value=float(row["value"]),
+        unit=row["unit"],
+        qualifier=row.get("qualifier") or None,
+        url=row.get("url") or None,
+        note=row.get("note") or None,
+    )
 
 
 def _parameter_key(p: Parameter) -> tuple:
     return (p.label, p.reference, p.unit, json.dumps(p.conversions, sort_keys=True))
-
-
-def _benchmark_key(b: Benchmark) -> tuple:
-    return (b.parameter, b.source, b.averaging, b.value, b.unit, b.note)
 
 
 class ParameterService:
@@ -135,9 +175,8 @@ class ParameterService:
             for p in parameters
         ):
             return False
-        return sorted(map(_benchmark_key, await self.benchmarks())) == sorted(
-            map(_benchmark_key, benchmarks)
-        )
+        stored_benchmarks = {b.id: b.model_dump() for b in await self.benchmarks()}
+        return stored_benchmarks == {b.id: b.model_dump() for b in benchmarks}
 
     async def all(self) -> list[Parameter]:
         result = await self.session.exec(

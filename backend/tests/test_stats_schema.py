@@ -19,7 +19,21 @@ async def test_schema_lists_dimensions_parameters_and_version(client):
     assert len(body["parameters"]) == len(read_parameters())
     pm25 = next(p for p in body["parameters"] if p["slug"] == "pm2_5")
     assert pm25["unit"] == "µg/m³"
-    assert pm25["benchmarks"][0]["source"] == "WHO AQG 2021"
+    default = pm25["benchmarks"][0]
+    assert default["is_default"] and default["id"] == "pm-2"
+    assert default["institution"] == "WHO" and default["region"] == "Worldwide"
+    assert (default["averaging"], default["grain"], default["value"]) == (
+        "day",
+        "day",
+        15,
+    )
+    assert default["url"].startswith("https://")
+    assert not any(b["is_default"] for b in pm25["benchmarks"][1:])
+    # worldwide references come right after the default
+    regions = [b["region"] for b in pm25["benchmarks"][1:]]
+    assert regions == sorted(regions, key=lambda r: (r != "Worldwide", r.casefold()))
+    radon = next(p for p in body["parameters"] if p["slug"] == "radon")
+    assert {b["grain"] for b in radon["benchmarks"]} == {"space"}
     assert "space.occupancy_density" in body["metrics"]
     assert body["version"] == 1
 

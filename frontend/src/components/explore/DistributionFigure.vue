@@ -29,6 +29,7 @@
         :format-share="formatShare"
       />
     </FigureFrame>
+    <ReferenceSource v-if="!emptyMessage" :parameter="parameter" compared />
     <template #footer>
       <button v-if="hasMore" type="button" class="figure-link" @click="showAll = true">
         {{ t('ranked_bars.show_all', { count: rows.length }) }}
@@ -56,14 +57,17 @@
 /**
  * How a pollutant's levels spread in each group of a context, against the
  * pollutant's reference and the median of the whole database, with each
- * group's share of periods at or below the reference.
+ * group's share of periods at or below the reference. The levels are means
+ * over the reference's averaging period: hourly, daily, or one per space for
+ * a long-term reference.
  */
 import ChartCard from '@/components/explore/ChartCard.vue';
 import DistributionTable, { type DistributionRow } from '@/components/explore/DistributionTable.vue';
 import FigureDialog from '@/components/explore/FigureDialog.vue';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
 import FigureMenu from '@/components/explore/FigureMenu.vue';
-import { benchmarkOf, keyLabel, niceTicks } from '@/components/plots/charts';
+import ReferenceSource from '@/components/explore/ReferenceSource.vue';
+import { keyLabel, niceTicks } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';
 import { useContextChoice, useParameterChoice } from '@/composables/useContextScope';
@@ -98,7 +102,7 @@ const databaseRequest = useExploreRequest('measurements');
 /** the datasets per group, for the labels */
 const datasetsRequest = useExploreRequest('metadata');
 
-const benchmark = computed(() => benchmarkOf(exploreStore.schema, parameter.value));
+const benchmark = computed(() => exploreStore.benchmarkOf(parameter.value));
 
 const loading = computed(
   () =>
@@ -137,6 +141,10 @@ onMounted(() => void refresh());
 filtersStore.$onAction(({ name, after }) => {
   if (name === 'notifyUpdate') after(() => void refresh());
 });
+// another reference for the pollutant: other levels and shares when its averaging differs
+exploreStore.$onAction(({ name, args, after }) => {
+  if (name === 'pickBenchmark' && args[0] === parameter.value) after(() => void reload());
+});
 
 /** The four requests of the context and pollutant; none when either is missing. */
 async function reload(): Promise<void> {
@@ -145,14 +153,12 @@ async function reload(): Promise<void> {
   const slug = parameter.value;
   const ready = !!dimension && !!slug && !!b;
   // the reference's averaging period sets the grain of the levels and the shares
-  const base: ExploreParams | null = ready
-    ? { by: [dimension.key], parameters: [slug], grain: b.averaging }
-    : null;
+  const base: ExploreParams | null = ready ? { by: [dimension.key], parameters: [slug], grain: b.grain } : null;
   const scoped = { filter: exploreFilter(), ...exploreRange() };
   await Promise.all([
     statsRequest.load(base && { ...base, ...scoped, agg: 'stats' }),
     exceedanceRequest.load(base && { ...base, ...scoped, agg: 'exceedance', threshold: b?.value ?? 0 }),
-    databaseRequest.load(ready ? { by: ['parameter'], parameters: [slug], grain: b.averaging, agg: 'stats' } : null),
+    databaseRequest.load(ready ? { by: ['parameter'], parameters: [slug], grain: b.grain, agg: 'stats' } : null),
     datasetsRequest.load(
       ready ? { entity: 'datasets', by: [dimension.key], parameters: [slug], ...scoped } : null,
     ),
@@ -175,7 +181,7 @@ const rows = computed<DistributionRow[]>(() => {
     (exceedanceRequest.result.value?.buckets || []).map((b) => [b.key[0] ?? null, b.exceedance?.share]),
   );
   const datasets = new Map((datasetsRequest.result.value?.buckets || []).map((b) => [b.key[0] ?? null, b.n]));
-  const periods = t(`explore_figures.distribution.periods.${benchmark.value?.averaging ?? 'day'}`);
+  const periods = t(`explore_figures.distribution.periods.${benchmark.value?.grain ?? 'day'}`);
   return (statsRequest.result.value?.buckets || [])
     .flatMap((bucket, i) => {
       const key = bucket.key[0] ?? null;
@@ -220,7 +226,7 @@ const referenceText = computed(() => (benchmark.value ? describeReference(benchm
 const shareHeader = computed(() =>
   benchmark.value
     ? t('explore_figures.distribution.share_header', {
-        periods: t(`explore_figures.distribution.periods.${benchmark.value.averaging}`),
+        periods: t(`explore_figures.distribution.periods.${benchmark.value.grain}`),
         value: referenceText.value,
       })
     : '',

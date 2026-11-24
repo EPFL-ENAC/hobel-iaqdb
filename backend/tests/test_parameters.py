@@ -14,6 +14,11 @@ def test_dictionary_is_well_formed():
     assert {"co2", "pm2_5", "air_temperature"} <= set(slugs)
     benchmarks = read_benchmarks()
     assert {b.parameter for b in benchmarks} <= set(slugs)
+    defaults = {b.parameter: b for b in benchmarks if b.is_default}
+    assert set(defaults) == {b.parameter for b in benchmarks}
+    # the defaults the plan names (docs/202-reference-values.md)
+    assert (defaults["co2"].id, defaults["co2"].value) == ("co2-8", 1200)
+    assert defaults["pm2_5"].id == "pm-2" and defaults["radon"].id == "radon-1"
 
 
 def test_malformed_dictionary_fails(tmp_path: Path):
@@ -29,6 +34,37 @@ def test_malformed_dictionary_fails(tmp_path: Path):
     )
     with pytest.raises(ValueError, match="missing"):
         read_parameters(bad)
+
+
+BENCHMARK_HEADER = (
+    "id,parameter,is_default,source,institution,year,region,limit_type,"
+    "legal_status,setting,averaging,period,value,unit,qualifier,url,note\n"
+)
+
+
+def _benchmark(id: str, is_default: str = "true", averaging: str = "hour") -> str:
+    return (
+        f"{id},co2,{is_default},EN 16798-1,CEN,2019,Europe,Standard,,,"
+        f"{averaging},1 h,1200,ppm,,,\n"
+    )
+
+
+def test_malformed_benchmarks_fail(tmp_path: Path):
+    bad = tmp_path / "benchmarks.csv"
+    cases = [
+        (_benchmark("a", averaging="week"), "averaging not in"),
+        (_benchmark("a") + _benchmark("a", "false"), "duplicate id 'a'"),
+        (_benchmark("a") + _benchmark("b"), "'co2' has 2 defaults, expected 1"),
+        (_benchmark("a", "false"), "'co2' has 0 defaults, expected 1"),
+        (_benchmark("a", "yes"), "is_default must be true or false"),
+        (_benchmark("a").replace(",ppm,", ",ppb,"), "unit must be 'ppm'"),
+    ]
+    for rows, error in cases:
+        bad.write_text(BENCHMARK_HEADER + rows)
+        with pytest.raises(ValueError, match=error):
+            read_benchmarks(bad)
+    bad.write_text(BENCHMARK_HEADER + _benchmark("a") + _benchmark("b", "false"))
+    assert [b.id for b in read_benchmarks(bad)] == ["a", "b"]
 
 
 async def test_sync_is_idempotent(session):

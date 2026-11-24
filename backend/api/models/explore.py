@@ -6,7 +6,8 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 Entity = Literal["studies", "buildings", "spaces", "datasets"]
-Grain = Literal["day", "hour", "raw"]
+# space: one long-term mean per (dataset, space) over the query period
+Grain = Literal["day", "hour", "raw", "space"]
 Source = Literal["metadata", "measurements", "relationships"]
 MetadataAgg = Literal["count", "availability"]
 MeasurementAgg = Literal["coverage", "count", "stats", "exceedance"]
@@ -38,12 +39,26 @@ class Dimension(BaseModel):
 
 
 class Benchmark(BaseModel):
-    id: int
+    """A reference value, see api.models.measurement.Benchmark. `grain` is the
+    query grain whose values compare with it."""
+
+    id: str
     parameter: str
+    is_default: bool
     source: str
-    averaging: Literal["hour", "day"]
+    institution: str
+    year: int | None = None
+    region: str
+    limit_type: str
+    legal_status: str | None = None
+    setting: str | None = None
+    averaging: Literal["hour", "day", "long_term"]
+    grain: Literal["hour", "day", "space"]
+    period: str
     value: float
     unit: str
+    qualifier: str | None = None
+    url: str | None = None
     note: str | None = None
 
 
@@ -157,7 +172,7 @@ class Meta(BaseModel):
 
     source: Source
     agg: Agg
-    grain: Grain | Literal["space", "entity"]
+    grain: Grain | Literal["entity"]
     dimensions: list[str]
     parameters: list[str]
     unit: str | None

@@ -44,15 +44,29 @@ class Parameter(SQLModel, table=True):
 
 
 class Benchmark(SQLModel, table=True):
-    """Guideline values (e.g. WHO AQG 2021), in the parameter's canonical unit."""
+    """A reference value (guideline, legal limit, design criterion) in the
+    parameter's canonical unit. Mirrors api/data/benchmarks.csv, which
+    api/scripts/import_benchmarks.py builds from the science team's workbook."""
 
-    id: Optional[int] = Field(default=None, primary_key=True)
+    # <sheet>-<row> in the workbook (co2-8, pm-2), or who-* for rows kept by hand
+    id: str = Field(primary_key=True)
     parameter: str = Field(foreign_key="parameter.slug", ondelete="CASCADE")
-    source: str
-    averaging: str  # hour | day
+    # the one reference Explore shows until the user picks another
+    is_default: bool
+    source: str  # the document, e.g. "EN 16798-1:2019 – Category II"
+    institution: str
+    year: Optional[int] = Field(default=None)
+    region: str  # a country, a region or "Worldwide"
+    limit_type: str  # guideline, legal limit, design criterion...
+    legal_status: Optional[str] = Field(default=None)
+    setting: Optional[str] = Field(default=None)  # building type or air environment
+    averaging: str  # hour | day | long_term
+    period: str  # the averaging period in the source's words
     value: float
     unit: str
-    note: Optional[str] = Field(default=None)
+    qualifier: Optional[str] = Field(default=None)  # maximum, target, action level...
+    url: Optional[str] = Field(default=None)
+    note: Optional[str] = Field(default=None)  # conversions and assumptions
 
 
 class DatasetParameter(SQLModel, table=True):
