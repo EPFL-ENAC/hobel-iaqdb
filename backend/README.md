@@ -2,7 +2,7 @@
 Based loosely on https://github.com/gauravgola96/FastAPI-Example
 
 ## Requirements
-- python 3.11 (see `.python-version`)
+- python 3.12 (see `.python-version`)
 - [uv](https://docs.astral.sh/uv/)
 - Make
 - Docker with docker compose
