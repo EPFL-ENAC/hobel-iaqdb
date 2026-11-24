@@ -1,12 +1,13 @@
 """Server cache and HTTP validators of the explore routes (design §9).
 
-Key = route + canonical query + catalog version. Identical concurrent
-requests collapse into one computation; a matching `If-None-Match` answers
-304 without computing anything."""
+Key = route + canonical query + catalog version + server start. Identical
+concurrent requests collapse into one computation; a matching
+`If-None-Match` answers 304 without computing anything."""
 
 import asyncio
 import hashlib
 import json
+import time
 from typing import Awaitable, Callable
 
 from api.models.explore import ExploreQuery
@@ -17,10 +18,13 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 CACHE_CONTROL = "private, max-age=300"
+# new code can answer the same query differently (a new dimension in the
+# schema): an ETag from before a restart, or a deploy, must not match
+STARTED = time.time_ns()
 
 
 def canonical_key(route: str, query: ExploreQuery | None, version: int) -> str:
-    payload = {"route": route, "version": version}
+    payload = {"route": route, "version": version, "started": STARTED}
     if query is not None:
         params = query.model_dump(mode="json", by_alias=True, exclude_none=True)
         params["filter"] = parse_filter(query.filter)

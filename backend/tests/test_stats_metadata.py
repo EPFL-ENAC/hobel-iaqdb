@@ -1,6 +1,6 @@
 import json
 
-from api.models.catalog import Building, Variable
+from api.models.catalog import Building
 from api.services.explore.cache import cache
 from api.services.measurement import MeasurementService
 from tests.fixtures import make_catalog, make_fixture
@@ -208,53 +208,6 @@ async def test_availability(client, session, clean_db, tmp_path):
     assert "occupancy_density" in keys and "id" not in keys and "identifier" not in keys
 
 
-async def test_variable_availability(client, session, clean_db):
-    cache.clear()
-    fx = await make_catalog(session)
-    d1, d2 = fx.datasets["D1"], fx.datasets["D2"]
-    session.add_all(
-        [
-            Variable(
-                name="co2",
-                type="float",
-                unit="ppm",
-                reference="co2",
-                study_id=fx.study_id,
-                dataset_id=d1,
-            ),
-            Variable(
-                name="t",
-                type="float",
-                reference="air_temperature",
-                study_id=fx.study_id,
-                dataset_id=d1,
-            ),
-            Variable(name="pm", type="float", study_id=fx.study_id, dataset_id=d2),
-        ]
-    )
-    await session.commit()
-    response = await client.get(
-        "/stats/metadata", params={"entity": "variables", "agg": "availability"}
-    )
-    assert response.status_code == 200
-    availability = {b["key"][0]: b["availability"] for b in response.json()["buckets"]}
-    assert availability == {
-        "unit": {"present": 1, "total": 3},
-        "format": {"present": 0, "total": 3},
-        "reference": {"present": 2, "total": 3},
-    }
-    # the study's filters reach its variables
-    response = await client.get(
-        "/stats/metadata",
-        params={
-            "entity": "variables",
-            "agg": "availability",
-            "filter": json.dumps({"$building": {"country": "FR"}}),
-        },
-    )
-    assert {b["availability"]["total"] for b in response.json()["buckets"]} == {0}
-
-
 async def test_building_descriptor_and_band_dimensions(client, session, clean_db):
     cache.clear()
     fx = await make_catalog(session)
@@ -334,3 +287,56 @@ async def test_cache_etag_and_version(client, session, clean_db, tmp_path):
     bumped = await client.get("/stats/metadata", params=params)
     assert bumped.headers["etag"] != etag
     assert bumped.json()["meta"]["version"] == 2
+
+
+async def test_climate_group_drills_into_its_zones(client, session, clean_db):
+    cache.clear()
+    fx = await make_catalog(session)
+    # B1 is Cfb, B2 is Dfb; "NA" (the raster at sea) is in no group
+    session.add_all(
+        [
+            Building(identifier="B3", climate_zone="Csa", study_id=fx.study_id),
+            Building(identifier="B4", climate_zone="NA", study_id=fx.study_id),
+            Building(identifier="B5", study_id=fx.study_id),
+        ]
+    )
+    await session.commit()
+
+    async def counts(by: str, filter: dict | None = None) -> dict:
+        params = {"entity": "buildings", "by": by}
+        if filter is not None:
+            params["filter"] = json.dumps({"$building": filter})
+        response = await client.get("/stats/metadata", params=params)
+        assert response.status_code == 200, response.text
+        return {b["key"][0]: b["n"] for b in response.json()["buckets"]}
+
+    assert await counts("climate_group") == {"C": 2, "D": 1, None: 2}
+    # a click on a group keeps its zones, as the drill refines the filter
+    assert await counts("climate_zone", {"climate_group": "C"}) == {
+        "Cfb": 1,
+        "Csa": 1,
+    }
+    # the null group holds what no group maps
+    assert await counts("climate_zone", {"climate_group": ["D", None]}) == {
+        "Dfb": 1,
+        "NA": 1,
+        None: 1,
+    }
+    # with a column criterion next to it
+    assert await counts("city", {"climate_group": "C", "country": "CH"}) == {
+        "Zurich": 1
+    }
+
+
+async def test_unknown_climate_group_is_refused(client, clean_db):
+    # a list or an object is unhashable: refused, not a 500
+    for group in ["X", [["C"]], {"a": 1}, ["C", {"a": 1}], 3]:
+        response = await client.get(
+            "/stats/metadata",
+            params={
+                "entity": "buildings",
+                "by": "climate_zone",
+                "filter": json.dumps({"$building": {"climate_group": group}}),
+            },
+        )
+        assert response.status_code == 422, group

@@ -1,16 +1,21 @@
-/**
+ /**
  * Number and label formatting shared by the charts, in the current locale.
  */
-import type { Benchmark } from '@/components/plots/charts';
+import type { ExploreBenchmark } from '@/models';
 
 export function useChartFormat() {
-  const { t, locale } = useI18n();
+  const { locale } = useI18n();
 
   /** a measured value: 2 decimals below 10 in magnitude, none above */
   function formatValue(value: number): string {
     return new Intl.NumberFormat(locale.value, {
       maximumFractionDigits: Math.abs(value) < 10 ? 2 : 0,
     }).format(value);
+  }
+
+  /** a year: 1995, not 1,995 */
+  function formatYear(value: number): string {
+    return new Intl.NumberFormat(locale.value, { useGrouping: false, maximumFractionDigits: 0 }).format(value);
   }
 
   function formatCount(value: number): string {
@@ -34,14 +39,14 @@ export function useChartFormat() {
     return `${Math.round(value * 100)}%`;
   }
 
-  /** "800 ppm", marked "(placeholder)" while the reference is a stand-in */
-  function describeReference(b: Benchmark): string {
-    const value = `${formatValue(b.value)} ${b.unit}`;
-    return b.placeholder ? `${value} (${t('plots.placeholder').toLowerCase()})` : value;
+  /** a reference's value and unit, e.g. "1,200 ppm" */
+  function describeReference(b: ExploreBenchmark): string {
+    return `${formatValue(b.value)} ${b.unit}`;
   }
 
   return {
     formatValue,
+    formatYear,
     formatCount,
     formatCompact,
     formatShare,

@@ -1,10 +1,12 @@
 from pathlib import Path
 
 import pytest
-from api.models.measurement import Benchmark, Parameter
+from api.models.measurement import Parameter
+from api.services.benchmark import BenchmarkService, parse_benchmarks
 from api.services.catalog_version import CatalogVersionService
-from api.services.parameter import ParameterService, read_benchmarks, read_parameters
-from sqlmodel import delete, select, update
+from api.services.parameter import ParameterService, read_parameters
+from sqlmodel import select, update
+from tests.test_benchmarks import benchmark_row
 
 
 def test_dictionary_is_well_formed():
@@ -12,8 +14,6 @@ def test_dictionary_is_well_formed():
     slugs = [p.slug for p in parameters]
     assert len(slugs) == len(set(slugs))
     assert {"co2", "pm2_5", "air_temperature"} <= set(slugs)
-    benchmarks = read_benchmarks()
-    assert {b.parameter for b in benchmarks} <= set(slugs)
 
 
 def test_malformed_dictionary_fails(tmp_path: Path):
@@ -40,8 +40,7 @@ async def test_sync_is_idempotent(session):
     assert n == again
     rows = (await session.exec(select(Parameter))).all()
     assert len(rows) == n
-    assert len(await service.benchmarks()) == len(read_benchmarks())
-    # the dictionary already matched the CSVs: nothing to invalidate
+    # the dictionary already matched the CSV: nothing to invalidate
     assert await CatalogVersionService(session).get() == 1
 
 
@@ -57,9 +56,16 @@ async def test_sync_bumps_version_when_dictionary_changed(session):
     await session.refresh(co2)
     assert co2.label != "stale"
     assert await CatalogVersionService(session).get() == 2
-    # a changed benchmark is a change too
-    await session.exec(delete(Benchmark))
+
+
+async def test_sync_keeps_the_imported_benchmarks(session):
+    """The references come from the import script only: the boot sync of a
+    new release must not drop the ones a database already holds."""
+    parameters = {p.slug: p for p in read_parameters()}
+    await BenchmarkService(session).replace(
+        parse_benchmarks([benchmark_row("a")], parameters)
+    )
     await session.commit()
-    await service.sync()
+    await ParameterService(session).sync()
     await session.commit()
-    assert await CatalogVersionService(session).get() == 3
+    assert [b.id for b in await BenchmarkService(session).all()] == ["a"]

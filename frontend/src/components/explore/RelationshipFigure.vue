@@ -1,41 +1,46 @@
 <template>
   <ChartCard :eyebrow="eyebrowText" :title="title">
     <template #controls>
-      <span>{{ t('explore_figures.relationship.plot_mean') }}</span>
-      <!-- a pollutant fixed by the filter bar, or the only one with pairs, is said, not offered -->
-      <q-select
-        v-if="parameterOptions.length > 1"
-        :model-value="parameter"
-        :options="parameterOptions"
-        emit-value
-        map-options
-        dense
-        outlined
-        options-dense
-        class="relationship-figure__select"
-        @update:model-value="onParameter"
-      />
-      <span v-else class="relationship-figure__pollutant">{{ pollutantName }}</span>
-      <!-- no metric with pairs: nothing to pick, the chart says why -->
-      <template v-if="metricOptions.length">
-        <span>{{ t('explore_figures.relationship.against') }}</span>
+      <span class="figure-field">
+        <span>{{ t('explore_figures.relationship.plot_mean') }}</span>
+        <!-- a pollutant fixed by the filter bar, or the only one with pairs, is said, not offered -->
         <q-select
-          :model-value="metric"
-          :options="metricOptions"
-          :loading="probing"
+          v-if="parameterOptions.length > 1"
+          :model-value="parameter"
+          :options="parameterOptions"
           emit-value
           map-options
           dense
           outlined
           options-dense
           class="relationship-figure__select"
-          @update:model-value="(value) => (metric = value)"
+          @update:model-value="onParameter"
         />
+        <span v-else class="relationship-figure__pollutant">{{ pollutantName }}</span>
+      </span>
+      <!-- no metric with enough pairs: nothing to pick, the chart says why -->
+      <template v-if="metricOptions.length">
+        <span class="figure-field">
+          <span>{{ t('explore_figures.relationship.against') }}</span>
+          <q-select
+            :model-value="metric"
+            :options="metricOptions"
+            :loading="probing"
+            emit-value
+            map-options
+            dense
+            outlined
+            options-dense
+            class="relationship-figure__select"
+            @update:model-value="(value) => (metric = value)"
+          />
+        </span>
       </template>
     </template>
     <FigureFrame :height="height" :loading="loading" :error="error" :empty="emptyMessage">
       <e-charts autoresize :init-options="initOptions" :option="option" :update-options="updateOptions" />
     </FigureFrame>
+    <ReferenceSource v-if="!emptyMessage" :parameter="parameter" :benchmark="benchmark" @pick="pick" />
     <template #footer>
       <span class="relationship-figure__summary">{{ summary }}</span>
     </template>
@@ -47,7 +52,7 @@
  * A pollutant against a space characteristic, a point per space (its mean
  * over the period), with the least-squares line and the pollutant's
  * reference. Every metric is probed at once: switching only redraws. The
- * pollutant menu lists those with pairs for at least one metric.
+ * pollutant menu lists those with enough pairs for at least one metric.
  */
 import ECharts from 'vue-echarts';
 import type { EChartsOption } from 'echarts';
@@ -57,19 +62,13 @@ import { SVGRenderer } from 'echarts/renderers';
 import { GridComponent, MarkLineComponent, TooltipComponent } from 'echarts/components';
 import ChartCard from '@/components/explore/ChartCard.vue';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
-import {
-  FIGURE_ACCENT,
-  FIGURE_GAP,
-  GRID,
-  MUTED,
-  benchmarkOf,
-  initOptions,
-  updateOptions,
-} from '@/components/plots/charts';
+import ReferenceSource from '@/components/explore/ReferenceSource.vue';
+import { FIGURE_ACCENT, FIGURE_GAP, GRID, MUTED, initOptions, updateOptions } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';
 import { useParameterChoice } from '@/composables/useContextScope';
 import { useExploreRequest } from '@/composables/useExploreQuery';
+import { useFigureReference } from '@/composables/useFigureReference';
 
 use([SVGRenderer, ScatterChart, LineChart, GridComponent, MarkLineComponent, TooltipComponent]);
 
@@ -84,20 +83,26 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), { height: 380, defaultMetric: 'space.occupancy_density' });
 const i18n = useI18n();
 const { t, locale } = i18n;
-const { formatValue, describeReference } = useChartFormat();
+const { formatValue, formatYear, describeReference } = useChartFormat();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
 
 const metricKeys = exploreStore.schema?.metrics || [];
+/** catalog metrics that are years: 1995, not 1,995 */
+const YEAR_METRICS = new Set(['building.construction_year']);
 
 /** one partners request per catalog metric: the pollutants measured where it is known */
 const partners = new Map(metricKeys.map((key) => [key, useExploreRequest('relationships')] as const));
 
-/** the pollutants with pairs for at least one metric; null until known */
+/** the pollutants with enough pairs for a correlation with at least one metric; null until known */
 const paired = computed(() => {
   const results = [...partners.values()].map((request) => request.result.value);
   if (!results.length || results.some((result) => !result)) return null;
-  return new Set(results.flatMap((result) => (result?.buckets || []).flatMap((b) => (b.key[0] && b.n ? [b.key[0]] : []))));
+  return new Set(
+    results.flatMap((result) =>
+      (result?.buckets || []).flatMap((b) => (b.key[0] && b.n && b.enough !== false ? [b.key[0]] : [])),
+    ),
+  );
 });
 
 const parameters = useParameterChoice({ among: paired });
@@ -119,9 +124,23 @@ function metricName(key: string): string {
   return i18n.te(path) ? t(path) : key;
 }
 
+/** a metric below the minimum sample size for a correlation is left out */
 const metricOptions = computed(() =>
-  [...probes.entries()].flatMap(([key, probe]) => (probe.result.value?.meta.n ? [{ value: key, label: metricName(key) }] : [])),
+  [...probes.entries()].flatMap(([key, probe]) => {
+    const value = probe.result.value;
+    if (!value?.meta.n || value.buckets[0]?.enough === false) return [];
+    return [{ value: key, label: metricName(key) }];
+  }),
 );
+
+function formatX(value: number): string {
+  return metric.value && YEAR_METRICS.has(metric.value) ? formatYear(value) : formatValue(value);
+}
+
+/** r or R²; none below the minimum sample size */
+function formatFit(value: number | null | undefined): string {
+  return typeof value === 'number' ? value.toFixed(2) : '–';
+}
 
 const pollutantName = computed(() => (parameter.value ? parameterLabel.value : '–'));
 
@@ -133,28 +152,29 @@ const eyebrowText = computed(() =>
 
 const emptyMessage = computed(() => {
   if (probing.value || metric.value) return '';
+  // pairs, but too few spaces for any metric: every metric is left out
+  if ([...probes.values()].some((probe) => probe.result.value?.meta.n)) return t('plots.too_little_data');
   const metrics = new Intl.ListFormat(locale.value, { type: 'disjunction' }).format(
     [...probes.keys()].map((key) => metricName(key).toLowerCase()),
   );
   return t('plots.no_pairs', { parameter: parameterLabel.value, metrics });
 });
 
-const benchmark = computed(() => benchmarkOf(exploreStore.schema, parameter.value));
+// only the line follows the reference, so a pick redraws without a request
+const { benchmark, pick } = useFigureReference(parameter);
 
 /** spaces, correlation and fit quality, under the figure */
 const summary = computed(() => {
   const bucket = result.value?.buckets[0];
   if (!bucket?.fit || !bucket.n) return '';
-  const parts = [
-    t('plots.spaces_count', bucket.n),
-    `r = ${(bucket.fit.r ?? 0).toFixed(2)}`,
-    `R² = ${(bucket.fit.r2 ?? 0).toFixed(2)}`,
-  ];
+  const spaces = t('plots.spaces_count', bucket.n);
+  if (bucket.enough === false) return `${spaces} · ${t('plots.too_little_data')}`;
+  const parts = [spaces, `r = ${formatFit(bucket.fit.r)}`, `R² = ${formatFit(bucket.fit.r2)}`];
   if (bucket.sampled) parts.push(t('plots.sampled'));
   return parts.join(' · ');
 });
 
-/** Pairs for every metric, then the metric: kept while it has pairs, else the default, else the first. */
+/** Pairs for every metric, then the metric: kept while offered, else the default, else the first. */
 async function probeAll(): Promise<void> {
   const slug = parameter.value;
   await Promise.all(
@@ -212,7 +232,7 @@ const option = computed<EChartsOption>(() => {
         const item = Array.isArray(p) ? p[0] : p;
         if (!item || item.seriesType !== 'scatter') return '';
         const [x, y] = item.value as [number, number];
-        return `${xName}: <b>${formatValue(x)}</b><br/>${parameterLabel.value}: <b>${formatValue(y)}${unit}</b>`;
+        return `${xName}: <b>${formatX(x)}</b><br/>${parameterLabel.value}: <b>${formatValue(y)}${unit}</b>`;
       },
     },
     grid: { left: 0, right: 8, top: 16, bottom: 0, containLabel: true },
@@ -221,7 +241,7 @@ const option = computed<EChartsOption>(() => {
       scale: true,
       axisLine: { lineStyle: { color: GRID } },
       axisTick: { show: false },
-      axisLabel,
+      axisLabel: { ...axisLabel, formatter: (v: number) => formatX(v) },
       splitLine: { show: false },
     },
     yAxis: {

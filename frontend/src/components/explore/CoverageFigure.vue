@@ -24,9 +24,9 @@
 
 <script setup lang="ts">
 /**
- * Records per pollutant, ranked, with the share of the expected records that
- * are present. Only the selected pollutants are shown, or every one when
- * none is selected.
+ * Records per pollutant, ranked, with the share of the datasets in scope
+ * that measured it. Only the selected pollutants are shown, or every one
+ * when none is selected.
  */
 import ChartCard from '@/components/explore/ChartCard.vue';
 import RankedBars from '@/components/explore/RankedBars.vue';
@@ -51,17 +51,18 @@ const { formatCompact, formatShare } = useChartFormat();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
 
-// the same request as the explore hero: they share the cache
-const { result, loading, error, empty, load } = useExploreRequest('measurements');
+// the same requests as the explore hero: they share the cache
+const { result, loading: coverageLoading, error: coverageError, empty, load } =
+  useExploreRequest('measurements');
+const datasetsRequest = useExploreRequest('metadata');
 
 /** Load the chart: on mount and when the filters are applied. */
 function reload(): void {
-  void load({
-    agg: 'coverage',
-    by: ['parameter'],
-    filter: exploreFilter(),
-    ...exploreRange(),
-  });
+  const filter = exploreFilter();
+  const range = exploreRange();
+  void load({ agg: 'coverage', by: ['parameter'], filter, ...range });
+  // the datasets in scope, whatever they measured: the share's denominator
+  void datasetsRequest.load({ entity: 'datasets', by: ['study'], filter, ...range });
 }
 
 onMounted(reload);
@@ -87,18 +88,20 @@ const rows = computed<RankedRow<ExploreBucket>[]>(() => {
     .sort((a, b) => b.value - a.value);
 });
 
-/** present records over expected ones, summed over the rows */
-function completeness(rows: RankedRow<ExploreBucket>[]): string {
-  let present = 0;
-  let missing = 0;
-  for (const row of rows) {
-    present += row.data.n_records ?? 0;
-    missing += row.data.coverage?.n_missing ?? 0;
-  }
-  return present + missing ? formatShare(present / (present + missing)) : '–';
+const loading = computed(() => coverageLoading.value || datasetsRequest.loading.value);
+const error = computed(() => coverageError.value || datasetsRequest.error.value);
+
+/**
+ * Datasets that measured the pollutant over the datasets in scope. "Other"
+ * gets none: its datasets overlap, so their sum is not a count.
+ */
+function datasetShare(rows: RankedRow<ExploreBucket>[]): string {
+  const total = datasetsRequest.result.value?.meta.n ?? 0;
+  const measured = rows.length === 1 ? rows[0]?.data.coverage?.n_datasets : undefined;
+  return measured !== undefined && total ? formatShare(Math.min(measured / total, 1)) : '–';
 }
 
 const columns = computed<RankedColumn<ExploreBucket>[]>(() => [
-  { key: 'complete', header: t('explore_figures.complete'), format: completeness },
+  { key: 'datasets', header: t('explore_figures.of_datasets'), format: datasetShare },
 ]);
 </script>

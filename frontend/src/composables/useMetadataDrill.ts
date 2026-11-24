@@ -6,6 +6,7 @@
 import type { ShallowRef } from 'vue';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import {
+  appliesUnder,
   hasGlobalFilter,
   isUnknownKey,
   keyLabel,
@@ -77,9 +78,17 @@ export function useMetadataDrill(props: MetadataDrillProps) {
     return !!dimension.filter_path;
   });
 
+  /** The index of a level's dimension in the path: a drill can skip levels, so not its depth in the stack. */
+  function pathIndex(level: DrillLevel): number {
+    return props.path.indexOf(level.dimension.key);
+  }
+
   /** whether a click on the current level drills, rather than navigates */
   const drills = computed(
-    () => props.click === 'drill' && stack.value.length < props.path.length,
+    () =>
+      props.click === 'drill' &&
+      !!current.value &&
+      pathIndex(current.value) + 1 < props.path.length,
   );
 
   /** In `filter` mode, the keys of this dimension already in the global filters. */
@@ -89,12 +98,25 @@ export function useMetadataDrill(props: MetadataDrillProps) {
     return new Set(selectedFilterKeys(current.value?.dimension.filter_path));
   });
 
-  /** The dimensions of the path, those a click cannot reach left out. */
-  const chain = computed<ExploreDimension[]>(() =>
-    (props.click === 'drill' ? props.path : props.path.slice(0, 1)).flatMap(
-      (key) => exploreStore.dimension(key) ?? [],
-    ),
-  );
+  /**
+   * The dimensions of the path, those a click cannot reach left out: the
+   * levels gone through, then those below the current one. A level the drill
+   * skipped is not in it, so the index of a step is its depth in the stack.
+   */
+  const chain = computed<ExploreDimension[]>(() => {
+    if (props.click !== 'drill') return props.path.slice(0, 1).flatMap(dimensionOf);
+    const level = current.value;
+    if (!level) return props.path.flatMap(dimensionOf);
+    return [
+      ...stack.value.map((visited) => visited.dimension),
+      ...props.path.slice(pathIndex(level) + 1).flatMap(dimensionOf),
+    ];
+  });
+
+  function dimensionOf(key: string): ExploreDimension[] {
+    const dimension = exploreStore.dimension(key);
+    return dimension ? [dimension] : [];
+  }
 
   onMounted(() => void restart());
   // applying the filters (or the parameters) restarts the drill from the top
@@ -138,15 +160,21 @@ export function useMetadataDrill(props: MetadataDrillProps) {
       );
       return;
     }
-    if (!drills.value) {
+    const key = bucket.key[0] ?? null;
+    // the next level of the path that means something under this key
+    const nextKey = drills.value
+      ? props.path
+          .slice(pathIndex(level) + 1)
+          .find((next) => appliesUnder(level.dimension.key, key, next))
+      : undefined;
+    if (!nextKey) {
       onBucketClick(
         { kind: 'navigate', dimension: level.dimension, params: level.params, router },
         bucket,
       );
       return;
     }
-    const key = bucket.key[0] ?? null;
-    const dimension = exploreStore.dimension(props.path[stack.value.length] || '');
+    const dimension = exploreStore.dimension(nextKey);
     if (!dimension) return;
     // an unknown key stands for every unknown key of the level, summed into one row
     const keys =

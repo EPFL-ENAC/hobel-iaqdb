@@ -9,6 +9,19 @@ from tests.fixtures import mean
 from tests.test_stats_metadata import buckets_of, loaded_fixture
 
 
+@pytest.fixture(autouse=True)
+def no_minimum(monkeypatch):
+    """The fixture pairs two spaces: the tests below check the statistics,
+    the `minimum` tests the cutoff."""
+    monkeypatch.setattr("api.services.explore.relationships.MIN_SPACES", 1)
+    monkeypatch.setattr("api.services.explore.relationships.MIN_PAIRS", 1)
+
+
+def real_minimum(monkeypatch) -> None:
+    monkeypatch.setattr("api.services.explore.relationships.MIN_SPACES", 3)
+    monkeypatch.setattr("api.services.explore.relationships.MIN_PAIRS", 30)
+
+
 def assert_points(got: list, expected: list) -> None:
     assert len(got) == len(expected)
     for g, e in zip(sorted(map(tuple, got)), sorted(expected)):
@@ -166,7 +179,12 @@ async def test_partners(client, session, clean_db, tmp_path):
     # pm2_5 is only measured in S3, where there is no CO2
     expected = len(paired_hours(fx, "co2", "air_temperature", ("S1", "S2")))
     assert buckets_of(body) == {
-        ("air_temperature",): {"key": ["air_temperature"], "n": expected}
+        ("air_temperature",): {
+            "key": ["air_temperature"],
+            "n": expected,
+            "n_spaces": 2,
+            "enough": True,
+        }
     }
     # the same count as the matrix cell of the pair
     response = await client.get(
@@ -252,3 +270,89 @@ async def test_partners_of_a_catalog_metric(client, session, clean_db, tmp_path)
         },
     )
     assert response.json()["buckets"] == []
+
+
+async def test_minimum_pairs_have_counts_but_no_fit(
+    client, session, clean_db, tmp_path, monkeypatch
+):
+    """#226: CO2 and temperature share many hours, but in two spaces only."""
+    fx = await loaded_fixture(session, clean_db, tmp_path)
+    real_minimum(monkeypatch)
+    response = await client.get(
+        "/stats/relationships",
+        params={"agg": "pairs", "x": "co2", "y": "air_temperature"},
+    )
+    assert response.status_code == 200, response.text
+    bucket = response.json()["buckets"][0]
+    expected_points = paired_hours(fx, "co2", "air_temperature", ("S1", "S2"))
+    assert bucket["n"] == len(expected_points) > 30
+    assert bucket["n_spaces"] == 2
+    assert bucket["enough"] is False
+    assert bucket["fit"] == {}
+    # the dots stay: the chart shows them without a line
+    assert_points(bucket["points"], expected_points)
+    # enough spaces, too few pairs
+    monkeypatch.setattr("api.services.explore.relationships.MIN_SPACES", 2)
+    monkeypatch.setattr(
+        "api.services.explore.relationships.MIN_PAIRS", len(expected_points) + 1
+    )
+    from api.services.explore.cache import cache
+
+    cache.clear()
+    response = await client.get(
+        "/stats/relationships",
+        params={"agg": "pairs", "x": "co2", "y": "air_temperature"},
+    )
+    assert response.json()["buckets"][0]["enough"] is False
+
+
+async def test_minimum_metric_pairs_from_two_spaces(
+    client, session, clean_db, tmp_path, monkeypatch
+):
+    """#226: a pollutant against a space metric got r = 0.00 from one space."""
+    await loaded_fixture(session, clean_db, tmp_path)
+    real_minimum(monkeypatch)
+    response = await client.get(
+        "/stats/relationships",
+        params={"agg": "pairs", "x": "space.occupancy_density", "y": "co2"},
+    )
+    assert response.status_code == 200, response.text
+    bucket = response.json()["buckets"][0]
+    assert (bucket["n"], bucket["n_spaces"], bucket["enough"]) == (2, 2, False)
+    assert bucket["fit"] == {}
+    assert len(bucket["points"]) == 2
+    response = await client.get(
+        "/stats/relationships",
+        params={"agg": "partners", "x": "space.occupancy_density"},
+    )
+    co2 = buckets_of(response.json())[("co2",)]
+    assert (co2["n_spaces"], co2["enough"]) == (2, False)
+
+
+async def test_minimum_matrix_cells_are_blank(
+    client, session, clean_db, tmp_path, monkeypatch
+):
+    fx = await loaded_fixture(session, clean_db, tmp_path)
+    real_minimum(monkeypatch)
+    n = len(paired_hours(fx, "air_temperature", "co2", ("S1", "S2")))
+    for method in ("pearson", "spearman"):
+        response = await client.get(
+            "/stats/relationships",
+            params={
+                "agg": "matrix",
+                "parameters": "co2,air_temperature,pm2_5",
+                "method": method,
+            },
+        )
+        assert response.status_code == 200, response.text
+        cells = buckets_of(response.json())
+        cell = cells[("air_temperature", "co2")]
+        assert (cell["n"], cell["n_spaces"], cell["enough"]) == (n, 2, False), method
+        assert "r" not in cell["fit"], method
+        never = cells[("co2", "pm2_5")]
+        assert (never["n"], never["n_spaces"], never["enough"]) == (0, 0, False)
+    response = await client.get(
+        "/stats/relationships", params={"agg": "partners", "x": "co2"}
+    )
+    partner = buckets_of(response.json())[("air_temperature",)]
+    assert (partner["n"], partner["n_spaces"], partner["enough"]) == (n, 2, False)

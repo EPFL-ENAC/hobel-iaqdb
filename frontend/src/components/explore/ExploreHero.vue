@@ -73,6 +73,10 @@ const error = computed(
     coverageRequest.error.value,
 );
 
+const studies = computed(() => {
+  const result = datasetsRequest.result.value;
+  return result ? result.buckets.filter((b) => b.key[0] !== null).length : null;
+});
 const datasets = computed(() => datasetsRequest.result.value?.meta.n ?? null);
 const countries = computed(() => {
   const result = countriesRequest.result.value;
@@ -130,7 +134,13 @@ const title = computed(() => {
   });
 });
 
+// from the largest unit to the smallest: a study holds datasets, a dataset records
 const stats = computed(() => [
+  {
+    key: 'studies',
+    value: studies.value === null ? null : formatCount(studies.value),
+    label: t('explore_hero.stats.studies', studies.value ?? 2),
+  },
   {
     key: 'datasets',
     value: datasets.value === null ? null : formatCount(datasets.value),
@@ -199,7 +209,7 @@ const stats = computed(() => [
 
 .explore-hero__grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   margin: 0 0 0 -1px;
 
   @media (max-width: $breakpoint-sm-max) {

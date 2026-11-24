@@ -3,7 +3,7 @@ from datetime import datetime
 
 import pytest
 from tests.expected import series_of, stats_of
-from tests.fixtures import daily, hourly
+from tests.fixtures import daily, hourly, mean
 from tests.test_stats_metadata import buckets_of, loaded_fixture
 
 
@@ -29,7 +29,7 @@ async def test_count_by_parameter_at_each_grain(client, session, clean_db, tmp_p
 
 async def test_stats_by_country_at_each_grain(client, session, clean_db, tmp_path):
     fx = await loaded_fixture(session, clean_db, tmp_path)
-    for grain in ("day", "hour", "raw"):
+    for grain in ("day", "hour", "raw", "space"):
         response = await client.get(
             "/stats/measurements",
             params={
@@ -192,6 +192,72 @@ async def test_exceedance_and_coverage(client, session, clean_db, tmp_path):
     # dataset under every country its study has a building in
     assert body[("pm2_5", "DE")]["coverage"]["n_datasets"] == 1
     assert body[("pm2_5", "CH")]["coverage"]["n_datasets"] == 1
+
+
+async def test_space_grain_compares_long_term_means(
+    client, session, clean_db, tmp_path
+):
+    fx = await loaded_fixture(session, clean_db, tmp_path)
+    space_means = [mean([v for _, v in points]) for points in series_of(fx, "co2")]
+    threshold = sorted(space_means)[0] + 1
+    response = await client.get(
+        "/stats/measurements",
+        params={
+            "agg": "exceedance",
+            "parameters": "co2",
+            "threshold": threshold,
+            "grain": "space",
+        },
+    )
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["meta"]["grain"] == "space"
+    above = sum(1 for v in space_means if v > threshold)
+    assert 0 < above < len(space_means)
+    assert body["buckets"][0]["n"] == len(space_means)
+    assert body["buckets"][0]["exceedance"]["n_above"] == above
+    # the filter applies before the mean: one office, one space
+    response = await client.get(
+        "/stats/measurements",
+        params={
+            "agg": "stats",
+            "parameters": "co2",
+            "grain": "space",
+            "filter": json.dumps({"$space": {"type": "office"}}),
+        },
+    )
+    bucket = response.json()["buckets"][0]
+    assert bucket["n"] == 1
+    assert bucket["stats"]["mean"] == pytest.approx(
+        mean([v for _, v in fx.series[("co2", "S1")]]), rel=1e-6
+    )
+    # a period narrows each space's mean
+    response = await client.get(
+        "/stats/measurements",
+        params={
+            "agg": "stats",
+            "parameters": "co2",
+            "grain": "space",
+            "from": "2023-03-02",
+            "to": "2023-03-03",
+        },
+    )
+    window = (datetime(2023, 3, 2), datetime(2023, 3, 3))
+    expected = stats_of(series_of(fx, "co2", window=window), "space")
+    assert response.json()["buckets"][0]["stats"]["max"] == pytest.approx(
+        expected["max"], rel=1e-6
+    )
+    for by in ("day", "hour_of_day"):
+        response = await client.get(
+            "/stats/measurements",
+            params={"agg": "stats", "parameters": "co2", "grain": "space", "by": by},
+        )
+        assert response.status_code == 422, by
+    response = await client.get(
+        "/stats/relationships",
+        params={"agg": "pairs", "x": "co2", "y": "air_temperature", "grain": "space"},
+    )
+    assert response.status_code == 422
 
 
 async def test_raw_cap_and_unknown_parameter(

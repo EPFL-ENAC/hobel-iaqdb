@@ -1,12 +1,22 @@
 <template>
-  <q-layout view="hHh lpR fFf">
-    <q-header bordered class="bg-white text-grey-10">
-      <app-toolbar
-        :no-menu="!hasFilterDrawer"
-        @toggle-left="toggleLeftDrawer"
-        @toggle-right="toggleRightDrawer"
-      />
-      <router-view name="bar" />
+  <q-layout view="hHh lpR fFf" @scroll="onScroll">
+    <q-header bordered class="bg-white text-grey-10" :class="{ 'main-layout__header--float': floatBar }">
+      <div class="main-layout__top">
+        <app-toolbar
+          :no-menu="!hasFilterDrawer"
+          @toggle-left="toggleLeftDrawer"
+          @toggle-right="toggleRightDrawer"
+        />
+      </div>
+      <!-- on a phone or tablet the bar floats under the toolbar: it slides away while scrolling down -->
+      <div
+        class="main-layout__bar"
+        :class="{ 'main-layout__bar--hidden': floatBar && barHidden }"
+        :inert="(floatBar && barHidden) || undefined"
+      >
+        <q-resize-observer @resize="(size) => (barHeight = size.height)" />
+        <router-view name="bar" />
+      </div>
     </q-header>
 
     <q-drawer
@@ -76,6 +86,8 @@
     </q-drawer>
 
     <q-page-container>
+      <!-- the room the floating bar takes at the top of the page -->
+      <div v-if="floatBar" :style="{ height: `${barHeight}px` }" aria-hidden="true" />
       <router-view />
     </q-page-container>
   </q-layout>
@@ -101,6 +113,36 @@ const miniStateRight = ref(false);
 
 /** the filters side bar; explore filters from the bar in the header */
 const hasFilterDrawer = computed(() => route.path !== '/explore');
+
+/**
+ * On a phone or tablet the toolbar stays and the filter bar floats under it,
+ * out of the header's height: scrolling down slides the bar away, scrolling
+ * up brings it back.
+ */
+const floatBar = computed(() => $q.screen.lt.md && route.matched.some((r) => r.components?.bar));
+const barHeight = ref(0);
+const barHidden = ref(false);
+
+/** how far to scroll one way before the bar follows */
+const SCROLL_SLACK = 24;
+let lastTop = 0;
+let direction = 0;
+let turnedAt = 0;
+
+function onScroll({ position }: { position: number }): void {
+  const top = position;
+  const moved = Math.sign(top - lastTop);
+  if (moved && moved !== direction) {
+    direction = moved;
+    turnedAt = lastTop;
+  }
+  lastTop = top;
+  if (top <= barHeight.value) barHidden.value = false;
+  else if (direction > 0 && top - turnedAt > SCROLL_SLACK) barHidden.value = true;
+  else if (direction < 0 && turnedAt - top > SCROLL_SLACK) barHidden.value = false;
+}
+
+watch(() => route.path, () => (barHidden.value = false));
 
 const showPlots = computed(() => {
   return !helpStore.show && !catalogStore.showStudyDetails;
@@ -142,3 +184,28 @@ function toggleShowStudyDetails() {
   catalogStore.showStudyDetails = !catalogStore.showStudyDetails;
 }
 </script>
+
+<style scoped lang="scss">
+.main-layout__header--float {
+  // the toolbar covers the bar as it slides up behind it
+  .main-layout__top {
+    position: relative;
+    z-index: 1;
+    background: white;
+  }
+
+  .main-layout__bar {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    border-bottom: 1px solid $grey-4;
+    background: white;
+    transition: transform 0.2s ease;
+  }
+
+  .main-layout__bar--hidden {
+    transform: translateY(-100%);
+  }
+}
+</style>

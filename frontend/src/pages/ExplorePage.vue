@@ -34,7 +34,7 @@
           :eyebrow="t('explore_figures.datasets_by_climate_zone.eyebrow')"
           :title="t('explore_figures.datasets_by_climate_zone.title')"
           entity="datasets"
-          :path="['climate_zone', 'country', 'city', 'study']"
+          :path="['climate_group', 'climate_zone', 'country', 'city', 'study']"
           layout="stacked"
           :limit="4"
         />
@@ -93,19 +93,19 @@
           v-if="exploreStore.schema"
           :aspect="t('explore_figures.groups.ventilation.aspect')"
           :title="t('explore_figures.groups.ventilation.title')"
-          by="ventilation_type"
+          :path="['ventilation_type']"
         />
         <GroupFigure
           v-if="exploreStore.schema"
           :aspect="t('explore_figures.groups.climate.aspect')"
           :title="t('explore_figures.groups.climate.title')"
-          by="climate_zone"
+          :path="['climate_group', 'climate_zone']"
         />
         <GroupFigure
           v-if="exploreStore.schema"
           :aspect="t('explore_figures.groups.building.aspect')"
           :title="t('explore_figures.groups.building.title')"
-          by="building_type"
+          :path="['building_type']"
         />
       </FigureGrid>
       <FigureGrid>

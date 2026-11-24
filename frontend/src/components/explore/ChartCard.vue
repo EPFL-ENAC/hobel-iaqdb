@@ -93,11 +93,25 @@ withDefaults(defineProps<Props>(), { footerBlank: false });
   flex-wrap: wrap;
   align-items: center;
   gap: 8px 16px;
+
+  // under the title on a phone: the menus take the card's width
+  @media (max-width: $breakpoint-xs-max) {
+    width: 100%;
+  }
 }
 
 .chart-card__lead {
   display: flex;
   flex-direction: column;
+
+  // one column: the footer of a split card goes under the chart, not above it
+  @media (max-width: $breakpoint-sm-max) {
+    display: contents;
+
+    .figure-footer {
+      order: 1;
+    }
+  }
 }
 
 .chart-card__body {
