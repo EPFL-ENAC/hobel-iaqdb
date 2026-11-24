@@ -18,10 +18,14 @@ class Config(BaseSettings):
     DB_URL: str | None = None
 
     # Keycloak
-    KEYCLOAK_REALM: str = "HOBEL"
-    KEYCLOAK_URL: str = "https://enac-it-sso.epfl.ch"
+    KEYCLOAK_REALM: str = "EPFL"
+    KEYCLOAK_URL: str = "https://enac-it-sso2.epfl.ch"
     KEYCLOAK_API_ID: str
     KEYCLOAK_API_SECRET: str
+    # True: the admin role is a client role of the API client, in a realm shared
+    # with other apps (sso2)
+    # False: the admin role is a realm role, in a realm of its own
+    KEYCLOAK_CLIENT_ROLES: bool = False
 
     PATH_PREFIX: str = "/api"
 

@@ -1,14 +1,14 @@
 import { defineStore } from 'pinia';
-import { keycloak } from '@/boot/api';
+import { keycloak, authApiClientId } from '@/boot/api';
 import type { KeycloakProfile } from 'keycloak-js';
 
 
 export const useAuthStore = defineStore('auth', () => {
 
   const profile = ref<KeycloakProfile>();
-  const realmRoles = ref<string[]>([]);
+  const roles = ref<string[]>([]);
   const isAuthenticated = computed(() => profile.value !== undefined);
-  const isAdmin = computed(() => realmRoles.value.includes('admin'));
+  const isAdmin = computed(() => roles.value.includes('admin'));
 
   // keycloak is a plain (non-reactive) Keycloak instance, so a `computed`
   // reading keycloak.token would never invalidate: Vue has nothing to track
@@ -19,12 +19,15 @@ export const useAuthStore = defineStore('auth', () => {
   async function init() {
     if (isAuthenticated.value) return Promise.resolve(true);
     profile.value = undefined;
-    realmRoles.value = [];
+    roles.value = [];
     return keycloak.init({
+      // the login status iframe needs third-party cookies (blocked by browsers) and is refused (403)
+      // by Keycloak for an origin missing from the client Web origins
+      checkLoginIframe: false,
       onLoad: 'check-sso' // Optional: 'login-required' forces login right away, 'check-sso' checks if the user is already logged in.
     }).then(async (authenticated: boolean) => {
       if (authenticated) {
-        realmRoles.value = keycloak.tokenParsed?.realm_access?.roles || [];
+        roles.value = readRoles();
         profile.value = await keycloak.loadUserProfile();
         accessToken.value = keycloak.token
         keycloak.onTokenExpired = () => void updateToken().catch(() => undefined)
@@ -36,6 +39,12 @@ export const useAuthStore = defineStore('auth', () => {
         return authenticated;
       }
     });
+  }
+
+  function readRoles(): string[] {
+    if (authApiClientId)
+      return keycloak.tokenParsed?.resource_access?.[authApiClientId]?.roles || [];
+    return keycloak.tokenParsed?.realm_access?.roles || [];
   }
 
   async function login() {
@@ -50,7 +59,7 @@ export const useAuthStore = defineStore('auth', () => {
       redirectUri: window.location.origin,
     }).then(() => {
       profile.value = undefined;
-      realmRoles.value = [];
+      roles.value = [];
       accessToken.value = undefined
     });
   }
@@ -73,7 +82,7 @@ export const useAuthStore = defineStore('auth', () => {
     isAuthenticated,
     isAdmin,
     profile,
-    realmRoles,
+    roles,
     accessToken,
     init,
     login,
