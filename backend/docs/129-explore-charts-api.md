@@ -243,7 +243,7 @@ shared.
 | `entity` | `studies\|buildings\|spaces\|datasets` | metadata route only. |
 | `fields` | comma-separated | `agg=availability` only; defaults to all nullable fields of the entity. |
 | `x`, `y` | slug or metric key | relationships `agg=pairs`: `y` is fitted as a function of `x`, so a metric key goes in `x` (`y` is always a slug); `x` alone (a slug) for `agg=partners`. A metric key is a numeric catalog column from a closed list (`space.occupancy_density`, `space.occupancy_number`, `space.floor_area`, `space.space_volume`, `building.airtightness`, `building.construction_year`, `building.altitude`). |
-| `method` | `pearson` (default) or `spearman` | relationships only. |
+| `method` | `pearson` (default) or `spearman` | relationships `agg=pairs` and `agg=matrix` only. On `pairs`, it sets `fit.r` and the r within each study; `slope`, `intercept` and `r2` stay the least-squares fit (#229). |
 
 Canonical form: the frontend sorts list values and serialises the filter with
 sorted keys and no `undefined` entries. The backend re-canonicalises before
@@ -360,11 +360,15 @@ instrument_id, ts)` so only co-located, co-timed readings pair).
 - `agg=pairs&x=co2&y=air_temperature[&by=country]`: self-join on
   `(dataset_id, space_id, hour)`. Two statements: (1) per group
   `count, regr_slope, regr_intercept, regr_r2, corr` over **all** matched rows;
-  (2) a deterministic sample of points, `row_number() over (order by
-  dataset_id, space_id, hour) % step = 0` with `step = ceil(n / 2000)` (the
+  (2) a deterministic sample of points per group, `row_number() over
+  (partition by the keys order by dataset_id, space_id, hour) % step = 0`
+  with `step = ceil(n / quota)` and `quota = ceil(2000 / groups)` (the
   aggregates have no `id`), so the trend line is exact and the dots are a
-  stable, cacheable sample. Bucket carries `fit`, `points`, `n` and
-  `sampled` (true only when `step > 1`).
+  stable, cacheable sample. Each group gets its share of the dots, however
+  small (#229, `229-split-relationships.md`). Bucket carries `fit`, `points`,
+  `n` and `sampled` (true only when the group has more rows than its quota).
+  With `method=spearman`, statement (1) reads x and y ranked inside the group,
+  and inside the group and the study, as the Spearman matrix does.
 - a metric `x` with a parameter `y` (chart 13, CO2 × occupancy): `y` is first
   aggregated per `(dataset, space)`, then joined to the space column; one point
   `(metric, mean)` per space, `y` fitted on the metric over all spaces (how the
@@ -376,8 +380,8 @@ instrument_id, ts)` so only co-located, co-timed readings pair).
   `dataset_id, space_id, hour`), then a single `SELECT` computes
   `corr(a, b)` and `count(a) filter (where b is not null)` for every pair.
   Spearman ranks each column, per pair, within the rows where the other
-  parameter is present (`rank() over (partition by b is not null order by
-  a)`, ties get their lowest rank). Cells are buckets keyed `[x, y]` (slugs
+  parameter is present, and per study for the r within each study. Ties get
+  their average rank, `(rank() + cume_dist() * count()) / 2`. Cells are buckets keyed `[x, y]` (slugs
   sorted) with `n` and `fit.r`. Max 10 parameters (45 cells).
 - `agg=partners&x=co2`: which parameters were measured with `x`, for the y
   menu of chart 18. One statement: the distinct `(dataset_id, space_id, hour)`
@@ -752,7 +756,8 @@ Read with §1–§14; code wins where they still disagree.
 | `dataset_parameter` | also `n_unlinked`, `n_statistical` | those live in `dataset.load_report` |
 | data upload skip | MD5 skips the load too | MD5 skips the upload only, the load always runs (§3) |
 | catalog fan-out | not considered | `coverage`, the raw cap and `metadata` with `parameters` reason at study level; `measurements`, `relationships` and the empty-state suggestion filter the fact rows themselves |
-| pairs sample | `id % step` | `row_number() % step`, `sampled` true only when sampling happened (§7) |
+| pairs sample | `id % step` | `row_number() % step` per group, `sampled` true only when sampling happened (§7, #229) |
+| pairs method | Pearson only | `method` sets `fit.r` and the r within each study (§7, #229) |
 | sample behind an r | `n` only | also `n_spaces`, `enough` (#226), `n_studies` and the r within each study (#229) (§7) |
 | dictionary | #107's CSV | provisional CSVs in `api/data`, synced at boot and data upload |
 | frequencies routes | deleted | deleted; the five `PlotsDrawer` charts became one `MetadataTreemapChart` over `/stats/metadata` |

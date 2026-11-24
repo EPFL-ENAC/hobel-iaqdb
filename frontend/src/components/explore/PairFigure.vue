@@ -38,8 +38,31 @@
             @update:model-value="onY"
           />
         </span>
+        <FigureMenu
+          :label="t('explore_figures.split.label')"
+          :model-value="split"
+          :options="splitOptions"
+          @update:model-value="onSplit"
+        />
       </template>
-      <div class="pair-figure__body">
+      <!-- split: one small chart per group, under the menus -->
+      <template v-if="splitShown">
+        <!-- at least one small chart tall: a row of them is always taller, so no blank band under it -->
+        <FigureFrame :height="PANEL_HEIGHT" fit="content" :loading="loading" :error="error" :empty="emptyMessage">
+          <SplitPanels
+            :dimension="splitShown"
+            :buckets="pairsRequest.result.value?.buckets ?? []"
+            :method="method"
+            :title="pairTitle"
+            :option-of="panelOption"
+            :facts-of="panelFacts"
+            :points-label="t('explore_figures.studies.paired_hours')"
+            :height="PANEL_HEIGHT"
+          />
+        </FigureFrame>
+        <p class="pair-figure__note pair-figure__note--split">{{ t('explore_figures.pair.note') }}</p>
+      </template>
+      <div v-else class="pair-figure__body">
         <aside class="pair-figure__facts">
           <div class="pair-figure__r">
             <span class="pair-figure__r-symbol">r</span>
@@ -51,9 +74,9 @@
             <template v-for="fact in facts" :key="fact.label">
               <dt>{{ fact.label }}</dt>
               <!-- the number of studies opens their list -->
-              <dd v-if="fact.studies && x && y">
+              <dd v-if="fact.studies">
                 <StudiesDialog
-                  :title="`${shortParameterName(x)} × ${shortParameterName(y)}`"
+                  :title="pairTitle"
                   v-bind="{ method, r, within, pointsLabel: t('explore_figures.studies.paired_hours') }"
                   >{{ fact.value }}</StudiesDialog
                 >
@@ -75,25 +98,28 @@
 /**
  * Any two variables measured in the same space at the same hour: a sample of
  * the hourly pairs as dots, the least-squares line over every pair, and the
- * correlation by the method picked. A correlation matrix cell opens its pair here.
+ * correlation by the method picked. "Split by" draws one small chart per
+ * group (#229). A correlation matrix cell opens its pair here.
  */
 import ECharts from 'vue-echarts';
-import type { EChartsOption } from 'echarts';
 import { use } from 'echarts/core';
 import { LineChart, ScatterChart } from 'echarts/charts';
 import { SVGRenderer } from 'echarts/renderers';
 import { GridComponent, TooltipComponent } from 'echarts/components';
 import ChartCard from '@/components/explore/ChartCard.vue';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
+import FigureMenu from '@/components/explore/FigureMenu.vue';
 import FigureToggle from '@/components/explore/FigureToggle.vue';
+import SplitPanels from '@/components/explore/SplitPanels.vue';
 import StudiesDialog from '@/components/explore/StudiesDialog.vue';
 import StudySpread from '@/components/explore/StudySpread.vue';
-import { FIGURE_ACCENT, GRID, MUTED, initOptions, shortParameterName, updateOptions } from '@/components/plots/charts';
+import { initOptions, shortParameterName, updateOptions } from '@/components/plots/charts';
+import { type ScatterSpec, scatterOption, splitRanges } from '@/components/plots/scatter';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';
-import { useParametersWithRecords } from '@/composables/useContextScope';
+import { useParametersWithRecords, useSplitChoice } from '@/composables/useContextScope';
 import { useExploreRequest } from '@/composables/useExploreQuery';
-import type { ExploreParams } from '@/models';
+import type { ExploreBucket, ExploreParams } from '@/models';
 
 use([SVGRenderer, ScatterChart, LineChart, GridComponent, TooltipComponent]);
 
@@ -120,6 +146,7 @@ const root = ref<HTMLElement | null>(null);
 const x = ref<string | null>(null);
 const y = ref<string | null>(null);
 const method = ref<Method>('spearman');
+const { split, splitOptions } = useSplitChoice();
 /** variables measured together with x, enough for a correlation */
 const partners = ref<Set<string>>(new Set());
 /** variables measured together with y, enough for a correlation; null while there is no y */
@@ -130,12 +157,10 @@ const coverage = useParametersWithRecords();
 const probe = useExploreRequest('relationships');
 /** the partners of y: the X menu */
 const probeY = useExploreRequest('relationships');
-/** the dots and the least-squares line, with Pearson's r */
+/** the dots, the least-squares line and r by the method, per group of the split */
 const pairsRequest = useExploreRequest('relationships');
-/** Spearman's r of the pair: a matrix of two */
-const rankRequest = useExploreRequest('relationships');
 
-const loading = computed(() => pairsRequest.loading.value || rankRequest.loading.value);
+const loading = computed(() => pairsRequest.loading.value);
 const error = computed(() => pairsRequest.error.value);
 const emptyMessage = computed(() => {
   if (pairsRequest.empty.value) return t('plots.no_common_hours');
@@ -155,23 +180,20 @@ const methodOptions = computed<{ value: Method; label: string }[]>(() => [
   { value: 'pearson', label: t('plots.pearson') },
   { value: 'spearman', label: t('plots.spearman') },
 ]);
-const bucket = computed(() => pairsRequest.result.value?.buckets[0] ?? null);
+/** the split of the result on show, which the menu runs ahead of while it loads */
+const splitShown = computed(() => pairsRequest.result.value?.meta.dimensions[0] ?? null);
+/** all the pairs, without a split */
+const bucket = computed(() => (splitShown.value ? null : (pairsRequest.result.value?.buckets[0] ?? null)));
+const pairTitle = computed(() => `${shortParameterName(x.value ?? '')} × ${shortParameterName(y.value ?? '')}`);
 
 /** the method, or why there is no r */
 const methodLabel = computed(() =>
   bucket.value?.enough === false ? t('plots.too_little_data') : t(`explore_figures.pair.${method.value}`),
 );
 
-/** Pearson's from the pairs, Spearman's from the matrix of two */
-const r = computed<number | null>(() => {
-  if (method.value === 'pearson') return bucket.value?.fit?.r ?? null;
-  return rankRequest.result.value?.buckets[0]?.fit?.r ?? null;
-});
-
-/** the r within each study, by the method of r */
-const within = computed(() =>
-  method.value === 'pearson' ? bucket.value?.within : rankRequest.result.value?.buckets[0]?.within,
-);
+/** by the method of the request */
+const r = computed<number | null>(() => bucket.value?.fit?.r ?? null);
+const within = computed(() => bucket.value?.within);
 
 function unitOf(slug: string | null): string {
   return exploreStore.schema?.parameters.find((p) => p.slug === slug)?.unit ?? '';
@@ -279,12 +301,8 @@ async function narrowX(): Promise<void> {
 
 function reload(): void {
   const pair = x.value && y.value ? { x: x.value, y: y.value } : null;
-  void pairsRequest.load(pair ? { agg: 'pairs', ...pair, ...scope() } : null);
-  void rankRequest.load(
-    pair && method.value === 'spearman'
-      ? { agg: 'matrix', parameters: [pair.x, pair.y], method: 'spearman', ...scope() }
-      : null,
-  );
+  const by = split.value ? { by: [split.value] } : {};
+  void pairsRequest.load(pair ? { agg: 'pairs', ...pair, method: method.value, ...by, ...scope() } : null);
 }
 
 /** Settle both menus, then load: on mount and when the filters are applied. */
@@ -314,6 +332,11 @@ function onMethod(value: Method): void {
   reload();
 }
 
+function onSplit(value: string | null): void {
+  split.value = value;
+  reload();
+}
+
 onMounted(() => void refresh());
 filtersStore.$onAction(({ name, after }) => {
   if (name === 'notifyUpdate') after(() => void refresh());
@@ -332,86 +355,44 @@ exploreStore.$onAction(({ name, args }) => {
   });
 });
 
-const option = computed<EChartsOption>(() => {
-  const b = bucket.value;
-  const points = b?.points || [];
-  if (!b || !points.length) return {};
-  const xs = points.map(([px]) => px);
-  const ys = points.map(([, py]) => py);
-  const lo = Math.min(...xs);
-  const hi = Math.max(...xs);
-  const fit = b.fit;
-  const line =
-    fit?.slope != null && fit.intercept != null
-      ? [
-          [lo, fit.slope * lo + fit.intercept],
-          [hi, fit.slope * hi + fit.intercept],
-        ]
-      : [];
+const PAIR_STYLE = { dot: 6, opacity: 0.75, yTicks: 3 };
+const PANEL_STYLE = { dot: 4, opacity: 0.6, yTicks: 3 };
+/** height of each small chart of a split */
+const PANEL_HEIGHT = 180;
+
+/** the scatter of the pair, alone or as a small chart of the split */
+function specOf(b: ExploreBucket): ScatterSpec {
   const xName = [x.value ? shortParameterName(x.value) : '', unitOf(x.value)].filter(Boolean).join(' ');
   const yName = [y.value ? shortParameterName(y.value) : '', unitOf(y.value)].filter(Boolean).join(' ');
-  const axisLabel = { color: MUTED, fontSize: 11, formatter: (v: number) => formatValue(v) };
   return {
-    tooltip: {
-      trigger: 'item',
-      formatter: (p) => {
-        const item = Array.isArray(p) ? p[0] : p;
-        if (!item || item.seriesType !== 'scatter') return '';
-        const [px, py] = item.value as [number, number];
-        return `${xName}: <b>${formatValue(px)}</b><br/>${yName}: <b>${formatValue(py)}</b>`;
-      },
-    },
-    grid: { left: 0, right: 16, top: 28, bottom: 24, containLabel: true },
-    xAxis: {
-      type: 'value',
-      scale: true,
-      // concentrations stay on the positive side; the trend line is clipped
-      ...(lo >= 0 ? { min: 0 } : {}),
-      name: `${xName} →`,
-      nameLocation: 'end',
-      nameGap: 8,
-      nameTextStyle: { color: MUTED, fontSize: 11, align: 'right', verticalAlign: 'top', padding: [14, 0, 0, 0] },
-      axisLine: { lineStyle: { color: GRID } },
-      axisTick: { show: false },
-      axisLabel,
-      splitLine: { show: false },
-    },
-    yAxis: {
-      type: 'value',
-      scale: true,
-      ...(Math.min(...ys) >= 0 ? { min: 0 } : {}),
-      splitNumber: 3,
-      name: `↑ ${yName}`,
-      nameLocation: 'end',
-      nameGap: 12,
-      nameTextStyle: { color: MUTED, fontSize: 11, align: 'left' },
-      axisLine: { show: false },
-      axisTick: { show: false },
-      axisLabel,
-      splitLine: { lineStyle: { color: GRID, width: 1 } },
-    },
-    series: [
-      {
-        type: 'scatter',
-        data: points,
-        symbolSize: 6,
-        itemStyle: { color: FIGURE_ACCENT, opacity: 0.75 },
-        cursor: 'default',
-      },
-      ...(line.length
-        ? [
-            {
-              type: 'line' as const,
-              data: line,
-              symbol: 'none',
-              silent: true,
-              lineStyle: { color: '#212121', width: 1.5 },
-            },
-          ]
-        : []),
-    ],
+    points: b.points ?? [],
+    fit: b.fit,
+    style: PAIR_STYLE,
+    xZero: true,
+    formatX: formatValue,
+    formatY: formatValue,
+    tooltip: (px, py) => `${xName}: <b>${formatValue(px)}</b><br/>${yName}: <b>${formatValue(py)}</b>`,
+    names: { x: xName, y: yName },
   };
-});
+}
+
+const option = computed(() => (bucket.value ? scatterOption(specOf(bucket.value)) : {}));
+
+/** every group on the same axes */
+const ranges = computed(() =>
+  splitRanges(pairsRequest.result.value?.buckets ?? [], { xZero: true, yTicks: PANEL_STYLE.yTicks }),
+);
+
+function panelOption(b: ExploreBucket) {
+  return scatterOption({ ...specOf(b), style: PANEL_STYLE, ranges: ranges.value });
+}
+
+function panelFacts(b: ExploreBucket): string[] {
+  return [
+    t('plots.spaces_count', b.n_spaces ?? 0),
+    t('explore_figures.pair.hours', { count: b.n.toLocaleString(locale.value) }),
+  ];
+}
 </script>
 
 <style scoped lang="scss">
@@ -489,6 +470,10 @@ const option = computed<EChartsOption>(() => {
   font-size: 0.8125rem;
   line-height: 1.5;
   color: $grey-8;
+}
+
+.pair-figure__note--split {
+  margin-top: 16px;
 }
 
 .pair-figure__plot {

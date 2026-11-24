@@ -351,6 +351,10 @@ export default {
       note: 'X and Y list only variables measured together with the other. The dots are a fixed sample; the trend line uses every pair.',
       within: 'r within each study',
     },
+    split: {
+      label: 'Split by',
+      none: 'None',
+    },
     relationship: {
       eyebrow: 'Relationship · {pollutant} × space metrics',
       title: 'Explore pollutant patterns',
@@ -639,6 +643,7 @@ export default {
     paired_hours: 'Hourly means, paired per space',
     no_common_hours: 'Never measured together',
     too_little_data: 'Too little data for a correlation',
+    not_recorded: 'Not recorded',
     paired_hours_count: '{count} paired hours',
     studies_count: 'No studies | 1 study | {count} studies',
     within: 'Within {count} of {total} studies: median r = {median}, from {min} to {max}',
