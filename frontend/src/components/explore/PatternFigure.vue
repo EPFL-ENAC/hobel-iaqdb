@@ -24,7 +24,13 @@
         @click="onClick"
       />
     </FigureFrame>
-    <ReferenceSource v-if="!emptyMessage" :parameter="parameter" compared />
+    <ReferenceSource
+      v-if="!emptyMessage"
+      :parameter="parameter"
+      :benchmark="benchmark"
+      compared
+      @pick="onReference"
+    />
     <template #footer>
       <button v-if="drilled" type="button" class="figure-link" @click="popTo(0)">
         <q-icon name="arrow_back" size="14px" class="q-mr-xs" />{{ t('explore_figures.pattern.back', { year }) }}
@@ -67,7 +73,8 @@ import { useChartFormat } from '@/composables/useChartFormat';
 import { useParameterChoice } from '@/composables/useContextScope';
 import { useDrillStack } from '@/composables/useDrillStack';
 import { useExploreRequest } from '@/composables/useExploreQuery';
-import type { ExploreParams, ExploreResult, ExploreStats } from '@/models';
+import { useFigureReference } from '@/composables/useFigureReference';
+import type { ExploreBenchmark, ExploreParams, ExploreResult, ExploreStats } from '@/models';
 
 use([SVGRenderer, LineChart, BarChart, GridComponent, MarkLineComponent, TitleComponent, TooltipComponent]);
 
@@ -106,7 +113,6 @@ withDefaults(defineProps<Props>(), { height: 404 });
 const { t, locale } = useI18n();
 const { formatValue, formatShare, describeReference } = useChartFormat();
 const filtersStore = useFiltersStore();
-const exploreStore = useExploreStore();
 
 /**
  * the levels' grid, then the shares' grid under it, in pixels from the top;
@@ -131,7 +137,7 @@ const { stack, current, show, popTo } = useDrillStack<Level, Loaded>({
   clear: () => (slots.value = []),
 });
 
-const benchmark = computed(() => exploreStore.benchmarkOf(parameter.value));
+const { benchmark, pick } = useFigureReference(parameter);
 const longTerm = computed(() => benchmark.value?.grain === 'space');
 const drilled = computed(() => stack.value.length > 1);
 const byMonth = computed(() => current.value?.by === 'month');
@@ -175,10 +181,12 @@ onMounted(() => void refresh());
 filtersStore.$onAction(({ name, after }) => {
   if (name === 'notifyUpdate') after(() => void refresh());
 });
-// another reference for the pollutant: the same periods, against it
-exploreStore.$onAction(({ name, args, after }) => {
-  if (name === 'pickBenchmark' && args[0] === parameter.value) after(() => void rebuild());
-});
+
+/** another reference: the same periods, against it */
+function onReference(b: ExploreBenchmark): void {
+  pick(b);
+  void rebuild();
+}
 
 /** The years with data for the pollutant: keeps the year if still offered, else the busiest. */
 async function reloadYears(): Promise<void> {

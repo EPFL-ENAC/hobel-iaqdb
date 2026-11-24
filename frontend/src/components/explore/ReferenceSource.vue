@@ -1,7 +1,12 @@
 <template>
   <div v-if="benchmark" class="reference-source">
     <span class="reference-source__label">{{ t('explore_figures.reference_source.label') }}</span>
-    <ReferenceMenu class="reference-source__pill" :parameter="parameter" />
+    <ReferenceMenu
+      class="reference-source__pill"
+      :parameter="parameter"
+      :selected="benchmark"
+      @pick="(b) => emit('pick', b)"
+    />
     <span class="reference-source__name">
       <span class="reference-source__text">{{ benchmark.source }}</span>
       <q-icon name="info_outline" size="14px" class="reference-source__info" />
@@ -30,22 +35,23 @@
  * with the value, to pick another one, then the source and a link to it. A
  * tooltip on the source gives institution, year, region, type of limit and
  * averaging period. With `compared`, it also says which means the figure
- * compares with the reference.
+ * compares with the reference. A pick goes back to the figure.
  */
 import ReferenceMenu from '@/components/explore/ReferenceMenu.vue';
+import type { ExploreBenchmark } from '@/models';
 
 const props = defineProps<{
   parameter: string | null;
+  /** the reference of the figure */
+  benchmark: ExploreBenchmark | null;
   /** the figure counts the periods above the reference, at the reference's grain */
   compared?: boolean;
 }>();
+const emit = defineEmits<{ pick: [benchmark: ExploreBenchmark] }>();
 const { t } = useI18n();
-const exploreStore = useExploreStore();
-
-const benchmark = computed(() => exploreStore.benchmarkOf(props.parameter));
 
 const details = computed(() => {
-  const b = benchmark.value;
+  const b = props.benchmark;
   if (!b) return '';
   const by = b.year === null ? b.institution : `${b.institution}, ${b.year}`;
   return [by, b.region, b.limit_type, b.period].join(' · ') + '.';
@@ -53,7 +59,7 @@ const details = computed(() => {
 
 /** how the figure compares, then how the value was derived, e.g. a unit conversion */
 const comparison = computed(() => {
-  const b = benchmark.value;
+  const b = props.benchmark;
   if (!b) return '';
   const parts = props.compared ? [t(`explore_figures.reference_source.compared.${b.grain}`)] : [];
   if (b.note) parts.push(`${b.note}.`);

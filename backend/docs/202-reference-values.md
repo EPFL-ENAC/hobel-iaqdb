@@ -39,7 +39,8 @@ half of the PM rows are annual means.
 3. Exactly one reference per pollutant has `is_default` set. The backend
    refuses a CSV that breaks this rule.
 4. Explore shows a reference menu in each figure that draws a reference.
-   The choice is per pollutant and shared by all figures on the page.
+   Each figure keeps its own choice per pollutant, so a pick changes that
+   figure only.
 5. Each figure names the reference in one line under the chart, with a
    link to the URL. A tooltip gives the institution, year, region, type of
    limit and averaging period. The menu says that local rules can differ.
@@ -127,10 +128,12 @@ first row. The `DEFAULTS` table in the script holds the explicit choices.
 
 ## Frontend
 
-- `exploreStore` keeps the chosen reference id per pollutant, in the
-  browser storage with the other Explore choices. `benchmarkOf` returns the
-  chosen reference, else the default. When the schema no longer lists a
-  chosen id, the store drops it, and the default applies again.
+- `exploreStore.benchmarksOf` lists the references of a pollutant, and
+  `defaultBenchmarkOf` gives its default. The store keeps no choice.
+- `useFigureReference` holds the reference of one figure. The figure keeps
+  one pick per pollutant, and a pollutant without a pick uses its default.
+  The picks last as long as the page. After a reload, the defaults apply
+  again.
 - `ReferenceSource.vue`: one line under a figure that names the
   reference. It holds the label, the reference pill, the source name with
   an info icon, and a link to the source. If the name is too long for the
@@ -139,7 +142,8 @@ first row. The `DEFAULTS` table in the script holds the explicit choices.
   `compared`, the tooltip also says which means the figure compares with
   the reference: hourly, daily, or one per space.
 - `ReferenceMenu.vue`: the small pill. It shows the value only, for
-  example 1,200 ppm, so it never cuts text. It has a red border and a
+  example 1,200 ppm, so it never cuts text. The figure gives it the
+  reference, and it sends a pick back to the figure. It has a red border and a
   short red line, the color of the reference line in the charts. This
   makes it different from the square menus in the card header. If a
   pollutant has one reference only, the pill does not open.

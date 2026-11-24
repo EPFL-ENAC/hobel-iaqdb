@@ -87,7 +87,7 @@ export function useParameterChoice({
 
   const parameterOptions = computed(() =>
     withBenchmark
-      ? withRecords.value.filter((opt) => !!exploreStore.benchmarkOf(opt.value))
+      ? withRecords.value.filter((opt) => !!exploreStore.defaultBenchmarkOf(opt.value))
       : withRecords.value,
   );
 

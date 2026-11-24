@@ -23,7 +23,7 @@
         @select="onSelect"
       />
     </FigureFrame>
-    <ReferenceSource v-if="!emptyMessage" :parameter="parameter" />
+    <ReferenceSource v-if="!emptyMessage" :parameter="parameter" :benchmark="benchmark" @pick="pick" />
     <template #footer>
       <button v-if="hasMore" type="button" class="figure-link" @click="showAll = true">
         {{ t('ranked_bars.show_all', { count: rows.length }) }}
@@ -63,6 +63,7 @@ import { useChartFormat } from '@/composables/useChartFormat';
 import { useParameterChoice } from '@/composables/useContextScope';
 import { useDrillStack } from '@/composables/useDrillStack';
 import { useExploreRequest } from '@/composables/useExploreQuery';
+import { useFigureReference } from '@/composables/useFigureReference';
 import type { ExploreParams, ExploreResult } from '@/models';
 
 interface Props {
@@ -152,7 +153,8 @@ const eyebrowText = computed(() =>
   }),
 );
 
-const benchmark = computed(() => exploreStore.benchmarkOf(parameter.value));
+// only the line follows the reference, so a pick redraws without a request
+const { benchmark, pick } = useFigureReference(parameter);
 const reference = computed(() => benchmark.value?.value ?? null);
 
 /** the levels of the path, then the datasets: named in the header, the one shown marked */

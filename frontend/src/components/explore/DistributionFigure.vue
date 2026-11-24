@@ -29,7 +29,13 @@
         :format-share="formatShare"
       />
     </FigureFrame>
-    <ReferenceSource v-if="!emptyMessage" :parameter="parameter" compared />
+    <ReferenceSource
+      v-if="!emptyMessage"
+      :parameter="parameter"
+      :benchmark="benchmark"
+      compared
+      @pick="onReference"
+    />
     <template #footer>
       <button v-if="hasMore" type="button" class="figure-link" @click="showAll = true">
         {{ t('ranked_bars.show_all', { count: rows.length }) }}
@@ -72,7 +78,8 @@ import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';
 import { useContextChoice, useParameterChoice } from '@/composables/useContextScope';
 import { useExploreRequest } from '@/composables/useExploreQuery';
-import type { ExploreParams } from '@/models';
+import { useFigureReference } from '@/composables/useFigureReference';
+import type { ExploreBenchmark, ExploreParams } from '@/models';
 
 interface Props {
   eyebrow: string;
@@ -85,7 +92,6 @@ const props = withDefaults(defineProps<Props>(), { limit: 6 });
 const { t } = useI18n();
 const { formatValue, formatShare, describeReference } = useChartFormat();
 const filtersStore = useFiltersStore();
-const exploreStore = useExploreStore();
 
 const parameters = useParameterChoice({ withBenchmark: true });
 const { parameter, parameterOptions, noDataMessage } = parameters;
@@ -102,7 +108,7 @@ const databaseRequest = useExploreRequest('measurements');
 /** the datasets per group, for the labels */
 const datasetsRequest = useExploreRequest('metadata');
 
-const benchmark = computed(() => exploreStore.benchmarkOf(parameter.value));
+const { benchmark, pick } = useFigureReference(parameter);
 
 const loading = computed(
   () =>
@@ -141,10 +147,12 @@ onMounted(() => void refresh());
 filtersStore.$onAction(({ name, after }) => {
   if (name === 'notifyUpdate') after(() => void refresh());
 });
-// another reference for the pollutant: other levels and shares when its averaging differs
-exploreStore.$onAction(({ name, args, after }) => {
-  if (name === 'pickBenchmark' && args[0] === parameter.value) after(() => void reload());
-});
+
+/** another reference: other levels and shares when its averaging differs */
+function onReference(b: ExploreBenchmark): void {
+  pick(b);
+  void reload();
+}
 
 /** The four requests of the context and pollutant; none when either is missing. */
 async function reload(): Promise<void> {

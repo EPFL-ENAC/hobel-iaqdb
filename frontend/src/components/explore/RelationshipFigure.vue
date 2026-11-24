@@ -40,7 +40,7 @@
     <FigureFrame :height="height" :loading="loading" :error="error" :empty="emptyMessage">
       <e-charts autoresize :init-options="initOptions" :option="option" :update-options="updateOptions" />
     </FigureFrame>
-    <ReferenceSource v-if="!emptyMessage" :parameter="parameter" />
+    <ReferenceSource v-if="!emptyMessage" :parameter="parameter" :benchmark="benchmark" @pick="pick" />
     <template #footer>
       <span class="relationship-figure__summary">{{ summary }}</span>
     </template>
@@ -68,6 +68,7 @@ import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';
 import { useParameterChoice } from '@/composables/useContextScope';
 import { useExploreRequest } from '@/composables/useExploreQuery';
+import { useFigureReference } from '@/composables/useFigureReference';
 
 use([SVGRenderer, ScatterChart, LineChart, GridComponent, MarkLineComponent, TooltipComponent]);
 
@@ -159,7 +160,8 @@ const emptyMessage = computed(() => {
   return t('plots.no_pairs', { parameter: parameterLabel.value, metrics });
 });
 
-const benchmark = computed(() => exploreStore.benchmarkOf(parameter.value));
+// only the line follows the reference, so a pick redraws without a request
+const { benchmark, pick } = useFigureReference(parameter);
 
 /** spaces, correlation and fit quality, under the figure */
 const summary = computed(() => {

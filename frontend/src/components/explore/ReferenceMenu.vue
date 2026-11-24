@@ -65,7 +65,7 @@
                 clickable
                 :active="b.id === selected?.id"
                 active-class="reference-menu__item--active"
-                @click="pick(b)"
+                @click="emit('pick', b)"
               >
                 <q-item-section>
                   <q-item-label lines="2">{{ describeReference(b) }} · {{ b.source }}</q-item-label>
@@ -93,17 +93,22 @@
 
 <script setup lang="ts">
 /**
- * The reference a pollutant is compared with, as a small red pill in the
- * line under a chart. The red mark stands for the red reference line of
- * the chart. With one reference, the pill shows it and does not open. With
- * more, it opens a menu: first a region, then a reference of that region. A search lists the matches of
- * every region, or of the open one. The choice is per pollutant and shared
- * by every figure of the page.
+ * The reference a pollutant is compared with, as a small red pill. The red
+ * mark stands for the red reference line of the charts. With one reference,
+ * the pill shows it and does not open. With more, it opens a menu: first a
+ * region, then a reference of that region. A search lists the matches of
+ * every region, or of the open one. The figure holds the choice, so a pick
+ * changes that figure only.
  */
 import { useChartFormat } from '@/composables/useChartFormat';
 import type { ExploreBenchmark } from '@/models';
 
-const props = defineProps<{ parameter: string | null }>();
+const props = defineProps<{
+  parameter: string | null;
+  /** the reference of the figure, shown in the pill and marked in the menu */
+  selected: ExploreBenchmark | null;
+}>();
+const emit = defineEmits<{ pick: [benchmark: ExploreBenchmark] }>();
 const { t } = useI18n();
 const { describeReference } = useChartFormat();
 const exploreStore = useExploreStore();
@@ -120,9 +125,8 @@ function reset(): void {
 
 /** in the schema's order: the default first, then worldwide, then by region */
 const benchmarks = computed(() => exploreStore.benchmarksOf(props.parameter));
-const selected = computed(() => exploreStore.benchmarkOf(props.parameter));
 /** the value only: the line around the pill names the source */
-const selectedLabel = computed(() => (selected.value ? describeReference(selected.value) : ''));
+const selectedLabel = computed(() => (props.selected ? describeReference(props.selected) : ''));
 
 function caption(b: ExploreBenchmark): string {
   const by = b.year === null ? b.institution : `${b.institution}, ${b.year}`;
@@ -158,10 +162,6 @@ const groups = computed(() =>
     }),
   ),
 );
-
-function pick(b: ExploreBenchmark): void {
-  if (props.parameter) exploreStore.pickBenchmark(props.parameter, b.id);
-}
 </script>
 
 <style scoped lang="scss">
