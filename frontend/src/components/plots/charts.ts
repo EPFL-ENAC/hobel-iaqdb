@@ -180,6 +180,12 @@ export const STATS_CONTEXTS = [
   'space_type',
 ];
 
+/**
+ * The dimensions a relationship chart can split by, in menu order (#229).
+ * Filtration joins them with #235.
+ */
+export const SPLIT_DIMENSIONS = ['building_type', 'ventilation', 'ventilation_type'];
+
 /** Label lists for the dimensions whose keys are codes. */
 const KEY_OPTIONS: Record<string, OptionItem[]> = {
   country: countryOptions,

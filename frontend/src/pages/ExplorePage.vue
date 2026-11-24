@@ -108,14 +108,12 @@
           :path="['building_type']"
         />
       </FigureGrid>
-      <FigureGrid>
-        <RelationshipFigure v-if="exploreStore.schema" :title="t('explore_figures.relationship.title')" />
-        <CorrelationFigure
-          v-if="exploreStore.schema"
-          :eyebrow="t('explore_figures.correlation.eyebrow')"
-          :title="t('explore_figures.correlation.title')"
-        />
-      </FigureGrid>
+      <RelationshipFigure v-if="exploreStore.schema" :title="t('explore_figures.relationship.title')" />
+      <CorrelationFigure
+        v-if="exploreStore.schema"
+        :eyebrow="t('explore_figures.correlation.eyebrow')"
+        :title="t('explore_figures.correlation.title')"
+      />
       <PairFigure
         v-if="exploreStore.schema"
         :eyebrow="t('explore_figures.pair.eyebrow')"

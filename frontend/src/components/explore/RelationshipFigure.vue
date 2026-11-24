@@ -32,16 +32,44 @@
             outlined
             options-dense
             class="relationship-figure__select"
-            @update:model-value="(value) => (metric = value)"
+            @update:model-value="onMetric"
           />
         </span>
+        <FigureMenu
+          :label="t('explore_figures.split.label')"
+          :model-value="split"
+          :options="splitOptions"
+          @update:model-value="onSplit"
+        />
       </template>
     </template>
-    <FigureFrame :height="height" :loading="loading" :error="error" :empty="emptyMessage">
+    <!-- at least one small chart tall: a row of them is always taller, so no blank band under it -->
+    <FigureFrame v-if="splitBuckets" :height="PANEL_HEIGHT" fit="content" :loading="loading" :error="error">
+      <SplitPanels
+        :dimension="splitBuckets.dimension"
+        :buckets="splitBuckets.buckets"
+        method="pearson"
+        :title="pairTitle"
+        :option-of="panelOption"
+        :facts-of="(b) => [t('plots.spaces_count', b.n)]"
+        :height="PANEL_HEIGHT"
+      />
+    </FigureFrame>
+    <FigureFrame v-else :height="height" :loading="loading" :error="error" :empty="emptyMessage">
       <e-charts autoresize :init-options="initOptions" :option="option" :update-options="updateOptions" />
     </FigureFrame>
     <template #footer>
-      <span class="relationship-figure__summary">{{ summary }}</span>
+      <!-- split: the reference line of the small charts, which have no room for its label -->
+      <span v-if="splitBuckets" class="relationship-figure__summary">{{ referenceLabel }}</span>
+      <span v-else class="relationship-figure__summary">
+        <template v-if="summary && studies">
+          <StudiesDialog :title="pairTitle" method="pearson" :r="bucket?.fit?.r" :within="bucket?.within">{{
+            studies
+          }}</StudiesDialog>
+          ·
+        </template>
+        {{ summary }}
+      </span>
     </template>
   </ChartCard>
 </template>
@@ -52,28 +80,25 @@
  * over the period), with the least-squares line and the pollutant's
  * reference. Every metric is probed at once: switching only redraws. The
  * pollutant menu lists those with enough pairs for at least one metric.
+ * "Split by" draws one small chart per group (#229), from one more request.
  */
 import ECharts from 'vue-echarts';
-import type { EChartsOption } from 'echarts';
 import { use } from 'echarts/core';
 import { LineChart, ScatterChart } from 'echarts/charts';
 import { SVGRenderer } from 'echarts/renderers';
 import { GridComponent, MarkLineComponent, TooltipComponent } from 'echarts/components';
 import ChartCard from '@/components/explore/ChartCard.vue';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
-import {
-  FIGURE_ACCENT,
-  FIGURE_GAP,
-  GRID,
-  MUTED,
-  benchmarkOf,
-  initOptions,
-  updateOptions,
-} from '@/components/plots/charts';
+import FigureMenu from '@/components/explore/FigureMenu.vue';
+import SplitPanels from '@/components/explore/SplitPanels.vue';
+import StudiesDialog from '@/components/explore/StudiesDialog.vue';
+import { benchmarkOf, initOptions, updateOptions } from '@/components/plots/charts';
+import { type ScatterSpec, scatterOption, splitRanges } from '@/components/plots/scatter';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';
-import { useParameterChoice } from '@/composables/useContextScope';
+import { useParameterChoice, useSplitChoice } from '@/composables/useContextScope';
 import { useExploreRequest } from '@/composables/useExploreQuery';
+import type { ExploreBucket } from '@/models';
 
 use([SVGRenderer, ScatterChart, LineChart, GridComponent, MarkLineComponent, TooltipComponent]);
 
@@ -86,9 +111,11 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), { height: 380, defaultMetric: 'space.occupancy_density' });
+/** height of each small chart of a split */
+const PANEL_HEIGHT = 160;
 const i18n = useI18n();
 const { t, locale } = i18n;
-const { formatValue, formatYear, describeReference } = useChartFormat();
+const { formatValue, formatYear, describeReference, describeWithin } = useChartFormat();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
 
@@ -113,16 +140,31 @@ const paired = computed(() => {
 const parameters = useParameterChoice({ among: paired });
 const { parameter, parameterOptions, parameterLabel } = parameters;
 const metric = ref<string | null>(null);
+const { split, splitOptions } = useSplitChoice();
+/** the metric against the pollutant per group of the split */
+const splitRequest = useExploreRequest('relationships');
 
 /** one pairs request per catalog metric: the menu lists those with pairs */
 const probes = new Map(metricKeys.map((key) => [key, useExploreRequest('relationships')] as const));
 const current = computed(() => (metric.value ? probes.get(metric.value) : undefined));
 const result = computed(() => current.value?.result.value ?? null);
 const probing = computed(() => [...probes.values()].some((probe) => probe.loading.value));
-const loading = computed(() => probing.value || [...partners.values()].some((request) => request.loading.value));
-const error = computed(
-  () => current.value?.error.value ?? [...probes.values()].find((probe) => probe.error.value)?.error.value ?? null,
+const loading = computed(
+  () => probing.value || splitRequest.loading.value || [...partners.values()].some((request) => request.loading.value),
 );
+const error = computed(
+  () =>
+    current.value?.error.value ??
+    [...probes.values()].find((probe) => probe.error.value)?.error.value ??
+    splitRequest.error.value,
+);
+
+/** the groups of the split on show, which the menu runs ahead of while they load */
+const splitBuckets = computed(() => {
+  const value = splitRequest.result.value;
+  const dimension = value?.meta.dimensions[0];
+  return dimension ? { dimension, buckets: value.buckets } : null;
+});
 
 function metricName(key: string): string {
   const path = `plots.metrics.${key.replace('.', '_')}`;
@@ -167,14 +209,25 @@ const emptyMessage = computed(() => {
 
 const benchmark = computed(() => benchmarkOf(exploreStore.schema, parameter.value));
 
-/** spaces, correlation and fit quality, under the figure */
+const bucket = computed(() => result.value?.buckets[0]);
+
+/** the studies behind the dots, a link to their list, before the summary */
+const studies = computed(() => {
+  const n = bucket.value?.n_studies;
+  return n === undefined ? '' : t('plots.studies_count', n);
+});
+const pairTitle = computed(() => `${metric.value ? metricName(metric.value) : ''} × ${pollutantName.value}`);
+
+/** spaces, correlation and fit quality, then r within each study, under the figure */
 const summary = computed(() => {
-  const bucket = result.value?.buckets[0];
-  if (!bucket?.fit || !bucket.n) return '';
-  const spaces = t('plots.spaces_count', bucket.n);
-  if (bucket.enough === false) return `${spaces} · ${t('plots.too_little_data')}`;
-  const parts = [spaces, `r = ${formatFit(bucket.fit.r)}`, `R² = ${formatFit(bucket.fit.r2)}`];
-  if (bucket.sampled) parts.push(t('plots.sampled'));
+  const b = bucket.value;
+  if (!b?.fit || !b.n) return '';
+  const spaces = t('plots.spaces_count', b.n);
+  if (b.enough === false) return `${spaces} · ${t('plots.too_little_data')}`;
+  const parts = [spaces, `r = ${formatFit(b.fit.r)}`, `R² = ${formatFit(b.fit.r2)}`];
+  if (b.sampled) parts.push(t('plots.sampled'));
+  const within = describeWithin(b.within);
+  if (within) parts.push(within);
   return parts.join(' · ');
 });
 
@@ -187,8 +240,30 @@ async function probeAll(): Promise<void> {
     ),
   );
   const keys = metricOptions.value.map((opt) => opt.value);
-  if (metric.value && keys.includes(metric.value)) return;
-  metric.value = keys.includes(props.defaultMetric) ? props.defaultMetric : (keys[0] ?? null);
+  if (!metric.value || !keys.includes(metric.value)) {
+    metric.value = keys.includes(props.defaultMetric) ? props.defaultMetric : (keys[0] ?? null);
+  }
+  await loadSplit();
+}
+
+/** The groups of the metric against the pollutant; none without a split. */
+async function loadSplit(): Promise<void> {
+  const slug = parameter.value;
+  const x = metric.value;
+  const by = split.value;
+  await splitRequest.load(
+    by && x && slug ? { agg: 'pairs', x, y: slug, by: [by], filter: exploreFilter(), ...exploreRange() } : null,
+  );
+}
+
+function onMetric(value: string): void {
+  metric.value = value;
+  void loadSplit();
+}
+
+function onSplit(value: string | null): void {
+  split.value = value;
+  void loadSplit();
 }
 
 /** Which pollutants have pairs, then settle the pollutant, then probe: on mount and when the filters are applied. */
@@ -209,99 +284,47 @@ filtersStore.$onAction(({ name, after }) => {
   if (name === 'notifyUpdate') after(() => void refresh());
 });
 
-const option = computed<EChartsOption>(() => {
-  const bucket = result.value?.buckets[0];
-  const points = bucket?.points || [];
-  if (!bucket || !points.length) return {};
-  const xs = points.map(([x]) => x);
-  const ys = points.map(([, y]) => y);
-  const lo = Math.min(...xs);
-  const hi = Math.max(...xs);
-  const fit = bucket.fit;
-  const line =
-    fit?.slope != null && fit.intercept != null
-      ? [
-          [lo, fit.slope * lo + fit.intercept],
-          [hi, fit.slope * hi + fit.intercept],
-        ]
-      : [];
-  const b = benchmark.value;
+const STYLE = { dot: 7, opacity: 0.8, yTicks: 4 };
+const PANEL_STYLE = { dot: 5, opacity: 0.7, yTicks: 3 };
+
+const referenceLabel = computed(() =>
+  benchmark.value ? t('explore_figures.pattern.reference', { value: describeReference(benchmark.value) }) : '',
+);
+
+/** the scatter of the metric, alone or as a small chart of the split */
+function specOf(b: ExploreBucket): ScatterSpec {
   const unit = result.value?.meta.unit ? ` ${result.value.meta.unit}` : '';
   const xName = metricName(metric.value ?? '');
-  const axisLabel = { color: MUTED, fontSize: 11 };
+  const reference = benchmark.value?.value;
   return {
-    tooltip: {
-      trigger: 'item',
-      formatter: (p) => {
-        const item = Array.isArray(p) ? p[0] : p;
-        if (!item || item.seriesType !== 'scatter') return '';
-        const [x, y] = item.value as [number, number];
-        return `${xName}: <b>${formatX(x)}</b><br/>${parameterLabel.value}: <b>${formatValue(y)}${unit}</b>`;
-      },
-    },
-    grid: { left: 0, right: 8, top: 16, bottom: 0, containLabel: true },
-    xAxis: {
-      type: 'value',
-      scale: true,
-      axisLine: { lineStyle: { color: GRID } },
-      axisTick: { show: false },
-      axisLabel: { ...axisLabel, formatter: (v: number) => formatX(v) },
-      splitLine: { show: false },
-    },
-    yAxis: {
-      type: 'value',
-      scale: true,
-      // concentrations stay on the positive side; the reference stays in view
-      ...(Math.min(...ys) >= 0 ? { min: 0 } : {}),
-      ...(b ? { max: (extent: { max: number }) => Math.max(extent.max, b.value * 1.1) } : {}),
-      splitNumber: 4,
-      axisLine: { show: false },
-      axisTick: { show: false },
-      axisLabel: { ...axisLabel, formatter: (v: number) => formatValue(v) },
-      splitLine: { lineStyle: { color: GRID, width: 1 } },
-    },
-    series: [
-      {
-        type: 'scatter',
-        data: points,
-        symbolSize: 7,
-        itemStyle: { color: FIGURE_ACCENT, opacity: 0.8 },
-        cursor: 'default',
-        clip: false,
-        ...(b
-          ? {
-              markLine: {
-                silent: true,
-                symbol: 'none',
-                lineStyle: { color: FIGURE_GAP, type: 'solid' as const, width: 1.5 },
-                label: {
-                  position: 'insideEndTop' as const,
-                  distance: 6,
-                  padding: [2, 0, 4, 0],
-                  lineHeight: 16,
-                  color: FIGURE_GAP,
-                  fontSize: 11,
-                  formatter: t('explore_figures.pattern.reference', { value: describeReference(b) }),
-                },
-                data: [{ yAxis: b.value }],
-              },
-            }
-          : {}),
-      },
-      ...(line.length
-        ? [
-            {
-              type: 'line' as const,
-              data: line,
-              symbol: 'none',
-              silent: true,
-              lineStyle: { color: '#212121', width: 1.5 },
-            },
-          ]
-        : []),
-    ],
+    points: b.points ?? [],
+    fit: b.fit,
+    style: STYLE,
+    xZero: false,
+    formatX,
+    formatY: formatValue,
+    tooltip: (x, y) => `${xName}: <b>${formatX(x)}</b><br/>${parameterLabel.value}: <b>${formatValue(y)}${unit}</b>`,
+    reference: reference === undefined ? undefined : { value: reference, label: referenceLabel.value },
   };
-});
+}
+
+const option = computed(() => (bucket.value ? scatterOption(specOf(bucket.value)) : {}));
+
+/** every group on the same axes, the reference in view */
+const ranges = computed(() =>
+  splitRanges(splitBuckets.value?.buckets ?? [], {
+    xZero: false,
+    yTicks: PANEL_STYLE.yTicks,
+    reference: benchmark.value?.value,
+  }),
+);
+
+/** a small chart: the reference line without its label, which the footer gives */
+function panelOption(b: ExploreBucket) {
+  const spec = specOf(b);
+  const reference = spec.reference && { value: spec.reference.value };
+  return scatterOption({ ...spec, style: PANEL_STYLE, reference, ranges: ranges.value });
+}
 </script>
 
 <style scoped lang="scss">

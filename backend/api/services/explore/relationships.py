@@ -2,10 +2,20 @@
 measurements (same dataset, space and time bucket)."""
 
 import math
+import statistics
+from collections import defaultdict
 from itertools import combinations
 
-from api.models.catalog import Building, Space
-from api.models.explore import Bucket, ExploreQuery, ExploreResult, Fit, Meta
+from api.models.catalog import Building, Space, Study
+from api.models.explore import (
+    Bucket,
+    ExploreQuery,
+    ExploreResult,
+    Fit,
+    Meta,
+    StudyFit,
+    Within,
+)
 from api.services.explore.dimensions import resolve
 from api.services.explore.envelope import (
     check_parameters,
@@ -18,7 +28,7 @@ from api.services.explore.facts import Fact, check_raw_cap
 from api.services.explore.filters import parse_filter
 from api.services.explore.schema import METRICS
 from fastapi import HTTPException
-from sqlalchemy import and_, func, literal, text, union_all
+from sqlalchemy import and_, case, func, literal, text, tuple_, union_all
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -52,6 +62,129 @@ def fit_bucket(row, width: int, n_spaces: int, reached: bool) -> Bucket:
         fit=Fit(slope=slope, intercept=intercept, r2=r2, r=r),
         points=[],
     )
+
+
+def by_study(group, study):
+    """GROUP BY the keys, then the keys and the study: one scan gives the
+    pooled row of each key and one row per study under it, told apart by
+    `grouping(study)` (1 on the pooled row, where the study is not grouped)."""
+    return func.grouping_sets(tuple_(*group), tuple_(*group, study))
+
+
+def within(cells: list[tuple], reached, identifiers: dict[int, str]) -> Within:
+    """`within` from the (study_id, n, n_spaces, r) row of each study with
+    pairs. A study has an r if it reaches the minimum sample size alone,
+    `reached(n, n_spaces)`, and if neither variable is constant in it."""
+    studies = []
+    for study, n, n_spaces, r in cells:
+        alone = reached(int(n), int(n_spaces))
+        studies.append(
+            StudyFit(
+                study=identifiers[study],
+                n=int(n),
+                n_spaces=int(n_spaces),
+                enough=alone,
+                r=number(r) if alone else None,
+            )
+        )
+    studies.sort(key=lambda s: (0, s.r) if s.r is not None else (1, -s.n))
+    rs = [s.r for s in studies if s.r is not None]
+    return Within(median=statistics.median(rs) if rs else None, studies=studies)
+
+
+async def add_studies(session: AsyncSession, buckets: dict, studies: dict, reached):
+    """Set `n_studies` and `within` on each bucket from the (study_id, n,
+    n_spaces, r) rows of its studies, both by the same key. A study with
+    pairs counts: counting its rows costs no count(distinct), which sorts
+    every row again. One lookup names the studies."""
+    studies = {key: [c for c in cells if c[1]] for key, cells in studies.items()}
+    ids = {cell[0] for cells in studies.values() for cell in cells}
+    named = select(Study.id, Study.identifier).where(col(Study.id).in_(ids))
+    identifiers = dict((await session.exec(named)).all()) if ids else {}
+    for key, bucket in buckets.items():
+        cells = studies.get(key, [])
+        bucket.n_studies = len(cells)
+        bucket.within = within(cells, reached, identifiers)
+
+
+def fit_buckets(rows, width: int, reached) -> tuple[dict, dict]:
+    """Pairs buckets from `by_study` rows (*keys, n, slope, intercept, r2, r,
+    n_spaces, study_id, grouping): the pooled rows are the buckets, by key;
+    the study rows are their (study_id, n, n_spaces, r), by the same key,
+    for `add_studies`. `reached` is the minimum sample size."""
+    buckets: dict[tuple, Bucket] = {}
+    studies: dict[tuple, list[tuple]] = defaultdict(list)
+    for row in rows:
+        n, r, n_spaces = int(row[width]), row[width + 4], int(row[width + 5])
+        # no group by: the pooled row of an empty scan counts 0
+        if not n:
+            continue
+        key = tuple(key_text(v) for v in row[:width])
+        if row[width + 7]:
+            buckets[key] = fit_bucket(row, width, n_spaces, reached(n, n_spaces))
+        else:
+            studies[key].append((row[width + 6], n, n_spaces, r))
+    return buckets, studies
+
+
+def average_rank(value, *partition):
+    """Spearman's rank of `value` inside `partition` (all rows without one).
+    Ties get their average rank, as Spearman's rho requires: rank() is the
+    lowest rank of a tie and cume_dist() times the row count its highest,
+    both on the same sort."""
+    over = {"partition_by": partition or None, "order_by": value}
+    lowest = func.rank().over(**over)
+    highest = func.cume_dist().over(**over) * func.count().over(
+        partition_by=partition or None
+    )
+    return (lowest + highest) / 2.0
+
+
+def paired_rows(keys: list, x, y, space, study, method: str):
+    """The rows a fit reads: the keys as k0, k1…, x, y, the space and the
+    study. Spearman also ranks x and y inside the bucket (rx, ry), and inside
+    the bucket and the study (study_rx, study_ry)."""
+    columns = [
+        *(key.label(f"k{i}") for i, key in enumerate(keys)),
+        x.label("x"),
+        y.label("y"),
+        space.label("space_id"),
+        study.label("study_id"),
+    ]
+    if method == "spearman":
+        columns += [
+            average_rank(x, *keys).label("rx"),
+            average_rank(y, *keys).label("ry"),
+            average_rank(x, *keys, study).label("study_rx"),
+            average_rank(y, *keys, study).label("study_ry"),
+        ]
+    return select(*columns)
+
+
+def fit_statement(rows, width: int, method: str):
+    """`by_study` rows (*keys, n, slope, intercept, r2, r, n_spaces, study_id,
+    grouping) from a `paired_rows` subquery. The least-squares fit is over
+    the values whatever the method: the trend line stays the same."""
+    keys = [rows.c[f"k{i}"] for i in range(width)]
+    x, y, study = rows.c.x, rows.c.y, rows.c.study_id
+    pooled = func.grouping(study)
+    r = func.corr(y, x)
+    if method == "spearman":
+        r = case(
+            (pooled == 1, func.corr(rows.c.ry, rows.c.rx)),
+            else_=func.corr(rows.c.study_ry, rows.c.study_rx),
+        )
+    return select(
+        *keys,
+        func.count(),
+        func.regr_slope(y, x),
+        func.regr_intercept(y, x),
+        func.regr_r2(y, x),
+        r,
+        func.count(rows.c.space_id.distinct()),
+        study,
+        pooled,
+    ).group_by(by_study(keys, study))
 
 
 class RelationshipService:
@@ -143,43 +276,56 @@ class RelationshipService:
     async def _pairs(self, grain, query, filter, specs) -> list[Bucket]:
         a, b, frame = self._paired(grain, query, filter)
         keys = [spec.column(frame) for spec in specs]
-        x, y = a.value, b.value
-        fit = select(
-            *keys,
-            func.count(),
-            func.regr_slope(y, x),
-            func.regr_intercept(y, x),
-            func.regr_r2(y, x),
-            func.corr(y, x),
-            func.count(a.c.space_id.distinct()),
+        rows = paired_rows(
+            keys, a.value, b.value, a.c.space_id, a.c.study_id, query.method
         )
-        fit = self._pair_where(fit, a, b, query, filter)
-        fit = fit.select_from(frame.select_from).group_by(*keys)
-        rows = [r for r in (await self.session.exec(fit)).all() if r[len(keys)]]
+        rows = self._pair_where(rows, a, b, query, filter)
+        rows = rows.select_from(frame.select_from).subquery("paired")
         width = len(keys)
-        buckets = {}
-        for row in rows:
-            n_spaces = int(row[width + 5])
-            bucket = fit_bucket(row, width, n_spaces, enough(row[width], n_spaces))
-            buckets[tuple(bucket.key)] = bucket
-        total = sum(bucket.n for bucket in buckets.values())
-        step = max(1, math.ceil(total / SAMPLE))
+        fit = fit_statement(rows, width, query.method)
+        buckets, studies = fit_buckets(
+            await self._rows(fit, query.method), width, enough
+        )
+        await add_studies(self.session, buckets, studies, enough)
+        await self._sample(buckets, keys, a, b, frame, query, filter)
+        return list(buckets.values())
+
+    async def _sample(self, buckets: dict, keys, a, b, frame, query, filter):
+        """The dots: per bucket, every `ceil(n / quota)`-th row in a stable
+        order. The buckets share SAMPLE, so a small group keeps its dots."""
+        quota = math.ceil(SAMPLE / max(1, len(buckets)))
+        partition = keys or None
         order = [a.c.dataset_id, a.c.space_id, a.time]
         numbered = select(
-            *keys,
-            x.label("x"),
-            y.label("y"),
-            func.row_number().over(order_by=order).label("rn"),
+            *(key.label(f"k{i}") for i, key in enumerate(keys)),
+            a.value.label("x"),
+            b.value.label("y"),
+            func.row_number().over(partition_by=partition, order_by=order).label("rn"),
+            func.count().over(partition_by=partition).label("n"),
         )
         numbered = self._pair_where(numbered, a, b, query, filter)
         sub = numbered.select_from(frame.select_from).subquery()
+        step = (sub.c.n + quota - 1) // quota
         points = select(*sub.c).where((sub.c.rn - 1) % step == 0)
+        width = len(keys)
         for row in (await self.session.exec(points)).all():
             key = tuple(key_text(v) for v in row[:width])
             buckets[key].points.append((float(row[width]), float(row[width + 1])))
         for bucket in buckets.values():
-            bucket.sampled = step > 1
-        return list(buckets.values())
+            bucket.sampled = bucket.n > quota
+
+    async def _rows(self, statement, method: str) -> list:
+        """The rows of a fit. Spearman ranks sort every row and spill to disk
+        at the default work_mem: they get SORT_MEMORY, for this statement only."""
+        if method != "spearman":
+            return (await self.session.exec(statement)).all()
+        await self.session.exec(text(f"SET LOCAL work_mem = '{SORT_MEMORY}'"))
+        rows = (await self.session.exec(statement)).all()
+        # back to the default for the rest of the request: a savepoint would
+        # not do, as releasing it keeps a SET LOCAL (on an error the rollback
+        # drops it)
+        await self.session.exec(text("RESET work_mem"))
+        return rows
 
     def _pair_where(self, statement, a: Fact, b: Fact, query, filter):
         statement = a.where(statement, query, filter, [query.x])
@@ -189,23 +335,7 @@ class RelationshipService:
         """The catalog column named by x against y aggregated per (dataset,
         space): one point per space, y fitted on x over all spaces."""
         entity, attr = query.x.split(".")
-        fact = Fact(grain)
-        inner = select(
-            fact.c.dataset_id.label("dataset_id"),
-            fact.c.space_id.label("space_id"),
-            fact.c.building_id.label("building_id"),
-            (
-                func.sum(fact.value * fact.n) / func.sum(fact.n)
-                if fact.n is not None
-                else func.avg(fact.value)
-            ).label("y"),
-        )
-        inner = fact.where(inner, query, filter, [query.y])
-        inner = inner.where(fact.c.space_id.isnot(None))
-        sub = inner.group_by(
-            fact.c.dataset_id, fact.c.space_id, fact.c.building_id
-        ).subquery()
-        metric = getattr(METRIC_MODELS[entity], attr)
+        sub = self._per_space(grain, query, filter)
         joined = sub.join(Space, col(Space.id) == sub.c.space_id).outerjoin(
             Building, col(Building.id) == sub.c.building_id
         )
@@ -217,40 +347,50 @@ class RelationshipService:
                     status_code=422, detail=f"'{spec.key}' cannot group metric pairs"
                 )
             keys.append(getattr(METRIC_MODELS[spec.entity], attr_of(spec)))
-        x, y = col(metric), sub.c.y
-        base = (
-            select(
-                *keys,
-                func.count(),
-                func.regr_slope(y, x),
-                func.regr_intercept(y, x),
-                func.regr_r2(y, x),
-                func.corr(y, x),
-                func.count(sub.c.space_id.distinct()),
-            )
-            .select_from(joined)
-            .where(x.isnot(None))
-        )
-        rows = [
-            r
-            for r in (await self.session.exec(base.group_by(*keys))).all()
-            if r[len(keys)]
-        ]
+        x, y = col(getattr(METRIC_MODELS[entity], attr)), sub.c.y
+        rows = paired_rows(keys, x, y, sub.c.space_id, sub.c.study_id, query.method)
+        rows = rows.select_from(joined).where(x.isnot(None)).subquery("paired")
         width = len(keys)
-        buckets = {}
-        for row in rows:
+        fit = fit_statement(rows, width, query.method)
+
+        def reached(n: int, n_spaces: int) -> bool:
             # one point per space: the spaces are the sample
-            n_spaces = int(row[width + 5])
-            bucket = fit_bucket(row, width, n_spaces, n_spaces >= MIN_SPACES)
-            bucket.sampled = False
-            buckets[tuple(bucket.key)] = bucket
+            return n_spaces >= MIN_SPACES
+
+        buckets, studies = fit_buckets(
+            await self._rows(fit, query.method), width, reached
+        )
+        await add_studies(self.session, buckets, studies, reached)
         points = select(*keys, x, y).select_from(joined).where(x.isnot(None))
-        for row in (
-            await self.session.exec(points.order_by(sub.c.dataset_id, sub.c.space_id))
-        ).all():
+        points = points.order_by(sub.c.dataset_id, sub.c.space_id)
+        for row in (await self.session.exec(points)).all():
             key = tuple(key_text(v) for v in row[:width])
             buckets[key].points.append((float(row[width]), float(row[width + 1])))
+        for bucket in buckets.values():
+            bucket.sampled = False
         return list(buckets.values())
+
+    def _per_space(self, grain, query, filter):
+        """y per (dataset, space): the mean of its readings, weighted by the
+        readings behind each aggregate row."""
+        fact = Fact(grain)
+        inner = select(
+            fact.c.dataset_id.label("dataset_id"),
+            fact.c.space_id.label("space_id"),
+            fact.c.building_id.label("building_id"),
+            # a dataset is in one study: grouping by it splits no point
+            fact.c.study_id.label("study_id"),
+            (
+                func.sum(fact.value * fact.n) / func.sum(fact.n)
+                if fact.n is not None
+                else func.avg(fact.value)
+            ).label("y"),
+        )
+        inner = fact.where(inner, query, filter, [query.y])
+        inner = inner.where(fact.c.space_id.isnot(None))
+        return inner.group_by(
+            fact.c.dataset_id, fact.c.space_id, fact.c.building_id, fact.c.study_id
+        ).subquery()
 
     async def _matrix(self, grain, query, filter, slugs) -> list[Bucket]:
         """One scan: pivot the filtered rows to one column per parameter
@@ -262,21 +402,30 @@ class RelationshipService:
             func.max(fact.value).filter(fact.c.parameter == slug).label(f"p{i}")
             for i, slug in enumerate(slugs)
         ]
-        pivot = select(fact.c.dataset_id, fact.c.space_id, fact.time, *columns)
-        pivot = fact.where(pivot, query, filter, slugs)
-        pivot = pivot.group_by(fact.c.dataset_id, fact.c.space_id, fact.time).cte(
-            "pivot"
+        # a dataset is in one study: grouping by it splits no row
+        pivot = select(
+            fact.c.dataset_id, fact.c.space_id, fact.c.study_id, fact.time, *columns
         )
+        pivot = fact.where(pivot, query, filter, slugs)
+        pivot = pivot.group_by(
+            fact.c.dataset_id, fact.c.space_id, fact.c.study_id, fact.time
+        ).cte("pivot")
         pairs = list(combinations(range(len(slugs)), 2))
+        # per pair, (n, n_spaces, r) of the pool, (study_id, n, n_spaces, r)
+        # of each study
+        pooled: dict[tuple[int, int], tuple] = {}
+        studies: dict[tuple[int, int], list[tuple]] = defaultdict(list)
+
+        def add(pair, pooled_row, study, *cell):
+            if pooled_row:
+                pooled[pair] = cell
+            else:
+                studies[pair].append((study, *cell))
+
         if query.method == "spearman":
-            # the rank sorts spill to disk at the default work_mem
-            await self.session.exec(text(f"SET LOCAL work_mem = '{SORT_MEMORY}'"))
-            rows = (await self.session.exec(self._ranked(pivot, pairs))).all()
-            # back to the default for the rest of the request: a savepoint
-            # would not do, as releasing it keeps a SET LOCAL (on an error the
-            # rollback drops it)
-            await self.session.exec(text("RESET work_mem"))
-            cells = {(i, j): (n, s, r) for i, j, n, s, r in rows}
+            rows = await self._rows(self._ranked(pivot, pairs), "spearman")
+            for i, j, pooled_row, study, *cell in rows:
+                add((i, j), pooled_row, study, *cell)
         else:
             stats = []
             for i, j in pairs:
@@ -285,32 +434,38 @@ class RelationshipService:
                 stats.append(func.count(a).filter(b.isnot(None)))
                 stats.append(func.count(pivot.c.space_id.distinct()).filter(both))
                 stats.append(func.corr(a, b))
-            row = (await self.session.exec(select(*stats).select_from(pivot))).one()
-            cells = {pair: row[3 * k : 3 * k + 3] for k, pair in enumerate(pairs)}
-        buckets = []
+            study = pivot.c.study_id
+            statement = (
+                select(*stats, study, func.grouping(study))
+                .select_from(pivot)
+                .group_by(by_study([], study))
+            )
+            for row in (await self.session.exec(statement)).all():
+                for k, pair in enumerate(pairs):
+                    add(pair, row[-1], row[-2], *row[3 * k : 3 * k + 3])
+        buckets = {}
         for i, j in pairs:
-            n, n_spaces, r = cells[(i, j)]
+            n, n_spaces, r = pooled[(i, j)]
             reached = enough(n, n_spaces)
-            buckets.append(
-                Bucket(
-                    key=[slugs[i], slugs[j]],
-                    n=int(n),
-                    n_spaces=int(n_spaces),
-                    enough=reached,
-                    fit=Fit(
-                        slope=None,
-                        intercept=None,
-                        r2=None,
-                        r=number(r) if reached else None,
-                    ),
-                )
+            buckets[(i, j)] = Bucket(
+                key=[slugs[i], slugs[j]],
+                n=int(n),
+                n_spaces=int(n_spaces),
+                enough=reached,
+                fit=Fit(
+                    slope=None,
+                    intercept=None,
+                    r2=None,
+                    r=number(r) if reached else None,
+                ),
             )
         # a cell with no co-timed rows stays in a partial matrix (the grid
         # must be complete), but a matrix with no data at all is the empty
         # state of D3: no buckets, `available_parameters` filled
-        if all(bucket.n == 0 for bucket in buckets):
+        if all(bucket.n == 0 for bucket in buckets.values()):
             return []
-        return buckets
+        await add_studies(self.session, buckets, studies, enough)
+        return list(buckets.values())
 
     async def _partners(self, grain, query, filter) -> list[Bucket]:
         """The parameters measured with x: per parameter, the (dataset,
@@ -403,37 +558,42 @@ class RelationshipService:
 
     def _ranked(self, pivot, pairs: list[tuple[int, int]]):
         """Spearman: per pair, rank both parameters within the rows where
-        both are present and correlate the ranks, one (i, j, n, r) row per
-        pair. Ties get their average rank, as Spearman's rho requires:
-        rank() is the lowest rank of a tie and cume_dist() times the row
-        count its highest, both on the same sort, so a pair costs two sorts
-        over its own rows only."""
-
-        def average_rank(value):
-            lowest = func.rank().over(order_by=value)
-            highest = func.cume_dist().over(order_by=value) * func.count().over()
-            return (lowest + highest) / 2.0
-
+        both are present (`average_rank`) and correlate the ranks. The pool
+        ranks over every row of the pair, a study over its own rows: four
+        sorts per pair. Per pair, one (i, j, grouping, study_id, n, n_spaces,
+        r) row for the pool (grouping 1, no study), then one per study."""
+        study = pivot.c.study_id
         cells = []
         for i, j in pairs:
             a, b = pivot.c[f"p{i}"], pivot.c[f"p{j}"]
             ranked = (
                 select(
                     pivot.c.space_id,
+                    study,
                     average_rank(a).label("a"),
                     average_rank(b).label("b"),
+                    average_rank(a, study).label("study_a"),
+                    average_rank(b, study).label("study_b"),
                 )
                 .where(a.isnot(None), b.isnot(None))
                 .subquery()
             )
+            pooled_row = func.grouping(ranked.c.study_id)
             cells.append(
                 select(
                     literal(i),
                     literal(j),
+                    pooled_row,
+                    ranked.c.study_id,
                     func.count(),
                     func.count(ranked.c.space_id.distinct()),
-                    func.corr(ranked.c.a, ranked.c.b),
-                ).select_from(ranked)
+                    case(
+                        (pooled_row == 1, func.corr(ranked.c.a, ranked.c.b)),
+                        else_=func.corr(ranked.c.study_a, ranked.c.study_b),
+                    ),
+                )
+                .select_from(ranked)
+                .group_by(by_study([], ranked.c.study_id))
             )
         return union_all(*cells)
 

@@ -6,20 +6,16 @@
         <FigureToggle :model-value="method" :options="methodOptions" @update:model-value="onMethod" />
       </span>
       <span class="figure-field figure-field--bare">
-        <q-select
+        <MatrixPicker
           :model-value="selected"
-          :options="parameterOptions"
+          :options="coverage.options.value"
+          :records="coverage.records.value"
+          :locked="exploreStore.parameters"
+          :defaults="DEFAULT_SET"
+          :max="MAX_PARAMETERS"
+          :eyebrow="eyebrow"
           :loading="coverage.loading.value"
-          multiple
-          emit-value
-          map-options
-          dense
-          outlined
-          options-dense
-          :display-value="t('explore_figures.correlation.pollutants', { count: selected.length })"
-          class="correlation-figure__pollutants"
-          @update:model-value="onParameters"
-          @popup-hide="onPopupHide"
+          @update:model-value="onPicked"
         />
       </span>
     </template>
@@ -45,15 +41,20 @@
               'correlation-figure__cell--strongest': isStrongest(row, col),
             }"
             :style="cellStyle(row, col, i, j)"
-            :disabled="row === col || cellOf(row, col)?.r === null"
-            @click="exploreStore.showPair(col, row)"
+            :disabled="row === col || !cellOf(row, col)?.n"
+            @click="onCell(row, col)"
           >
-            {{ row === col ? '–' : formatR(cellOf(row, col)?.r ?? null) }}
+            <span>{{ row === col ? '–' : formatR(cellOf(row, col)?.r ?? null) }}</span>
+            <!-- the studies behind r: one or two can make a pooled r on their own -->
+            <span v-if="row !== col && studiesOf(row, col)" class="correlation-figure__studies">{{
+              studiesOf(row, col)
+            }}</span>
             <q-tooltip v-if="row !== col">
               <div>
                 <b>{{ shortParameterName(col) }} × {{ shortParameterName(row) }}</b>
               </div>
               <div>{{ describe(row, col) }}</div>
+              <div v-if="cellOf(row, col)?.enough">{{ withinOf(row, col) }}</div>
             </q-tooltip>
           </button>
         </template>
@@ -66,6 +67,18 @@
         >
       </div>
     </FigureFrame>
+    <StudiesDialog
+      v-model="studiesOpen"
+      :title="listedTitle"
+      :method="method"
+      :r="listed?.cell.r"
+      :within="listed?.cell.within"
+      :points-label="t('explore_figures.studies.paired_hours')"
+    >
+      <template v-if="listed?.cell.r !== null" #footer>
+        <q-btn v-close-popup flat no-caps :label="t('explore_figures.studies.plot_pair')" @click="onPlot" />
+      </template>
+    </StudiesDialog>
   </ChartCard>
 </template>
 
@@ -74,15 +87,21 @@
  * How the pollutants move together: one cell per pair, the correlation of
  * their hourly means in the same space at the same hour, teal when they rise
  * together, red when one falls as the other rises. The strongest pair is
- * outlined; a click on a cell plots the pair.
+ * outlined. A click on a cell lists the studies behind its r, with a
+ * button that plots the pair. The matrix opens on a default set, and adds
+ * the pollutants selected in the filters; a dialog picks others.
  */
 import ChartCard from '@/components/explore/ChartCard.vue';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
 import FigureToggle from '@/components/explore/FigureToggle.vue';
+import MatrixPicker from '@/components/explore/MatrixPicker.vue';
+import StudiesDialog from '@/components/explore/StudiesDialog.vue';
 import { shortParameterName } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
+import { useChartFormat } from '@/composables/useChartFormat';
 import { useParametersWithRecords } from '@/composables/useContextScope';
 import { useExploreRequest } from '@/composables/useExploreQuery';
+import type { ExploreWithin } from '@/models';
 
 interface Props {
   eyebrow: string;
@@ -95,21 +114,22 @@ type Method = 'pearson' | 'spearman';
 
 withDefaults(defineProps<Props>(), { height: 380 });
 const { t, locale } = useI18n();
+const { describeWithin } = useChartFormat();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
 
 /** the endpoint caps a matrix at 10 parameters (45 cells) */
 const MAX_PARAMETERS = 10;
-/** the pollutants the matrix opens on, when they have data */
-const DEFAULT_SET = ['co2', 'relative_humidity', 'no2', 'pm2_5', 'pm10'];
+/** the pollutants the matrix opens on, when they have data: the five most survey respondents named (#229) */
+const DEFAULT_SET = ['co2', 'pm2_5', 'air_temperature', 'relative_humidity', 'no2'];
 
+/** picked in the dialog, else the default set; the matrix adds the pollutants selected in the filters */
+const base = ref<string[]>([...DEFAULT_SET]);
+/** the pollutants of the matrix */
 const selected = ref<string[]>([]);
-/** picked in the menu since the last load */
-const picked = ref(false);
 const method = ref<Method>('spearman');
 
 const coverage = useParametersWithRecords();
-const parameterOptions = coverage.options;
 const { result, loading, error, empty, load } = useExploreRequest('relationships');
 
 const methodOptions = computed<{ value: Method; label: string }[]>(() => [
@@ -125,9 +145,18 @@ const emptyMessage = computed(() => {
 /** the axis order: as the matrix returned it */
 const order = computed(() => result.value?.meta.parameters || []);
 
-/** r, paired hours and spaces of each pair, both orders */
+interface Cell {
+  r: number | null;
+  n: number;
+  spaces: number;
+  studies: number | undefined;
+  enough: boolean;
+  within: ExploreWithin | undefined;
+}
+
+/** r, paired hours, spaces and studies of each pair, both orders */
 const cells = computed(() => {
-  const map = new Map<string, { r: number | null; n: number; spaces: number; enough: boolean }>();
+  const map = new Map<string, Cell>();
   for (const bucket of result.value?.buckets || []) {
     const [a, b] = bucket.key;
     if (!a || !b) continue;
@@ -135,7 +164,9 @@ const cells = computed(() => {
       r: bucket.n ? (bucket.fit?.r ?? null) : null,
       n: bucket.n,
       spaces: bucket.n_spaces ?? 0,
+      studies: bucket.n_studies,
       enough: bucket.enough !== false,
+      within: bucket.within,
     };
     map.set(`${a}|${b}`, cell);
     map.set(`${b}|${a}`, cell);
@@ -185,15 +216,47 @@ function formatR(r: number | null): string {
 function describe(a: string, b: string): string {
   const cell = cellOf(a, b);
   if (!cell?.n) return t('plots.no_common_hours');
-  const hours = t('plots.paired_hours_count', { count: cell.n.toLocaleString(locale.value) });
+  const behind = [
+    ...(cell.studies === undefined ? [] : [t('plots.studies_count', cell.studies)]),
+    t('plots.spaces_count', cell.spaces),
+    t('plots.paired_hours_count', { count: cell.n.toLocaleString(locale.value) }),
+  ].join(' · ');
   // below the minimum sample size the cell stays blank: say why
-  if (!cell.enough) return `${t('plots.too_little_data')} · ${t('plots.spaces_count', cell.spaces)} · ${hours}`;
+  if (!cell.enough) return `${t('plots.too_little_data')} · ${behind}`;
   if (cell.r === null) return t('plots.no_common_hours');
-  return `r = ${cell.r.toFixed(2)} · ${hours}`;
+  return `r = ${cell.r.toFixed(2)} · ${behind}`;
+}
+
+/** "3 studies"; nothing for a pair never measured together */
+function studiesOf(a: string, b: string): string {
+  const cell = cellOf(a, b);
+  return cell?.n && cell.studies !== undefined ? t('plots.studies_count', cell.studies) : '';
+}
+
+/** the r within each study of the pair, in one line */
+function withinOf(a: string, b: string): string {
+  return describeWithin(cellOf(a, b)?.within);
+}
+
+/** the cell whose studies the dialog lists */
+const listed = ref<{ row: string; col: string; cell: Cell } | null>(null);
+const studiesOpen = ref(false);
+const listedTitle = computed(() =>
+  listed.value ? `${shortParameterName(listed.value.col)} × ${shortParameterName(listed.value.row)}` : '',
+);
+
+function onCell(row: string, col: string): void {
+  const cell = cellOf(row, col);
+  if (!cell) return;
+  listed.value = { row, col, cell };
+  studiesOpen.value = true;
+}
+
+function onPlot(): void {
+  if (listed.value) exploreStore.showPair(listed.value.col, listed.value.row);
 }
 
 function reload(): void {
-  picked.value = false;
   void load(
     selected.value.length >= 2
       ? {
@@ -208,26 +271,27 @@ function reload(): void {
 }
 
 /**
- * Pollutants with data, then the selection: keeps the pollutants that still
- * have data; with fewer than two, the page's selection or the default set,
- * filled up from the pollutants with data.
+ * The pollutants of the matrix: the base, then the pollutants selected in
+ * the filters (R5), among those with records. Past the cap, those of the
+ * filters stay. With fewer than two, the pollutants with records fill up to
+ * the size of the default set.
  */
+function matrixOf(picked: string[]): string[] {
+  const offered = coverage.options.value.map((opt) => opt.value);
+  const has = new Set(offered);
+  const wanted = [...new Set([...picked, ...exploreStore.parameters])].filter((slug) => has.has(slug));
+  if (wanted.length < 2) return [...new Set([...wanted, ...offered])].slice(0, DEFAULT_SET.length);
+  if (wanted.length <= MAX_PARAMETERS) return wanted;
+  const fromFilters = new Set(exploreStore.parameters);
+  const filtersFirst = [...wanted.filter((s) => fromFilters.has(s)), ...wanted.filter((s) => !fromFilters.has(s))];
+  const kept = new Set(filtersFirst.slice(0, MAX_PARAMETERS));
+  return wanted.filter((slug) => kept.has(slug));
+}
+
+/** Pollutants with data, then the matrix. */
 async function settle(): Promise<void> {
   await coverage.refresh();
-  const offered = new Set(parameterOptions.value.map((opt) => opt.value));
-  const kept = selected.value.filter((slug) => offered.has(slug));
-  if (kept.length >= 2) {
-    selected.value = kept;
-    return;
-  }
-  const global = exploreStore.parameters.filter((slug) => offered.has(slug));
-  if (global.length >= 2) {
-    selected.value = global.slice(0, MAX_PARAMETERS);
-    return;
-  }
-  const defaults = DEFAULT_SET.filter((slug) => offered.has(slug));
-  const start = defaults.length >= 2 ? defaults : [...new Set([...defaults, ...offered])];
-  selected.value = start.slice(0, MAX_PARAMETERS);
+  selected.value = matrixOf(base.value);
 }
 
 /** Settle the pollutants, then load: on mount and when the filters are applied. */
@@ -241,15 +305,16 @@ function onMethod(value: Method): void {
   reload();
 }
 
-function onParameters(value: string[] | null): void {
-  // past the cap, the last pick is dropped
-  selected.value = (value || []).slice(0, MAX_PARAMETERS);
-  picked.value = true;
-}
-
-/** one load once the menu closes, not one per pick */
-function onPopupHide(): void {
-  if (picked.value) reload();
+/**
+ * The dialog's pick becomes the base. A pollutant of the filters stays out
+ * of the base unless it was in it, so that it leaves the matrix with the
+ * filters.
+ */
+function onPicked(value: string[]): void {
+  const fromFilters = new Set(exploreStore.parameters);
+  base.value = value.filter((slug) => !fromFilters.has(slug) || base.value.includes(slug));
+  selected.value = matrixOf(base.value);
+  reload();
 }
 
 onMounted(() => void refresh());
@@ -259,14 +324,6 @@ filtersStore.$onAction(({ name, after }) => {
 </script>
 
 <style scoped lang="scss">
-.correlation-figure__pollutants {
-  min-width: 160px;
-
-  :deep(.q-field__control) {
-    border-radius: 2px;
-  }
-}
-
 .correlation-figure__matrix {
   display: grid;
   gap: 8px;
@@ -289,6 +346,7 @@ filtersStore.$onAction(({ name, after }) => {
 
 .correlation-figure__cell {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   min-height: 0;
@@ -307,6 +365,16 @@ filtersStore.$onAction(({ name, after }) => {
   &:not(:disabled):hover {
     border-color: $grey-6;
   }
+}
+
+.correlation-figure__studies {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  opacity: 0.8;
 }
 
 .correlation-figure__cell--self {

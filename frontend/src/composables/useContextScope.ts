@@ -11,6 +11,7 @@ import type { Ref } from 'vue';
 import {
   benchmarkOf,
   isUnknownKey,
+  SPLIT_DIMENSIONS,
   STATS_CONTEXTS,
 } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
@@ -34,6 +35,16 @@ export function useParametersWithRecords() {
     );
   });
 
+  /** records of each pollutant under the filters */
+  const records = computed(
+    () =>
+      new Map(
+        (coverage.result.value?.buckets || []).flatMap((b) =>
+          b.key[0] && b.n_records ? [[b.key[0], b.n_records] as const] : [],
+        ),
+      ),
+  );
+
   const options = computed(() => {
     const withData = available.value;
     return withData
@@ -51,7 +62,7 @@ export function useParametersWithRecords() {
     });
   }
 
-  return { available, options, loading: coverage.loading, refresh };
+  return { available, records, options, loading: coverage.loading, refresh };
 }
 
 /** Options of the pollutant menu. */
@@ -250,3 +261,20 @@ export function useContextChoice(
   return { context, contextOptions, contextDimension, refresh };
 }
 
+/**
+ * The "Split by" menu of a relationship chart (#229): none, or one of
+ * SPLIT_DIMENSIONS, with its label from the schema.
+ */
+export function useSplitChoice() {
+  const { t } = useI18n();
+  const exploreStore = useExploreStore();
+  const split = ref<string | null>(null);
+  const splitOptions = computed(() => [
+    { value: null, label: t('explore_figures.split.none') },
+    ...SPLIT_DIMENSIONS.flatMap((key) => {
+      const dimension = exploreStore.dimension(key);
+      return dimension ? [{ value: key, label: dimension.label }] : [];
+    }),
+  ]);
+  return { split, splitOptions };
+}

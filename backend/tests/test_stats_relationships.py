@@ -1,12 +1,122 @@
 import json
+import math
+import statistics
+from datetime import timedelta
 
 import pytest
+from api.models.catalog import Building, Dataset, Instrument, Space, Study
 from api.models.explore import ExploreQuery
+from api.services.explore.cache import cache
 from api.services.explore.relationships import RelationshipService
+from api.services.measurement import MeasurementService
 from sqlalchemy import text
 from tests.expected import paired_hours, regression, spearman
-from tests.fixtures import mean
+from tests.fixtures import START, mean, series_rows, write_csv
 from tests.test_stats_metadata import buckets_of, loaded_fixture
+
+STUDY_A = ("S1", "S2")
+# study B: three spaces of one building, so that it reaches MIN_SPACES alone
+DENSITY_B = {"S4": 0.5, "S5": 0.6, "S6": 0.8}
+
+
+def co2_b(t, space: str) -> float:
+    hours = (t - START).total_seconds() / 3600
+    base = {"S4": 600, "S5": 650, "S6": 700}[space]
+    return round(base + 150 * math.sin(hours / 12 * 2 * math.pi), 3)
+
+
+def temperature_b(t, space: str) -> float:
+    hours = (t - START).total_seconds() / 3600
+    depth = {"S4": 0.5, "S5": 1.0, "S6": 1.5}[space]
+    return round(24 - depth * math.sin(hours / 12 * 2 * math.pi + 0.3), 3)
+
+
+async def with_study_b(session, engine, tmp_path):
+    """The fixture (study A), and study B: CO2 and temperature every 10
+    minutes in S4 to S6, related another way than in study A, so that the
+    pooled r and the r of each study differ."""
+    fx = await loaded_fixture(session, engine, tmp_path)
+    study = Study(identifier="study-b", name="Study B")
+    session.add(study)
+    await session.commit()
+    building = Building(identifier="B3", country="CH", type="office", study_id=study.id)
+    session.add(building)
+    await session.commit()
+    dataset = Dataset(name="D3", description="co2 and temperature", study_id=study.id)
+    session.add_all(
+        [
+            *(
+                Space(
+                    identifier=space,
+                    type="office",
+                    occupancy_density=density,
+                    study_id=study.id,
+                    building_id=building.id,
+                )
+                for space, density in DENSITY_B.items()
+            ),
+            Instrument(identifier="I1", study_id=study.id),
+            dataset,
+        ]
+    )
+    await session.commit()
+    rows = []
+    for space in DENSITY_B:
+        for slug, unit, at in (
+            ("co2", "ppm", co2_b),
+            ("air_temperature", "°C", temperature_b),
+        ):
+            part, expected = series_rows(
+                "D3",
+                "B3",
+                space,
+                slug,
+                unit,
+                timedelta(minutes=10),
+                lambda t, s=space, at=at: at(t, s),
+            )
+            fx.series[(slug, space)] = expected
+            rows += part
+    path = write_csv(tmp_path / "d3_long.csv", rows)
+    await MeasurementService(engine).load(dataset.id, [path])
+    cache.clear()
+    return fx
+
+
+def studies_of(bucket: dict) -> dict[str, dict]:
+    """The studies of `within` by identifier."""
+    return {study["study"]: study for study in bucket["within"]["studies"]}
+
+
+def assert_within(bucket: dict, rs: dict[str, float | None]) -> None:
+    """`within` against the r expected of each study by identifier, None for
+    a study with no r of its own: the studies with an r first, by r, and the
+    median of their r."""
+    studies = bucket["within"]["studies"]
+    assert bucket["n_studies"] == len(studies)
+    assert {study["study"] for study in studies} == set(rs)
+    ranked = sorted((r, study) for study, r in rs.items() if r is not None)
+    assert [study["study"] for study in studies[: len(ranked)]] == [
+        study for _, study in ranked
+    ]
+    for study in studies:
+        expected = rs[study["study"]]
+        if expected is None:
+            assert "r" not in study, study
+        else:
+            assert study["r"] == pytest.approx(expected, rel=1e-6), study
+    median = bucket["within"].get("median")
+    if ranked:
+        expected = statistics.median(r for r, _ in ranked)
+        assert median == pytest.approx(expected, rel=1e-6)
+    else:
+        assert median is None
+
+
+def density_points(fx, spaces) -> list[tuple[float, float]]:
+    """(occupancy density, mean CO2) per space, the metric pairs."""
+    density = {"S1": 0.1, "S2": 0.3, **DENSITY_B}
+    return [(density[s], mean([v for _, v in fx.series[("co2", s)]])) for s in spaces]
 
 
 @pytest.fixture(autouse=True)
@@ -356,3 +466,277 @@ async def test_minimum_matrix_cells_are_blank(
     )
     partner = buckets_of(response.json())[("air_temperature",)]
     assert (partner["n"], partner["n_spaces"], partner["enough"]) == (n, 2, False)
+
+
+async def test_pairs_within_each_study(client, session, clean_db, tmp_path):
+    """#229: a pooled r can come from the differences between studies."""
+    fx = await with_study_b(session, clean_db, tmp_path)
+    study_b = tuple(DENSITY_B)
+    params = {"agg": "pairs", "x": "co2", "y": "air_temperature"}
+    response = await client.get("/stats/relationships", params=params)
+    assert response.status_code == 200, response.text
+    bucket = response.json()["buckets"][0]
+    pooled = paired_hours(fx, "co2", "air_temperature", STUDY_A + study_b)
+    assert (bucket["n"], bucket["n_spaces"], bucket["n_studies"]) == (len(pooled), 5, 2)
+    assert bucket["fit"]["r"] == pytest.approx(regression(pooled)["r"], rel=1e-6)
+    r_a, r_b = (
+        regression(paired_hours(fx, "co2", "air_temperature", spaces))["r"]
+        for spaces in (STUDY_A, study_b)
+    )
+    assert_within(bucket, {"study-a": r_a, "study-b": r_b})
+    studies = studies_of(bucket)
+    for study, spaces in (("study-a", STUDY_A), ("study-b", study_b)):
+        n = len(paired_hours(fx, "co2", "air_temperature", spaces))
+        assert (studies[study]["n"], studies[study]["n_spaces"]) == (n, len(spaces))
+        assert studies[study]["enough"] is True
+    # per bucket of `by`: the offices are in both studies, the meeting room in A
+    response = await client.get(
+        "/stats/relationships", params={**params, "by": "space_type"}
+    )
+    buckets = buckets_of(response.json())
+    office = buckets[("office",)]
+    assert (office["n_spaces"], office["n_studies"]) == (4, 2)
+    r_s1 = regression(paired_hours(fx, "co2", "air_temperature", ("S1",)))["r"]
+    assert_within(office, {"study-a": r_s1, "study-b": r_b})
+    room = buckets[("meeting room",)]
+    assert (room["n_spaces"], room["n_studies"]) == (1, 1)
+    assert_within(room, {"study-a": room["fit"]["r"]})
+
+
+async def test_metric_pairs_within_each_study(client, session, clean_db, tmp_path):
+    fx = await with_study_b(session, clean_db, tmp_path)
+    response = await client.get(
+        "/stats/relationships",
+        params={"agg": "pairs", "x": "space.occupancy_density", "y": "co2"},
+    )
+    assert response.status_code == 200, response.text
+    bucket = response.json()["buckets"][0]
+    assert (bucket["n"], bucket["n_spaces"], bucket["n_studies"]) == (5, 5, 2)
+    pooled = density_points(fx, STUDY_A + tuple(DENSITY_B))
+    assert bucket["fit"]["r"] == pytest.approx(regression(pooled)["r"], rel=1e-6)
+    assert_points(bucket["points"], pooled)
+    assert_within(
+        bucket,
+        {
+            study: regression(density_points(fx, spaces))["r"]
+            for study, spaces in (("study-a", STUDY_A), ("study-b", tuple(DENSITY_B)))
+        },
+    )
+    studies = studies_of(bucket)
+    # one point per space
+    assert (studies["study-a"]["n"], studies["study-a"]["n_spaces"]) == (2, 2)
+    assert (studies["study-b"]["n"], studies["study-b"]["n_spaces"]) == (3, 3)
+
+
+async def test_matrix_within_each_study(client, session, clean_db, tmp_path):
+    fx = await with_study_b(session, clean_db, tmp_path)
+    study_b = tuple(DENSITY_B)
+    pooled = paired_hours(fx, "air_temperature", "co2", STUDY_A + study_b)
+    per_study = [
+        paired_hours(fx, "air_temperature", "co2", spaces)
+        for spaces in (STUDY_A, study_b)
+    ]
+    for method, r_of in (
+        ("pearson", lambda points: regression(points)["r"]),
+        ("spearman", spearman),
+    ):
+        response = await client.get(
+            "/stats/relationships",
+            params={
+                "agg": "matrix",
+                "parameters": "co2,air_temperature,pm2_5",
+                "method": method,
+            },
+        )
+        assert response.status_code == 200, response.text
+        cells = buckets_of(response.json())
+        cell = cells[("air_temperature", "co2")]
+        assert (cell["n"], cell["n_spaces"], cell["n_studies"]) == (len(pooled), 5, 2)
+        assert cell["fit"]["r"] == pytest.approx(r_of(pooled), rel=1e-6), method
+        r_a, r_b = (r_of(points) for points in per_study)
+        assert_within(cell, {"study-a": r_a, "study-b": r_b})
+        studies = studies_of(cell)
+        assert [studies[s]["n"] for s in ("study-a", "study-b")] == [
+            len(points) for points in per_study
+        ], method
+        # never measured together: no study, no r
+        never = cells[("co2", "pm2_5")]
+        assert (never["n_studies"], never["within"]) == (0, {"studies": []}), method
+
+
+async def test_minimum_within_each_study(
+    client, session, clean_db, tmp_path, monkeypatch
+):
+    """Study A has two spaces: it counts in n_studies, with no r of its own."""
+    fx = await with_study_b(session, clean_db, tmp_path)
+    real_minimum(monkeypatch)
+    study_b = tuple(DENSITY_B)
+    response = await client.get(
+        "/stats/relationships",
+        params={"agg": "pairs", "x": "co2", "y": "air_temperature"},
+    )
+    bucket = response.json()["buckets"][0]
+    assert (bucket["enough"], bucket["n_studies"]) == (True, 2)
+    r_b = regression(paired_hours(fx, "co2", "air_temperature", study_b))["r"]
+    assert_within(bucket, {"study-a": None, "study-b": r_b})
+    assert studies_of(bucket)["study-a"]["enough"] is False
+    response = await client.get(
+        "/stats/relationships",
+        params={"agg": "pairs", "x": "space.occupancy_density", "y": "co2"},
+    )
+    bucket = response.json()["buckets"][0]
+    assert (bucket["enough"], bucket["n_studies"]) == (True, 2)
+    r_b = regression(density_points(fx, study_b))["r"]
+    assert_within(bucket, {"study-a": None, "study-b": r_b})
+    points = paired_hours(fx, "air_temperature", "co2", study_b)
+    for method, r_b in (
+        ("pearson", regression(points)["r"]),
+        ("spearman", spearman(points)),
+    ):
+        response = await client.get(
+            "/stats/relationships",
+            params={
+                "agg": "matrix",
+                "parameters": "co2,air_temperature",
+                "method": method,
+            },
+        )
+        cell = response.json()["buckets"][0]
+        assert (cell["enough"], cell["n_studies"]) == (True, 2), method
+        assert_within(cell, {"study-a": None, "study-b": r_b})
+        assert studies_of(cell)["study-a"]["enough"] is False, method
+
+
+async def test_pairs_spearman(client, session, clean_db, tmp_path):
+    """`pairs` takes the method for r and the r of each study; the
+    least-squares fit stays over the values."""
+    fx = await with_study_b(session, clean_db, tmp_path)
+    study_b = tuple(DENSITY_B)
+    for x, y, points_of in (
+        (
+            "co2",
+            "air_temperature",
+            lambda s: paired_hours(fx, "co2", "air_temperature", s),
+        ),
+        ("space.occupancy_density", "co2", lambda s: density_points(fx, s)),
+    ):
+        params = {"agg": "pairs", "x": x, "y": y}
+        pearson = (await client.get("/stats/relationships", params=params)).json()
+        response = await client.get(
+            "/stats/relationships", params={**params, "method": "spearman"}
+        )
+        assert response.status_code == 200, response.text
+        bucket = response.json()["buckets"][0]
+        assert bucket["fit"]["r"] == pytest.approx(
+            spearman(points_of(STUDY_A + study_b)), rel=1e-6
+        ), x
+        assert_within(
+            bucket,
+            {
+                "study-a": spearman(points_of(STUDY_A)),
+                "study-b": spearman(points_of(study_b)),
+            },
+        )
+        for name in ("slope", "intercept", "r2"):
+            expected = pearson["buckets"][0]["fit"][name]
+            assert bucket["fit"][name] == pytest.approx(expected), (x, name)
+        assert bucket["points"] == pearson["buckets"][0]["points"], x
+
+
+async def test_pairs_split_ranks_inside_each_bucket(
+    client, session, clean_db, tmp_path
+):
+    """By space type, the office bucket holds S1 of study A and the spaces of
+    study B: Spearman ranks inside the bucket, and inside the bucket and the
+    study."""
+    fx = await with_study_b(session, clean_db, tmp_path)
+    study_b = tuple(DENSITY_B)
+    response = await client.get(
+        "/stats/relationships",
+        params={
+            "agg": "pairs",
+            "x": "co2",
+            "y": "air_temperature",
+            "by": "space_type",
+            "method": "spearman",
+        },
+    )
+    assert response.status_code == 200, response.text
+    buckets = buckets_of(response.json())
+    assert set(buckets) == {("office",), ("meeting room",)}
+
+    def hours(spaces):
+        return paired_hours(fx, "co2", "air_temperature", spaces)
+
+    office = buckets[("office",)]
+    assert office["fit"]["r"] == pytest.approx(spearman(hours(("S1",) + study_b)))
+    assert_within(
+        office,
+        {"study-a": spearman(hours(("S1",))), "study-b": spearman(hours(study_b))},
+    )
+    meeting = buckets[("meeting room",)]
+    assert meeting["fit"]["r"] == pytest.approx(spearman(hours(("S2",))))
+    assert_within(meeting, {"study-a": spearman(hours(("S2",)))})
+
+
+async def test_pairs_split_by_ventilation(client, session, clean_db, tmp_path):
+    """Building B1 is mechanically ventilated, B3 of study B has no answer:
+    one bucket each, with the points and the fit of its own spaces."""
+    fx = await with_study_b(session, clean_db, tmp_path)
+    study_b = tuple(DENSITY_B)
+    for x, y, points_of in (
+        (
+            "co2",
+            "air_temperature",
+            lambda s: paired_hours(fx, "co2", "air_temperature", s),
+        ),
+        ("space.occupancy_density", "co2", lambda s: density_points(fx, s)),
+    ):
+        response = await client.get(
+            "/stats/relationships",
+            params={"agg": "pairs", "x": x, "y": y, "by": "ventilation"},
+        )
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["meta"]["dimensions"] == ["ventilation"]
+        # nulls last
+        assert [bucket["key"] for bucket in body["buckets"]] == [["yes"], [None]], x
+        for bucket, spaces, study in zip(
+            body["buckets"], (STUDY_A, study_b), ("study-a", "study-b")
+        ):
+            expected = points_of(spaces)
+            assert bucket["n"] == len(expected), x
+            assert bucket["fit"]["r"] == pytest.approx(regression(expected)["r"]), x
+            assert_points(bucket["points"], expected)
+            assert [s["study"] for s in bucket["within"]["studies"]] == [study]
+
+
+async def test_pairs_sampled_per_bucket(
+    client, session, clean_db, tmp_path, monkeypatch
+):
+    """The buckets share SAMPLE: each keeps every ceil(n / quota)-th row, and
+    a bucket below its quota keeps all its rows."""
+    fx = await with_study_b(session, clean_db, tmp_path)
+    params = {"agg": "pairs", "x": "co2", "y": "air_temperature", "by": "space_type"}
+    full = buckets_of((await client.get("/stats/relationships", params=params)).json())
+    meeting_n = full[("meeting room",)]["n"]
+    office_n = full[("office",)]["n"]
+    assert meeting_n < office_n
+    # the meeting room fits in its half of SAMPLE, the offices do not
+    sample = 2 * meeting_n
+    monkeypatch.setattr("api.services.explore.relationships.SAMPLE", sample)
+    cache.clear()
+    buckets = buckets_of(
+        (await client.get("/stats/relationships", params=params)).json()
+    )
+    meeting = buckets[("meeting room",)]
+    assert meeting["sampled"] is False
+    assert_points(
+        meeting["points"], paired_hours(fx, "co2", "air_temperature", ("S2",))
+    )
+    office = buckets[("office",)]
+    quota = meeting_n
+    step = math.ceil(office_n / quota)
+    assert office["sampled"] is True
+    assert len(office["points"]) == math.ceil(office_n / step)
+    assert office["fit"] == pytest.approx(full[("office",)]["fit"])

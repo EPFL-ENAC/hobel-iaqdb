@@ -2,6 +2,7 @@
  * Number and label formatting shared by the charts, in the current locale.
  */
 import type { Benchmark } from '@/components/plots/charts';
+import type { ExploreWithin } from '@/models';
 
 export function useChartFormat() {
   const { t, locale } = useI18n();
@@ -45,6 +46,35 @@ export function useChartFormat() {
     return b.placeholder ? `${value} (${t('plots.placeholder').toLowerCase()})` : value;
   }
 
+  /**
+   * The r inside each study (#229) in one line: their median and range, out
+   * of the studies behind the pooled r. Empty below two studies, as the r of
+   * a single study is the pooled r.
+   */
+  /** The r of the studies of `within` that have one, ascending. */
+  function rsWithin(within: ExploreWithin | undefined): number[] {
+    return within?.studies.flatMap((study) => (study.r === undefined ? [] : [study.r])) ?? [];
+  }
+
+  /** The r within each study behind a pooled r, in one line; none below two studies. */
+  function describeWithin(within: ExploreWithin | undefined): string {
+    const total = within?.studies.length ?? 0;
+    if (total < 2) return '';
+    const rs = rsWithin(within);
+    const first = rs[0];
+    const last = rs[rs.length - 1];
+    if (first === undefined || last === undefined) return t('plots.within_none');
+    if (rs.length === 1) return t('plots.within_one', { total, r: first.toFixed(2) });
+    return t('plots.within', {
+      count: rs.length,
+      total,
+      median: within?.median?.toFixed(2) ?? '–',
+      min: first.toFixed(2),
+      max: last.toFixed(2),
+    });
+  }
+
+
   return {
     formatValue,
     formatYear,
@@ -52,5 +82,7 @@ export function useChartFormat() {
     formatCompact,
     formatShare,
     describeReference,
+    describeWithin,
+    rsWithin,
   };
 }

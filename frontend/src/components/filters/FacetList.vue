@@ -29,7 +29,7 @@
       />
       <span class="facet-list__label">{{ option.label }}</span>
       <span class="facet-list__track"><span class="facet-list__bar" :style="`width: ${widthOf(option.count)}%;`" /></span>
-      <span class="facet-list__count">{{ option.count.toLocaleString() }}</span>
+      <span class="facet-list__count">{{ format ? format(option.count) : option.count.toLocaleString() }}</span>
     </label>
     <button v-if="hidden > 0" type="button" class="figure-link facet-list__more" @click="expanded = true">
       {{ t('filter_dialog.show_more', { count: hidden }) }}
@@ -52,9 +52,16 @@ interface Props {
   limit?: number;
   searchable?: boolean;
   searchPlaceholder?: string;
+  /** the count as shown, e.g. "11M"; the plain number by default */
+  format?: ((count: number) => string) | undefined;
 }
 
-const props = withDefaults(defineProps<Props>(), { limit: 7, searchable: false, searchPlaceholder: '' });
+const props = withDefaults(defineProps<Props>(), {
+  limit: 7,
+  searchable: false,
+  searchPlaceholder: '',
+  format: undefined,
+});
 const emit = defineEmits<{ 'update:modelValue': [value: string[]] }>();
 const { t } = useI18n();
 
@@ -97,7 +104,8 @@ function toggle(value: string, on: boolean): void {
 
 .facet-list__row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) 72px 32px;
+  // a wider count, e.g. "11.1M", sets --facet-count-width on a parent
+  grid-template-columns: auto minmax(0, 1fr) 72px var(--facet-count-width, 32px);
   align-items: center;
   gap: 10px;
   min-height: 28px;
