@@ -138,9 +138,9 @@ const { formatValue } = useChartFormat();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
 
-/** the pair the figure opens on, when both have data together */
-const DEFAULT_X = 'pm2_5';
-const DEFAULT_Y = 'pm10';
+/** the pair the figure opens on, when both have data together: the one most survey respondents asked for (#229) */
+const DEFAULT_X = 'co2';
+const DEFAULT_Y = 'pm2_5';
 
 const root = ref<HTMLElement | null>(null);
 const x = ref<string | null>(null);

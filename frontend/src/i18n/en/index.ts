@@ -381,6 +381,18 @@ export default {
       pick_two: 'Pick at least two pollutants.',
       slow: 'Correlating every pair over each shared hour: this can take a few seconds.',
     },
+    matrix_picker: {
+      title: 'Pollutants in the matrix',
+      lead: 'Pick 2 to {max} pollutants. The bars give the records of each pollutant for these filters.',
+      locked: 'The pollutants selected in the filters are always in the matrix: {pollutants}. To remove one, change the filters.',
+      locked_title: 'Selected in the filters',
+      full: 'At most {max} pollutants',
+      search: 'Search pollutants',
+      default: 'Default',
+      count: '{count} of {max}',
+      cancel: 'Cancel',
+      apply: 'Apply',
+    },
     groups: {
       eyebrow: 'Relationship · {pollutant} × {aspect}',
       pollutant: 'Pollutant',

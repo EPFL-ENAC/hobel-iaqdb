@@ -35,6 +35,16 @@ export function useParametersWithRecords() {
     );
   });
 
+  /** records of each pollutant under the filters */
+  const records = computed(
+    () =>
+      new Map(
+        (coverage.result.value?.buckets || []).flatMap((b) =>
+          b.key[0] && b.n_records ? [[b.key[0], b.n_records] as const] : [],
+        ),
+      ),
+  );
+
   const options = computed(() => {
     const withData = available.value;
     return withData
@@ -52,7 +62,7 @@ export function useParametersWithRecords() {
     });
   }
 
-  return { available, options, loading: coverage.loading, refresh };
+  return { available, records, options, loading: coverage.loading, refresh };
 }
 
 /** Options of the pollutant menu. */

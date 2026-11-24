@@ -6,20 +6,16 @@
         <FigureToggle :model-value="method" :options="methodOptions" @update:model-value="onMethod" />
       </span>
       <span class="figure-field figure-field--bare">
-        <q-select
+        <MatrixPicker
           :model-value="selected"
-          :options="parameterOptions"
+          :options="coverage.options.value"
+          :records="coverage.records.value"
+          :locked="exploreStore.parameters"
+          :defaults="DEFAULT_SET"
+          :max="MAX_PARAMETERS"
+          :eyebrow="eyebrow"
           :loading="coverage.loading.value"
-          multiple
-          emit-value
-          map-options
-          dense
-          outlined
-          options-dense
-          :display-value="t('explore_figures.correlation.pollutants', { count: selected.length })"
-          class="correlation-figure__pollutants"
-          @update:model-value="onParameters"
-          @popup-hide="onPopupHide"
+          @update:model-value="onPicked"
         />
       </span>
     </template>
@@ -92,11 +88,13 @@
  * their hourly means in the same space at the same hour, teal when they rise
  * together, red when one falls as the other rises. The strongest pair is
  * outlined. A click on a cell lists the studies behind its r, with a
- * button that plots the pair.
+ * button that plots the pair. The matrix opens on a default set, and adds
+ * the pollutants selected in the filters; a dialog picks others.
  */
 import ChartCard from '@/components/explore/ChartCard.vue';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
 import FigureToggle from '@/components/explore/FigureToggle.vue';
+import MatrixPicker from '@/components/explore/MatrixPicker.vue';
 import StudiesDialog from '@/components/explore/StudiesDialog.vue';
 import { shortParameterName } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
@@ -122,16 +120,16 @@ const exploreStore = useExploreStore();
 
 /** the endpoint caps a matrix at 10 parameters (45 cells) */
 const MAX_PARAMETERS = 10;
-/** the pollutants the matrix opens on, when they have data */
-const DEFAULT_SET = ['co2', 'relative_humidity', 'no2', 'pm2_5', 'pm10'];
+/** the pollutants the matrix opens on, when they have data: the five most survey respondents named (#229) */
+const DEFAULT_SET = ['co2', 'pm2_5', 'air_temperature', 'relative_humidity', 'no2'];
 
+/** picked in the dialog, else the default set; the matrix adds the pollutants selected in the filters */
+const base = ref<string[]>([...DEFAULT_SET]);
+/** the pollutants of the matrix */
 const selected = ref<string[]>([]);
-/** picked in the menu since the last load */
-const picked = ref(false);
 const method = ref<Method>('spearman');
 
 const coverage = useParametersWithRecords();
-const parameterOptions = coverage.options;
 const { result, loading, error, empty, load } = useExploreRequest('relationships');
 
 const methodOptions = computed<{ value: Method; label: string }[]>(() => [
@@ -259,7 +257,6 @@ function onPlot(): void {
 }
 
 function reload(): void {
-  picked.value = false;
   void load(
     selected.value.length >= 2
       ? {
@@ -274,26 +271,27 @@ function reload(): void {
 }
 
 /**
- * Pollutants with data, then the selection: keeps the pollutants that still
- * have data; with fewer than two, the page's selection or the default set,
- * filled up from the pollutants with data.
+ * The pollutants of the matrix: the base, then the pollutants selected in
+ * the filters (R5), among those with records. Past the cap, those of the
+ * filters stay. With fewer than two, the pollutants with records fill up to
+ * the size of the default set.
  */
+function matrixOf(picked: string[]): string[] {
+  const offered = coverage.options.value.map((opt) => opt.value);
+  const has = new Set(offered);
+  const wanted = [...new Set([...picked, ...exploreStore.parameters])].filter((slug) => has.has(slug));
+  if (wanted.length < 2) return [...new Set([...wanted, ...offered])].slice(0, DEFAULT_SET.length);
+  if (wanted.length <= MAX_PARAMETERS) return wanted;
+  const fromFilters = new Set(exploreStore.parameters);
+  const filtersFirst = [...wanted.filter((s) => fromFilters.has(s)), ...wanted.filter((s) => !fromFilters.has(s))];
+  const kept = new Set(filtersFirst.slice(0, MAX_PARAMETERS));
+  return wanted.filter((slug) => kept.has(slug));
+}
+
+/** Pollutants with data, then the matrix. */
 async function settle(): Promise<void> {
   await coverage.refresh();
-  const offered = new Set(parameterOptions.value.map((opt) => opt.value));
-  const kept = selected.value.filter((slug) => offered.has(slug));
-  if (kept.length >= 2) {
-    selected.value = kept;
-    return;
-  }
-  const global = exploreStore.parameters.filter((slug) => offered.has(slug));
-  if (global.length >= 2) {
-    selected.value = global.slice(0, MAX_PARAMETERS);
-    return;
-  }
-  const defaults = DEFAULT_SET.filter((slug) => offered.has(slug));
-  const start = defaults.length >= 2 ? defaults : [...new Set([...defaults, ...offered])];
-  selected.value = start.slice(0, MAX_PARAMETERS);
+  selected.value = matrixOf(base.value);
 }
 
 /** Settle the pollutants, then load: on mount and when the filters are applied. */
@@ -307,15 +305,16 @@ function onMethod(value: Method): void {
   reload();
 }
 
-function onParameters(value: string[] | null): void {
-  // past the cap, the last pick is dropped
-  selected.value = (value || []).slice(0, MAX_PARAMETERS);
-  picked.value = true;
-}
-
-/** one load once the menu closes, not one per pick */
-function onPopupHide(): void {
-  if (picked.value) reload();
+/**
+ * The dialog's pick becomes the base. A pollutant of the filters stays out
+ * of the base unless it was in it, so that it leaves the matrix with the
+ * filters.
+ */
+function onPicked(value: string[]): void {
+  const fromFilters = new Set(exploreStore.parameters);
+  base.value = value.filter((slug) => !fromFilters.has(slug) || base.value.includes(slug));
+  selected.value = matrixOf(base.value);
+  reload();
 }
 
 onMounted(() => void refresh());
@@ -325,14 +324,6 @@ filtersStore.$onAction(({ name, after }) => {
 </script>
 
 <style scoped lang="scss">
-.correlation-figure__pollutants {
-  min-width: 160px;
-
-  :deep(.q-field__control) {
-    border-radius: 2px;
-  }
-}
-
 .correlation-figure__matrix {
   display: grid;
   gap: 8px;
