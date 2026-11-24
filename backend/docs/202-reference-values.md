@@ -57,6 +57,10 @@ The script fails on any text it does not know (unknown period, unknown
 unit, missing value). A new version of the workbook with new wording then
 forces an explicit decision in the script.
 
+The script writes the result to `benchmarks.csv.new` and reads it back
+with the backend's own parser. It replaces `benchmarks.csv` only if the
+parser accepts the result. A refused result keeps the current CSV.
+
 The script skips a row, and prints the reason, in two cases:
 
 - The pollutant is not in `parameters.csv` (for example styrene, acrolein).
@@ -66,7 +70,10 @@ The script skips a row, and prints the reason, in two cases:
 
 The script finds the pollutant by its label in `parameters.csv`. The
 `ALIASES` table adds the other names that the workbook uses, for example
-"2-Butanone (MEK)" for methyl ethyl ketone. The `REGIONS` table gives one
+"2-Butanone (MEK)" for methyl ethyl ketone. Some labels belong to more
+than one parameter, for example "Particle number concentration". If the
+workbook uses such a label, the script fails until `ALIASES` names the
+parameter. The `REGIONS` table gives one
 name to each country, for example "United Kingdom" for "UK".
 
 Values are converted to the parameter's canonical unit with the factors of
@@ -181,7 +188,8 @@ per space, so their tooltip has no `compared` text.
   unknown averaging and duplicate ids fail.
 - `test_import_benchmarks.py`: a small workbook built in the test converts
   units, adds the outdoor CO2 level, skips unknown pollutants and fails on
-  an unknown period.
+  an unknown period or a shared label. A result that the backend refuses
+  keeps the current CSV.
 - `test_stats_measurements.py`: `grain=space` gives one value per space,
   exceedance counts spaces, a time dimension answers 422.
 - `test_stats_schema.py`: the benchmark fields and the default order.

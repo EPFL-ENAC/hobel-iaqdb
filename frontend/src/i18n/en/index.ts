@@ -366,7 +366,6 @@ export default {
     groups: {
       eyebrow: 'Relationship · {pollutant} × {aspect}',
       pollutant: 'Pollutant',
-      tip_days: '{count} days',
       ventilation: {
         aspect: 'ventilation',
         title: 'Compare airflow strategies',

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 from api.scripts import import_benchmarks
-from api.scripts.import_benchmarks import read_workbook, with_defaults
+from api.scripts.import_benchmarks import read_workbook, with_defaults, write_rows
 from api.services.parameter import read_parameters
 from openpyxl import Workbook
 
@@ -125,6 +125,46 @@ def test_unknown_text_stops_the_import(tmp_path, parameters):
     path = _workbook(tmp_path / "sheet.xlsx", {"NO2": []})
     with pytest.raises(ValueError, match="unknown sheet 'NO2'"):
         read_workbook(path, parameters)
+    # particle_number_concentration and particle_number share this label
+    path = _workbook(
+        tmp_path / "label.xlsx",
+        {"PM": [_row(1, "Particle number concentration", 1000, "#/cm³")]},
+    )
+    with pytest.raises(ValueError, match="add it to ALIASES"):
+        read_workbook(path, parameters)
+
+
+def test_a_refused_result_keeps_the_csv(tmp_path, monkeypatch):
+    out = tmp_path / "benchmarks.csv"
+    kept = {
+        "id": "who-benzene",
+        "parameter": "benzene",
+        "is_default": "false",
+        "source": "Source",
+        "institution": "WHO",
+        "region": "Worldwide",
+        "limit_type": "Guideline",
+        "averaging": "day",
+        "period": "24 hours",
+        "value": "5",
+        "unit": "µg/m³",
+    }
+    write_rows(out, [kept])
+    monkeypatch.setattr(import_benchmarks, "DEFAULTS", {})
+
+    def run(*rows):
+        path = _workbook(tmp_path / "bench.xlsx", {"Individual VOC": list(rows)})
+        monkeypatch.setattr("sys.argv", ["import", str(path), "--out", str(out)])
+        import_benchmarks.main()
+
+    run(_row(1, "Benzene", 2, "µg/m³"))
+    accepted = out.read_text(encoding="utf-8")
+    assert "voc-1,benzene,true" in accepted
+    # without a benzene row, the kept who-benzene row has no default
+    with pytest.raises(ValueError, match="'benzene' has 0 defaults"):
+        run(_row(2, "Toluene", 200, "µg/m³"))
+    assert out.read_text(encoding="utf-8") == accepted
+    assert not (tmp_path / "benchmarks.csv.new").exists()
 
 
 def test_defaults(monkeypatch):

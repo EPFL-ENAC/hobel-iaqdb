@@ -5,12 +5,13 @@
 
 Workbook rows replace the rows with a sheet prefix (co2-, tvoc-, voc-,
 radon-, pm-); the other rows (who-*) are kept by hand. Any text the tables
-below do not know stops the script: a new wording needs a decision here."""
+below do not know stops the script: a new wording needs a decision here.
+The CSV changes only when the backend accepts the result."""
 
 import argparse
 import csv
 import sys
-from collections import Counter
+from collections import Counter, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -49,7 +50,8 @@ COLUMNS = [
     "note",
 ]
 
-# workbook pollutant names that are not a parameter label
+# workbook pollutant names that are not a parameter label, or that are the
+# label of more than one parameter
 ALIASES = {
     "carbon dioxide (co2)": "co2",
     "total volatile organic compounds (tvoc)": "tvoc",
@@ -201,8 +203,7 @@ def main() -> None:
     rows, skipped = read_workbook(args.workbook, parameters)
     kept = [r for r in read_rows(args.out) if not _from_workbook(r["id"])]
     rows = with_defaults(kept, rows)
-    write_rows(args.out, kept + rows)
-    read_benchmarks(args.out, parameters)  # the backend must accept the result
+    write_checked(args.out, kept + rows, parameters)
     print(f"{len(rows)} workbook rows and {len(kept)} kept rows in {args.out}")
     for (reason, name), count in sorted(
         Counter((s.reason, s.name) for s in skipped).items()
@@ -213,7 +214,9 @@ def main() -> None:
 def read_workbook(
     path: Path, parameters: dict[str, Parameter]
 ) -> tuple[list[dict], list[Skipped]]:
-    by_label = {p.label.casefold(): p.slug for p in parameters.values()}
+    by_label: dict[str, list[str]] = defaultdict(list)
+    for p in parameters.values():
+        by_label[p.label.casefold()].append(p.slug)
     rows: list[dict] = []
     skipped: list[Skipped] = []
     workbook = load_workbook(path, read_only=True, data_only=True)
@@ -230,10 +233,16 @@ def read_workbook(
                 continue
             where = f"{sheet.title} row n={cell.get('n')}"
             name = _text(cell["Parameter"])
-            slug = ALIASES.get(name.casefold()) or by_label.get(name.casefold())
-            if slug is None:
+            key = name.casefold()
+            slugs = [ALIASES[key]] if key in ALIASES else by_label.get(key, [])
+            if len(slugs) > 1:
+                raise ValueError(
+                    f"{where}: '{name}' is the label of {slugs}, add it to ALIASES"
+                )
+            if not slugs:
                 skipped.append(Skipped("no such parameter", name))
                 continue
+            slug = slugs[0]
             period = _text(cell["Average period"])
             if period not in PERIODS:
                 raise ValueError(
@@ -326,6 +335,18 @@ def with_defaults(kept: list[dict], rows: list[dict]) -> list[dict]:
 def read_rows(path: Path) -> list[dict]:
     with path.open(encoding="utf-8") as stream:
         return list(csv.DictReader(stream))
+
+
+def write_checked(path: Path, rows: list[dict], parameters: dict[str, Parameter]):
+    """Replace path with rows only if the backend accepts them: a refused
+    result leaves the current CSV as it is."""
+    draft = path.with_name(f"{path.name}.new")
+    try:
+        write_rows(draft, rows)
+        read_benchmarks(draft, parameters)
+        draft.replace(path)
+    finally:
+        draft.unlink(missing_ok=True)
 
 
 def write_rows(path: Path, rows: list[dict]) -> None:
