@@ -13,6 +13,7 @@ from api.scripts import data_upload
 from api.services import publish
 from api.services.catalog_version import CatalogVersionService
 from api.services.parameter import read_parameters
+from api.services.s3 import s3_client
 from sqlalchemy import text
 from tests.fixtures import D1_REPORT, d1_rows, make_catalog, write_csv
 
@@ -112,6 +113,11 @@ def test_report_study_failed_dataset_is_red_and_not_ok(
     assert out == "\033[31m    FAILED D1: boom\033[0m\n"
 
 
+def pub_key(name: str) -> str:
+    """Key of a published file of the study of `make_catalog`."""
+    return s3_client.to_s3_key("pub/study-a/") + name
+
+
 def zip_csv(csv: Path, path: Path) -> Path:
     """A zip as macOS Finder makes it: the CSV in a sub-folder, plus
     `__MACOSX/` metadata entries that are not CSVs despite their name."""
@@ -146,12 +152,14 @@ async def test_publish_loads_zipped_csvs(session, clean_db, tmp_path, monkeypatc
     files = {"D1": local, "D2": empty}
     for name, path in files.items():
         dataset = await session.get(Dataset, fx.datasets[name])
-        dataset.folder = {"children": [{"name": path.name, "path": f"k/{name}.zip"}]}
+        dataset.folder = {
+            "children": [{"name": path.name, "path": pub_key(f"{name}.zip")}]
+        }
         session.add(dataset)
     await session.commit()
 
     async def fake_download(key: str, path: Path) -> Path:
-        shutil.copy(files[key.removeprefix("k/").removesuffix(".zip")], path)
+        shutil.copy(files[Path(key).stem], path)
         return path
 
     monkeypatch.setattr(publish, "download_object", fake_download)
@@ -177,14 +185,14 @@ async def test_publish_loads_from_s3_and_refreshes(
     dataset = await session.get(Dataset, fx.datasets["D1"])
     dataset.folder = {
         "name": "D1",
-        "path": "iaqdb/test/pub/study-a/files/D1",
+        "path": pub_key("files/D1"),
         "is_file": False,
         "children": [
             {
                 "name": "d1_long.csv",
-                "path": "iaqdb/test/pub/study-a/files/D1/d1_long.csv",
+                "path": pub_key("files/D1/d1_long.csv"),
             },
-            {"name": "raw.xlsx", "path": "iaqdb/test/pub/study-a/files/D1/raw.xlsx"},
+            {"name": "raw.xlsx", "path": pub_key("files/D1/raw.xlsx")},
         ],
     }
     session.add(dataset)
@@ -200,7 +208,7 @@ async def test_publish_loads_from_s3_and_refreshes(
     # D2 has no CSV: it fails visibly, D1 still loads
     with pytest.raises(RuntimeError, match="1 dataset\\(s\\) failed"):
         await publish.load_published_study(clean_db, fx.study_id)
-    assert downloaded == ["iaqdb/test/pub/study-a/files/D1/d1_long.csv"]
+    assert downloaded == [pub_key("files/D1/d1_long.csv")]
     await session.refresh(dataset)
     assert dataset.summary_status == "ready"
     assert dataset.load_report["unlinked_space"] == 1
@@ -231,7 +239,9 @@ async def test_concurrent_publish_loads_are_serialized(
     local = write_csv(tmp_path / "d1_long.csv", d1_rows(fx))
     for name in ("D1", "D2"):
         dataset = await session.get(Dataset, fx.datasets[name])
-        dataset.folder = {"children": [{"name": "d.csv", "path": f"k/{name}.csv"}]}
+        dataset.folder = {
+            "children": [{"name": "d.csv", "path": pub_key(f"{name}.csv")}]
+        }
         session.add(dataset)
     await session.commit()
 
@@ -253,21 +263,58 @@ async def test_concurrent_publish_loads_are_serialized(
         assert n == dataset.load_report["loaded"] > 0
 
 
+def csv_dataset(*files: tuple[str, str]) -> Dataset:
+    children = [{"name": name, "path": path} for name, path in files]
+    return Dataset(name="D", description="d", folder={"children": children})
+
+
 def test_csv_keys_unquote_and_filter():
-    dataset = Dataset(
-        name="D",
-        description="d",
-        folder={
-            "children": [
-                {"name": "a b.csv", "path": "p/a%20b.csv"},
-                {"name": "x.zip", "path": "p/x.zip"},
-                {"name": "raw.xlsx", "path": "p/raw.xlsx"},
-            ]
-        },
+    dataset = csv_dataset(
+        ("a b.csv", pub_key("a%20b.csv")),
+        ("x.zip", pub_key("x.zip")),
+        ("raw.xlsx", pub_key("raw.xlsx")),
     )
-    assert publish.csv_keys(dataset) == [
-        ("p/a b.csv", "a b.csv"),
-        ("p/x.zip", "x.zip"),
+    assert publish.csv_keys(dataset, "study-a") == [
+        (pub_key("a b.csv"), "a b.csv"),
+        (pub_key("x.zip"), "x.zip"),
     ]
-    assert publish.csv_keys(Dataset(name="D", description="d", folder=None)) == []
+    empty = Dataset(name="D", description="d", folder=None)
+    assert publish.csv_keys(empty, "study-a") == []
     assert json.dumps(D1_REPORT)  # the report is JSON serialisable
+
+
+@pytest.mark.parametrize(
+    "name", ["../../app/api/data/parameters.csv", "/app/api/data/parameters.csv"]
+)
+def test_csv_keys_names_have_no_folder(name):
+    keys = publish.csv_keys(csv_dataset((name, pub_key("a.csv"))), "study-a")
+    assert keys == [(pub_key("a.csv"), "parameters.csv")]
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        s3_client.to_s3_key("downloads/1.zip"),
+        s3_client.to_s3_key("pub/study-b/a.csv"),
+        s3_client.to_s3_key("pub/study-a-b/a.csv"),
+        s3_client.to_s3_key("draft/study-a/a.csv"),
+        s3_client.to_s3_key("pub/study-a/%2E%2E/study-b/a.csv"),
+    ],
+)
+async def test_publish_only_reads_files_of_the_study(
+    session, clean_db, monkeypatch, path
+):
+    fx = await make_catalog(session)
+    dataset = await session.get(Dataset, fx.datasets["D1"])
+    dataset.folder = csv_dataset(("a.csv", path)).folder
+    session.add(dataset)
+    await session.commit()
+
+    async def download(*_):
+        raise AssertionError("S3 was read")
+
+    monkeypatch.setattr(publish, "download_object", download)
+    with pytest.raises(RuntimeError):
+        await publish.load_published_study(clean_db, fx.study_id)
+    await session.refresh(dataset)
+    assert dataset.summary_error == "a.csv is not a published file of the study"
