@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Dict, List, Literal, Optional
 
 from enacit4r_sql.models.query import ListResult
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 from sqlalchemy import TIMESTAMP
 from sqlalchemy.dialects.postgresql import JSONB as JSON
 from sqlmodel import Column, Field, Relationship, SQLModel, UniqueConstraint
@@ -30,6 +30,16 @@ class Person(PersonBase, table=True):
     )
     # relationships
     study: Optional["Study"] = Relationship(back_populates="contributors")
+
+
+class PersonRead(PersonBase):
+    """A contributor as anyone sees them: no email unless it is public."""
+
+    id: int
+
+    @field_serializer("email")
+    def public_email(self, email: str) -> Optional[str]:
+        return email if self.email_public else None
 
 
 class StudyBase(SQLModel):
@@ -75,7 +85,7 @@ class Study(StudyBase, table=True):
 
 class StudyRead(StudyBase):
     id: int
-    contributors: List["Person"] = []
+    contributors: List[PersonRead] = []
     buildings: List["Building"] = []
     instruments: List["Instrument"] = []
     datasets: List["DatasetSummaryRead"] = []
@@ -83,6 +93,7 @@ class StudyRead(StudyBase):
 
 class StudyDraft(StudyRead):
     id: Optional[int] = Field(default=None)
+    contributors: List["Person"] = []  # with the private emails
     buildings: List["BuildingDraft"] = []
     instruments: List["InstrumentDraft"] = []
     datasets: List["DatasetDraft"] = []

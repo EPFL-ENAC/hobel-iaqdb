@@ -7,6 +7,8 @@ from typing import Literal
 from api.db import AsyncSession
 from api.models.catalog import (
     Contribution,
+    Person,
+    Study,
     StudyBundle,
     StudyBundlesResult,
     StudyDraftDocument,
@@ -227,6 +229,14 @@ class StudyDraftService:
                 status_code=404, detail=f"Published study {identifier} not found."
             )
         document = json.loads(content)
+        # the file does not have the private emails
+        contributors = await self.session.exec(
+            select(Person)
+            .join(Study)
+            .where(Study.identifier == identifier)
+            .order_by(col(Person.id))
+        )
+        document["contributors"] = [p.model_dump() for p in contributors]
 
         pairs = [
             (key, key.replace("/pub/", "/draft/"))

@@ -2,7 +2,7 @@
   <div>
     <q-card flat bordered class="q-mt-md bg-grey-3 q-mb-md">
       <q-card-section>
-        <q-markdown :src="study?.description" />
+        <q-markdown no-html :src="study?.description" />
       </q-card-section>
     </q-card>
     <div class="grid">

@@ -8,7 +8,13 @@
       </q-item-section>
       <q-item-section>
         <q-item-label>
-          <span v-if="item.html" v-html="item.html(dbobject)"></span>
+          <a
+            v-if="item.link && item.link(dbobject)"
+            :href="item.link(dbobject)"
+            target="_blank"
+            class="epfl"
+            >{{ dbobject[item.field] }}</a
+          >
           <span v-else-if="item.format"
             >{{ item.format(dbobject) }} {{ item.unit }}</span
           >
@@ -22,21 +28,6 @@
             }}
             {{ item.unit }}
           </span>
-          <div v-if="item.links">
-            <dt v-if="item.links(dbobject)">
-              <dl
-                v-for="link in item.links(dbobject)"
-                :key="link"
-                class="q-mt-sm q-mb-sm field-item"
-              >
-                <a :href="link" target="_blank">
-                  {{ truncateString(link, 100) }}
-                  <q-icon name="open_in_new" />
-                </a>
-              </dl>
-            </dt>
-            <span v-else>-</span>
-          </div>
           <div
             v-if="item.comment && item.comment(dbobject)"
             class="text-grey-6 q-mt-sm"
@@ -51,7 +42,6 @@
 
 <script setup lang="ts">
 import { toMaxDecimals } from '@/utils/numbers';
-import { truncateString } from '@/utils/strings';
 
 export interface FieldItem {
   field: string;
@@ -60,9 +50,7 @@ export interface FieldItem {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   format?: (val: any) => string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  links?: (val: any) => string[] | null; // href
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  html?: (val: any) => string;
+  link?: (val: any) => string | undefined; // href, must be a safe URL
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   visible?: (val: any) => boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
