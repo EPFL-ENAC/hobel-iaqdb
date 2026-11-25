@@ -7,6 +7,7 @@ import {
   countryOptions,
 } from '@/utils/options';
 import { defineStore } from 'pinia';
+import { isAxiosError } from 'axios';
 import { exportFile } from 'quasar';
 import { api } from '@/boot/api';
 import type {
@@ -48,6 +49,13 @@ export const useContributeStore = defineStore(
     const dataFiles = ref<DataFile[]>([]);
 
     const dataEmbargo = ref<string | undefined>('none');
+    /** The user chose the embargo: an update leaves the stored one otherwise. */
+    const dataEmbargoEdited = ref(false);
+
+    function setDataEmbargo(value: string) {
+      dataEmbargo.value = value;
+      dataEmbargoEdited.value = true;
+    }
 
     function reset() {
       study.value = {
@@ -61,11 +69,23 @@ export const useContributeStore = defineStore(
       };
       dataFiles.value = [];
       dataEmbargo.value = 'none';
+      dataEmbargoEdited.value = false;
     }
 
     async function load(identifier: string) {
-      const res = await api.get(`/contribute/study-draft/${identifier}`);
-      return study.value = res.data;
+      const [draft, embargo] = await Promise.all([
+        api.get(`/contribute/study-draft/${identifier}`),
+        api.get(`/contribute/contribution/${identifier}`)
+          .then((res) => res.data.data_embargo)
+          .catch((error) => {
+            // a draft may have no contribution yet
+            if (isNotFound(error)) return undefined;
+            throw error;
+          }),
+      ]);
+      dataEmbargo.value = embargo ?? 'none';
+      dataEmbargoEdited.value = false;
+      return study.value = draft.data;
     }
 
     const inProgress = computed(
@@ -408,6 +428,10 @@ export const useContributeStore = defineStore(
           .then((res) => res.data));
     }
 
+    function isNotFound(error: unknown) {
+      return isAxiosError(error) && error.response?.status === 404;
+    }
+
     function isUUID(str: string) {
       return str.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     }
@@ -433,19 +457,23 @@ export const useContributeStore = defineStore(
       });
       if (study.value.identifier !== '' && study.value.identifier !== '_draft') {
         // check if study exists
-        return api.get(`/contribute/study-draft/${study.value.identifier}`).then(() => {
-          // update existing study
-          return updateDraft();
-        }).catch(() => {
-          // create new study, ensure identifier is empty
-          study.value.identifier = '';
-          return createDraft();
-        });
+        const exists = await api.get(`/contribute/study-draft/${study.value.identifier}`)
+          .then(() => true)
+          .catch((error) => {
+            if (isNotFound(error)) return false;
+            throw error;
+          });
+        // an update that fails must not create a copy of the study
+        if (exists) return updateDraft();
+        // create new study, ensure identifier is empty
+        study.value.identifier = '';
       }
       return createDraft();
     }
 
     async function createDraft() {
+      // the new contribution has no embargo stored
+      dataEmbargoEdited.value = true;
       if (!authStore.isAuthenticated) {
         return api.post('/contribute/study-draft', study.value)
           .then((res) => study.value = res.data)
@@ -479,6 +507,12 @@ export const useContributeStore = defineStore(
     }
 
     async function updateContribution() {
+      if (!dataEmbargoEdited.value) return;
+      await putContribution();
+      dataEmbargoEdited.value = false;
+    }
+
+    async function putContribution() {
       if (!authStore.isAuthenticated) {
         return api.put(`/contribute/contribution/${study.value.identifier}`, {
           data_embargo: dataEmbargo.value,
@@ -565,6 +599,8 @@ export const useContributeStore = defineStore(
     return {
       study,
       dataEmbargo,
+      dataEmbargoEdited,
+      setDataEmbargo,
       inProgress,
       parseErrors,
       reset,
