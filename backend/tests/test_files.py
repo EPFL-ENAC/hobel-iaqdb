@@ -1,6 +1,7 @@
 """Access control of the S3 files routes and of the moves of uploads."""
 
 import uuid
+from contextlib import asynccontextmanager
 from datetime import datetime
 
 import pytest
@@ -203,6 +204,28 @@ async def test_published_draft_is_not_public(session, client, monkeypatch):
     await session.commit()
     path = key.replace("..", "%252E%252E")
     assert await get_anonymously(client, monkeypatch, path) == 403
+
+
+async def test_uploads_are_private(monkeypatch, tmp_path):
+    sent = []
+
+    class Client:
+        async def put_object(self, **kwargs):
+            sent.append(kwargs)
+            return {"ResponseMetadata": {"HTTPStatusCode": 200}}
+
+    @asynccontextmanager
+    async def client():
+        yield Client()
+
+    async def path_exists(_):
+        return False
+
+    monkeypatch.setattr(s3_client, "_client", client)
+    monkeypatch.setattr(s3_client, "path_exists", path_exists)
+    (tmp_path / "study.json").write_text("{}")
+    await s3_client.upload_local_file(str(tmp_path), "study.json", s3_folder="pub/s1")
+    assert len(sent) == 1 and "ACL" not in sent[0]
 
 
 async def test_draft_identifiers_are_not_listed(session, client):

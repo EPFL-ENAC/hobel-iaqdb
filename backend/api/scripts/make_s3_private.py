@@ -1,4 +1,4 @@
-"""Make every object under S3_PATH_PREFIX private. Uploads and copies used to
+"""Make the study files under S3_PATH_PREFIX private. Uploads and copies used to
 be `public-read`, which let anyone who knew a URL read drafts and embargoed
 data directly from S3. One-off, safe to re-run."""
 
@@ -8,11 +8,17 @@ import asyncio
 from api.config import config
 from api.services.s3 import COPY_CONCURRENCY, s3_client
 
+# the app's own folders: anything else under the prefix may be public on purpose
+FOLDERS = ("tmp", "draft", "pub", "downloads")
+
 
 async def run(apply: bool) -> int:
     """Returns the number of objects whose ACL could not be changed."""
-    keys = await s3_client.list_files("")
-    print(f"{len(keys)} objects under {config.S3_PATH_PREFIX}")
+    keys = []
+    for folder in FOLDERS:
+        found = await s3_client.list_files(f"{folder}/")
+        print(f"{len(found)} objects under {config.S3_PATH_PREFIX}{folder}/")
+        keys += found
     failures = []
     semaphore = asyncio.Semaphore(COPY_CONCURRENCY)
 
