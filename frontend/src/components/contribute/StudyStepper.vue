@@ -154,7 +154,8 @@
         <div class="row">
           <div class="col-12 col-md-6">
             <q-select
-              v-model="contrib.dataEmbargo"
+              :model-value="contrib.dataEmbargo"
+              @update:model-value="contrib.setDataEmbargo"
               :options="dataEmbargoOptions"
               filled
               emit-value

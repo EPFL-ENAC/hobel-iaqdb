@@ -15,7 +15,7 @@
     <div class="text-bold q-mt-md">{{ t('Contributors') }}</div>
     <template
       v-for="contributor in study?.contributors"
-      :key="contributor.email"
+      :key="contributor.id"
     >
       <fields-list :dbobject="contributor" :items="contactItems" />
     </template>
@@ -40,6 +40,7 @@ import { licenseOptions } from '@/utils/options';
 import FieldsList from '@/components/FieldsList.vue';
 import type { FieldItem } from '@/components/FieldsList.vue';
 import type { Study, Person } from '@/models';
+import { httpUrl } from '@/utils/strings';
 
 const catalogStore = useCatalogStore();
 const { t } = useI18n();
@@ -73,8 +74,7 @@ const items: FieldItem[] = [
   {
     field: 'website',
     label: 'Website',
-    html: (val: Study) =>
-      val.website ? `<a href="${val.website}" target="_blank" class="epfl">${val.website}</a>` : '-',
+    link: (val: Study) => httpUrl(val.website),
   },
 ];
 
@@ -86,21 +86,24 @@ const refItems: FieldItem[] = [
   {
     field: 'doi',
     label: 'DOI',
-    html: (val: Study) =>
-      val.doi ? `<a href="${val.doi.startsWith('http') ? val.doi : 'https://doi.org/' + val.doi}" target="_blank" class="epfl">${val.doi}</a>` : '-',
+    link: (val: Study) => httpUrl(val.doi) ?? (val.doi ? `https://doi.org/${val.doi}` : undefined),
   },
 ];
 
 const contactItems: FieldItem[] = [
   {
-    field: 'contact',
+    field: 'name',
     label: 'Name',
-    html: (val: Person) => val.name + (val.email_public ? ` &lt;<a href="mailto:${val.email}" class="epfl">${val.email}</a>&gt;` : ''),
   },
   {
-    field: 'contact',
+    field: 'email',
+    label: 'Email',
+    visible: (val: Person) => val.email_public,
+    link: (val: Person) => `mailto:${val.email}`,
+  },
+  {
+    field: 'institution',
     label: 'Institution / Company',
-    html: (val: Person) => val.institution,
   },
 ];
 </script>

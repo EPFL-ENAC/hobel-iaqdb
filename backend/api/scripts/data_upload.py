@@ -61,10 +61,9 @@ from api.services.measurement import (
     zip_csv_members,
 )
 from api.services.parameter import ParameterService, read_parameters
-from api.services.s3 import s3_client
+from api.services.s3 import head_object, s3_client
 from api.services.study import StudyService
 from api.services.study_draft import StudyDraftService
-from botocore.exceptions import ClientError
 from enacit4r_files.models.files import FileRef
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -264,17 +263,6 @@ def read_part(path: Path, start: int) -> bytes:
         return stream.read(PART_SIZE)
 
 
-async def head_object(key: str) -> dict | None:
-    """S3 object metadata, None if the object does not exist."""
-    async with s3_client._client() as client:
-        try:
-            return await client.head_object(Bucket=s3_client.bucket, Key=key)
-        except ClientError as e:
-            if e.response.get("ResponseMetadata", {}).get("HTTPStatusCode") == 404:
-                return None
-            raise
-
-
 async def is_uploaded(key: str, path: Path, md5: str) -> bool:
     """Whether the draft file in S3 already holds the content of `path`."""
     head = await head_object(key)
@@ -313,7 +301,6 @@ async def upload_file(
     kwargs = {
         "Bucket": s3_client.bucket,
         "Key": key,
-        "ACL": "public-read",
         "ContentType": s3_client._get_mime_type(path.name),
         "Metadata": {MD5_METADATA: md5},
     }

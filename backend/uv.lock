@@ -831,8 +831,8 @@ dependencies = [
 
 [[package]]
 name = "enacit4r-files"
-version = "1.4.0"
-source = { git = "https://github.com/EPFL-ENAC/enacit4r-files?rev=1.4.1#48d5382f768b51162538cb55efacbe4e80cee6c8" }
+version = "1.5.0"
+source = { git = "https://github.com/EPFL-ENAC/enacit4r-files?rev=1.5.0#c0100ed9060d61af432b3e8a8c8a21ffe16cbde3" }
 dependencies = [
     { name = "aiobotocore" },
     { name = "aiohttp" },
@@ -1211,7 +1211,7 @@ requires-dist = [
     { name = "duckdb", specifier = ">=2.0.0" },
     { name = "dynaconf", specifier = ">=3.2.6,<4.0.0" },
     { name = "enacit4r-auth", git = "https://github.com/EPFL-ENAC/enacit4r-auth?rev=0.8.0" },
-    { name = "enacit4r-files", git = "https://github.com/EPFL-ENAC/enacit4r-files?rev=1.4.1" },
+    { name = "enacit4r-files", git = "https://github.com/EPFL-ENAC/enacit4r-files?rev=1.5.0" },
     { name = "enacit4r-sql", git = "https://github.com/EPFL-ENAC/enacit4r-sql?rev=0.4.1" },
     { name = "faker", specifier = ">=40.54.0,<41.0.0" },
     { name = "fastapi", specifier = ">=0.162.5,<1.0.0" },

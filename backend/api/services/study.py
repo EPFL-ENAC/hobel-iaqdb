@@ -11,6 +11,7 @@ from api.models.catalog import (
     Instrument,
     InstrumentParameter,
     Person,
+    PersonRead,
     Space,
     StudiesResult,
     Study,
@@ -216,7 +217,9 @@ class StudyService:
         await self.session.commit()
         for person in contributors:
             await self.session.refresh(person)
-            study_dict["contributors"].append(person.model_dump())
+            study_dict["contributors"].append(
+                PersonRead.model_validate(person).model_dump()
+            )
 
         # Buildings
         study_dict["buildings"] = []

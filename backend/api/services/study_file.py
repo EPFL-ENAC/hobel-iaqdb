@@ -2,6 +2,7 @@ from typing import Iterable, Literal
 
 from api.db import AsyncSession
 from api.models.catalog import StudyFile
+from api.services.contribution import ContributionService
 from sqlalchemy.dialects.postgresql import insert
 from sqlmodel import col, delete, select
 
@@ -44,3 +45,11 @@ class StudyFileService:
             statement = statement.where(col(StudyFile.key).in_(list(keys)))
         res = await self.session.exec(statement.returning(StudyFile.key))
         return list(res.scalars().all())
+
+    async def is_open_draft(self, key: str) -> bool:
+        """Whether the file belongs to a draft that its anonymous contributor
+        may still read."""
+        file = await self.session.get(StudyFile, key)
+        if file is None or file.area != "draft" or ".." in key.split("/"):
+            return False
+        return await ContributionService(self.session).is_open(file.study_identifier)
