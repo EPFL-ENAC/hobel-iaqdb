@@ -263,6 +263,25 @@ async def test_concurrent_publish_loads_are_serialized(
         assert n == dataset.load_report["loaded"] > 0
 
 
+async def test_files_with_the_same_name_are_all_loaded(monkeypatch):
+    dataset = csv_dataset(
+        ("a/data.csv", pub_key("a/data.csv")), ("b/data.csv", pub_key("b/data.csv"))
+    )
+    loaded = []
+
+    async def download(key: str, path: Path) -> Path:
+        path.write_text(key)
+        return path
+
+    class Service:
+        async def load(self, _, paths):
+            loaded.extend(path.read_text() for path in paths)
+
+    monkeypatch.setattr(publish, "download_object", download)
+    await publish.load_dataset(Service(), dataset, "study-a")
+    assert loaded == [pub_key("a/data.csv"), pub_key("b/data.csv")]
+
+
 def csv_dataset(*files: tuple[str, str]) -> Dataset:
     children = [{"name": name, "path": path} for name, path in files]
     return Dataset(name="D", description="d", folder={"children": children})

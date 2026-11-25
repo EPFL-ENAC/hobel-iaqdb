@@ -1,4 +1,5 @@
 import json
+import logging
 import urllib.parse
 import uuid
 from typing import Literal
@@ -22,6 +23,8 @@ from fastapi import HTTPException
 from sqlalchemy import func, literal_column, or_
 from sqlalchemy.dialects.postgresql import insert
 from sqlmodel import col, select
+
+logger = logging.getLogger(__name__)
 
 BundleSort = Literal[
     "identifier", "name", "data_embargo", "created_at", "updated_at", "published_at"
@@ -63,7 +66,9 @@ class StudyDraftService:
         # Destination folder in s3
         s3_folder = f"draft/{identifier}"
 
-        # Move tmp files to their final location
+        # Copy tmp files to their final location. They are deleted once the
+        # document is committed, so that a save that fails can be retried
+        moved = []
         for dataset in document.get("datasets") or []:
             folder = dataset.get("folder")
             if not folder:
@@ -75,7 +80,7 @@ class StudyDraftService:
                         f"{s3_folder}/files/{dataset['name']}/{file['name']}"
                     )
                     await copy_object(source_key, new_key)
-                    await delete_objects([source_key])
+                    moved.append(source_key)
                     file["path"] = urllib.parse.quote(new_key)
             folder["name"] = dataset["name"]
             folder["path"] = s3_client.to_s3_path(
@@ -102,6 +107,12 @@ class StudyDraftService:
         await self.files.remove(identifier, "draft", stale)
         await self.session.commit()
         await delete_objects(stale)
+        try:
+            await delete_objects(moved)
+        except Exception:
+            # the draft is saved: an error would make the client retry the
+            # save with the paths of uploads that may be deleted
+            logger.exception("Uploads of draft %s not deleted", identifier)
         return document
 
     async def delete(self, identifier: str) -> None:

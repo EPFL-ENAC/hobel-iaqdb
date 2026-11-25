@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 
 from api.auth import User
@@ -60,6 +61,16 @@ class ContributionService:
             if (await self.session.exec(statement)).first() is not None:
                 return True
         return False
+
+    async def is_open(self, study_identifier: str) -> bool:
+        """Whether the anonymous contributor may still access the draft. The
+        study identifier, a UUID only they were given, is their credential
+        until the study is published."""
+        try:
+            uuid.UUID(study_identifier)
+        except ValueError:
+            return False
+        return not await self.is_published(study_identifier)
 
     async def delete(self, contribution_id: int) -> Contribution:
         """Delete a contribution by id"""

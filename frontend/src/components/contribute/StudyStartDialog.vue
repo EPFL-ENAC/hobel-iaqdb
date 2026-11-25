@@ -33,7 +33,9 @@
 </template>
 
 <script setup lang="ts">
+import { isAxiosError } from 'axios';
 import { useQuasar } from 'quasar';
+import { notifyError } from '@/utils/notify';
 
 const $q = useQuasar();
 const { t } = useI18n();
@@ -78,6 +80,10 @@ async function doStart() {
       // reload
       await contrib.load(identifier.value);
     } catch (error) {
+      if (isAxiosError(error) && error.response?.status === 403) {
+        notifyError(error);
+        return;
+      }
       console.error(error);
       contrib.reset();
     }

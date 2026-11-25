@@ -212,7 +212,10 @@ async def test_draft_identifiers_are_not_listed(session, client):
     assert (await client.get("/contribute/contribution/1")).status_code == 404
     body = {"data_embargo": "3m"}
     res = await client.put("/contribute/contribution/1", json=body)
-    assert res.status_code == 404
+    assert res.status_code == 403
+    # contributions are only created with a draft
+    res = await client.post("/contribute/contribution/", json=body)
+    assert res.status_code in (404, 405)
     res = await client.put(f"/contribute/contribution/{identifier}", json=body)
     assert res.status_code == 200 and res.json()["data_embargo"] == "3m"
     # the form shows the stored embargo, without the user names
@@ -238,7 +241,8 @@ async def test_published_study_is_locked(session, client, monkeypatch, mark):
         ("POST", "/contribute/study-draft", draft),
         ("PUT", f"/contribute/contribution/{identifier}", {"data_embargo": "none"}),
     ]
-    for method, path, body in writes:
+    read = ("GET", f"/contribute/study-draft/{identifier}", None)
+    for method, path, body in [read, *writes]:
         res = await client.request(method, path, json=body)
         assert res.status_code == 403, path
         assert "published" in res.json()["detail"]
@@ -253,10 +257,92 @@ async def test_published_study_is_locked(session, client, monkeypatch, mark):
         pass
 
     monkeypatch.setattr(draft_module, "delete_objects", delete_objects)
-    for method, path, body in (writes[0], writes[2]):
+    for method, path, body in (writes[0], writes[2], read):
         assert (await client.request(method, path, json=body)).status_code == 200
     res = await client.get(f"/contribute/contribution/{identifier}")
     assert res.json()["data_embargo"] == "none"
+
+
+async def test_guessable_draft_is_locked(session, client, monkeypatch):
+    """A draft of a bulk upload that is not in the catalog yet."""
+    document = {"identifier": "study-a", "name": "kept"}
+    await StudyDraftService(session).createOrUpdate(document)
+    path = "/contribute/study-draft/study-a"
+    body = {"identifier": "study-a", "name": "changed"}
+    assert (await client.put(path, json=body)).status_code == 403
+    assert (await client.get(path)).status_code == 403
+    assert (await StudyDraftService(session).get("study-a"))["name"] == "kept"
+    body = {"data_embargo": "1y"}
+    res = await client.put("/contribute/contribution/study-a", json=body)
+    assert res.status_code == 403
+
+    monkeypatch.setattr(contribute_view, "is_admin", lambda user: True)
+    assert (await client.get(path)).json()["name"] == "kept"
+
+
+@pytest.mark.parametrize("identifier", ["", "_draft"])
+async def test_new_draft_gets_an_identifier(client, identifier):
+    body = {"identifier": identifier, "name": "a"}
+    res = await client.post("/contribute/study-draft", json=body)
+    assert res.status_code == 200
+    saved = res.json()["identifier"]
+    uuid.UUID(saved)
+    assert (await client.get(f"/contribute/study-draft/{saved}")).status_code == 200
+
+
+async def test_failed_save_can_be_retried(session, monkeypatch):
+    uploads = {f"{PREFIX}tmp/1/a.csv", f"{PREFIX}tmp/2/b.csv"}
+    failing = True
+
+    async def copy_object(source, _):
+        if source not in uploads or (failing and source.endswith("b.csv")):
+            raise RuntimeError("S3")
+
+    async def delete_objects(keys):
+        uploads.difference_update(keys)
+
+    monkeypatch.setattr(draft_module, "copy_object", copy_object)
+    monkeypatch.setattr(draft_module, "delete_objects", delete_objects)
+
+    def document():
+        datasets = [
+            {
+                "name": name,
+                "description": "",
+                "folder": {"children": [{"name": file, "path": f"{PREFIX}{path}"}]},
+            }
+            for name, file, path in [
+                ("D1", "a.csv", "tmp/1/a.csv"),
+                ("D2", "b.csv", "tmp/2/b.csv"),
+            ]
+        ]
+        draft = StudyDraft(identifier="s1", datasets=datasets)
+        return draft.model_dump(mode="json")
+
+    with pytest.raises(RuntimeError):
+        await StudyDraftService(session).createOrUpdate(document())
+    assert len(uploads) == 2
+    failing = False
+    await StudyDraftService(session).createOrUpdate(document())
+    assert uploads == set()
+
+
+async def test_uploads_cleanup_failure_keeps_the_save(session, monkeypatch):
+    async def copy_object(*_):
+        pass
+
+    async def delete_objects(keys):
+        if keys:
+            raise RuntimeError("S3")
+
+    monkeypatch.setattr(draft_module, "copy_object", copy_object)
+    monkeypatch.setattr(draft_module, "delete_objects", delete_objects)
+    child = {"name": "a.csv", "path": f"{PREFIX}tmp/1/a.csv"}
+    dataset = {"name": "D1", "description": "", "folder": {"children": [child]}}
+    document = StudyDraft(identifier="s1", datasets=[dataset]).model_dump(mode="json")
+    saved = await StudyDraftService(session).createOrUpdate(document)
+    key = f"{PREFIX}draft/s1/files/D1/a.csv"
+    assert saved["datasets"][0]["folder"]["children"][0]["path"] == key
 
 
 async def test_open_draft_is_editable(session, client):

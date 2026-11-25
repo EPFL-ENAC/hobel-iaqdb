@@ -1,4 +1,3 @@
-import uuid
 from typing import Iterable, Literal
 
 from api.db import AsyncSession
@@ -49,14 +48,8 @@ class StudyFileService:
 
     async def is_open_draft(self, key: str) -> bool:
         """Whether the file belongs to a draft that its anonymous contributor
-        may still read. The study identifier, a UUID only they were given, is
-        their credential until the study is published: the catalog shows it."""
+        may still read."""
         file = await self.session.get(StudyFile, key)
         if file is None or file.area != "draft" or ".." in key.split("/"):
             return False
-        identifier = file.study_identifier
-        try:
-            uuid.UUID(identifier)
-        except ValueError:
-            return False
-        return not await ContributionService(self.session).is_published(identifier)
+        return await ContributionService(self.session).is_open(file.study_identifier)

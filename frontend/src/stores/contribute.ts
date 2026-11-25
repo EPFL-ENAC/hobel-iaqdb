@@ -49,8 +49,12 @@ export const useContributeStore = defineStore(
     const dataFiles = ref<DataFile[]>([]);
 
     const dataEmbargo = ref<string | undefined>('none');
-    /** The user chose the embargo: an update leaves the stored one otherwise. */
-    const dataEmbargoEdited = ref(false);
+    /**
+     * The user chose the embargo: an update leaves the stored one otherwise.
+     * Undefined in a state persisted before this flag existed: the embargo was
+     * not loaded then, so any value but the default is the user's choice.
+     */
+    const dataEmbargoEdited = ref<boolean>();
 
     function setDataEmbargo(value: string) {
       dataEmbargo.value = value;
@@ -72,9 +76,17 @@ export const useContributeStore = defineStore(
       dataEmbargoEdited.value = false;
     }
 
+    /** Contributors are anonymous, the token is for admins. */
+    async function authConfig() {
+      if (!authStore.isAuthenticated) return {};
+      await authStore.updateToken();
+      return { headers: { Authorization: `Bearer ${authStore.accessToken}` } };
+    }
+
     async function load(identifier: string) {
+      const config = await authConfig();
       const [draft, embargo] = await Promise.all([
-        api.get(`/contribute/study-draft/${identifier}`),
+        api.get(`/contribute/study-draft/${identifier}`, config),
         api.get(`/contribute/contribution/${identifier}`)
           .then((res) => res.data.data_embargo)
           .catch((error) => {
@@ -457,7 +469,7 @@ export const useContributeStore = defineStore(
       });
       if (study.value.identifier !== '' && study.value.identifier !== '_draft') {
         // check if study exists
-        const exists = await api.get(`/contribute/study-draft/${study.value.identifier}`)
+        const exists = await api.get(`/contribute/study-draft/${study.value.identifier}`, await authConfig())
           .then(() => true)
           .catch((error) => {
             if (isNotFound(error)) return false;
@@ -507,7 +519,8 @@ export const useContributeStore = defineStore(
     }
 
     async function updateContribution() {
-      if (!dataEmbargoEdited.value) return;
+      const edited = dataEmbargoEdited.value ?? (dataEmbargo.value ?? 'none') !== 'none';
+      if (!edited) return;
       await putContribution();
       dataEmbargoEdited.value = false;
     }

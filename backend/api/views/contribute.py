@@ -36,17 +36,18 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 router = APIRouter()
 
 
-async def check_editable(
+async def check_open(
     session: AsyncSession, identifier: str | None, user: User | None
 ) -> None:
-    """Contributors are anonymous: the study identifier is their credential,
-    until the catalog shows it."""
-    if is_admin(user) or not identifier:
+    """Contributors are anonymous: the study identifier, a UUID, is their
+    credential until the catalog shows it. A new draft has none yet."""
+    if is_admin(user) or not identifier or identifier == "_draft":
         return
-    if await ContributionService(session).is_published(identifier):
+    if not await ContributionService(session).is_open(identifier):
         raise HTTPException(
             status_code=403,
-            detail="This study is published: only administrators can change it",
+            detail="This study is published, or was added by an administrator:"
+            " only administrators can access its draft",
         )
 
 
@@ -134,7 +135,7 @@ async def create_study_draft(
             status_code=409,
             detail=f"Study with identifier {identifier} already exists.",
         )
-    await check_editable(session, identifier, user)
+    await check_open(session, identifier, user)
     document = await service.createOrUpdate(study.model_dump(mode="json"))
     await ContributionService(session).touch_by_identifier(document["identifier"], user)
     return document
@@ -144,8 +145,10 @@ async def create_study_draft(
 async def get_study_draft(
     identifier: str,
     session: AsyncSession = Depends(get_session),
+    user: User = Depends(kc_service.get_user_info(required=False)),
 ) -> dict:
-    """Get a study draft"""
+    """Get a study draft: it has the private emails of the contributors"""
+    await check_open(session, identifier, user)
     return await StudyDraftService(session).get(identifier)
 
 
@@ -162,7 +165,7 @@ async def update_study_draft(
             status_code=400,
             detail="Identifier in URL does not match identifier in body",
         )
-    await check_editable(session, identifier, user)
+    await check_open(session, identifier, user)
     document = await StudyDraftService(session).createOrUpdate(
         study.model_dump(mode="json")
     )
@@ -287,18 +290,6 @@ async def delete_contribution(
         await service.delete_by_identifier(id)
 
 
-@router.post(
-    "/contribution/", response_model=Contribution, response_model_exclude_none=True
-)
-async def create_contribution(
-    contribution: Contribution,
-    session: AsyncSession = Depends(get_session),
-    user: User = Depends(kc_service.get_user_info()),
-) -> Contribution:
-    """Create a contribution"""
-    return await ContributionService(session).create(contribution, user)
-
-
 @router.put(
     "/contribution/{id}", response_model=Contribution, response_model_exclude_none=True
 )
@@ -310,5 +301,5 @@ async def update_contribution(
 ) -> Contribution:
     """Update a contribution by study identifier, not by id: ids are
     guessable and the response has the identifier"""
-    await check_editable(session, id, user)
+    await check_open(session, id, user)
     return await ContributionService(session).update(id, contribution, user)

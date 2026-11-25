@@ -46,7 +46,12 @@ async def load_dataset(
         raise ValueError(f"dataset {dataset.name}: no CSV file")
     with tempfile.TemporaryDirectory() as tmp:
         try:
-            paths = [await download_object(key, Path(tmp) / name) for key, name in keys]
+            paths = []
+            for i, (key, name) in enumerate(keys):
+                # own folder: files may share a name
+                folder = Path(tmp) / str(i)
+                folder.mkdir()
+                paths.append(await download_object(key, folder / name))
         except Exception as e:
             await service.fail(dataset.id, f"download failed: {e}")
             raise
