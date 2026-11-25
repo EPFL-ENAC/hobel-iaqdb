@@ -14,6 +14,7 @@ s3_client = S3Service(
     config.S3_REGION,
     config.S3_BUCKET,
     config.S3_PATH_PREFIX,
+    acl=None,  # private: objects are only served through the API
 )
 
 # CopyObject refuses objects above 5 GB, those are copied in parts instead
