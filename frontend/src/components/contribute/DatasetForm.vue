@@ -41,6 +41,8 @@
             round
             icon="download"
             :disable="uploading"
+            :loading="child.path in downloads"
+            :percentage="downloads[child.path]"
             :title="t('download')"
             color="primary"
             @click="onDownload(child)"
@@ -61,6 +63,7 @@
 </template>
 
 <script setup lang="ts">
+import { isAxiosError } from 'axios';
 import DatasetVariablesForm from '@/components/contribute/DatasetVariablesForm.vue';
 import DataFileDialog from '@/components/contribute/DataFileDialog.vue';
 import type { Dataset, FileNode } from '@/models';
@@ -78,6 +81,8 @@ const { t } = useI18n();
 
 const showDataFile = ref(false);
 const uploading = ref(false);
+/** Percentage received of the files being downloaded, by path. */
+const downloads = ref<Record<string, number>>({});
 
 const dataset = ref(props.modelValue);
 
@@ -85,8 +90,21 @@ watch(() => props.modelValue, (val) => {
   dataset.value = val;
 });
 
-function onDownload(file: FileNode) {
-  contrib.downloadFile(file);
+async function onDownload(file: FileNode) {
+  downloads.value[file.path] = 0;
+  try {
+    await contrib.downloadFile(file, (percentage) => {
+      downloads.value[file.path] = percentage;
+    });
+  } catch (error) {
+    // the error body is a blob, as the file would be: no detail to show
+    const status = isAxiosError(error) ? error.response?.status : undefined;
+    if (status === 403) notifyError('study.dataset.download_forbidden');
+    else if (status === 404) notifyError('study.dataset.download_not_found');
+    else notifyError(error);
+  } finally {
+    delete downloads.value[file.path];
+  }
 }
 
 function onShowDataFile() {

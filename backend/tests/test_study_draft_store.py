@@ -1,6 +1,7 @@
 """Study drafts in the database and the S3 files index."""
 
 import json
+import uuid
 
 from api.models.catalog import StudyDraft
 from api.scripts import import_s3_drafts
@@ -132,17 +133,18 @@ async def test_api_drafts_are_validated(client):
         "/contribute/study-draft", json={"identifier": "s2", "buildings": "?"}
     )
     assert res.status_code == 422
-    body = {"identifier": "s2", "name": "S2"}
+    identifier = str(uuid.uuid4())
+    body = {"identifier": identifier, "name": "S2"}
     res = await client.post("/contribute/study-draft", json=body)
     assert res.status_code == 200, res.text
     res = await client.post("/contribute/study-draft", json=body)
     assert res.status_code == 409
-    res = await client.get("/contribute/study-draft/s2")
+    res = await client.get(f"/contribute/study-draft/{identifier}")
     assert res.json()["name"] == "S2"
     assert res.json()["datasets"] == []
     res = await client.put("/contribute/study-draft/other", json=body)
     assert res.status_code == 400
-    res = await client.get("/contribute/study-draft/missing")
+    res = await client.get(f"/contribute/study-draft/{uuid.uuid4()}")
     assert res.status_code == 404
 
 

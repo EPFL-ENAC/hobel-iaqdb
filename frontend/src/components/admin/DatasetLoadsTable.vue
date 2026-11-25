@@ -141,7 +141,8 @@ function reportEntries(report: LoadReport): [string, number][] {
   );
 }
 
-const formatCount = (v?: number) => (v === undefined ? '-' : v.toLocaleString());
+// null: no report, the load is pending or failed before reading any file
+const formatCount = (v?: number | null) => v?.toLocaleString() ?? '-';
 
 function duration(row: DatasetLoad) {
   if (!row.load_started_at || !row.load_finished_at) return undefined;

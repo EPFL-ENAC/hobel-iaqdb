@@ -1,11 +1,12 @@
 from importlib.resources import files
 from typing import Literal
 
-from api.auth import User, kc_service
+from api.auth import User, is_admin, kc_service
 from api.config import config
 from api.db import AsyncSession, get_engine, get_session
 from api.models.catalog import (
     Contribution,
+    ContributionRead,
     ContributionsResult,
     DatasetLoadsResult,
     Study,
@@ -33,6 +34,21 @@ from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncEngine
 
 router = APIRouter()
+
+
+async def check_open(
+    session: AsyncSession, identifier: str | None, user: User | None
+) -> None:
+    """Contributors are anonymous: the study identifier, a UUID, is their
+    credential until the catalog shows it. A new draft has none yet."""
+    if is_admin(user) or not identifier or identifier == "_draft":
+        return
+    if not await ContributionService(session).is_open(identifier):
+        raise HTTPException(
+            status_code=403,
+            detail="This study is published, or was added by an administrator:"
+            " only administrators can access its draft",
+        )
 
 
 @router.get("/study-template")
@@ -119,6 +135,7 @@ async def create_study_draft(
             status_code=409,
             detail=f"Study with identifier {identifier} already exists.",
         )
+    await check_open(session, identifier, user)
     document = await service.createOrUpdate(study.model_dump(mode="json"))
     await ContributionService(session).touch_by_identifier(document["identifier"], user)
     return document
@@ -128,8 +145,10 @@ async def create_study_draft(
 async def get_study_draft(
     identifier: str,
     session: AsyncSession = Depends(get_session),
+    user: User = Depends(kc_service.get_user_info(required=False)),
 ) -> dict:
-    """Get a study draft"""
+    """Get a study draft: it has the private emails of the contributors"""
+    await check_open(session, identifier, user)
     return await StudyDraftService(session).get(identifier)
 
 
@@ -146,6 +165,7 @@ async def update_study_draft(
             status_code=400,
             detail="Identifier in URL does not match identifier in body",
         )
+    await check_open(session, identifier, user)
     document = await StudyDraftService(session).createOrUpdate(
         study.model_dump(mode="json")
     )
@@ -237,8 +257,9 @@ async def get_contributions(
     sort: str = Query(None),
     range: str = Query(None),
     session: AsyncSession = Depends(get_session),
+    user: User = Depends(kc_service.require_admin()),
 ) -> ContributionsResult:
-    """Get all contributions"""
+    """Get all contributions (admin: the identifier of a draft gives access to it)"""
     service = ContributionService(session)
     res = await service.find(
         paramAsDict(filter), paramAsArray(sort), paramAsArray(range)
@@ -246,19 +267,13 @@ async def get_contributions(
     return res
 
 
-@router.get("/contribution/{id}", response_model=Contribution)
+@router.get("/contribution/{identifier}", response_model=ContributionRead)
 async def get_contribution(
+    identifier: str,
     session: AsyncSession = Depends(get_session),
-    *,
-    id: str,
 ) -> Contribution:
-    """Get a contribution by id or study identifier"""
-    service = ContributionService(session)
-    if id.isdigit():
-        res = await service.get(int(id))
-    else:
-        res = await service.get_by_identifier(id)
-    return res
+    """Get a contribution by study identifier, not by id: ids are guessable"""
+    return await ContributionService(session).get_by_identifier(identifier)
 
 
 @router.delete("/contribution/{id}")
@@ -275,18 +290,6 @@ async def delete_contribution(
         await service.delete_by_identifier(id)
 
 
-@router.post(
-    "/contribution/", response_model=Contribution, response_model_exclude_none=True
-)
-async def create_contribution(
-    contribution: Contribution,
-    session: AsyncSession = Depends(get_session),
-    user: User = Depends(kc_service.get_user_info()),
-) -> Contribution:
-    """Create a contribution"""
-    return await ContributionService(session).create(contribution, user)
-
-
 @router.put(
     "/contribution/{id}", response_model=Contribution, response_model_exclude_none=True
 )
@@ -296,5 +299,7 @@ async def update_contribution(
     session: AsyncSession = Depends(get_session),
     user: User = Depends(kc_service.get_user_info(required=False)),
 ) -> Contribution:
-    """Update a contribution by id"""
+    """Update a contribution by study identifier, not by id: ids are
+    guessable and the response has the identifier"""
+    await check_open(session, id, user)
     return await ContributionService(session).update(id, contribution, user)

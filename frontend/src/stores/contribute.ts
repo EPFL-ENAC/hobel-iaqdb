@@ -7,7 +7,9 @@ import {
   countryOptions,
 } from '@/utils/options';
 import { defineStore } from 'pinia';
-import { api, baseUrl } from '@/boot/api';
+import { isAxiosError } from 'axios';
+import { exportFile } from 'quasar';
+import { api } from '@/boot/api';
 import type {
   Study,
   Building,
@@ -47,6 +49,17 @@ export const useContributeStore = defineStore(
     const dataFiles = ref<DataFile[]>([]);
 
     const dataEmbargo = ref<string | undefined>('none');
+    /**
+     * The user chose the embargo: an update leaves the stored one otherwise.
+     * Undefined in a state persisted before this flag existed: the embargo was
+     * not loaded then, so any value but the default is the user's choice.
+     */
+    const dataEmbargoEdited = ref<boolean>();
+
+    function setDataEmbargo(value: string) {
+      dataEmbargo.value = value;
+      dataEmbargoEdited.value = true;
+    }
 
     function reset() {
       study.value = {
@@ -60,11 +73,31 @@ export const useContributeStore = defineStore(
       };
       dataFiles.value = [];
       dataEmbargo.value = 'none';
+      dataEmbargoEdited.value = false;
+    }
+
+    /** Contributors are anonymous, the token is for admins. */
+    async function authConfig() {
+      if (!authStore.isAuthenticated) return {};
+      await authStore.updateToken();
+      return { headers: { Authorization: `Bearer ${authStore.accessToken}` } };
     }
 
     async function load(identifier: string) {
-      const res = await api.get(`/contribute/study-draft/${identifier}`);
-      return study.value = res.data;
+      const config = await authConfig();
+      const [draft, embargo] = await Promise.all([
+        api.get(`/contribute/study-draft/${identifier}`, config),
+        api.get(`/contribute/contribution/${identifier}`)
+          .then((res) => res.data.data_embargo)
+          .catch((error) => {
+            // a draft may have no contribution yet
+            if (isNotFound(error)) return undefined;
+            throw error;
+          }),
+      ]);
+      dataEmbargo.value = embargo ?? 'none';
+      dataEmbargoEdited.value = false;
+      return study.value = draft.data;
     }
 
     const inProgress = computed(
@@ -407,6 +440,10 @@ export const useContributeStore = defineStore(
           .then((res) => res.data));
     }
 
+    function isNotFound(error: unknown) {
+      return isAxiosError(error) && error.response?.status === 404;
+    }
+
     function isUUID(str: string) {
       return str.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     }
@@ -432,19 +469,23 @@ export const useContributeStore = defineStore(
       });
       if (study.value.identifier !== '' && study.value.identifier !== '_draft') {
         // check if study exists
-        return api.get(`/contribute/study-draft/${study.value.identifier}`).then(() => {
-          // update existing study
-          return updateDraft();
-        }).catch(() => {
-          // create new study, ensure identifier is empty
-          study.value.identifier = '';
-          return createDraft();
-        });
+        const exists = await api.get(`/contribute/study-draft/${study.value.identifier}`, await authConfig())
+          .then(() => true)
+          .catch((error) => {
+            if (isNotFound(error)) return false;
+            throw error;
+          });
+        // an update that fails must not create a copy of the study
+        if (exists) return updateDraft();
+        // create new study, ensure identifier is empty
+        study.value.identifier = '';
       }
       return createDraft();
     }
 
     async function createDraft() {
+      // the new contribution has no embargo stored
+      dataEmbargoEdited.value = true;
       if (!authStore.isAuthenticated) {
         return api.post('/contribute/study-draft', study.value)
           .then((res) => study.value = res.data)
@@ -478,6 +519,13 @@ export const useContributeStore = defineStore(
     }
 
     async function updateContribution() {
+      const edited = dataEmbargoEdited.value ?? (dataEmbargo.value ?? 'none') !== 'none';
+      if (!edited) return;
+      await putContribution();
+      dataEmbargoEdited.value = false;
+    }
+
+    async function putContribution() {
       if (!authStore.isAuthenticated) {
         return api.put(`/contribute/contribution/${study.value.identifier}`, {
           data_embargo: dataEmbargo.value,
@@ -530,8 +578,18 @@ export const useContributeStore = defineStore(
       return await api.delete(`/files/${file.path}`);
     }
 
-    function downloadFile(file: FileNode) {
-      window.open(`${baseUrl}/files/${file.path}?d=true`);
+    /** `onProgress` gets the received share of the file, 0 to 100. */
+    async function downloadFile(file: FileNode, onProgress: (percentage: number) => void) {
+      // contributors are anonymous, the token is for admins
+      if (authStore.isAuthenticated) await authStore.updateToken();
+      // ponytail: the file goes through browser memory, as a link cannot carry the token;
+      // presigned S3 URLs if files outgrow it
+      const res = await api.get(`/files/${file.path}`, {
+        responseType: 'blob',
+        headers: authStore.isAuthenticated ? { Authorization: `Bearer ${authStore.accessToken}` } : {},
+        onDownloadProgress: ({ loaded, total }) => onProgress(total ? (100 * loaded) / total : 0),
+      });
+      exportFile(file.name, res.data);
     }
 
     async function uploadTmpFiles(files: File[]): Promise<FileNode> {
@@ -554,6 +612,8 @@ export const useContributeStore = defineStore(
     return {
       study,
       dataEmbargo,
+      dataEmbargoEdited,
+      setDataEmbargo,
       inProgress,
       parseErrors,
       reset,

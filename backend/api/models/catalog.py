@@ -404,6 +404,14 @@ class Contribution(ContributionBase, table=True):
     )
 
 
+class ContributionRead(BaseModel):
+    """What a contributor, who is anonymous, sees of their contribution."""
+
+    study_identifier: str
+    data_embargo: Optional[str] = None
+    published_at: Optional[datetime] = None
+
+
 class StudyDraftDocument(SQLModel, table=True):
     """A study draft as the contributor left it: raw JSON, validated on publish."""
 

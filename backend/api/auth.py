@@ -9,3 +9,7 @@ kc_service = KeycloakService(
     "admin",
     client_roles=config.KEYCLOAK_CLIENT_ROLES,
 )
+
+
+def is_admin(user: User | None) -> bool:
+    return user is not None and kc_service.admin_role in kc_service.get_roles(user)
