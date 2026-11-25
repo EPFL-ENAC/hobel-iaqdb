@@ -2,11 +2,11 @@ from datetime import datetime
 
 from api.auth import User
 from api.db import AsyncSession
-from api.models.catalog import Contribution, ContributionsResult
+from api.models.catalog import Contribution, ContributionsResult, Study
 from enacit4r_sql.utils.query import QueryBuilder
 from fastapi import HTTPException
 from sqlalchemy.sql import text
-from sqlmodel import select
+from sqlmodel import col, select
 
 
 class ContributionQueryBuilder(QueryBuilder):
@@ -46,6 +46,20 @@ class ContributionService:
             raise HTTPException(status_code=404, detail="Contribution not found")
 
         return contribution
+
+    async def is_published(self, study_identifier: str) -> bool:
+        """Whether the study is, or was, in the catalog, which shows its
+        identifier: it is no longer the credential of its contributor."""
+        published = select(Contribution.id).where(
+            Contribution.study_identifier == study_identifier,
+            col(Contribution.published_at).is_not(None),
+        )
+        # a study is in the catalog before its contribution is marked published
+        study = select(Study.id).where(Study.identifier == study_identifier)
+        for statement in (published, study):
+            if (await self.session.exec(statement)).first() is not None:
+                return True
+        return False
 
     async def delete(self, contribution_id: int) -> Contribution:
         """Delete a contribution by id"""
@@ -109,14 +123,12 @@ class ContributionService:
         return contribution
 
     async def update(
-        self, id_or_identifier: str, payload: Contribution, user: User = None
+        self, study_identifier: str, payload: Contribution, user: User = None
     ) -> Contribution:
-        """Update a contribution"""
+        """Update a contribution by study identifier"""
         res = await self.session.exec(
-            select(Contribution).where(Contribution.id == int(id_or_identifier))
-            if id_or_identifier.isdigit()
-            else select(Contribution).where(
-                Contribution.study_identifier == id_or_identifier
+            select(Contribution).where(
+                Contribution.study_identifier == study_identifier
             )
         )
         contribution = res.one_or_none()

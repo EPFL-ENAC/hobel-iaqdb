@@ -1,14 +1,25 @@
 """
 Handle / uploads
 """
-import datetime
+import uuid
+from urllib.parse import quote
 
-from api.services.s3 import s3_client
+from api.auth import User, is_admin, kc_service
+from api.db import AsyncSession, get_session
+from api.services.s3 import (
+    delete_objects,
+    head_object,
+    is_secret_tmp_key,
+    s3_client,
+    stream_object,
+    tmp_key,
+)
+from api.services.study_file import StudyFileService
 from api.utils.files import file_checker
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.datastructures import UploadFile
 from fastapi.param_functions import File
-from fastapi.responses import Response
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 
@@ -22,31 +33,43 @@ router = APIRouter()
 @router.get(
     "/{file_path:path}",
     status_code=200,
-    description="-- Download any assets from S3 --",
+    description="-- Download any assets from S3 (admin), or own uploads --",
 )
 async def get_file(
     file_path: str,
-    download: bool = Query(
-        False, alias="d", description="Download file instead of inline display"
-    ),
+    session: AsyncSession = Depends(get_session),
+    user: User | None = Depends(kc_service.get_user_info(required=False)),
 ):
-    (body, content_type) = await s3_client.get_file(file_path)
-    if body:
-        if download:
-            # download file
-            return Response(
-                content=body,
-                media_type=content_type,
-                headers={
-                    "Content-Disposition": "attachment; filename="
-                    + file_path.split("/")[-1]
-                },
+    """Admins read any file: they include studies under data embargo and the
+    archives of the download links. Contributors, who are anonymous, read their
+    uploads and the files of their draft until it is published. Contributors
+    upload any content, so it is never displayed inline."""
+    if not is_admin(user):
+        upload = tmp_key(file_path)
+        if not (
+            is_secret_tmp_key(upload)
+            if upload
+            else await StudyFileService(session).is_open_draft(
+                s3_client.to_s3_key(file_path)
             )
-        else:
-            # inline image
-            return Response(content=body)
-    else:
+        ):
+            raise HTTPException(
+                status_code=403, detail="You are not authorised to read this file"
+            )
+    key = s3_client.to_s3_key(file_path)
+    head = await head_object(key)
+    if head is None:
         raise HTTPException(status_code=404, detail="File not found")
+    return StreamingResponse(
+        stream_object(key),
+        media_type=head["ContentType"],
+        headers={
+            "Content-Disposition": "attachment;"
+            f" filename*=UTF-8''{quote(key.split('/')[-1])}",
+            "Content-Length": str(head["ContentLength"]),
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @router.post(
@@ -58,9 +81,8 @@ async def get_file(
 async def upload_temp_files(
     files: list[UploadFile] = File(description="multiple file upload"),
 ):
-    current_time = datetime.datetime.now()
-    # generate unique name for the files' base folder in S3
-    folder_name = str(current_time.timestamp()).replace(".", "")
+    # unguessable name for the files' base folder in S3: knowing it gives access
+    folder_name = uuid.uuid4().hex
     folder_path = f"tmp/{folder_name}"
     children = [
         await s3_client.upload_file(file, s3_folder=folder_path) for file in files
@@ -77,10 +99,11 @@ async def upload_temp_files(
 @router.delete(
     "/{file_path:path}",
     status_code=204,
-    description="-- Delete asset present in S3 --",
+    description="-- Delete temporary asset present in S3 --",
 )
 async def delete_temp_files(file_path: str):
-    # delete path if it contains /tmp/
-    if "/tmp/" in file_path:
-        await s3_client.delete_file(file_path)
+    # anything but an upload not saved yet is left to the study draft routes
+    key = tmp_key(file_path)
+    if key:
+        await delete_objects([key])
     return

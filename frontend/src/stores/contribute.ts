@@ -7,7 +7,8 @@ import {
   countryOptions,
 } from '@/utils/options';
 import { defineStore } from 'pinia';
-import { api, baseUrl } from '@/boot/api';
+import { exportFile } from 'quasar';
+import { api } from '@/boot/api';
 import type {
   Study,
   Building,
@@ -530,8 +531,18 @@ export const useContributeStore = defineStore(
       return await api.delete(`/files/${file.path}`);
     }
 
-    function downloadFile(file: FileNode) {
-      window.open(`${baseUrl}/files/${file.path}?d=true`);
+    /** `onProgress` gets the received share of the file, 0 to 100. */
+    async function downloadFile(file: FileNode, onProgress: (percentage: number) => void) {
+      // contributors are anonymous, the token is for admins
+      if (authStore.isAuthenticated) await authStore.updateToken();
+      // ponytail: the file goes through browser memory, as a link cannot carry the token;
+      // presigned S3 URLs if files outgrow it
+      const res = await api.get(`/files/${file.path}`, {
+        responseType: 'blob',
+        headers: authStore.isAuthenticated ? { Authorization: `Bearer ${authStore.accessToken}` } : {},
+        onDownloadProgress: ({ loaded, total }) => onProgress(total ? (100 * loaded) / total : 0),
+      });
+      exportFile(file.name, res.data);
     }
 
     async function uploadTmpFiles(files: File[]): Promise<FileNode> {

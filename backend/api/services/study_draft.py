@@ -10,7 +10,13 @@ from api.models.catalog import (
     StudyBundlesResult,
     StudyDraftDocument,
 )
-from api.services.s3 import copy_objects, delete_objects, s3_client
+from api.services.s3 import (
+    copy_object,
+    copy_objects,
+    delete_objects,
+    s3_client,
+    tmp_key,
+)
 from api.services.study_file import StudyFileService
 from fastapi import HTTPException
 from sqlalchemy import func, literal_column, or_
@@ -63,11 +69,13 @@ class StudyDraftService:
             if not folder:
                 continue
             for file in folder.get("children") or []:
-                if "/tmp/" in file["path"]:
-                    dataset_file_path = (
+                source_key = tmp_key(file["path"])
+                if source_key:
+                    new_key = s3_client.to_s3_key(
                         f"{s3_folder}/files/{dataset['name']}/{file['name']}"
                     )
-                    new_key = await s3_client.move_file(file["path"], dataset_file_path)
+                    await copy_object(source_key, new_key)
+                    await delete_objects([source_key])
                     file["path"] = urllib.parse.quote(new_key)
             folder["name"] = dataset["name"]
             folder["path"] = s3_client.to_s3_path(

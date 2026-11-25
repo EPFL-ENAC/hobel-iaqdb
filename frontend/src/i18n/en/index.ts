@@ -229,6 +229,8 @@ export default {
       description_hint: 'Detailed description of the dataset.',
       file: 'File',
       file_hint: 'The dataset file.',
+      download_forbidden: 'You cannot download this file. Once a study is published, only administrators can download its files from this form.',
+      download_not_found: 'This file was not found, it may have been removed or replaced.',
       dictionary: 'Dictionary',
       dictionary_hint: 'The dataset dictionary, following the IAQ reference dictionary.',
       variables: 'Variables',
