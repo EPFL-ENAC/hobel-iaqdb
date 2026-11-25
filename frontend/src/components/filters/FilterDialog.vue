@@ -1,7 +1,15 @@
 <template>
-  <q-dialog :model-value="modelValue" @update:model-value="(value) => emit('update:modelValue', value)" @before-show="open">
+  <q-dialog
+    :model-value="modelValue"
+    :maximized="small"
+    :transition-show="small ? 'slide-up' : 'scale'"
+    :transition-hide="small ? 'slide-down' : 'scale'"
+    @update:model-value="(value) => emit('update:modelValue', value)"
+    @before-show="open"
+    @show="revealTab"
+  >
     <q-card class="filter-dialog">
-      <nav class="filter-dialog__nav" :aria-label="t('filter_dialog.sections_label')">
+      <nav ref="nav" class="filter-dialog__nav" :aria-label="t('filter_dialog.sections_label')">
         <button
           v-for="key in FILTER_SECTIONS"
           :key="key"
@@ -22,7 +30,8 @@
       </nav>
       <section class="filter-dialog__main">
         <header class="filter-dialog__header">
-          <h2 class="filter-dialog__title">{{ t(`filter_dialog.sections.${current}.title`) }}</h2>
+          <!-- full screen, the tabs name the section: the title names the dialog -->
+          <h2 class="filter-dialog__title">{{ small ? t('filters') : t(`filter_dialog.sections.${current}.title`) }}</h2>
           <q-btn v-close-popup flat round dense icon="close" :aria-label="t('ranked_bars.close')" />
         </header>
         <div class="filter-dialog__body">
@@ -33,7 +42,7 @@
             outline
             no-caps
             color="grey-8"
-            :label="t('filter_dialog.clear_section', { section: t(`filter_dialog.sections.${current}.title`) })"
+            :label="small ? t('filter_dialog.clear') : t('filter_dialog.clear_section', { section: t(`filter_dialog.sections.${current}.title`) })"
             @click="clearSection(draft, current)"
           />
           <q-btn
@@ -75,6 +84,7 @@ import {
 import { useExploreQuery } from '@/composables/useExploreQuery';
 import { useFilterSummary } from '@/composables/useFilterSummary';
 import { DEFAULT_MEASUREMENT_YEARS, rebound } from '@/stores/filters';
+import { useQuasar } from 'quasar';
 
 interface Props {
   modelValue: boolean;
@@ -86,6 +96,10 @@ const props = withDefaults(defineProps<Props>(), { section: 'what' });
 const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>();
 const { t } = useI18n();
 const summary = useFilterSummary();
+const $q = useQuasar();
+
+/** a phone or tablet: the dialog takes the whole screen, its buttons at the bottom */
+const small = computed(() => $q.screen.lt.md);
 
 const SECTIONS: Record<FilterSection, Component> = {
   what: WhatWhenSection,
@@ -98,6 +112,15 @@ const SECTIONS: Record<FilterSection, Component> = {
 const draft = reactive(appliedDraft());
 provide(FILTER_DRAFT, draft);
 const current = ref<FilterSection>(props.section);
+const nav = ref<HTMLElement | null>(null);
+
+/** Scroll the current tab into view: the tabs scroll sideways on a small screen. */
+function revealTab(): void {
+  void nextTick(() => {
+    nav.value?.querySelector('.filter-dialog__tab--current')?.scrollIntoView({ block: 'nearest', inline: 'center' });
+  });
+}
+watch(current, revealTab);
 
 // the years holding records may load after the draft was copied: it moves with them
 watch(
@@ -156,9 +179,17 @@ function apply(): void {
   border-radius: 4px;
   overflow: hidden;
 
+  // full screen: the title and close on top, then the sections, the filters
+  // scrolling in between, and the buttons kept at the bottom
   @media (max-width: $breakpoint-sm-max) {
     grid-template-columns: minmax(0, 1fr);
-    height: auto;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    grid-template-areas: 'header' 'nav' 'body' 'footer';
+    width: 100%;
+    max-width: 100vw;
+    height: 100%;
+    max-height: 100dvh;
+    border-radius: 0;
   }
 }
 
@@ -168,8 +199,11 @@ function apply(): void {
   background: $grey-3;
 
   @media (max-width: $breakpoint-sm-max) {
+    grid-area: nav;
     flex-direction: row;
     overflow-x: auto;
+    scrollbar-width: none;
+    border-bottom: 1px solid $grey-4;
   }
 }
 
@@ -183,9 +217,21 @@ function apply(): void {
   font: inherit;
   text-align: left;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 
-  &:hover {
-    background: $grey-2;
+  @media (hover: hover) {
+    &:hover {
+      background: $grey-2;
+    }
+  }
+
+  @media (max-width: $breakpoint-sm-max) {
+    flex-shrink: 0;
+    justify-content: center;
+    min-height: 48px;
+    padding: 0 16px;
+    white-space: nowrap;
   }
 }
 
@@ -246,6 +292,11 @@ function apply(): void {
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+
+  // its header, body and footer take their own rows of the dialog grid
+  @media (max-width: $breakpoint-sm-max) {
+    display: contents;
+  }
 }
 
 .filter-dialog__header {
@@ -253,6 +304,13 @@ function apply(): void {
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px 8px 32px;
+
+  @media (max-width: $breakpoint-sm-max) {
+    grid-area: header;
+    padding: 8px 8px 8px 16px;
+    padding-top: calc(8px + env(safe-area-inset-top));
+    border-bottom: 1px solid $grey-4;
+  }
 }
 
 .filter-dialog__title {
@@ -261,6 +319,10 @@ function apply(): void {
   font-weight: 400;
   line-height: 1.3;
   color: $grey-10;
+
+  @media (max-width: $breakpoint-sm-max) {
+    font-size: 1.125rem;
+  }
 }
 
 .filter-dialog__body {
@@ -268,6 +330,12 @@ function apply(): void {
   min-height: 0;
   padding: 16px 32px 24px;
   overflow-y: auto;
+
+  @media (max-width: $breakpoint-sm-max) {
+    grid-area: body;
+    padding: 16px;
+    overscroll-behavior: contain;
+  }
 }
 
 .filter-dialog__footer {
@@ -276,5 +344,24 @@ function apply(): void {
   gap: 12px;
   padding: 16px 32px;
   border-top: 1px solid $grey-4;
+
+  @media (max-width: $breakpoint-sm-max) {
+    grid-area: footer;
+    gap: 8px;
+    padding: 12px 16px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    background: white;
+
+    // two buttons side by side, big enough for a thumb; "Show" gets more room
+    :deep(.q-btn) {
+      flex: 1 1 0;
+      min-width: 0;
+      min-height: 48px;
+    }
+
+    :deep(.q-btn:last-child) {
+      flex-grow: 1.4;
+    }
+  }
 }
 </style>

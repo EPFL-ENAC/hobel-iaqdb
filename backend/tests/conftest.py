@@ -20,6 +20,7 @@ TEST_DB_PORT = 5433
 CATALOG_TABLES = (
     "download_request",
     "measurement",
+    "measurement_statistic",
     "dataset_parameter",
     "variable",
     "dataset",
@@ -33,6 +34,7 @@ CATALOG_TABLES = (
     "study_draft",
     "study_file",
     "study",
+    "benchmark",
 )
 
 

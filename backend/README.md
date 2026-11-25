@@ -2,7 +2,7 @@
 Based loosely on https://github.com/gauravgola96/FastAPI-Example
 
 ## Requirements
-- python 3.11 (see `.python-version`)
+- python 3.12 (see `.python-version`)
 - [uv](https://docs.astral.sh/uv/)
 - Make
 - Docker with docker compose
@@ -56,9 +56,10 @@ preloaded": either recreate the volume or run
 `ALTER SYSTEM SET shared_preload_libraries = 'timescaledb'` and restart
 the container.
 
-Seeding loads the study metadata and the measurements from `SEED_DATA`
-into the hypertable (`make seed`, or `make seed <identifier>...` for a
-subset; `make seed-check` reports without writing). Design and load
+The data upload loads the study metadata and the measurements from
+`UPLOAD_DATA` into the hypertable (`make data-upload`, or
+`make data-upload <identifier>...` for a subset; `make data-upload-check`
+reports without writing). Design and load
 budgets are in `docs/129-explore-charts-api.md`.
 
 ## Tests

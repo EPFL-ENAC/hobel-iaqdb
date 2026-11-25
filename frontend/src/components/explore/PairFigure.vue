@@ -2,36 +2,42 @@
   <div ref="root">
     <ChartCard :eyebrow="eyebrow" :title="title">
       <template #actions>
-        <span class="pair-figure__label">{{ t('explore_figures.correlation.method') }}</span>
-        <FigureToggle :model-value="method" :options="methodOptions" @update:model-value="onMethod" />
-        <span class="pair-figure__label">X</span>
-        <q-select
-          :model-value="x"
-          :options="xOptions"
-          :loading="coverage.loading.value || probeY.loading.value"
-          :display-value="x ? shortParameterName(x) : ''"
-          emit-value
-          map-options
-          dense
-          outlined
-          options-dense
-          class="pair-figure__select"
-          @update:model-value="onX"
-        />
-        <span class="pair-figure__label">Y</span>
-        <q-select
-          :model-value="y"
-          :options="yOptions"
-          :loading="probe.loading.value"
-          :display-value="y ? shortParameterName(y) : ''"
-          emit-value
-          map-options
-          dense
-          outlined
-          options-dense
-          class="pair-figure__select"
-          @update:model-value="onY"
-        />
+        <span class="figure-field">
+          <span class="pair-figure__label">{{ t('explore_figures.correlation.method') }}</span>
+          <FigureToggle :model-value="method" :options="methodOptions" @update:model-value="onMethod" />
+        </span>
+        <span class="figure-field">
+          <span class="pair-figure__label">X</span>
+          <q-select
+            :model-value="x"
+            :options="xOptions"
+            :loading="coverage.loading.value || probeY.loading.value"
+            :display-value="x ? shortParameterName(x) : ''"
+            emit-value
+            map-options
+            dense
+            outlined
+            options-dense
+            class="pair-figure__select"
+            @update:model-value="onX"
+          />
+        </span>
+        <span class="figure-field">
+          <span class="pair-figure__label">Y</span>
+          <q-select
+            :model-value="y"
+            :options="yOptions"
+            :loading="probe.loading.value"
+            :display-value="y ? shortParameterName(y) : ''"
+            emit-value
+            map-options
+            dense
+            outlined
+            options-dense
+            class="pair-figure__select"
+            @update:model-value="onY"
+          />
+        </span>
       </template>
       <div class="pair-figure__body">
         <aside class="pair-figure__facts">
@@ -103,9 +109,9 @@ const root = ref<HTMLElement | null>(null);
 const x = ref<string | null>(null);
 const y = ref<string | null>(null);
 const method = ref<Method>('spearman');
-/** variables measured together with x */
+/** variables measured together with x, enough for a correlation */
 const partners = ref<Set<string>>(new Set());
-/** variables measured together with y; null while there is no y */
+/** variables measured together with y, enough for a correlation; null while there is no y */
 const partnersOfY = ref<Set<string> | null>(null);
 
 const coverage = useParametersWithRecords();
@@ -120,22 +126,30 @@ const rankRequest = useExploreRequest('relationships');
 
 const loading = computed(() => pairsRequest.loading.value || rankRequest.loading.value);
 const error = computed(() => pairsRequest.error.value);
-const emptyMessage = computed(() => (pairsRequest.empty.value ? t('plots.no_common_hours') : ''));
+const emptyMessage = computed(() => {
+  if (pairsRequest.empty.value) return t('plots.no_common_hours');
+  // x has partners, but none with enough data: the Y menu is empty
+  if (x.value && !y.value && !probe.loading.value) return t('plots.too_little_data');
+  return '';
+});
 
-/** only the variables measured in the same space and hour as y */
+/** only the variables measured in the same space and hour as y, with enough data */
 const xOptions = computed(() =>
   coverage.options.value.filter((opt) => !partnersOfY.value || partnersOfY.value.has(opt.value)),
 );
-/** only the variables measured in the same space and hour as x */
+/** only the variables measured in the same space and hour as x, with enough data */
 const yOptions = computed(() => coverage.options.value.filter((opt) => partners.value.has(opt.value)));
 
 const methodOptions = computed<{ value: Method; label: string }[]>(() => [
   { value: 'pearson', label: t('plots.pearson') },
   { value: 'spearman', label: t('plots.spearman') },
 ]);
-const methodLabel = computed(() => t(`explore_figures.pair.${method.value}`));
-
 const bucket = computed(() => pairsRequest.result.value?.buckets[0] ?? null);
+
+/** the method, or why there is no r */
+const methodLabel = computed(() =>
+  bucket.value?.enough === false ? t('plots.too_little_data') : t(`explore_figures.pair.${method.value}`),
+);
 
 /** Pearson's from the pairs, Spearman's from the matrix of two */
 const r = computed<number | null>(() => {
@@ -154,6 +168,9 @@ const facts = computed(() => {
   const points = b.points?.length ?? 0;
   return [
     { label: t('explore_figures.pair.pairs'), value: t('explore_figures.pair.hours', { count: b.n.toLocaleString(locale.value) }) },
+    ...(b.n_spaces !== undefined
+      ? [{ label: t('explore_figures.pair.spaces'), value: b.n_spaces.toLocaleString(locale.value) }]
+      : []),
     ...(fit?.slope != null && fit.intercept != null
       ? [
           {
@@ -175,16 +192,19 @@ function scope(): Pick<ExploreParams, 'filter' | 'from' | 'to'> {
   return { filter: exploreFilter(), ...exploreRange() };
 }
 
-/** The variables measured with `slug`; null when a later load aborted this one. */
+/**
+ * The variables measured with `slug`, leaving out the pairs below the minimum
+ * sample size; null when a later load aborted this one.
+ */
 async function partnersOf(request: typeof probe, slug: string): Promise<Set<string> | null> {
   const value = await request.load({ agg: 'partners', x: slug, ...scope() });
   if (!value) return null;
-  return new Set(value.buckets.flatMap((b) => (b.n && b.key[0] ? [b.key[0]] : [])));
+  return new Set(value.buckets.flatMap((b) => (b.n && b.enough !== false && b.key[0] ? [b.key[0]] : [])));
 }
 
 /**
  * Variables with records, then x: kept while offered, else the default, else
- * the first; one measured with nothing is passed over, as its Y menu would be empty.
+ * the first; one with no partner above the minimum is passed over, as its Y menu would be empty.
  * The first pick is probed alone; past it one request names every variable
  * measured with another, not a probe each.
  */

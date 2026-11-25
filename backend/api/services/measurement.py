@@ -1,8 +1,10 @@
-"""Load processed long-format CSVs into the `measurement` hypertable.
+"""Load processed long-format CSVs into the `measurement` hypertable, and
+their `statistical` rows into `measurement_statistic`.
 
 Every row of every file goes to exactly one bin of the LoadReport: loaded,
-missing, statistical, unknown parameter/unit, unparseable value/timestamp.
-Nothing is guessed: a rejected row is counted and reported, never fixed.
+statistical, missing, unknown parameter/statistic/unit, unparseable
+value/timestamp. Nothing is guessed: a rejected row is counted and reported,
+never fixed.
 
 The CSV side is DuckDB (streaming, bounded memory); the database side is
 asyncpg COPY, then compression, continuous aggregate refresh and the
@@ -12,6 +14,10 @@ path calls (design §3, updated).
 """
 
 import asyncio
+import difflib
+import shutil
+import tempfile
+import zipfile
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -23,10 +29,12 @@ from api.models.catalog import Building, Dataset, Instrument, Space
 from api.models.measurement import (
     MEASUREMENT_BULK_INDEXES,
     MEASUREMENT_COLUMNS,
+    STATISTIC_COLUMNS,
     DatasetParameter,
     LoadReport,
     Parameter,
     measurement,
+    measurement_statistic,
 )
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -34,36 +42,63 @@ from sqlmodel import col, delete, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 BATCH_SIZE = 50_000
+# every file has these
 REQUIRED_COLUMNS = (
     "data_type",
     "building_id",
     "space_id",
     "instrument_id",
-    "timestamp",
-    "start_timestamp",
-    "end_timestamp",
     "parameter",
     "value",
     "real_unit",
+)
+# an absent one reads as empty. What a row needs is checked per row, since
+# `data_type` is per row: a time_series row its `timestamp`, a statistical
+# row its `statistic`, the others their `start_timestamp`
+OPTIONAL_COLUMNS = (
+    "timestamp",
+    "start_timestamp",
+    "end_timestamp",
+    "statistic",
     "inferred_unit",
     "value_qualifier",
 )
+# a header this close to an absent column is a misspelling of it, and its
+# data would be silently dropped: rejected. Low enough for `value_qualifer`,
+# high enough for the processed CSVs' extras (`source_space_id`, `record_id`)
+MISSPELLING_CUTOFF = 0.85
 MISSING_VALUES = ("", "NA", "N/A", "NAN", "NULL", "NONE")
 # units the processed CSVs use to say "no unit"
 NO_UNIT = ("", "not applicable", "unknown")
 # trailing UTC offset or Z after a time of day: dropped, the wall clock is kept
 TZ_SUFFIX = r"(\d{2}:\d{2}(:\d{2}(\.\d+)?)?)(Z|[+-]\d{2}:?\d{2})$"
 DECIMAL_COMMA = r"^-?\d+,\d+$"
+# statistics of the values, in the parameter's unit. Not `count`, `*_percent`
+# or `reported_value` (a single reading labelled statistical): those are not
+# in the parameter's unit, or not statistics
+STATISTIC = (
+    r"mean|arithmetic_mean|geometric_mean|median|minimum|maximum"
+    r"|standard_deviation|\d+(st|nd|rd|th)_percentile(_median)?|p\d+(_\d+)?"
+)
+# spreads convert with the factor only: an offset cancels out
+SPREADS = ("standard_deviation",)
+# the quote is set, not sniffed: DuckDB guesses it from the first rows only, so
+# a file whose first quoted field (e.g. a context_json) comes later is split
+CSV_OPTIONS = (
+    "header = true, all_varchar = true, union_by_name = true,"
+    " quote = '\"', escape = '\"'"
+)
 # advisory lock (pg_advisory_lock(int)) serializing every measurement writer
 WRITE_LOCK = 0x1A0F
 _local_write_lock = asyncio.Lock()
 BINS = (
-    "statistical",
+    "unknown_statistic",
     "unknown_parameter",
     "unknown_unit",
     "missing",
     "unparseable_value",
     "unparseable_timestamp",
+    "statistical",
     "loaded",
 )
 
@@ -87,34 +122,87 @@ class Classification:
     last_at: object = None
 
 
+def zip_csv_members(archive: zipfile.ZipFile) -> list[str]:
+    """CSV members of a zip, without macOS metadata (`__MACOSX/`, `._*`)."""
+    return [
+        name
+        for name in archive.namelist()
+        if name.lower().endswith(".csv")
+        and not any(part.startswith(("__MACOSX", ".")) for part in name.split("/"))
+    ]
+
+
+def _extract_csvs(paths: list[Path], folder: Path) -> list[str]:
+    """The CSV files to read: plain CSVs as is, the CSV members of a zip
+    extracted to `folder` (DuckDB cannot read inside a zip)."""
+    files = []
+    for path in paths:
+        if path.suffix.lower() != ".zip":
+            files.append(str(path))
+            continue
+        with zipfile.ZipFile(path) as archive:
+            members = zip_csv_members(archive)
+            if not members:
+                raise ValueError(f"no CSV file in {path.name}")
+            for member in members:
+                # prefixed: members of different zips or folders may share a name
+                target = folder / f"{len(files)}_{Path(member).name}"
+                with archive.open(member) as src, target.open("wb") as dst:
+                    shutil.copyfileobj(src, dst)
+                files.append(str(target))
+    return files
+
+
 def _files_sql(files: list[str]) -> str:
     return "[" + ", ".join("'" + f.replace("'", "''") + "'" for f in files) + "]"
 
 
-def _classified_sql(files: list[str]) -> str:
+def _check_header(header: list[str]) -> set[str]:
+    """The known columns `header` has (lowercase: DuckDB names are case
+    insensitive). Raises on a missing required column, or on a header that
+    looks like a misspelled absent optional column."""
+    names = {name.strip().lower() for name in header}
+    missing = sorted(set(REQUIRED_COLUMNS) - names)
+    if missing:
+        raise ValueError(f"missing columns {missing}")
+    known = set(REQUIRED_COLUMNS) | set(OPTIONAL_COLUMNS)
+    absent = [c for c in OPTIONAL_COLUMNS if c not in names]
+    for name in sorted(names - known):
+        close = difflib.get_close_matches(name, absent, 1, MISSPELLING_CUTOFF)
+        if close:
+            raise ValueError(f"unknown column '{name}', did you mean '{close[0]}'?")
+    return names & known
+
+
+def _classified_sql(files: list[str], columns: set[str]) -> str:
     files_sql = _files_sql(files)
     missing_sql = ", ".join(f"'{v}'" for v in MISSING_VALUES)
     no_unit_sql = ", ".join(f"'{v}'" for v in NO_UNIT)
+
+    def c(name: str) -> str:
+        return f'"{name}"' if name in columns else "NULL::VARCHAR"
+
     return f"""
     WITH raw AS (
         SELECT
             coalesce(trim(parameter), '') AS slug,
             coalesce(trim(data_type), '') AS data_type,
+            coalesce(trim({c("statistic")}), '') AS statistic,
             nullif(trim(building_id), '') AS building_ident,
             nullif(trim(space_id), '') AS space_ident,
             nullif(trim(instrument_id), '') AS instrument_ident,
-            nullif(trim("timestamp"), '') AS timestamp_text,
-            nullif(trim(start_timestamp), '') AS start_text,
-            nullif(trim(end_timestamp), '') AS end_text,
+            nullif(trim({c("timestamp")}), '') AS timestamp_text,
+            nullif(trim({c("start_timestamp")}), '') AS start_text,
+            nullif(trim({c("end_timestamp")}), '') AS end_text,
             coalesce(trim(value), '') AS value_text,
-            nullif(trim(value_qualifier), '') AS value_qualifier,
+            nullif(trim({c("value_qualifier")}), '') AS value_qualifier,
             coalesce(
                 nullif(trim(real_unit), ''),
-                CASE WHEN lower(coalesce(trim(inferred_unit), '')) IN ({no_unit_sql})
-                     THEN NULL ELSE trim(inferred_unit) END
+                CASE WHEN lower(coalesce(trim({c("inferred_unit")}), ''))
+                          IN ({no_unit_sql})
+                     THEN NULL ELSE trim({c("inferred_unit")}) END
             ) AS unit
-        FROM read_csv({files_sql}, header = true, all_varchar = true,
-                      union_by_name = true)
+        FROM read_csv({files_sql}, {CSV_OPTIONS})
     ),
     typed AS (
         SELECT r.*, d.factor, d.off, d.unit AS accepted_unit, k.slug AS known_slug,
@@ -124,9 +212,10 @@ def _classified_sql(files: list[str]) -> str:
                  THEN try_cast(replace(value_text, ',', '.') AS DOUBLE)
                  ELSE try_cast(value_text AS DOUBLE) END AS value,
             try_cast(regexp_replace(
-                CASE WHEN data_type = 'time_integrated'
+                CASE WHEN data_type IN ('time_integrated', 'statistical')
                      THEN coalesce(start_text, timestamp_text)
-                     ELSE timestamp_text END, '{TZ_SUFFIX}', '\\1') AS TIMESTAMP) AS ts,
+                     ELSE coalesce(timestamp_text, start_text) END,
+                '{TZ_SUFFIX}', '\\1') AS TIMESTAMP) AS ts,
             try_cast(regexp_replace(start_text, '{TZ_SUFFIX}', '\\1') AS TIMESTAMP)
                 AS start_ts,
             try_cast(regexp_replace(end_text, '{TZ_SUFFIX}', '\\1') AS TIMESTAMP)
@@ -141,13 +230,16 @@ def _classified_sql(files: list[str]) -> str:
     ),
     classified AS (
         SELECT *,
-            CASE WHEN data_type = 'statistical' THEN 'statistical'
+            CASE WHEN data_type = 'statistical'
+                      AND NOT regexp_full_match(statistic, '{STATISTIC}')
+                 THEN 'unknown_statistic'
                  WHEN known_slug IS NULL THEN 'unknown_parameter'
                  WHEN accepted_unit IS NULL THEN 'unknown_unit'
                  WHEN upper(value_text) IN ({missing_sql}) THEN 'missing'
                  WHEN value IS NULL OR isnan(value) OR isinf(value)
                  THEN 'unparseable_value'
                  WHEN ts IS NULL THEN 'unparseable_timestamp'
+                 WHEN data_type = 'statistical' THEN 'statistical'
                  ELSE 'loaded' END AS bin
         FROM typed
     )
@@ -156,25 +248,31 @@ def _classified_sql(files: list[str]) -> str:
 
 class MeasurementReader:
     """DuckDB view of a dataset's files, classified against the dictionary
-    and the study's catalog. Blocking: call it from a thread."""
+    and the study's catalog. `paths` are CSVs or zips of CSVs.
+    Blocking: call it from a thread."""
 
     def __init__(
         self, paths: list[Path], parameters: list[Parameter], maps: CatalogMaps
     ):
-        self.files = [str(p) for p in paths]
+        self._tmp = tempfile.TemporaryDirectory()
         self.con = duckdb.connect()
-        self._check_columns()
-        self._register(parameters, maps)
+        try:
+            self.files = _extract_csvs(paths, Path(self._tmp.name))
+            self._check_columns()
+            self._register(parameters, maps)
+        except Exception:
+            self.close()
+            raise
 
     def _check_columns(self) -> None:
         files_sql = _files_sql(self.files)
         rows = self.con.execute(
-            f"DESCRIBE SELECT * FROM read_csv({files_sql}, header = true,"
-            " all_varchar = true, union_by_name = true)"
+            f"DESCRIBE SELECT * FROM read_csv({files_sql}, {CSV_OPTIONS})"
         ).fetchall()
-        missing = sorted(set(REQUIRED_COLUMNS) - {r[0] for r in rows})
-        if missing:
-            raise ValueError(f"missing columns {missing} in {self.files}")
+        try:
+            self.columns = _check_header([r[0] for r in rows])
+        except ValueError as error:
+            raise ValueError(f"{error} in {self.files}") from None
 
     def _register(self, parameters: list[Parameter], maps: CatalogMaps) -> None:
         con = self.con
@@ -208,15 +306,14 @@ class MeasurementReader:
 
     def classify(self) -> Classification:
         rows = self.con.execute(
-            _classified_sql(self.files)
+            _classified_sql(self.files, self.columns)
             + """
-            SELECT bin, slug, unit, count(*),
-                   count(*) FILTER (WHERE bin = 'loaded' AND building_id IS NULL),
-                   count(*) FILTER (WHERE bin = 'loaded' AND space_id IS NULL),
-                   count(*) FILTER (WHERE bin = 'loaded' AND instrument_id IS NULL),
-                   min(ts) FILTER (WHERE bin = 'loaded'),
-                   max(ts) FILTER (WHERE bin = 'loaded')
-            FROM classified GROUP BY 1, 2, 3
+            SELECT bin, slug, unit, statistic, data_type = 'statistical', count(*),
+                   count(*) FILTER (WHERE building_id IS NULL),
+                   count(*) FILTER (WHERE space_id IS NULL),
+                   count(*) FILTER (WHERE instrument_id IS NULL),
+                   min(ts), max(ts)
+            FROM classified GROUP BY 1, 2, 3, 4, 5
             """
         ).fetchall()
         return _summarize(rows)
@@ -225,7 +322,7 @@ class MeasurementReader:
         """Batches of `measurement` rows (MEASUREMENT_COLUMNS order),
         values converted to the canonical unit."""
         cursor = self.con.execute(
-            _classified_sql(self.files)
+            _classified_sql(self.files, self.columns)
             + f"""
             SELECT {dataset_id}, {study_id}, building_id, space_id, instrument_id,
                    slug, data_type, ts, start_ts, end_ts,
@@ -233,33 +330,64 @@ class MeasurementReader:
             FROM classified WHERE bin = 'loaded'
             """
         )
-        while True:
-            batch = cursor.fetchmany(BATCH_SIZE)
-            if not batch:
-                return
-            yield batch
+        yield from _batches(cursor)
+
+    def statistics(self, dataset_id: int, study_id: int) -> Iterator[list[tuple]]:
+        """Batches of `measurement_statistic` rows (STATISTIC_COLUMNS order),
+        values converted to the canonical unit."""
+        spreads_sql = ", ".join(f"'{s}'" for s in SPREADS)
+        cursor = self.con.execute(
+            _classified_sql(self.files, self.columns)
+            + f"""
+            SELECT {dataset_id}, {study_id}, building_id, space_id, instrument_id,
+                   slug, statistic, ts, end_ts,
+                   CASE WHEN statistic IN ({spreads_sql}) THEN value * factor
+                        ELSE value * factor + off END,
+                   value_qualifier
+            FROM classified WHERE bin = 'statistical'
+            """
+        )
+        yield from _batches(cursor)
 
     def close(self) -> None:
         self.con.close()
+        self._tmp.cleanup()
+
+
+def _batches(cursor) -> Iterator[list[tuple]]:
+    while True:
+        batch = cursor.fetchmany(BATCH_SIZE)
+        if not batch:
+            return
+        yield batch
 
 
 def _summarize(rows: list[tuple]) -> Classification:
     report = LoadReport()
     missing: dict[str, int] = {}
     first_at = last_at = None
-    for bin_, slug, unit, n, no_building, no_space, no_instrument, lo, hi in rows:
-        if bin_ == "loaded":
-            report.loaded += n
+    for row in rows:
+        bin_, slug, unit, statistic, is_statistic, n = row[:6]
+        no_building, no_space, no_instrument, lo, hi = row[6:]
+        if bin_ in ("loaded", "statistical"):
             report.unlinked_building += no_building
             report.unlinked_space += no_space
             report.unlinked_instrument += no_instrument
+        if bin_ == "loaded":
+            report.loaded += n
             first_at = lo if first_at is None else min(first_at, lo)
             last_at = hi if last_at is None else max(last_at, hi)
-        elif bin_ == "missing":
-            report.missing += n
-            missing[slug] = missing.get(slug, 0) + n
         elif bin_ == "statistical":
             report.statistical += n
+        elif bin_ == "missing":
+            report.missing += n
+            # n_missing of `dataset_parameter`, which only covers `measurement`
+            if not is_statistic:
+                missing[slug] = missing.get(slug, 0) + n
+        elif bin_ == "unknown_statistic":
+            report.unknown_statistic[statistic] = (
+                report.unknown_statistic.get(statistic, 0) + n
+            )
         elif bin_ == "unparseable_timestamp":
             report.unparseable_timestamp += n
         elif bin_ == "unknown_unit":
@@ -273,7 +401,7 @@ def _summarize(rows: list[tuple]) -> Classification:
 
 @asynccontextmanager
 async def measurement_write_lock(engine: AsyncEngine):
-    """One measurement writer at a time, cluster-wide (pods, seed): TimescaleDB
+    """One measurement writer at a time, cluster-wide (pods, data upload): TimescaleDB
     rejects a concurrent aggregate refresh, and concurrent DELETE/COPY/compress
     on shared chunks deadlock. The local lock keeps queued writers from each
     holding a pool connection while they wait.
@@ -298,8 +426,8 @@ class MeasurementService:
     ) -> LoadReport:
         """Replace the dataset's measurements with the content of `paths`.
         Idempotent. Marks the dataset ready or failed; a failure is raised.
-        `bulk` (seed) skips compression and the aggregate refresh and turns
-        synchronous commits off: the seed does them once at the end."""
+        `bulk` (data upload) skips compression and the aggregate refresh and turns
+        synchronous commits off: the data upload does them once at the end."""
         async with AsyncSession(self.engine, expire_on_commit=False) as session:
             dataset = await session.get(Dataset, dataset_id)
             if dataset is None:
@@ -313,7 +441,7 @@ class MeasurementService:
             await self._finish(dataset_id, None, "failed", f"{type(e).__name__}: {e}")
             raise
         report = classification.report
-        if report.loaded == 0:
+        if report.loaded == 0 and report.statistical == 0:
             await self._finish(dataset_id, report, "failed", "no row loaded")
             raise ValueError(f"no row loaded: {report.summary()}")
         await self._finish(dataset_id, report, "ready", None)
@@ -359,11 +487,12 @@ class MeasurementService:
                 col(DatasetParameter.dataset_id) == dataset.id
             )
         )
-        await session.exec(
-            text("DELETE FROM measurement WHERE dataset_id = :id").bindparams(
-                id=dataset.id
+        for table in ("measurement", "measurement_statistic"):
+            await session.exec(
+                text(f"DELETE FROM {table} WHERE dataset_id = :id").bindparams(
+                    id=dataset.id
+                )
             )
-        )
         await session.commit()
 
     async def _copy(
@@ -377,8 +506,17 @@ class MeasurementService:
         reader = await asyncio.to_thread(MeasurementReader, paths, parameters, maps)
         try:
             classification = await asyncio.to_thread(reader.classify)
-            if classification.report.loaded:
-                await self._copy_batches(reader, dataset, bulk)
+            report = classification.report
+            if report.loaded:
+                batches = reader.loaded(dataset.id, dataset.study_id)
+                await self._copy_batches(
+                    "measurement", MEASUREMENT_COLUMNS, batches, bulk
+                )
+            if report.statistical:
+                batches = reader.statistics(dataset.id, dataset.study_id)
+                await self._copy_batches(
+                    "measurement_statistic", STATISTIC_COLUMNS, batches, bulk
+                )
         finally:
             reader.close()
         if not classification.report.loaded:
@@ -390,9 +528,8 @@ class MeasurementService:
         return classification
 
     async def _copy_batches(
-        self, reader: MeasurementReader, dataset: Dataset, bulk: bool
+        self, table: str, columns: list[str], batches: Iterator, bulk: bool
     ) -> None:
-        batches = reader.loaded(dataset.id, dataset.study_id)
         async with self.engine.connect() as conn:
             raw = await conn.get_raw_connection()
             pg = raw.driver_connection
@@ -402,9 +539,7 @@ class MeasurementService:
                 batch = await asyncio.to_thread(next, batches, None)
                 if batch is None:
                     break
-                await pg.copy_records_to_table(
-                    "measurement", records=batch, columns=MEASUREMENT_COLUMNS
-                )
+                await pg.copy_records_to_table(table, records=batch, columns=columns)
 
     async def _summarize(self, dataset_id: int, missing: dict[str, int]) -> None:
         """Derive `dataset_parameter` from the loaded rows, in one statement."""
@@ -492,7 +627,7 @@ class MeasurementService:
             return result.scalar_one()
 
     async def drop_bulk_indexes(self) -> None:
-        """Seed only: the bulk COPY is faster without the query index. The
+        """Data upload only: the bulk COPY is faster without the query index. The
         FK-leading indexes are kept (see MEASUREMENT_BULK_INDEXES)."""
         async with self.engine.begin() as conn:
             for name in MEASUREMENT_BULK_INDEXES:
@@ -500,14 +635,15 @@ class MeasurementService:
 
     async def create_bulk_indexes(self) -> None:
         """Recreate every secondary index of the model, not only the ones this
-        version drops: a run aborted under an older seed may have left more
+        version drops: a run aborted under an older data upload may have left more
         of them missing."""
         async with self.engine.begin() as conn:
-            for index in measurement.indexes:
-                name = index.name
-                columns = ", ".join(c.name for c in index.columns)
-                await conn.execute(
-                    text(
-                        f"CREATE INDEX IF NOT EXISTS {name} ON measurement ({columns})"
+            for table in (measurement, measurement_statistic):
+                for index in table.indexes:
+                    columns = ", ".join(c.name for c in index.columns)
+                    await conn.execute(
+                        text(
+                            f"CREATE INDEX IF NOT EXISTS {index.name}"
+                            f" ON {table.name} ({columns})"
+                        )
                     )
-                )

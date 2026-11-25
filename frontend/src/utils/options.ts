@@ -40,6 +40,15 @@ export const climateOptions = sortByLabel([
   { value: 'EF', label: '[EF]  Polar, frost' },
 ]);
 
+/** The main Köppen groups: the first level of the climate drill. */
+export const climateGroupOptions = [
+  { value: 'A', label: '[A] Tropical' },
+  { value: 'B', label: '[B] Dry (arid & semiarid)' },
+  { value: 'C', label: '[C] Temperate' },
+  { value: 'D', label: '[D] Continental' },
+  { value: 'E', label: '[E] Polar' },
+];
+
 export const occupantImpactOptions = [
   { value: 'health', label: 'Health' },
   { value: 'comfort', label: 'Comfort' },

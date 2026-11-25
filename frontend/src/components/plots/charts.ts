@@ -1,18 +1,17 @@
 import type { SetOptionOpts } from 'echarts';
 import type { Router } from 'vue-router';
 import type {
-  ExploreBenchmark,
   ExploreBucket,
   ExploreDimension,
   ExploreParams,
   ExploreResult,
-  ExploreSchema,
 } from '@/models';
 import { useExploreStore } from '@/stores/explore';
 import { cityName, useFiltersStore } from '@/stores/filters';
 import {
   ageGroupOptions,
   buildingTypeOptions,
+  climateGroupOptions,
   climateOptions,
   countryOptions,
   mechanicalVentilationTypeOptions,
@@ -93,33 +92,6 @@ export function toSeries(
   return [...series.values()];
 }
 
-/** A benchmark from the schema, or a stand-in until one is provided. */
-export type Benchmark = Pick<ExploreBenchmark, 'source' | 'averaging' | 'value' | 'unit' | 'note'> & {
-  placeholder?: boolean;
-};
-
-/**
- * Stand-ins for pollutants the database has no benchmark for yet; charts show
- * them with a "placeholder" badge until the reference values are provided.
- */
-const PLACEHOLDER_BENCHMARKS: Record<string, Benchmark> = {
-  co2: {
-    source: 'Placeholder',
-    averaging: 'day',
-    value: 800,
-    unit: 'ppm',
-    note: 'target',
-    placeholder: true,
-  },
-};
-
-/** The first benchmark the schema lists for a pollutant, else its placeholder. */
-export function benchmarkOf(schema: ExploreSchema | null, slug: string | null): Benchmark | null {
-  if (!slug) return null;
-  const listed = schema?.parameters.find((p) => p.slug === slug)?.benchmarks[0];
-  return listed ?? PLACEHOLDER_BENCHMARKS[slug] ?? null;
-}
-
 /**
  * About `count` ticks at a round step (1, 2 or 5 times a power of ten)
  * covering [min, max]: the first and last are the axis bounds.
@@ -171,6 +143,7 @@ export function isUnknownKey(key: string | null | undefined): boolean {
 export const STATS_CONTEXTS = [
   'country',
   'city',
+  'climate_group',
   'climate_zone',
   'building_type',
   'ventilation',
@@ -181,6 +154,7 @@ export const STATS_CONTEXTS = [
 /** Label lists for the dimensions whose keys are codes. */
 const KEY_OPTIONS: Record<string, OptionItem[]> = {
   country: countryOptions,
+  climate_group: climateGroupOptions,
   climate_zone: climateOptions,
   building_type: buildingTypeOptions,
   ventilation: yesNoOptions,
@@ -203,6 +177,21 @@ export function keyLabel(dimension: string, key: string): string {
   if (dimension === 'study') return useExploreStore().studyNames.get(key) || key;
   if (dimension === 'dataset') return useExploreStore().datasetNames.get(key) || key;
   return KEY_OPTIONS[dimension]?.find((opt) => opt.value === key)?.label || key;
+}
+
+/**
+ * The levels that mean nothing under a bucket key, which a drill goes past:
+ * a building without mechanical ventilation has no mechanical ventilation
+ * type, whatever its spaces record.
+ */
+const NOT_APPLICABLE_UNDER: Record<string, Record<string, string[]>> = {
+  ventilation: { no: ['ventilation_type'] },
+};
+
+/** Whether the level `next` means something under `key` of `dimension`. */
+export function appliesUnder(dimension: string, key: string | null, next: string): boolean {
+  if (key === null) return true;
+  return !NOT_APPLICABLE_UNDER[dimension]?.[key]?.includes(next);
 }
 
 export type ClickKind = 'filter' | 'drill' | 'navigate';
@@ -267,18 +256,27 @@ export function selectedFilterKeys(path: string | null | undefined): string[] {
   return filter ? filter.selected(useFiltersStore()) : [];
 }
 
-/** Merge a bucket key into the request filter, following `filter_path`. */
-export function refine(params: ExploreParams, dimension: ExploreDimension, key: string): ExploreParams {
+/**
+ * Merge a bucket key into the request filter, following `filter_path`. A
+ * list of keys matches any of them, null matching a missing value: how the
+ * unknown keys, summed into one row, are drilled together.
+ */
+export function refine(
+  params: ExploreParams,
+  dimension: ExploreDimension,
+  key: string | (string | null)[],
+): ExploreParams {
   const path = dimension.filter_path;
   if (!path) throw new Error(`dimension ${dimension.key} cannot become a filter`);
   const next: ExploreParams = { ...params, filter: { ...(params.filter || {}) } };
-  if (path === 'parameters') {
-    next.parameters = [key];
-    return next;
-  }
-  if (path === 'from') {
-    next.from = key;
-    next.to = nextPeriod(dimension.key, key);
+  if (path === 'parameters' || path === 'from') {
+    if (Array.isArray(key)) throw new Error(`dimension ${dimension.key} cannot match several keys`);
+    if (path === 'parameters') {
+      next.parameters = [key];
+    } else {
+      next.from = key;
+      next.to = nextPeriod(dimension.key, key);
+    }
     return next;
   }
   const filter = next.filter as Record<string, unknown>;

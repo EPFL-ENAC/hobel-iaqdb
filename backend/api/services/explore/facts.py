@@ -57,6 +57,41 @@ class Fact:
         return apply_fact_filter(self.table, statement, filter)
 
 
+class SpaceFact(Fact):
+    """grain=space: one row per (dataset, space, parameter), the mean of its
+    readings over the query period, from `measurement_day`. Long-term
+    references (annual guidelines) compare with it. The period, the
+    parameters and the filter apply inside, so `where` adds nothing."""
+
+    def __init__(self, query: ExploreQuery, filter: dict):
+        day = Fact("day")
+        keys = (
+            day.c.dataset_id,
+            day.c.study_id,
+            day.c.building_id,
+            day.c.space_id,
+            day.c.parameter,
+        )
+        inner = select(
+            *keys,
+            (func.sum(day.value * day.n) / func.sum(day.n)).label("mean"),
+            func.sum(day.n).label("n"),
+        )
+        inner = day.where(inner, query, filter, query.parameters).group_by(*keys)
+        self.grain = "space"
+        self.table = inner.subquery("space_mean")
+        # no time column: a time dimension is refused by `resolve`
+        self.time = None
+        self.value = self.table.c.mean
+        self.n = self.table.c.n
+        self.c = self.table.c
+
+    def where(
+        self, statement, query: ExploreQuery, filter: dict, parameters: list[str]
+    ):
+        return statement
+
+
 async def check_raw_cap(
     session: AsyncSession, filter: dict, parameters: list[str]
 ) -> int:

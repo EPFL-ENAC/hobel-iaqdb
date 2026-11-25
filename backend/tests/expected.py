@@ -12,9 +12,12 @@ SPACE_TYPE = {"S1": "office", "S2": "meeting room", "S3": "classroom"}
 
 
 def bucket_values(points, grain: str) -> list[float]:
-    """The values a grain exposes: raw readings or bucket means."""
+    """The values a grain exposes: raw readings, bucket means, or one mean
+    per series (a space) at grain space."""
     if grain == "raw":
         return [v for _, v in points]
+    if grain == "space":
+        return [mean([v for _, v in points])]
     groups = hourly(points) if grain == "hour" else daily(points)
     return [mean(v) for v in groups.values()]
 

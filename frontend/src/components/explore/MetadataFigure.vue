@@ -40,6 +40,7 @@ import ChartCard from '@/components/explore/ChartCard.vue';
 import DrillPath, { type DrillStep } from '@/components/explore/DrillPath.vue';
 import RankedBars from '@/components/explore/RankedBars.vue';
 import type { RankedRow } from '@/components/explore/ranked';
+import { isUnknownKey } from '@/components/plots/charts';
 import { useMetadataDrill } from '@/composables/useMetadataDrill';
 import type { ExploreBucket, ExploreDimension, ExploreEntity } from '@/models';
 
@@ -82,6 +83,7 @@ const {
   shown,
   chain,
   clickable,
+  drills,
   selectedKeys,
   popTo,
   label,
@@ -106,21 +108,35 @@ const steps = computed<DrillStep[]>(() =>
   })),
 );
 
+/**
+ * One row per known key, in the order received; missing and 'unknown' keys
+ * summed into a last "Unknown" row, which drills into all of them; it opens
+ * nothing and sets no global filter, those take a single key.
+ */
 const rows = computed<RankedRow<ExploreBucket>[]>(() => {
   const value = shown.value;
   if (!value) return [];
   const dimension = value.level.dimension;
-  return value.result.buckets.map((bucket, i) => {
-    const key = bucket.key[0];
-    return {
-      // keys are unique, null aside
-      key: key ?? `null-${i}`,
-      label: label(dimension, key),
-      value: bucket.n,
-      clickable: clickable.value && key !== null && key !== undefined,
-      data: bucket,
-    };
-  });
+  const known = value.result.buckets.filter((bucket) => !isUnknownKey(bucket.key[0]));
+  const unknown = value.result.buckets.filter((bucket) => isUnknownKey(bucket.key[0]));
+  const out: RankedRow<ExploreBucket>[] = known.map((bucket) => ({
+    key: bucket.key[0] as string,
+    label: label(dimension, bucket.key[0]),
+    value: bucket.n,
+    clickable: clickable.value,
+    data: bucket,
+  }));
+  if (unknown.length) {
+    const n = unknown.reduce((sum, bucket) => sum + bucket.n, 0);
+    out.push({
+      key: 'unknown',
+      label: label(dimension, null),
+      value: n,
+      clickable: clickable.value && drills.value,
+      data: { key: [null], n },
+    });
+  }
+  return out;
 });
 
 /** in `filter` mode, the keys in the global filters; else every row */
@@ -133,8 +149,9 @@ const hint = computed(() => {
   const level = shown.value?.level;
   if (!level || !clickable.value) return '';
   if (props.click === 'filter') return t('explore_figures.hint_filter');
-  // the level shown, not the one loading: the stack moves first
-  return stack.value.indexOf(level) + 1 < props.path.length
+  // the level shown, not the one loading: the stack moves first; a drill can
+  // skip a level, so where the level stands in the path, not in the stack
+  return props.path.indexOf(level.dimension.key) + 1 < props.path.length
     ? t('explore_figures.hint_drill')
     : t('explore_figures.hint_open');
 });

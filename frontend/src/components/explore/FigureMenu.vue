@@ -44,6 +44,22 @@ const selectedLabel = computed(() => props.options.find((opt) => opt.value === p
   flex: none;
 }
 
+// on a phone a row of its own, lined up with the other figures' menus
+@media (max-width: $breakpoint-xs-max) {
+  .figure-menu {
+    display: flex;
+    width: 100%;
+  }
+
+  .figure-menu__label {
+    flex-basis: $figure-field-label;
+  }
+
+  .figure-menu .figure-menu__select {
+    flex: 1 1 auto;
+  }
+}
+
 .figure-menu__select {
   min-width: 120px;
   flex: 0 1 auto;

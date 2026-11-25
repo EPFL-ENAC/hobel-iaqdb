@@ -107,13 +107,10 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
       popup = new Popup().setLngLat(coordinates).setDOMContent(popupContent).addTo(map);
     }
     const options: SpiderfyOptions = {
-      onLeafHover: isSmallScreen ? undefined : onLeafEvent,
-      onLeafClick: isSmallScreen ? onLeafEvent : undefined,
+      ...(isSmallScreen ? { onLeafClick: onLeafEvent } : { onLeafHover: onLeafEvent }),
       closeOnLeafClick: !isSmallScreen,
-      minZoomLevel: 8,
-      zoomIncrement: 2,
+      forceSpiderifyMinZoom: 8,
       circleSpiralSwitchover: 10,
-      animationSpeed: 100,
       spiderLeavesLayout: {
         'icon-image': 'marker-icon',
         'icon-allow-overlap': true,
@@ -122,7 +119,7 @@ export class BuildingsLayerManager extends LayerManager<FilterParams> {
       spiderLeavesPaint: {
         'icon-color': ['get', 'color'],
       },
-    } as SpiderfyOptions;
+    };
     this.spiderfy = new Spiderfy(map, options);
     this.spiderfy?.applyTo('buildings-clusters');
 

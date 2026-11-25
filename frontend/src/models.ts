@@ -186,6 +186,7 @@ export interface LoadReport {
   missing: number;
   statistical: number;
   unknown_parameter: Record<string, number>;
+  unknown_statistic: Record<string, number>;
   unknown_unit: Record<string, number>;
   unparseable_value: Record<string, number>;
   unparseable_timestamp: number;
@@ -229,8 +230,9 @@ export interface UploadResult {
 
 // ---- Explore charts API (/stats/*), mirrors backend api/models/explore.py
 
-export type ExploreEntity = 'studies' | 'buildings' | 'spaces' | 'datasets' | 'variables';
-export type ExploreGrain = 'day' | 'hour' | 'raw';
+export type ExploreEntity = 'studies' | 'buildings' | 'spaces' | 'datasets';
+/** `space`: one mean per (dataset, space) over the period, for long-term references */
+export type ExploreGrain = 'day' | 'hour' | 'raw' | 'space';
 export type ExploreSource = 'metadata' | 'measurements' | 'relationships';
 export type ExploreAgg =
   | 'count'
@@ -252,14 +254,29 @@ export interface ExploreDimension {
   kind: 'category' | 'time';
 }
 
+/** A reference value of a pollutant, from the science team's benchmark workbook. */
 export interface ExploreBenchmark {
-  id: number;
+  id: string;
   parameter: string;
+  /** exactly one reference per pollutant is its default */
+  is_default: boolean;
   source: string;
-  averaging: 'hour' | 'day';
+  institution: string;
+  year: number | null;
+  region: string;
+  limit_type: string;
+  legal_status: string | null;
+  setting: string | null;
+  averaging: 'hour' | 'day' | 'long_term';
+  /** the query grain whose values compare with the reference */
+  grain: 'hour' | 'day' | 'space';
+  /** the averaging period as the source words it, e.g. "8-hour TWA" */
+  period: string;
   value: number;
   unit: string;
-  note?: string;
+  qualifier: string | null;
+  url: string | null;
+  note: string | null;
 }
 
 export interface ExploreParameter {
@@ -372,12 +389,16 @@ export interface ExploreBucket {
   fit?: { slope: number | null; intercept: number | null; r2: number | null; r: number | null };
   points?: [number, number][];
   sampled?: boolean;
+  /** relationships: the spaces behind n */
+  n_spaces?: number;
+  /** relationships: false below the minimum sample size, with no r and no fit */
+  enough?: boolean;
 }
 
 export interface ExploreMeta {
   source: ExploreSource;
   agg: ExploreAgg;
-  grain: ExploreGrain | 'space' | 'entity';
+  grain: ExploreGrain | 'entity';
   dimensions: string[];
   parameters: string[];
   unit?: string;

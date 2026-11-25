@@ -137,6 +137,6 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-# Local study data imported by `make seed`
-SEED_DATA/
-SEED_DATA_old/
+# Local study data uploaded by `make data-upload`
+UPLOAD_DATA/
+UPLOAD_DATA_old/

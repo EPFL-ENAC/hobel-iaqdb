@@ -1,5 +1,5 @@
 """`GET /stats/measurements`: group-by over `measurement_day`,
-`measurement_hour` or the raw hypertable."""
+`measurement_hour`, the raw hypertable or the long-term mean of each space."""
 
 from api.models.catalog import Building, Dataset, Space, Study
 from api.models.explore import (
@@ -20,7 +20,7 @@ from api.services.explore.envelope import (
     key_text,
     number,
 )
-from api.services.explore.facts import Fact, check_raw_cap
+from api.services.explore.facts import Fact, SpaceFact, check_raw_cap
 from api.services.explore.filters import apply_joined_filter, parse_filter
 from fastapi import HTTPException
 from sqlalchemy import func, literal_column
@@ -64,7 +64,7 @@ class MeasurementQueryService:
         return await finish(self.session, query, filter, meta, buckets, specs)
 
     async def _aggregate(self, agg, grain, query, filter, specs) -> list[Bucket]:
-        fact = Fact(grain)
+        fact = SpaceFact(query, filter) if grain == "space" else Fact(grain)
         frame = fact.frame()
         keys = [spec.column(frame) for spec in specs]
         measures = self._measures(agg, fact, query)
@@ -87,8 +87,8 @@ class MeasurementQueryService:
                     status_code=422, detail="exceedance needs threshold"
                 )
             return [func.count().filter(value > query.threshold)]
-        # stats: at day/hour these are statistics of bucket means, weighted
-        # mean excepted; at raw, of the readings themselves
+        # stats: at day/hour/space these are statistics of bucket means,
+        # weighted mean excepted; at raw, of the readings themselves
         mean = (
             func.sum(value * fact.n) / func.sum(fact.n)
             if fact.n is not None

@@ -1,7 +1,7 @@
 ---
 status: accepted
 issue: 129
-last_updated: 2026-09-23
+last_updated: 2026-11-24
 summary: Three query-shaped stats endpoints over raw measurements in a TimescaleDB hypertable (continuous aggregates as a derived cache), one response envelope, and a click model where every drill-down is a filter refinement of the same request. Implemented on branch feat/129; §15 lists where the code refined the design.
 ---
 
@@ -15,13 +15,13 @@ code does differently from the first draft and why.
 
 ## 1. Facts this design rests on
 
-Everything below was read from the code and the seed data, not assumed.
+Everything below was read from the code and the uploaded data, not assumed.
 
 - **Metadata** lives in Postgres: `study → building → space`, `study →
   instrument`, `study → dataset → variable` (`api/models/catalog.py`). Filters
   are the enacit4r-sql JSON dialect (`$and`, `$gte`, nested `$study`,
   `$building`, `$space` joins) shared by `/catalog/*` and `/stats/frequencies/*`.
-- **Measurements** are not in Postgres today. The seed script on branch
+- **Measurements** are not in Postgres today. The data upload script on branch
   `feat/128-seed-bulk-import-studies` uploads processed CSVs to the study
   folder on S3; S3 stays the archive of record for the files, Postgres
   becomes the queryable copy (§3). Every processed CSV is already in one **long schema**, 27
@@ -33,7 +33,7 @@ Everything below was read from the code and the seed data, not assumed.
   snake_case slug (`co2`, `pm2_5`, `air_temperature`), distinct from the
   `Variable.reference` taxonomy (`carbon dioxide`, `particle mass
   concentration`). Timestamps are naive local wall-clock.
-- **Volume** (SEED_DATA, 87 studies, 1 314 long-format CSVs; 64 studies
+- **Volume** (UPLOAD_DATA, 87 studies, 1 314 long-format CSVs; 64 studies
   ship them at the top level, 22 under `source_packages/`, 1 both):
 
   | quantity | value |
@@ -48,7 +48,7 @@ Everything below was read from the code and the seed data, not assumed.
 
   Measured on a 5 M-row sample from `D1053` (TimescaleDB 2.28 on PG 15,
   Docker Desktop, 4 CPU / 4 GB): raw rows compress to ~20 bytes each, so the
-  whole seed is **~6 GB compressed** and **~140 GB uncompressed at the peak of
+  whole data upload is **~6 GB compressed** and **~140 GB uncompressed at the peak of
   the load**. Hourly continuous aggregates are 5–20 M rows, daily 0.3–1 M.
   An hourly `GROUP BY` over 5 M compressed raw rows takes ~0.5 s, which is
   why charts read the continuous aggregates and raw is reserved for narrow
@@ -64,7 +64,7 @@ Everything below was read from the code and the seed data, not assumed.
 | # | Decision | Why |
 | --- | --- | --- |
 | D1 | **Three routes, one per query shape**, not per chart: `/stats/metadata`, `/stats/measurements`, `/stats/relationships`, plus a static `/stats/schema` descriptor. | 18 charts collapse into three SQL shapes: group-by over catalog rows, group-by over measurements, and pairwise join over measurements. A route per chart would re-implement filters 18 times; a single route would branch on chart type inside the handler. |
-| D2 | **Raw measurements in a TimescaleDB hypertable** (compressed), loaded at seed and at publish. Hourly and daily **continuous aggregates** are a derived cache the database maintains, never a second source of truth. No S3 read on any request path. | Pre-aggregating only freezes the filter vocabulary at import time: value-based filters (readings above a threshold), `value_qualifier`/`statistic` filters, non-hour windows (WHO 8-h means) and cross-parameter conditions at raw resolution are all lost once rows collapse to hourly means. With raw rows in the database any future filter is a `WHERE` clause. Continuous aggregates give the same hourly/daily speed as hand-built rollup tables, are always consistent with raw, and cost nothing to maintain in application code. TimescaleDB is a Postgres extension, so asyncpg, SQLModel and Alembic are unchanged. |
+| D2 | **Raw measurements in a TimescaleDB hypertable** (compressed), loaded at data upload and at publish. Hourly and daily **continuous aggregates** are a derived cache the database maintains, never a second source of truth. No S3 read on any request path. | Pre-aggregating only freezes the filter vocabulary at import time: value-based filters (readings above a threshold), `value_qualifier`/`statistic` filters, non-hour windows (WHO 8-h means) and cross-parameter conditions at raw resolution are all lost once rows collapse to hourly means. With raw rows in the database any future filter is a `WHERE` clause. Continuous aggregates give the same hourly/daily speed as hand-built rollup tables, are always consistent with raw, and cost nothing to maintain in application code. TimescaleDB is a Postgres extension, so asyncpg, SQLModel and Alembic are unchanged. |
 | D3 | **One response envelope** `{ meta, buckets[] }` for all three routes. Empty is `buckets: []` with `meta.n = 0` and `meta.available_parameters` filled. | `charts.ts` maps buckets to ECharts series generically. The UI gets both the "no data" signal and what to suggest instead. |
 | D4 | **A click is a filter refinement of the same request, never a new endpoint.** Buckets carry the dimension key; the schema descriptor says how a key becomes a filter criterion and which dimension to drill into next. | Drill-downs reuse the cache, the filter contract, and the chart component. Adding a drill level is data in the dimension registry, not code. |
 | D5 | **Parallel GETs for visible charts, no batch endpoint.** | GET keeps per-query HTTP caching and lets drill-downs share entries with their parents. Batching would couple a 5 ms metadata chart to a 200 ms relationship chart and defeat caching. |
@@ -77,7 +77,9 @@ Alembic migration that also runs `CREATE EXTENSION IF NOT EXISTS timescaledb`.
 
 ```
 parameter            slug PK, label, reference (taxonomy), unit (canonical), conversions JSONB
-benchmark            id PK, parameter FK, source, averaging (hour|day), value, unit, note
+benchmark            id PK (text), parameter FK, is_default, source, institution, year, region,
+                     limit_type, legal_status, setting, averaging (hour|day|long_term), period,
+                     value, unit, qualifier, url, note   (docs/202-reference-values.md)
 dataset_parameter    dataset_id FK, parameter FK, unit, n_records, n_missing, n_unlinked,
                      n_statistical, first_at, last_at, n_buildings, n_spaces   PK(dataset_id, parameter)
 
@@ -95,12 +97,13 @@ measurement_day      hierarchical continuous aggregate over measurement_hour:
                      mean = sum(mean·n)/sum(n), min, max
 ```
 
-Rules, all explicit and all reported by `make seed-check`:
+Rules, all explicit and all reported by `make data-upload-check`:
 
-- `parameter` is seeded from versioned CSVs (`api/data/parameters.csv` and
-  `api/data/benchmarks.csv`, mirrored into the tables by
-  `ParameterService.sync` at boot and at seed). The content shipped here is
-  **provisional**, derived from the slugs and units present in SEED_DATA and
+- `parameter` is seeded from a versioned CSV (`api/data/parameters.csv`,
+  mirrored into the table by `ParameterService.sync` at boot and at data
+  upload). The `benchmark` table is filled by `make import-benchmarks`
+  (see [202-reference-values.md](202-reference-values.md)). The content shipped here is
+  **provisional**, derived from the slugs and units present in UPLOAD_DATA and
   the factors of `Dictionary_data.xlsx`; #107 replaces it as data. No
   guessing units: `value` is stored in the canonical unit, the source unit
   is `coalesce(real_unit, inferred_unit)` (the processed CSVs leave
@@ -111,15 +114,21 @@ Rules, all explicit and all reported by `make seed-check`:
   `unknown_unit{slug|unit}`, `unparseable_value{slug}`,
   `unparseable_timestamp`, plus `unlinked_building/space/instrument`
   counts). Rejected rows are counted, never fixed and never loaded; the
-  dataset fails only when no row loads or a file cannot be read. The seed
+  dataset fails only when no row loads or a file cannot be read. The data upload
   data has 14 000 distinct slugs, 14 M non-numeric values and 740 k
   unparseable timestamps, so "an unknown slug fails the dataset" would have
   loaded nothing. `missing` is a value that is empty or `NA`; a decimal
   comma (`18,9`) is accepted, `5.2 K` is not.
 - `time_integrated` rows keep `start_ts` and `end_ts` and take
-  `ts = coalesce(start_ts, ts)`. `statistical` rows carry no timestamp in
-  99.97 % of the cases, so they **cannot enter the hypertable**: they are
-  counted in the report only, until #127 gives them a table.
+  `ts = coalesce(start_ts, ts)`. `statistical` rows go to their own plain
+  table, `measurement_statistic` (#174): `statistic`, `start_ts` (required,
+  the start of the period they cover), `end_ts`, `value` in the canonical
+  unit (a `standard_deviation` takes the factor only). They are never in
+  `measurement`, its aggregates or `dataset_parameter`, so no chart mixes
+  them with readings. `statistic` must be a statistic of the values (mean,
+  median, min, max, standard deviation, a percentile), else the row goes to
+  `unknown_statistic`. When this was first written, 99.97 % of them had no
+  timestamp; the October data gives 99 % of them a period.
 - `building_id` / `space_id` / `instrument_id` are resolved to catalog FKs by
   identifier within the study (spaces within their building). Unresolved
   rows keep `NULL` FKs, are counted in the report, and appear as a `null`
@@ -162,7 +171,7 @@ columns.
 1. DuckDB reads each CSV (`read_csv`, streaming, bounded memory: the 7.9 GB
    file must not be loaded with pandas), validates slugs and units against
    the dictionary, converts values to the canonical unit, resolves catalog
-   FKs, and yields Arrow batches. Measured parse rate on the seed files:
+   FKs, and yields Arrow batches. Measured parse rate on the uploaded files:
    1.5–3.7 GB/s.
 2. Batches go straight into `measurement` with asyncpg
    `copy_records_to_table`. No intermediate CSV.
@@ -174,24 +183,24 @@ columns.
    the same job.
 4. The whole load is idempotent per dataset: it starts by deleting the
    dataset's rows. The MD5 key from #128 only skips the S3 upload:
-   `StudyService.save` recreates the study and its datasets, so the seed
+   `StudyService.save` recreates the study and its datasets, so the data upload
    always reloads measurements.
-5. Seed calls it per dataset after the S3 upload. Publish (`/contribute`)
+5. The data upload calls it per dataset after the S3 upload. Publish (`/contribute`)
    calls it as a background task, streaming the S3 object to a temp file
    first. `dataset.summary_status ∈ {pending, ready, failed}`,
    `summary_error` and `load_report` make the state visible in the UI; a
    failed load is never a silent empty chart.
 
-Seed-only optimisations, applied by the seed script and not by publish: drop
+Data-upload-only optimisations, applied by the data upload script and not by publish: drop
 the `(parameter, ts)` query index on `measurement` before the bulk load and
 rebuild it after, and set `synchronous_commit = off` and a large
 `max_wal_size` for the duration of the run. The FK-leading indexes are
-**kept** during the seed: it recreates every study, so it deletes and
+**kept** during the data upload: it recreates every study, so it deletes and
 re-inserts the study's catalog rows, and each of those deletes cascades
 into the hypertable. Publish loads one dataset into an indexed table and
 takes seconds.
 
-Measured cost of loading the full seed (5 M-row sample, scaled to ~305 M
+Measured cost of loading the full data upload (5 M-row sample, scaled to ~305 M
 rows; Docker Desktop on a laptop, 4 CPU / 4 GB / virtual disk):
 
 | step | time |
@@ -204,13 +213,13 @@ rows; Docker Desktop on a laptop, 4 CPU / 4 GB / virtual disk):
 | **total, one-time** | **~1 h laptop, ~30–40 min on a server with local NVMe** |
 
 The bottleneck is disk write throughput, not CPU: four parallel `COPY`
-streams gained 7 % over one. A GPU is irrelevant. The seed already spends
-2+ h uploading the same files to S3, so the end-to-end seed becomes ~3 h.
+streams gained 7 % over one. A GPU is irrelevant. The data upload already spends
+2+ h uploading the same files to S3, so the end-to-end data upload becomes ~3 h.
 
 Disk: datasets overlap in time, so a monthly chunk can only be compressed
-once every dataset touching it is loaded. The seed loads everything and
+once every dataset touching it is loaded. The data upload loads everything and
 compresses in one pass at the end, which needs **~140 GB free** on the
-database host during the seed; the steady-state size is **~6 GB**. Publish
+database host during the data upload; the steady-state size is **~6 GB**. Publish
 loads one dataset at a time and recompresses its chunks immediately, so it
 never needs that headroom.
 
@@ -231,7 +240,7 @@ shared.
 | `parameters` | comma-separated slugs | From `parameter.slug`. Unknown slug → 422 listing valid slugs. Max 10. |
 | `by` | comma-separated dimension keys, max 2 | From the dimension registry (§5). Time bucketing is a dimension (`month`, `year`), so there is no separate `bucket` parameter. Second key gives stacked/heatmap series. |
 | `agg` | enum per route | metadata: `count`, `availability`. measurements: `coverage`, `count`, `stats`, `exceedance`. relationships: `pairs`, `matrix`, `partners`, `partnered`. |
-| `grain` | `day` (default), `hour` or `raw` | Which table the statistic is computed over: `measurement_day`, `measurement_hour` or the raw `measurement` hypertable. At `day`/`hour`, percentiles are percentiles of bucket means; at `raw` they are percentiles of the readings themselves. The response echoes the grain so the label is honest. `raw` is accepted only when `dataset_parameter` says the filter covers **≤ 20 M raw records**; above that the route answers 422 with the matched count and the client falls back to `hour`. No silent downgrade. |
+| `grain` | `day` (default), `hour`, `raw` or `space` | Which table the statistic is computed over: `measurement_day`, `measurement_hour` or the raw `measurement` hypertable. `space` is one mean per (dataset, space) over the period, from `measurement_day`, for long-term references; time dimensions and `/stats/relationships` refuse it with 422 (docs/202-reference-values.md). At `day`/`hour`, percentiles are percentiles of bucket means; at `raw` they are percentiles of the readings themselves. The response echoes the grain so the label is honest. `raw` is accepted only when `dataset_parameter` says the filter covers **≤ 20 M raw records**; above that the route answers 422 with the matched count and the client falls back to `hour`. No silent downgrade. |
 | `qualifier` | comma-separated | `grain=raw` only. Keeps rows whose `value_qualifier` is in the list; default is all. |
 | `threshold` | float | `agg=exceedance` only. The UI takes it from a benchmark in `/stats/schema` or from user input; the server never invents one. |
 | `entity` | `studies\|buildings\|spaces\|datasets` | metadata route only. |
@@ -437,8 +446,9 @@ continuous aggregate behind the same contract; no API change.
 publish and delete (the catalog changed) and **again after the background
 refresh** of the continuous aggregates (the measurement data changed), so a
 chart computed from not-yet-refreshed aggregates in between is dropped rather
-than cached under the new version. Seed bumps once, after its refresh, and
-the dictionary sync at boot bumps when the CSVs changed since the last run.
+than cached under the new version. The data upload bumps once, after its refresh, and
+the dictionary sync at boot bumps when the CSV changed since the last run, and
+the benchmark import bumps when the references changed.
 Reading it is one PK lookup per request. Nothing is ever invalidated by hand,
 and no result can outlive the data it was computed on.
 
@@ -472,7 +482,7 @@ also carry `filter=F` unless stated.
 | 9 | Descriptive statistics | `measurements?agg=stats&parameters=P&by=<context>&grain=day&from=T&to=T` box plot | drill along the context's `drill_to` |
 | 10 | Benchmark comparison | same as 9 with `by=year`; benchmark line from `/stats/schema` | toggles benchmark; `agg=exceedance&threshold=<benchmark.value>` for the share above |
 | 11 | Trends | `measurements?agg=stats&parameters=P&by=month&from=Y-01-01&to=Y+1-01-01` → line (p50, p25–p75 band) and table from the same buckets | drill → `day` inside the clicked month |
-| 12 | Exceedance over time | `measurements?agg=exceedance&threshold=…&by=month_of_year&grain=<benchmark.averaging>` | drill → `year` |
+| 12 | Exceedance over time | `measurements?agg=exceedance&threshold=…&by=month_of_year&grain=<benchmark.grain>` | drill → `year` |
 | 13 | CO₂ × occupancy | `relationships?agg=pairs&x=space.occupancy_density&y=co2` | `navigate` → space |
 | 14 | CO₂ × ventilation | `measurements?agg=stats&parameters=co2&by=ventilation_type` | drill → `space_type` |
 | 15 | Pollutant × climate | `measurements?agg=stats&parameters=P&by=climate_zone` | drill → `country` |
@@ -480,10 +490,11 @@ also carry `filter=F` unless stated.
 | 17 | Correlation matrix | `relationships?agg=matrix&parameters=P&method=…` | cell click opens chart 18 with `x`, `y` from the cell key |
 | 18 | Custom relationship | `relationships?agg=partners&x=…` (y menu), then `relationships?agg=pairs&x=…&y=…[&by=…]` | `navigate` → entity behind the point |
 
-Benchmarks (chart 10, 12): the `benchmark` table is seeded with WHO 2021 air
-quality guideline values (PM2.5 24-h 15 µg/m³, PM10 24-h 45, NO2 24-h 25,
-O3 8-h 100, CO 24-h 4 mg/m³) marked `source = "WHO AQG 2021"`, replaceable by
-the domain expert's values as data. No random placeholder in code.
+Benchmarks (chart 10, 12): the `benchmark` table holds the references of
+the science team's benchmark workbook, many per pollutant, with one default.
+Each schema benchmark carries the `grain` to query with. The import, the
+defaults and the averaging rules are in
+[202-reference-values.md](202-reference-values.md).
 
 ## 11. Pydantic stubs (`api/models/explore.py`)
 
@@ -516,13 +527,9 @@ class Dimension(BaseModel):
 
 
 class Benchmark(BaseModel):
-    id: int
-    parameter: str
-    source: str
-    averaging: Grain
-    value: float
-    unit: str
-    note: str | None = None
+    # superseded by docs/202-reference-values.md: text id, source metadata,
+    # averaging hour|day|long_term and the query grain
+    ...
 
 
 class Parameter(BaseModel):
@@ -680,7 +687,7 @@ Each tier is a shippable PR against `dev` with its own plan file.
    migration with the extension, `parameter`, `benchmark`,
    `dataset_parameter`, `measurement` hypertable with compression,
    `measurement_hour` / `measurement_day` continuous aggregates,
-   `catalog_version`; `MeasurementService`; seed and publish integration.
+   `catalog_version`; `MeasurementService`; data upload and publish integration.
 2. **Contract**: `api/models/explore.py`, `ExploreQuery`, dimension registry,
    `/stats/schema`, `/stats/metadata`, cache layer, delete frequencies,
    frontend `api/explore.ts` + `useExploreQuery` + `charts.ts` helpers.
@@ -715,7 +722,7 @@ against a `timescale/timescaledb:latest-pg18` service.
   `{"field": {"$exists": false}}` also matches JSON `'null'` text. The
   sub-issue can promise the click.
 - The production database host has to allow the `timescaledb` extension and
-  provide ~140 GB of temporary disk for the one-time seed. To confirm with
+  provide ~140 GB of temporary disk for the one-time data upload. To confirm with
   the hosting team before tier 1 starts.
 - The 20 M-record cap on `grain=raw` is a first value from the 0.5 s / 5 M
   rows measurement; tune it against the deployed budget once tier 3 runs on
@@ -733,14 +740,14 @@ Read with §1–§14; code wins where they still disagree.
 | topic | first draft | shipped |
 | --- | --- | --- |
 | unknown slug or unit | fails the dataset | row counted in `load_report`, dataset fails only when nothing loads (§3) |
-| `statistical` rows | loaded, excluded from aggregates | not loaded (no timestamp), counted in the report (§3) |
+| `statistical` rows | loaded, excluded from aggregates | stored in `measurement_statistic`, outside every aggregate (§3, #174) |
 | source unit | `real_unit` | `coalesce(real_unit, inferred_unit)` (§3) |
 | tz offsets | not considered | stripped, wall clock kept (§3) |
 | aggregate refresh | per dataset time range | `refresh_all()` after loads and deletes; invalidation makes it cheap (§3) |
 | `dataset_parameter` | also `n_unlinked`, `n_statistical` | those live in `dataset.load_report` |
-| seed skip | MD5 skips the load too | MD5 skips the upload only, the load always runs (§3) |
+| data upload skip | MD5 skips the load too | MD5 skips the upload only, the load always runs (§3) |
 | catalog fan-out | not considered | `coverage`, the raw cap and `metadata` with `parameters` reason at study level; `measurements`, `relationships` and the empty-state suggestion filter the fact rows themselves |
 | pairs sample | `id % step` | `row_number() % step`, `sampled` true only when sampling happened (§7) |
-| dictionary | #107's CSV | provisional CSVs in `api/data`, synced at boot and seed |
+| dictionary | #107's CSV | provisional `parameters.csv` in `api/data`, synced at boot and data upload; references loaded into each database from a CSV by `make import-benchmarks` |
 | frequencies routes | deleted | deleted; the five `PlotsDrawer` charts became one `MetadataTreemapChart` over `/stats/metadata` |
-| bulk seed indexes | drop all three secondary indexes | drop only `(parameter, ts)`; FK columns keep an index (migration `a97d374f471c`) because a re-run recreates studies and each cascaded delete scanned the hypertable (§3) |
+| bulk data upload indexes | drop all three secondary indexes | drop only `(parameter, ts)`; FK columns keep an index (migration `a97d374f471c`) because a re-run recreates studies and each cascaded delete scanned the hypertable (§3) |

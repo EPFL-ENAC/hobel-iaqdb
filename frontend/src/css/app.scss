@@ -233,3 +233,36 @@ p:last-child {
     color: $grey-10;
   }
 }
+
+// A label and its control in a figure's header, e.g. "X [PM2.5]": they wrap
+// as one. On a phone each takes a row, the labels in a column of their own and
+// the menus filling the rest, so the menus of every figure line up.
+
+.figure-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
+
+  @media (max-width: $breakpoint-xs-max) {
+    display: flex;
+    width: 100%;
+
+    > :first-child:not(:only-child) {
+      flex: 0 0 $figure-field-label;
+    }
+
+    > .q-select.q-field {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+  }
+}
+
+// a control without a label of its own: it lines up with the labelled ones
+.figure-field--bare {
+  @media (max-width: $breakpoint-xs-max) {
+    padding-left: calc(#{$figure-field-label} + 8px);
+  }
+}
