@@ -1,5 +1,5 @@
 <template>
-  <ChartCard :eyebrow="eyebrow" :title="title">
+  <ChartCard :eyebrow="eyebrow" :title="title" :note="t('explore_figures.records_by_pollutant.reading')">
     <RankedBars
       :rows="rows"
       :limit="limit"
@@ -10,6 +10,7 @@
       :format-value="formatCompact"
       :dialog-eyebrow="eyebrow"
       :dialog-title="title"
+      :dialog-note="t('explore_figures.records_by_pollutant.reading')"
       :loading="loading"
     >
       <template v-if="error" #message>

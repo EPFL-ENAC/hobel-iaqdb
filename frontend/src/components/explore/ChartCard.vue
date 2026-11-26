@@ -5,6 +5,7 @@
         <div class="chart-card__heading">
           <div class="chart-card__eyebrow">{{ eyebrow }}</div>
           <h3 class="chart-card__title">{{ title }}</h3>
+          <p v-if="note" class="chart-card__note">{{ note }}</p>
         </div>
         <!-- menus that change what the figure shows, e.g. its context -->
         <div v-if="$slots.actions" class="chart-card__actions">
@@ -44,11 +45,13 @@ interface Props {
   eyebrow: string;
   /** the question the figure answers */
   title: string;
+  /** how to read the figure: what one point, bar or row is */
+  note?: string;
   /** the footer has nothing to show this time: it keeps its place, without its rule */
   footerBlank?: boolean;
 }
 
-withDefaults(defineProps<Props>(), { footerBlank: false });
+withDefaults(defineProps<Props>(), { note: '', footerBlank: false });
 </script>
 
 <style scoped lang="scss">
@@ -155,5 +158,14 @@ withDefaults(defineProps<Props>(), { footerBlank: false });
   line-height: 1.3;
   color: $grey-10;
   margin: 0;
+}
+
+// under the title, as a chart's subtitle: a screenshot that keeps the title keeps it
+.chart-card__note {
+  max-width: 60ch;
+  margin: 8px 0 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: $grey-8;
 }
 </style>

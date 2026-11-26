@@ -1,5 +1,5 @@
 <template>
-  <ChartCard :eyebrow="eyebrowText" :title="title">
+  <ChartCard :eyebrow="eyebrowText" :title="title" :note="note">
     <template #controls>
       <span class="figure-field">
         <span>{{ t('explore_figures.relationship.plot_mean') }}</span>
@@ -63,7 +63,18 @@ import { GridComponent, MarkLineComponent, TooltipComponent } from 'echarts/comp
 import ChartCard from '@/components/explore/ChartCard.vue';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
 import ReferenceSource from '@/components/explore/ReferenceSource.vue';
-import { FIGURE_ACCENT, FIGURE_GAP, GRID, MUTED, initOptions, updateOptions } from '@/components/plots/charts';
+import {
+  FIGURE_ACCENT,
+  FIGURE_GAP,
+  GRID,
+  MUTED,
+  axisTitle,
+  initOptions,
+  plotGrid,
+  shortParameterName,
+  updateOptions,
+  withUnitName,
+} from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';
 import { useParameterChoice } from '@/composables/useContextScope';
@@ -160,6 +171,16 @@ const emptyMessage = computed(() => {
   return t('plots.no_pairs', { parameter: parameterLabel.value, metrics });
 });
 
+/** what one point is, for the pollutant and metric shown */
+const note = computed(() =>
+  parameter.value && metric.value
+    ? t('explore_figures.relationship.reading', {
+        pollutant: shortParameterName(parameter.value),
+        metric: metricName(metric.value).toLowerCase(),
+      })
+    : '',
+);
+
 // only the line follows the reference, so a pick redraws without a request
 const { benchmark, pick } = useFigureReference(parameter);
 
@@ -235,8 +256,9 @@ const option = computed<EChartsOption>(() => {
         return `${xName}: <b>${formatX(x)}</b><br/>${parameterLabel.value}: <b>${formatValue(y)}${unit}</b>`;
       },
     },
-    grid: { left: 0, right: 8, top: 16, bottom: 0, containLabel: true },
+    grid: plotGrid({ left: 0, right: 8, top: 16, bottom: 0 }),
     xAxis: {
+      ...axisTitle('x', xName),
       type: 'value',
       scale: true,
       axisLine: { lineStyle: { color: GRID } },
@@ -245,6 +267,10 @@ const option = computed<EChartsOption>(() => {
       splitLine: { show: false },
     },
     yAxis: {
+      ...axisTitle(
+        'y',
+        withUnitName(parameter.value ? shortParameterName(parameter.value) : '', result.value?.meta.unit),
+      ),
       type: 'value',
       scale: true,
       // concentrations stay on the positive side; the reference stays in view

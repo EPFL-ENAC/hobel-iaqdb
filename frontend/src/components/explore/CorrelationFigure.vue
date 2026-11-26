@@ -1,5 +1,5 @@
 <template>
-  <ChartCard :eyebrow="eyebrow" :title="title">
+  <ChartCard :eyebrow="eyebrow" :title="title" :note="note">
     <template #controls>
       <span class="figure-field">
         <span>{{ t('explore_figures.correlation.method') }}</span>
@@ -116,6 +116,9 @@ const methodOptions = computed<{ value: Method; label: string }[]>(() => [
   { value: 'pearson', label: t('plots.pearson') },
   { value: 'spearman', label: t('plots.spearman') },
 ]);
+
+/** what one cell is and what its colour says */
+const note = computed(() => t('explore_figures.correlation.reading', { method: t(`plots.${method.value}`) }));
 
 const emptyMessage = computed(() => {
   if (selected.value.length < 2) return t('explore_figures.correlation.pick_two');

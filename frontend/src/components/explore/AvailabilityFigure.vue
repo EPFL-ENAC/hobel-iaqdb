@@ -1,5 +1,5 @@
 <template>
-  <ChartCard :eyebrow="eyebrowText" :title="title" :footer-blank="!hasMore">
+  <ChartCard :eyebrow="eyebrowText" :title="title" :note="note" :footer-blank="!hasMore">
     <template #panel>
       <div class="availability-figure__label">{{ t('explore_figures.metadata_availability.score_fields_of') }}</div>
       <q-btn-toggle
@@ -40,6 +40,7 @@
       :format-value="formatShare"
       :dialog-eyebrow="eyebrowText"
       :dialog-title="title"
+      :dialog-note="note"
       :loading="loading"
     >
       <template v-if="error" #message>
@@ -112,6 +113,13 @@ const entityOptions = computed(() =>
     value,
     label: t(`explore_figures.entities.${value}`),
   })),
+);
+
+/** what one bar is, for the entity picked */
+const note = computed(() =>
+  t('explore_figures.metadata_availability.reading', {
+    entities: t(`explore_figures.entities.${entity.value}`).toLowerCase(),
+  }),
 );
 
 const { result, loading, error, load } = useExploreRequest('metadata');

@@ -1,5 +1,5 @@
 <template>
-  <ChartCard :eyebrow="eyebrowText" :title="title">
+  <ChartCard :eyebrow="eyebrowText" :title="title" :note="note">
     <RankedBars
       :rows="rows"
       :limit="limit"
@@ -9,6 +9,7 @@
       :layout="layout"
       :dialog-eyebrow="eyebrowText"
       :dialog-title="title"
+      :dialog-note="note"
       :loading="loading"
       @select="(row) => select(row.data, row.label)"
     >
@@ -103,6 +104,15 @@ function levelName(dimension: ExploreDimension, count: number): string {
 function capitalized(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
+
+/** what one bar is, at the level shown; a dataset is in one study only */
+const note = computed(() => {
+  const dimension = shown.value?.level.dimension;
+  if (!dimension) return '';
+  const reading = t('explore_figures.datasets_reading', { level: levelName(dimension, 1) });
+  if (dimension.key === 'study') return reading;
+  return `${reading} ${t('explore_figures.datasets_overlap', { levels: levelName(dimension, 2) })}`;
+});
 
 /** the drill path: the levels gone through, the one shown, those below */
 const steps = computed<DrillStep[]>(() =>

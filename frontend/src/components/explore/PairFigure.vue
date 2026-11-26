@@ -1,6 +1,6 @@
 <template>
   <div ref="root">
-    <ChartCard :eyebrow="eyebrow" :title="title">
+    <ChartCard :eyebrow="eyebrow" :title="title" :note="note">
       <template #actions>
         <span class="figure-field">
           <span class="pair-figure__label">{{ t('explore_figures.correlation.method') }}</span>
@@ -156,6 +156,13 @@ const r = computed<number | null>(() => {
   if (method.value === 'pearson') return bucket.value?.fit?.r ?? null;
   return rankRequest.result.value?.buckets[0]?.fit?.r ?? null;
 });
+
+/** what one dot is, for the pair shown */
+const note = computed(() =>
+  x.value && y.value
+    ? t('explore_figures.pair.reading', { x: shortParameterName(x.value), y: shortParameterName(y.value) })
+    : '',
+);
 
 function unitOf(slug: string | null): string {
   return exploreStore.schema?.parameters.find((p) => p.slug === slug)?.unit ?? '';

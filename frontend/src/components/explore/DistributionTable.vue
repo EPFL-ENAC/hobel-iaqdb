@@ -63,6 +63,14 @@
     >
       <span v-for="tick in ticks" :key="tick" :style="`left: ${at(tick)}%;`">{{ tickText(tick) }}</span>
     </div>
+    <div
+      v-if="axisTitle"
+      class="distribution-table__axis-title"
+      :style="`grid-row: ${rows.length + fillers + 3}; visibility: ${rows.length ? 'visible' : 'hidden'};`"
+      aria-hidden="true"
+    >
+      {{ axisTitle }}
+    </div>
   </div>
 </template>
 
@@ -102,6 +110,8 @@ interface Props {
   /** written beside the median line; its value alone when not given */
   medianText?: string;
   shareHeader?: string;
+  /** what the scale measures, with its unit, under the ticks, e.g. "Daily mean (ppm)" */
+  axisTitle?: string;
   /** blank rows are added up to this many, so the table keeps its height */
   minRows?: number | undefined;
   formatTick?: ((value: number) => string) | undefined;
@@ -114,6 +124,7 @@ const props = withDefaults(defineProps<Props>(), {
   referenceText: '',
   medianText: '',
   shareHeader: '',
+  axisTitle: '',
   minRows: 0,
   formatTick: undefined,
   formatShare: undefined,
@@ -134,7 +145,7 @@ const fillers = computed(() => Math.max(0, props.minRows - props.rows.length));
 /** explicit rows: the overlay spans them by line number */
 const gridStyle = computed(() => {
   const count = props.rows.length + fillers.value;
-  return `grid-template-rows: auto repeat(${count}, ${ROW_HEIGHT}px) auto; --rows: ${count};`;
+  return `grid-template-rows: auto repeat(${count}, ${ROW_HEIGHT}px) auto auto; --rows: ${count};`;
 });
 
 /**
@@ -341,5 +352,12 @@ function at(value: number): number {
     transform: translateX(-50%);
     white-space: nowrap;
   }
+}
+
+.distribution-table__axis-title {
+  grid-column: 2;
+  font-size: 0.75rem;
+  color: $grey-7;
+  text-align: right;
 }
 </style>

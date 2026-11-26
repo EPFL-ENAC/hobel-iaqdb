@@ -1,5 +1,5 @@
 <template>
-  <ChartCard :eyebrow="eyebrowText" :title="title" :footer-blank="!drilled && !hint">
+  <ChartCard :eyebrow="eyebrowText" :title="title" :note="note" :footer-blank="!drilled && !hint">
     <template #actions>
       <FigureMenu
         v-if="parameterOptions.length > 1"
@@ -64,9 +64,11 @@ import {
   FIGURE_GAP,
   GRID,
   MUTED,
+  axisTitle,
   initOptions,
   niceTicks,
   updateOptions,
+  withUnitName,
 } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';
@@ -280,6 +282,11 @@ const unit = computed(() => statsRequest.result.value?.meta.unit || benchmark.va
 
 const referenceText = computed(() => (benchmark.value ? describeReference(benchmark.value) : ''));
 
+/** what one point is: a month of the year, or a day of the month drilled into */
+const note = computed(() =>
+  slots.value.length ? t(`explore_figures.pattern.reading_${byMonth.value ? 'month' : 'day'}`) : '',
+);
+
 const option = computed<EChartsOption>(() => {
   const items = slots.value;
   const b = benchmark.value;
@@ -345,6 +352,8 @@ const option = computed<EChartsOption>(() => {
     ],
     yAxis: [
       {
+        // the levels are daily means, whatever the reference's averaging
+        ...axisTitle('y', withUnitName(t('explore_figures.mean_axis.day'), unit.value)),
         type: 'value',
         gridIndex: 0,
         min: low,
