@@ -32,7 +32,9 @@ def _split(value: str | list[str]) -> list[str]:
 class Dimension(BaseModel):
     key: str
     label: str
-    entity: Literal["study", "building", "space", "dataset", "parameter", "time"]
+    entity: Literal[
+        "study", "building", "space", "dataset", "instrument", "parameter", "time"
+    ]
     filter_path: str | None
     drill_to: str | None
     kind: Literal["category", "time"]

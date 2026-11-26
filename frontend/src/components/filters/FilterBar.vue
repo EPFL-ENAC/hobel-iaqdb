@@ -2,17 +2,17 @@
   <div class="filter-bar">
     <div class="filter-bar__inner">
       <div class="filter-bar__sentence">
-        <button type="button" class="filter-bar__icon" @click="openOn('what')">
+        <button type="button" class="filter-bar__icon" @click="openOn('pollutants')">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5h17M6.5 12h11M9.5 17.5h5" /></svg>
           {{ t('filter_bar.label') }}
         </button>
         <span>{{ t('filter_bar.showing') }}</span>
-        <button type="button" class="filter-bar__pill" :class="{ 'filter-bar__pill--set': applied.parameters.length }" :aria-label="pillLabel(summary.pollutants(applied))" @click="openOn('what')">
+        <button type="button" class="filter-bar__pill" :class="{ 'filter-bar__pill--set': applied.parameters.length }" :aria-label="pillLabel(summary.pollutants(applied))" @click="openOn('pollutants')">
           <span class="filter-bar__pill-text">{{ summary.pollutants(applied) }}</span>
           <svg class="filter-bar__chevron" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5" /></svg>
         </button>
         <span>{{ t('filter_bar.measured') }}</span>
-        <button type="button" class="filter-bar__pill" :class="{ 'filter-bar__pill--set': yearsSet }" :aria-label="pillLabel(summary.years(applied))" @click="openOn('what')">
+        <button type="button" class="filter-bar__pill" :class="{ 'filter-bar__pill--set': yearsSet }" :aria-label="pillLabel(summary.years(applied))" @click="openOn('years')">
           <span class="filter-bar__pill-text">{{ summary.years(applied) }}</span>
           <svg class="filter-bar__chevron" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5 6 7.5 9 4.5" /></svg>
         </button>
@@ -81,11 +81,11 @@ const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
 
 /** the sections after the pollutants and years, each a pill */
-const PLACE_SECTIONS = FILTER_SECTIONS.filter((s) => s !== 'what');
+const PLACE_SECTIONS = FILTER_SECTIONS.filter((s) => s !== 'pollutants' && s !== 'years');
 
 const showDialog = ref(false);
 const showDownload = ref(false);
-const section = ref<FilterSection>('what');
+const section = ref<FilterSection>('pollutants');
 
 /** the applied filters, read again when they are applied */
 const applied = computed(() => {

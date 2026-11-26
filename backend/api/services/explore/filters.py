@@ -1,20 +1,31 @@
 """The catalog filter dialect (enacit4r-sql JSON, shared with /catalog/*),
 anchored on the study: `{ ...study criteria, "$building": {...},
-"$space": {...}, "$dataset": {...} }`.
+"$space": {...}, "$dataset": {...}, "$instrument": {...} }`.
 
 Metadata queries apply the criteria on joined catalog tables; measurement
 queries turn each block into an `id IN (subquery)` on the fact table, so the
 fact scan never joins the catalog for filtering."""
 
-from api.models.catalog import Building, Dataset, Space, Study
+from api.models.catalog import Building, Dataset, Instrument, Space, Study
 from api.services.explore.dimensions import KOPPEN_GROUPS, ZONE_GROUPS, Frame
 from enacit4r_sql.utils.query import QueryBuilder, paramAsDict
 from fastapi import HTTPException
 from sqlalchemy import or_
 from sqlmodel import select
 
-NESTED = {"$building": "building", "$space": "space", "$dataset": "dataset"}
-MODELS = {"study": Study, "building": Building, "space": Space, "dataset": Dataset}
+NESTED = {
+    "$building": "building",
+    "$space": "space",
+    "$dataset": "dataset",
+    "$instrument": "instrument",
+}
+MODELS = {
+    "study": Study,
+    "building": Building,
+    "space": Space,
+    "dataset": Dataset,
+    "instrument": Instrument,
+}
 
 
 def climate_group_clause(model, groups: list[str | None]):
@@ -105,6 +116,7 @@ def apply_fact_filter(fact, statement, filter: dict):
         "building": fact.c.building_id,
         "space": fact.c.space_id,
         "dataset": fact.c.dataset_id,
+        "instrument": fact.c.instrument_id,
     }
     for entity, criteria in criteria_of(filter).items():
         statement = statement.where(columns[entity].in_(id_subquery(entity, criteria)))

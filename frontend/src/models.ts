@@ -248,7 +248,7 @@ export type ExploreAgg =
 export interface ExploreDimension {
   key: string;
   label: string;
-  entity: 'study' | 'building' | 'space' | 'dataset' | 'parameter' | 'time';
+  entity: 'study' | 'building' | 'space' | 'dataset' | 'instrument' | 'parameter' | 'time';
   filter_path: string | null;
   drill_to: string | null;
   kind: 'category' | 'time';
@@ -300,6 +300,7 @@ export interface ExploreFilter {
   $building?: Record<string, unknown>;
   $space?: Record<string, unknown>;
   $dataset?: Record<string, unknown>;
+  $instrument?: Record<string, unknown>;
 }
 
 export interface ExploreParams {

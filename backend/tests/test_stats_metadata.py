@@ -1,8 +1,9 @@
 import json
 
-from api.models.catalog import Building
+from api.models.catalog import Building, Instrument, Space, Study
 from api.services.explore.cache import cache
 from api.services.measurement import MeasurementService
+from sqlmodel import select
 from tests.fixtures import make_catalog, make_fixture
 
 
@@ -340,3 +341,39 @@ async def test_unknown_climate_group_is_refused(client, clean_db):
             },
         )
         assert response.status_code == 422, group
+
+
+async def test_space_and_instrument_dimensions(client, session, clean_db):
+    cache.clear()
+    await make_catalog(session)
+    spaces = (await session.exec(select(Space))).all()
+    for space in spaces:
+        space.air_filtration = "HEPA" if space.identifier == "S1" else None
+    instruments = (await session.exec(select(Instrument))).all()
+    grades = {"I1": "low-cost", "I2": "reference-grade"}
+    for instrument in instruments:
+        instrument.equipment_grade_rating = grades[instrument.identifier]
+        instrument.placement = "wall mounted"
+    session.add(Study(identifier="study-b", name="Study B"))
+    await session.commit()
+
+    async def counts(entity: str, by: str, filter: dict | None = None) -> dict:
+        params = {"entity": entity, "by": by}
+        if filter is not None:
+            params["filter"] = json.dumps(filter)
+        response = await client.get("/stats/metadata", params=params)
+        assert response.status_code == 200, response.text
+        return {b["key"][0]: b["n"] for b in response.json()["buckets"]}
+
+    assert await counts("spaces", "air_filtration") == {"HEPA": 1, None: 2}
+    assert await counts("studies", "instrument_grade") == {
+        "low-cost": 1,
+        "reference-grade": 1,
+        None: 1,
+    }
+    assert await counts("studies", "placement") == {"wall mounted": 1, None: 1}
+    # the catalog links instruments to the study only: both datasets of the
+    # study count under the grade of either instrument
+    reference = {"$instrument": {"equipment_grade_rating": "reference-grade"}}
+    assert await counts("datasets", "study", reference) == {"study-a": 2}
+    assert await counts("spaces", "study", reference) == {"study-a": 3}

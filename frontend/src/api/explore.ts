@@ -56,7 +56,20 @@ export function buildingCriteria(filters: FilterFields = useFiltersStore()) {
 }
 
 export function spaceCriteria(filters: FilterFields = useFiltersStore()) {
-  return { mechanical_ventilation_type: nonEmpty(filters.mechanical_ventilation_types) };
+  return {
+    type: nonEmpty(filters.space_types),
+    occupancy: nonEmpty(filters.occupancies),
+    mechanical_ventilation_type: nonEmpty(filters.mechanical_ventilation_types),
+    air_filtration: nonEmpty(filters.air_filtrations),
+  };
+}
+
+/** Explore only: the catalog lists (/catalog/*) take no instrument criteria. */
+export function instrumentCriteria(filters: FilterFields = useFiltersStore()) {
+  return {
+    equipment_grade_rating: nonEmpty(filters.instrument_grades),
+    placement: nonEmpty(filters.placements),
+  };
 }
 
 /** The study-anchored filter every explore route takes: the applied filters, or a draft's. */
@@ -65,6 +78,7 @@ export function exploreFilter(filters: FilterFields = useFiltersStore()): Explor
     ...studyCriteria(filters),
     $building: buildingCriteria(filters),
     $space: spaceCriteria(filters),
+    $instrument: instrumentCriteria(filters),
   };
 }
 

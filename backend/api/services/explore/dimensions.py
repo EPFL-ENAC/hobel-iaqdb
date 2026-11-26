@@ -230,6 +230,30 @@ DIMENSIONS: dict[str, DimensionSpec] = {
         _category(
             "occupancy", "Occupancy", "space", "occupancy", "$space.occupancy", None
         ),
+        _category(
+            "air_filtration",
+            "Air filtration",
+            "space",
+            "air_filtration",
+            "$space.air_filtration",
+            None,
+        ),
+        _category(
+            "instrument_grade",
+            "Instrument grade",
+            "instrument",
+            "equipment_grade_rating",
+            "$instrument.equipment_grade_rating",
+            None,
+        ),
+        _category(
+            "placement",
+            "Sampling location",
+            "instrument",
+            "placement",
+            "$instrument.placement",
+            None,
+        ),
         DimensionSpec(
             "parameter",
             "Parameter",

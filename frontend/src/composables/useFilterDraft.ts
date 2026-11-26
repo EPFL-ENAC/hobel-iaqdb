@@ -16,17 +16,27 @@ export interface FilterDraft extends FilterFields {
   parameters: string[];
 }
 
-export type FilterSection = 'what' | 'where' | 'buildings' | 'spaces' | 'people';
+export type FilterSection = 'pollutants' | 'years' | 'where' | 'buildings' | 'spaces' | 'people' | 'measurement';
 
-export const FILTER_SECTIONS: FilterSection[] = ['what', 'where', 'buildings', 'spaces', 'people'];
+export const FILTER_SECTIONS: FilterSection[] = [
+  'pollutants',
+  'years',
+  'where',
+  'buildings',
+  'spaces',
+  'people',
+  'measurement',
+];
 
 /** the fields each section edits and clears */
 export const SECTION_FIELDS: Record<FilterSection, (keyof FilterDraft)[]> = {
-  what: ['parameters', 'measurement_years'],
+  pollutants: ['parameters'],
+  years: ['measurement_years'],
   where: ['countries', 'cities', 'climate_zones', 'altitudes'],
-  buildings: ['building_types', 'study_ids', 'construction_years'],
-  spaces: ['mechanical_ventilation', 'mechanical_ventilation_types'],
+  buildings: ['building_types', 'construction_years', 'mechanical_ventilation'],
+  spaces: ['space_types', 'occupancies', 'mechanical_ventilation_types', 'air_filtrations'],
   people: ['outdoor_envs', 'age_groups', 'socioeconomic_status'],
+  measurement: ['study_ids', 'instrument_grades', 'placements'],
 };
 
 /** the draft the dialog's sections edit */
@@ -48,6 +58,11 @@ export function defaultDraft(): FilterDraft {
     outdoor_envs: [],
     mechanical_ventilation: null,
     mechanical_ventilation_types: [],
+    space_types: [],
+    occupancies: [],
+    air_filtrations: [],
+    instrument_grades: [],
+    placements: [],
     parameters: [],
   };
 }
@@ -69,6 +84,11 @@ export function appliedDraft(): FilterDraft {
     outdoor_envs: [...filters.outdoor_envs],
     mechanical_ventilation: filters.mechanical_ventilation,
     mechanical_ventilation_types: [...filters.mechanical_ventilation_types],
+    space_types: [...filters.space_types],
+    occupancies: [...filters.occupancies],
+    air_filtrations: [...filters.air_filtrations],
+    instrument_grades: [...filters.instrument_grades],
+    placements: [...filters.placements],
     parameters: [...useExploreStore().parameters],
   };
 }

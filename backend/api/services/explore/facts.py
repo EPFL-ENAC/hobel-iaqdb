@@ -2,7 +2,7 @@
 table a grain reads, the FROM clause around it, the common WHERE clauses and
 the raw-grain cap."""
 
-from api.models.catalog import Building, Dataset, Space, Study
+from api.models.catalog import Building, Dataset, Instrument, Space, Study
 from api.models.explore import ExploreQuery
 from api.models.measurement import DatasetParameter
 from api.services.explore.dimensions import Frame
@@ -16,9 +16,21 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 # raw readings a single request may scan; above it the client falls back to hour
 RAW_CAP = 20_000_000
 
+# catalog entity -> its model and the fact column that holds its id
+JOINS = {
+    "study": (Study, "study_id"),
+    "building": (Building, "building_id"),
+    "space": (Space, "space_id"),
+    "dataset": (Dataset, "dataset_id"),
+    "instrument": (Instrument, "instrument_id"),
+}
+
 
 class Fact:
     """A grain's table with its time and value columns, possibly aliased."""
+
+    # the entities a row joins: each reading has its own instrument
+    entities = ("study", "building", "space", "dataset", "instrument")
 
     def __init__(self, grain: str, alias: str | None = None):
         table, time, value, n = GRAIN_TABLES[grain]
@@ -32,12 +44,10 @@ class Fact:
 
     def frame(self) -> Frame:
         t = self.table
-        available = {
-            "study": (Study, col(Study.id) == t.c.study_id, ()),
-            "building": (Building, col(Building.id) == t.c.building_id, ()),
-            "space": (Space, col(Space.id) == t.c.space_id, ()),
-            "dataset": (Dataset, col(Dataset.id) == t.c.dataset_id, ()),
-        }
+        available = {}
+        for entity in self.entities:
+            model, column = JOINS[entity]
+            available[entity] = (model, col(model.id) == t.c[column], ())
         return Frame("fact", t, available, time=self.time, parameter=t.c.parameter)
 
     def records(self):
@@ -62,6 +72,9 @@ class SpaceFact(Fact):
     readings over the query period, from `measurement_day`. Long-term
     references (annual guidelines) compare with it. The period, the
     parameters and the filter apply inside, so `where` adds nothing."""
+
+    # a space mean pools the instruments of the space: no instrument key
+    entities = ("study", "building", "space", "dataset")
 
     def __init__(self, query: ExploreQuery, filter: dict):
         day = Fact("day")

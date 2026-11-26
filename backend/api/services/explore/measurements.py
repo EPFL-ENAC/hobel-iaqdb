@@ -1,7 +1,7 @@
 """`GET /stats/measurements`: group-by over `measurement_day`,
 `measurement_hour`, the raw hypertable or the long-term mean of each space."""
 
-from api.models.catalog import Building, Dataset, Space, Study
+from api.models.catalog import Building, Dataset, Instrument, Space, Study
 from api.models.explore import (
     Bucket,
     Coverage,
@@ -196,5 +196,10 @@ def coverage_frame() -> Frame:
             ("dataset",),
         ),
         "space": (Space, col(Space.study_id) == col(Dataset.study_id), ("dataset",)),
+        "instrument": (
+            Instrument,
+            col(Instrument.study_id) == col(Dataset.study_id),
+            ("dataset",),
+        ),
     }
     return Frame("parameter", dp, available, time=None, parameter=col(dp.parameter))

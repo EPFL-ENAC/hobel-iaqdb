@@ -66,10 +66,12 @@
  * "Show N datasets" applies it at once; closing drops it.
  */
 import BuildingsSection from '@/components/filters/BuildingsSection.vue';
+import MeasurementSection from '@/components/filters/MeasurementSection.vue';
 import PeopleSection from '@/components/filters/PeopleSection.vue';
+import PollutantsSection from '@/components/filters/PollutantsSection.vue';
 import SpacesSection from '@/components/filters/SpacesSection.vue';
-import WhatWhenSection from '@/components/filters/WhatWhenSection.vue';
 import WhereSection from '@/components/filters/WhereSection.vue';
+import YearsSection from '@/components/filters/YearsSection.vue';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import {
   FILTER_DRAFT,
@@ -92,7 +94,7 @@ interface Props {
   section?: FilterSection;
 }
 
-const props = withDefaults(defineProps<Props>(), { section: 'what' });
+const props = withDefaults(defineProps<Props>(), { section: 'pollutants' });
 const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>();
 const { t } = useI18n();
 const summary = useFilterSummary();
@@ -102,11 +104,13 @@ const $q = useQuasar();
 const small = computed(() => $q.screen.lt.md);
 
 const SECTIONS: Record<FilterSection, Component> = {
-  what: WhatWhenSection,
+  pollutants: PollutantsSection,
+  years: YearsSection,
   where: WhereSection,
   buildings: BuildingsSection,
   spaces: SpacesSection,
   people: PeopleSection,
+  measurement: MeasurementSection,
 };
 
 const draft = reactive(appliedDraft());
@@ -174,7 +178,8 @@ function apply(): void {
   grid-template-columns: 240px minmax(0, 1fr);
   width: 1180px;
   max-width: 96vw;
-  height: 560px;
+  // seven sections: the tabs scroll when the screen is shorter
+  height: 640px;
   max-height: 92vh;
   border-radius: 4px;
   overflow: hidden;
@@ -196,12 +201,14 @@ function apply(): void {
 .filter-dialog__nav {
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
   background: $grey-3;
 
   @media (max-width: $breakpoint-sm-max) {
     grid-area: nav;
     flex-direction: row;
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
     border-bottom: 1px solid $grey-4;
   }

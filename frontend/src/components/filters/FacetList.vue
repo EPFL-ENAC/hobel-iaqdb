@@ -1,5 +1,17 @@
 <template>
   <div class="facet-list">
+    <q-btn-toggle
+      v-if="sortable"
+      v-model="order"
+      :options="orders"
+      dense
+      flat
+      no-caps
+      size="sm"
+      toggle-color="teal-8"
+      class="facet-list__order"
+      :aria-label="t('filter_dialog.sort_label')"
+    />
     <q-input
       v-if="searchable"
       v-model="search"
@@ -41,7 +53,7 @@
 /**
  * Values to pick several of: a checkbox, the label, a bar and the count
  * each; the first `limit` shown, the rest on demand, a search above when
- * there are many.
+ * there are many. With `sortable`, the reader orders them by count or A to Z.
  */
 import type { FacetOption } from '@/components/filters/facets';
 
@@ -52,18 +64,40 @@ interface Props {
   limit?: number;
   searchable?: boolean;
   searchPlaceholder?: string;
+  sortable?: boolean;
 }
 
-const props = withDefaults(defineProps<Props>(), { limit: 7, searchable: false, searchPlaceholder: '' });
+const props = withDefaults(defineProps<Props>(), {
+  limit: 7,
+  searchable: false,
+  searchPlaceholder: '',
+  sortable: false,
+});
 const emit = defineEmits<{ 'update:modelValue': [value: string[]] }>();
 const { t } = useI18n();
 
 const search = ref<string | null>('');
 const expanded = ref(false);
+const order = ref<'count' | 'label'>('count');
+const orders = computed(() => [
+  { value: 'count', label: t('filter_dialog.sort_count') },
+  { value: 'label', label: t('filter_dialog.sort_label_az') },
+]);
 
+// A to Z keeps the options that only say ("Not reported") last
+const ordered = computed(() =>
+  order.value === 'count'
+    ? props.options
+    : [...props.options].sort(
+        (a, b) => Number(!!a.disabled) - Number(!!b.disabled) || a.label.localeCompare(b.label),
+      ),
+);
+// the label or the key: "co2" finds "CO₂"
 const matching = computed(() => {
   const needle = (search.value || '').trim().toLowerCase();
-  return needle ? props.options.filter((o) => o.label.toLowerCase().includes(needle)) : props.options;
+  return needle
+    ? ordered.value.filter((o) => o.label.toLowerCase().includes(needle) || o.value.toLowerCase().includes(needle))
+    : ordered.value;
 });
 // a search, or a value picked past the limit, shows every match
 const shown = computed(() =>
@@ -89,6 +123,11 @@ function toggle(value: string, on: boolean): void {
   gap: 4px;
   font-size: 0.875rem;
   color: $grey-10;
+}
+
+.facet-list__order {
+  align-self: flex-start;
+  margin-bottom: 8px;
 }
 
 .facet-list__search {
