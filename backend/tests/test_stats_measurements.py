@@ -2,6 +2,8 @@ import json
 from datetime import datetime
 
 import pytest
+from api.models.catalog import Instrument
+from sqlmodel import select
 from tests.expected import series_of, stats_of
 from tests.fixtures import daily, hourly, mean
 from tests.test_stats_metadata import buckets_of, loaded_fixture
@@ -148,6 +150,74 @@ async def test_filters_reach_the_fact_table(client, session, clean_db, tmp_path)
     assert body["buckets"] == []
     assert body["meta"]["n"] == 0
     assert body["meta"]["available_parameters"] == ["pm2_5"]
+
+
+async def test_instrument_filter_reaches_each_reading(
+    client, session, clean_db, tmp_path
+):
+    fx = await loaded_fixture(session, clean_db, tmp_path)
+    # I1 logs every series, I2 only the 24-h gravimetric pm2_5 sample
+    grades = {"I1": "low-cost", "I2": "reference-grade"}
+    for instrument in (await session.exec(select(Instrument))).all():
+        instrument.equipment_grade_rating = grades[instrument.identifier]
+    await session.commit()
+    pm25 = len(fx.series[("pm2_5", "S3")])
+    response = await client.get(
+        "/stats/measurements",
+        params={
+            "agg": "count",
+            "by": "instrument_grade",
+            "grain": "raw",
+            "parameters": "pm2_5",
+        },
+    )
+    assert response.status_code == 200, response.text
+    body = buckets_of(response.json())
+    assert body[("low-cost",)]["n"] == pm25 - 1
+    assert body[("reference-grade",)]["n"] == 1
+    reference = {"$instrument": {"equipment_grade_rating": "reference-grade"}}
+    for grain in ("raw", "day"):
+        response = await client.get(
+            "/stats/measurements",
+            params={
+                "agg": "count",
+                "by": "parameter",
+                "grain": grain,
+                "filter": json.dumps(reference),
+            },
+        )
+        body = buckets_of(response.json())
+        assert set(body) == {("pm2_5",)}, grain
+        assert body[("pm2_5",)]["n_records"] == 1
+    # coverage keeps the series a matching instrument logged, whole
+    response = await client.get(
+        "/stats/measurements",
+        params={"agg": "coverage", "by": "parameter", "filter": json.dumps(reference)},
+    )
+    body = buckets_of(response.json())
+    assert set(body) == {("pm2_5",)}
+    assert body[("pm2_5",)]["n_records"] == pm25
+    # a space mean pools its instruments: the filter applies, the key does not
+    response = await client.get(
+        "/stats/measurements",
+        params={
+            "agg": "stats",
+            "by": "instrument_grade",
+            "grain": "space",
+            "parameters": "pm2_5",
+        },
+    )
+    assert response.status_code == 422
+    response = await client.get(
+        "/stats/measurements",
+        params={
+            "agg": "stats",
+            "grain": "space",
+            "parameters": "co2",
+            "filter": json.dumps(reference),
+        },
+    )
+    assert response.json()["buckets"] == []
 
 
 async def test_exceedance_and_coverage(client, session, clean_db, tmp_path):

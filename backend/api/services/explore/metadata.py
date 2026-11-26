@@ -1,6 +1,6 @@
 """`GET /stats/metadata`: group-by over catalog rows."""
 
-from api.models.catalog import Building, Dataset, Space, Study
+from api.models.catalog import Building, Dataset, Instrument, Space, Study
 from api.models.explore import Availability, Bucket, ExploreQuery, ExploreResult, Meta
 from api.models.measurement import DatasetParameter
 from api.services.explore.dimensions import Frame, resolve
@@ -11,7 +11,7 @@ from api.services.explore.envelope import (
     key_text,
 )
 from api.services.explore.filters import apply_joined_filter, parse_filter
-from api.services.explore.tables import measurement_day
+from api.services.explore.tables import instrument_links, measurement_day
 from fastapi import HTTPException
 from sqlalchemy import func
 from sqlmodel import col, select
@@ -36,7 +36,9 @@ IDENTITY_FIELDS = {
 
 
 def metadata_frame(entity: str) -> Frame:
-    """Join paths from each root entity to the others (study is the hub)."""
+    """Join paths from each root entity to the others (study is the hub).
+    Instruments join through `instrument_links`: an entity counts for an
+    instrument only if it holds readings of that instrument."""
     parameter = (
         DatasetParameter,
         col(DatasetParameter.dataset_id) == col(Dataset.id),
@@ -74,6 +76,14 @@ def metadata_frame(entity: str) -> Frame:
                 (),
             ),
         }
+    links = instrument_links()
+    own = links.c[f"{ENTITY_OF[entity]}_id"]
+    available["instrument_link"] = (links, own == col(ROOTS[entity].id), ())
+    available["instrument"] = (
+        Instrument,
+        col(Instrument.id) == links.c.instrument_id,
+        ("instrument_link",),
+    )
     frame = Frame(ENTITY_OF[entity], ROOTS[entity], available)
     frame.parameter = None
     return frame

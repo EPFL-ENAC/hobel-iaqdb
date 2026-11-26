@@ -31,6 +31,13 @@ export interface FilterFields {
   outdoor_envs: string[];
   mechanical_ventilation: string | null;
   mechanical_ventilation_types: string[];
+  space_types: string[];
+  /** space use: occupied, unoccupied, mixed */
+  occupancies: string[];
+  air_filtrations: string[];
+  instrument_grades: string[];
+  /** where the instruments sample: wall, ceiling, desk */
+  placements: string[];
 }
 
 export const DEFAULT_CONSTRUCTION_YEARS = { min: 1800, max: new Date().getFullYear() };
@@ -126,6 +133,11 @@ export const useFiltersStore = defineStore(
     const outdoor_envs = ref<string[]>([]);
     const mechanical_ventilation = ref<string | null>(null);
     const mechanical_ventilation_types = ref<string[]>([]);
+    const space_types = ref<string[]>([]);
+    const occupancies = ref<string[]>([]);
+    const air_filtrations = ref<string[]>([]);
+    const instrument_grades = ref<string[]>([]);
+    const placements = ref<string[]>([]);
 
     const updates = ref(0);
 
@@ -143,6 +155,11 @@ export const useFiltersStore = defineStore(
       outdoor_envs.value = [];
       mechanical_ventilation.value = null;
       mechanical_ventilation_types.value = [];
+      space_types.value = [];
+      occupancies.value = [];
+      air_filtrations.value = [];
+      instrument_grades.value = [];
+      placements.value = [];
     }
 
     function notifyUpdate() {
@@ -182,6 +199,11 @@ export const useFiltersStore = defineStore(
       outdoor_envs,
       mechanical_ventilation,
       mechanical_ventilation_types,
+      space_types,
+      occupancies,
+      air_filtrations,
+      instrument_grades,
+      placements,
       updates,
       reset,
       asParams,

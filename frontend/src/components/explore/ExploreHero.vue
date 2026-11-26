@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { exploreFilter, exploreRange } from '@/api/explore';
+import { exploreFilter, exploreRange, needsDayCount } from '@/api/explore';
 import { useExploreRequest } from '@/composables/useExploreQuery';
 
 const { t, locale } = useI18n();
@@ -43,10 +43,11 @@ function reload(): void {
   // one study per dataset: the study buckets add up to the distinct datasets
   void datasetsRequest.load({ entity: 'datasets', by: ['study'], filter, ...range, ...parameters });
   void countriesRequest.load({ entity: 'datasets', by: ['country'], filter, ...range, ...parameters });
-  // coverage holds lifetime totals and spans: within a year range, count
-  // the measured days instead, by year for the span
+  // coverage holds lifetime totals and spans of whole datasets: within a year
+  // range or with an instrument filter, count the measured days instead, by
+  // year for the span
   void coverageRequest.load({
-    ...('from' in range || 'to' in range
+    ...(needsDayCount()
       ? { agg: 'count', by: ['parameter', 'year'] }
       : { agg: 'coverage', by: ['parameter'] }),
     filter,

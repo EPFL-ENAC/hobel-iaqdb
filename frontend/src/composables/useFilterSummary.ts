@@ -2,6 +2,7 @@
  * The filters said in words: the values a section holds ("Netherlands",
  * "School", "2010–2024"), for the filter bar's pills and the dialog's list.
  */
+import { sentence } from '@/components/filters/facets';
 import { keyLabel, shortParameterName } from '@/components/plots/charts';
 import { SECTION_FIELDS, defaultDraft, type FilterDraft, type FilterSection } from '@/composables/useFilterDraft';
 import { cityName } from '@/stores/filters';
@@ -55,6 +56,23 @@ export function useFilterSummary() {
           break;
         case 'mechanical_ventilation_types':
           out.push(...draft.mechanical_ventilation_types.map((key) => keyLabel('ventilation_type', key)));
+          break;
+        case 'space_types':
+          out.push(...draft.space_types.map((key) => sentence(keyLabel('space_type', key))));
+          break;
+        case 'occupancies':
+          out.push(...draft.occupancies.map((key) => sentence(keyLabel('occupancy', key))));
+          break;
+        case 'air_filtrations':
+          out.push(
+            ...draft.air_filtrations.map((key) => t('filter_bar.filtration_value', { value: keyLabel('air_filtration', key) })),
+          );
+          break;
+        case 'instrument_grades':
+          out.push(...draft.instrument_grades.map((key) => sentence(keyLabel('instrument_grade', key))));
+          break;
+        case 'placements':
+          out.push(...draft.placements.map(sentence));
           break;
         case 'outdoor_envs':
           out.push(...draft.outdoor_envs.map((key) => keyLabel('outdoor_env', key)));
