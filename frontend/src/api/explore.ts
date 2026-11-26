@@ -56,15 +56,27 @@ export function buildingCriteria(filters: FilterFields = useFiltersStore()) {
 }
 
 export function spaceCriteria(filters: FilterFields = useFiltersStore()) {
+  return { mechanical_ventilation_type: nonEmpty(filters.mechanical_ventilation_types) };
+}
+
+/**
+ * Explore only: the data hub has no control to show or clear the space type,
+ * the space use or the air filtration, so its lists (/catalog/*) take none.
+ */
+export function exploreSpaceCriteria(filters: FilterFields = useFiltersStore()) {
   return {
+    ...spaceCriteria(filters),
     type: nonEmpty(filters.space_types),
     occupancy: nonEmpty(filters.occupancies),
-    mechanical_ventilation_type: nonEmpty(filters.mechanical_ventilation_types),
     air_filtration: nonEmpty(filters.air_filtrations),
   };
 }
 
-/** Explore only: the catalog lists (/catalog/*) take no instrument criteria. */
+/**
+ * Explore only, like `exploreSpaceCriteria`: the data hub has no control to
+ * show or clear the instrument grade or the sampling location, so its lists
+ * (/catalog/*) take none.
+ */
 export function instrumentCriteria(filters: FilterFields = useFiltersStore()) {
   return {
     equipment_grade_rating: nonEmpty(filters.instrument_grades),
@@ -77,7 +89,7 @@ export function exploreFilter(filters: FilterFields = useFiltersStore()): Explor
   return {
     ...studyCriteria(filters),
     $building: buildingCriteria(filters),
-    $space: spaceCriteria(filters),
+    $space: exploreSpaceCriteria(filters),
     $instrument: instrumentCriteria(filters),
   };
 }
@@ -93,6 +105,18 @@ export function exploreRange(filters: FilterFields = useFiltersStore()): Pick<Ex
     ...(min > DEFAULT_MEASUREMENT_YEARS.min ? { from: `${min}-01-01` } : {}),
     ...(max < DEFAULT_MEASUREMENT_YEARS.max ? { to: `${max + 1}-01-01` } : {}),
   };
+}
+
+/**
+ * Whether the records totals must count the measured days. `agg=coverage`
+ * sums the lifetime totals of whole series, whatever instrument logged each
+ * reading, so it is exact only without a year range and without an
+ * instrument filter.
+ */
+export function needsDayCount(filters: FilterFields = useFiltersStore()): boolean {
+  const range = exploreRange(filters);
+  const instrument = Object.values(instrumentCriteria(filters)).some((value) => value !== undefined);
+  return 'from' in range || 'to' in range || instrument;
 }
 
 function sortedJson(value: unknown): string {

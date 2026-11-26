@@ -13,6 +13,7 @@ from sqlalchemy import (
     MetaData,
     String,
     Table,
+    select,
 )
 
 aggregates_metadata = MetaData()
@@ -45,3 +46,23 @@ GRAIN_TABLES = {
     "hour": (measurement_hour, "hour", "mean", "n"),
     "raw": (measurement, "ts", "value", None),
 }
+
+
+def instrument_links():
+    """The instruments behind the readings: one row per study, dataset,
+    building, space, instrument and parameter of `measurement_day`. The
+    catalog links an instrument to its study only, so this is the exact
+    link from an instrument to the places and the series it measured."""
+    day = measurement_day
+    return (
+        select(
+            day.c.study_id,
+            day.c.dataset_id,
+            day.c.building_id,
+            day.c.space_id,
+            day.c.instrument_id,
+            day.c.parameter,
+        )
+        .distinct()
+        .subquery("instrument_link")
+    )

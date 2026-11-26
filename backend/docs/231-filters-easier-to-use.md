@@ -35,8 +35,9 @@ this as one filter shown twice (R8). The other remarks were these:
    says what was measured, the other says when.
 2. The facet list takes a `sortable` option. With it, the reader orders
    the values by count ("Most common") or by name ("A to Z"). The search
-   matches the label and the key, so "co2" finds "CO₂". The pollutant
-   list uses both.
+   matches the label. With the `searchKeys` option, it also matches the
+   key, so "co2" finds "CO₂". Only the pollutant list sets it, because the
+   country keys are ISO codes and "de" then finds Germany.
 3. Buildings holds the building type, the construction year and the
    mechanical ventilation, which is recorded per building.
 4. Spaces holds the space type, the space use (the `occupancy` column),
@@ -47,7 +48,8 @@ this as one filter shown twice (R8). The other remarks were these:
 5. Measurement holds the study, the instrument grade
    (`equipment_grade_rating`) and the sampling location (`placement`).
    The sampling location is free text with about 250 values, so its list
-   is searchable.
+   is searchable. A note under the instrument grade says what an
+   instrument filter counts (decision 8).
 6. The explore filter dialect gains `$instrument`, next to `$building` and
    `$space`. Three dimensions join the registry: `air_filtration`,
    `instrument_grade` and `placement`.
@@ -56,13 +58,22 @@ this as one filter shown twice (R8). The other remarks were these:
    mean (`grain=space`) pools the instruments of a space. It applies an
    instrument filter to the readings before the mean, but it cannot group
    by instrument and returns 422 for that.
-8. The catalog links an instrument to its study only. The metadata and
-   coverage queries therefore join the instruments on the study. If its
-   study used such an instrument, a dataset, building or space counts for
-   that instrument grade. The dialog says this under the instrument grade.
-9. The space criteria go to the catalog routes too, so the data hub lists
-   follow them. The catalog has no `$instrument` join, so the data hub
-   lists ignore the instrument criteria.
+8. Each reading carries its instrument, but the catalog links an
+   instrument to its study only. The metadata and coverage queries
+   therefore join the instruments through `instrument_links`. This
+   subquery holds the distinct study, dataset, building, space, instrument
+   and parameter of `measurement_day`. If a study, dataset, building or
+   space holds no readings of an instrument of a grade, it does not count
+   for that grade. If such an instrument logged a dataset and parameter
+   pair, coverage keeps the pair and sums all its readings, from every
+   instrument. If an instrument filter is set, the records totals of the
+   filter bar and the hero count the measured days, so they stay exact.
+9. The new criteria go to the explore routes only. The data hub drawer has
+   no control to show or clear the space type, the space use, the air
+   filtration or the instrument criteria. If its lists followed them, the
+   reader does not see why rows are missing. The data hub keeps the
+   filters it had before: the ventilation type is the only space
+   criterion of the catalog routes.
 
 ## Out of scope
 
@@ -77,9 +88,11 @@ backfill. The reason is in the comment on the issue:
 
 1. `tests/test_stats_metadata.py::test_space_and_instrument_dimensions`
    groups spaces by air filtration and studies by instrument grade and
-   sampling location, and filters datasets and spaces by instrument grade.
+   sampling location. It filters datasets, buildings and spaces by
+   instrument grade and keeps only those that the instrument measured.
 2. `tests/test_stats_measurements.py::test_instrument_filter_reaches_each_reading`
-   counts raw readings per instrument grade, filters them at raw and day
-   grain, and checks the 422 and the filter at `grain=space`.
+   counts raw readings per instrument grade. It filters them at raw and
+   day grain and in coverage. It also checks the 422 and the filter at
+   `grain=space`.
 3. The frontend has no test runner. `npm run typecheck` and `npm run lint`
    cover it.

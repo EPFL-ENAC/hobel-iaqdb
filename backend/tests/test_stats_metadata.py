@@ -343,12 +343,12 @@ async def test_unknown_climate_group_is_refused(client, clean_db):
         assert response.status_code == 422, group
 
 
-async def test_space_and_instrument_dimensions(client, session, clean_db):
-    cache.clear()
-    await make_catalog(session)
+async def test_space_and_instrument_dimensions(client, session, clean_db, tmp_path):
+    await loaded_fixture(session, clean_db, tmp_path)
     spaces = (await session.exec(select(Space))).all()
     for space in spaces:
-        space.air_filtration = "HEPA" if space.identifier == "S1" else None
+        space.air_filtration = "yes" if space.identifier == "S1" else None
+    # I1 logs every series, I2 only the 24-h gravimetric pm2_5 sample of S3
     instruments = (await session.exec(select(Instrument))).all()
     grades = {"I1": "low-cost", "I2": "reference-grade"}
     for instrument in instruments:
@@ -365,15 +365,22 @@ async def test_space_and_instrument_dimensions(client, session, clean_db):
         assert response.status_code == 200, response.text
         return {b["key"][0]: b["n"] for b in response.json()["buckets"]}
 
-    assert await counts("spaces", "air_filtration") == {"HEPA": 1, None: 2}
+    assert await counts("spaces", "air_filtration") == {"yes": 1, None: 2}
     assert await counts("studies", "instrument_grade") == {
         "low-cost": 1,
         "reference-grade": 1,
         None: 1,
     }
     assert await counts("studies", "placement") == {"wall mounted": 1, None: 1}
-    # the catalog links instruments to the study only: both datasets of the
-    # study count under the grade of either instrument
+    # an entity counts for an instrument only if it holds readings of it:
+    # the reference instrument measured D2, in S3 of the school B2
     reference = {"$instrument": {"equipment_grade_rating": "reference-grade"}}
-    assert await counts("datasets", "study", reference) == {"study-a": 2}
-    assert await counts("spaces", "study", reference) == {"study-a": 3}
+    assert await counts("datasets", "study", reference) == {"study-a": 1}
+    assert await counts("buildings", "building_type", reference) == {"school": 1}
+    assert await counts("spaces", "space_type", reference) == {"classroom": 1}
+    low_cost = {"$instrument": {"equipment_grade_rating": "low-cost"}}
+    assert await counts("spaces", "space_type", low_cost) == {
+        "office": 1,
+        "meeting room": 1,
+        "classroom": 1,
+    }

@@ -54,6 +54,7 @@
  * Values to pick several of: a checkbox, the label, a bar and the count
  * each; the first `limit` shown, the rest on demand, a search above when
  * there are many. With `sortable`, the reader orders them by count or A to Z.
+ * With `searchKeys`, the search matches the key of a value too.
  */
 import type { FacetOption } from '@/components/filters/facets';
 
@@ -64,6 +65,8 @@ interface Props {
   limit?: number;
   searchable?: boolean;
   searchPlaceholder?: string;
+  /** opt-in: country keys are ISO codes, so "de" would find Germany */
+  searchKeys?: boolean;
   sortable?: boolean;
 }
 
@@ -71,6 +74,7 @@ const props = withDefaults(defineProps<Props>(), {
   limit: 7,
   searchable: false,
   searchPlaceholder: '',
+  searchKeys: false,
   sortable: false,
 });
 const emit = defineEmits<{ 'update:modelValue': [value: string[]] }>();
@@ -92,12 +96,12 @@ const ordered = computed(() =>
         (a, b) => Number(!!a.disabled) - Number(!!b.disabled) || a.label.localeCompare(b.label),
       ),
 );
-// the label or the key: "co2" finds "CO₂"
+// the label, or with `searchKeys` the key too: "co2" finds "CO₂"
 const matching = computed(() => {
   const needle = (search.value || '').trim().toLowerCase();
-  return needle
-    ? ordered.value.filter((o) => o.label.toLowerCase().includes(needle) || o.value.toLowerCase().includes(needle))
-    : ordered.value;
+  const matches = (o: FacetOption) =>
+    o.label.toLowerCase().includes(needle) || (props.searchKeys && o.value.toLowerCase().includes(needle));
+  return needle ? ordered.value.filter(matches) : ordered.value;
 });
 // a search, or a value picked past the limit, shows every match
 const shown = computed(() =>

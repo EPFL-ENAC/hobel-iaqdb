@@ -9,6 +9,7 @@
         :options="parameterOptions"
         :limit="10"
         searchable
+        search-keys
         sortable
         :search-placeholder="t('filter_dialog.search_parameters', { count: parameterOptions.length })"
       />

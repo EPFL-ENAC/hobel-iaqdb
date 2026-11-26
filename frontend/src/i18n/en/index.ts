@@ -329,7 +329,7 @@ export default {
     occupancy: 'Space use',
     air_filtration: 'Air filtration',
     instrument_grade: 'Instrument grade',
-    instrument_note: 'The measurement figures keep only the readings of matching instruments. The dataset counts keep a dataset if its study used one.',
+    instrument_note: 'Only what matching instruments measured counts: their readings, and the datasets, buildings and spaces they measured. "Records by pollutant" and "Measurement period" use all the readings of a pollutant in such a dataset, from every instrument.',
     placement: 'Sampling location',
     search_placements: 'Search {count} locations',
     outdoor_env: 'Outdoor environment',

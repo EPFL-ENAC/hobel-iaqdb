@@ -22,8 +22,9 @@ from api.services.explore.envelope import (
 )
 from api.services.explore.facts import Fact, SpaceFact, check_raw_cap
 from api.services.explore.filters import apply_joined_filter, parse_filter
+from api.services.explore.tables import instrument_links
 from fastapi import HTTPException
-from sqlalchemy import func, literal_column
+from sqlalchemy import and_, func, literal_column
 from sqlmodel import col, select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -186,7 +187,11 @@ class MeasurementQueryService:
 
 
 def coverage_frame() -> Frame:
+    """A `dataset_parameter` row counts for an instrument if that instrument
+    logged readings of the series. The row still sums every reading of the
+    series, whatever instrument logged it."""
     dp = DatasetParameter
+    links = instrument_links()
     available = {
         "dataset": (Dataset, col(Dataset.id) == col(dp.dataset_id), ()),
         "study": (Study, col(Study.id) == col(Dataset.study_id), ("dataset",)),
@@ -196,10 +201,18 @@ def coverage_frame() -> Frame:
             ("dataset",),
         ),
         "space": (Space, col(Space.study_id) == col(Dataset.study_id), ("dataset",)),
+        "instrument_link": (
+            links,
+            and_(
+                links.c.dataset_id == col(dp.dataset_id),
+                links.c.parameter == col(dp.parameter),
+            ),
+            (),
+        ),
         "instrument": (
             Instrument,
-            col(Instrument.study_id) == col(Dataset.study_id),
-            ("dataset",),
+            col(Instrument.id) == links.c.instrument_id,
+            ("instrument_link",),
         ),
     }
     return Frame("parameter", dp, available, time=None, parameter=col(dp.parameter))

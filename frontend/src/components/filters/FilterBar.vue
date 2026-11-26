@@ -61,7 +61,7 @@
  */
 import DownloadDialog from '@/components/DownloadDialog.vue';
 import FilterDialog from '@/components/filters/FilterDialog.vue';
-import { exploreFilter, exploreRange } from '@/api/explore';
+import { exploreFilter, exploreRange, needsDayCount } from '@/api/explore';
 import { shortParameterName } from '@/components/plots/charts';
 import { useChartFormat } from '@/composables/useChartFormat';
 import { useExploreRequest } from '@/composables/useExploreQuery';
@@ -128,8 +128,9 @@ function reload(): void {
   const parameters = exploreStore.parameters.length ? { parameters: [...exploreStore.parameters] } : {};
   void datasetsRequest.load({ entity: 'datasets', by: ['study'], filter: exploreFilter(), ...exploreRange(), ...parameters });
   const range = exploreRange();
-  // coverage holds lifetime totals: within a year range, count the measured days
-  const agg = 'from' in range || 'to' in range ? 'count' : 'coverage';
+  // coverage sums whole datasets: within a year range or with an instrument
+  // filter, count the measured days
+  const agg = needsDayCount() ? 'count' : 'coverage';
   void recordsRequest.load({ agg, by: ['parameter'], filter: exploreFilter(), ...range });
 }
 

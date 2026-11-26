@@ -11,7 +11,7 @@ from api.services.explore.envelope import (
     key_text,
 )
 from api.services.explore.filters import apply_joined_filter, parse_filter
-from api.services.explore.tables import measurement_day
+from api.services.explore.tables import instrument_links, measurement_day
 from fastapi import HTTPException
 from sqlalchemy import func
 from sqlmodel import col, select
@@ -37,22 +37,18 @@ IDENTITY_FIELDS = {
 
 def metadata_frame(entity: str) -> Frame:
     """Join paths from each root entity to the others (study is the hub).
-    The catalog links no instrument to a building, a space or a dataset, so
-    instruments join on the study: the entities of a study with an
-    instrument of that grade."""
+    Instruments join through `instrument_links`: an entity counts for an
+    instrument only if it holds readings of that instrument."""
     parameter = (
         DatasetParameter,
         col(DatasetParameter.dataset_id) == col(Dataset.id),
         ("dataset",),
     )
-    study_id = col(ROOTS[entity].id if entity == "studies" else ROOTS[entity].study_id)
-    instrument = (Instrument, col(Instrument.study_id) == study_id, ())
     if entity == "studies":
         available = {
             "building": (Building, col(Building.study_id) == col(Study.id), ()),
             "space": (Space, col(Space.study_id) == col(Study.id), ()),
             "dataset": (Dataset, col(Dataset.study_id) == col(Study.id), ()),
-            "instrument": instrument,
             "parameter": parameter,
         }
     elif entity == "buildings":
@@ -60,7 +56,6 @@ def metadata_frame(entity: str) -> Frame:
             "study": (Study, col(Study.id) == col(Building.study_id), ()),
             "space": (Space, col(Space.building_id) == col(Building.id), ()),
             "dataset": (Dataset, col(Dataset.study_id) == col(Building.study_id), ()),
-            "instrument": instrument,
             "parameter": parameter,
         }
     elif entity == "spaces":
@@ -68,7 +63,6 @@ def metadata_frame(entity: str) -> Frame:
             "building": (Building, col(Building.id) == col(Space.building_id), ()),
             "study": (Study, col(Study.id) == col(Space.study_id), ()),
             "dataset": (Dataset, col(Dataset.study_id) == col(Space.study_id), ()),
-            "instrument": instrument,
             "parameter": parameter,
         }
     else:
@@ -76,13 +70,20 @@ def metadata_frame(entity: str) -> Frame:
             "study": (Study, col(Study.id) == col(Dataset.study_id), ()),
             "building": (Building, col(Building.study_id) == col(Dataset.study_id), ()),
             "space": (Space, col(Space.study_id) == col(Dataset.study_id), ()),
-            "instrument": instrument,
             "parameter": (
                 DatasetParameter,
                 col(DatasetParameter.dataset_id) == col(Dataset.id),
                 (),
             ),
         }
+    links = instrument_links()
+    own = links.c[f"{ENTITY_OF[entity]}_id"]
+    available["instrument_link"] = (links, own == col(ROOTS[entity].id), ())
+    available["instrument"] = (
+        Instrument,
+        col(Instrument.id) == links.c.instrument_id,
+        ("instrument_link",),
+    )
     frame = Frame(ENTITY_OF[entity], ROOTS[entity], available)
     frame.parameter = None
     return frame

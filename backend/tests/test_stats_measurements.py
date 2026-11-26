@@ -189,6 +189,14 @@ async def test_instrument_filter_reaches_each_reading(
         body = buckets_of(response.json())
         assert set(body) == {("pm2_5",)}, grain
         assert body[("pm2_5",)]["n_records"] == 1
+    # coverage keeps the series a matching instrument logged, whole
+    response = await client.get(
+        "/stats/measurements",
+        params={"agg": "coverage", "by": "parameter", "filter": json.dumps(reference)},
+    )
+    body = buckets_of(response.json())
+    assert set(body) == {("pm2_5",)}
+    assert body[("pm2_5",)]["n_records"] == pm25
     # a space mean pools its instruments: the filter applies, the key does not
     response = await client.get(
         "/stats/measurements",
