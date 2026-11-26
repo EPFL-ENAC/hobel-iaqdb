@@ -1,5 +1,5 @@
 <template>
-  <ChartCard :eyebrow="eyebrow" :title="title" :footer-blank="!drilled && !hint">
+  <ChartCard :eyebrow="eyebrowText" :title="title" :footer-blank="!drilled && !hint">
     <template #actions>
       <FigureMenu
         v-if="parameterOptions.length > 1"
@@ -109,9 +109,9 @@ interface Slot {
   above: number | null;
 }
 
-withDefaults(defineProps<Props>(), { height: 404 });
+const props = withDefaults(defineProps<Props>(), { height: 404 });
 const { t, locale } = useI18n();
-const { formatValue, formatShare, describeReference } = useChartFormat();
+const { formatValue, formatShare, describeReference, withPollutants } = useChartFormat();
 const filtersStore = useFiltersStore();
 
 /**
@@ -124,6 +124,8 @@ const LEFT = 48;
 
 const parameters = useParameterChoice({ withBenchmark: true });
 const { parameter, parameterOptions, noDataMessage } = parameters;
+/** the pollutant shown, said in the eyebrow: the menu is there only when there is a choice */
+const eyebrowText = computed(() => withPollutants(props.eyebrow, parameter.value ? [parameter.value] : []));
 const year = ref<number | null>(null);
 const slots = ref<Slot[]>([]);
 

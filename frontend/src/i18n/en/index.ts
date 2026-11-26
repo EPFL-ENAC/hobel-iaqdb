@@ -461,6 +461,8 @@ export default {
       eyebrow: 'Records by calendar month',
       title: 'When in the year records are taken',
     },
+    eyebrow_pollutants: '{eyebrow} · {pollutants}',
+    pollutants_more: '{first} +{count}',
     all_parameters: 'All parameters',
     other_parameters: 'All other parameters',
     entities: {

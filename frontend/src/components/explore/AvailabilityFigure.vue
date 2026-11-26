@@ -1,5 +1,5 @@
 <template>
-  <ChartCard :eyebrow="eyebrow" :title="title" :footer-blank="!hasMore">
+  <ChartCard :eyebrow="eyebrowText" :title="title" :footer-blank="!hasMore">
     <template #panel>
       <div class="availability-figure__label">{{ t('explore_figures.metadata_availability.score_fields_of') }}</div>
       <q-btn-toggle
@@ -38,7 +38,7 @@
       :label-header="t('explore_figures.metadata_availability.field_availability')"
       :value-header="t('explore_figures.metadata_availability.reliability')"
       :format-value="formatShare"
-      :dialog-eyebrow="eyebrow"
+      :dialog-eyebrow="eyebrowText"
       :dialog-title="title"
       :loading="loading"
     >
@@ -80,9 +80,11 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), { limit: 15 });
 const i18n = useI18n();
 const { t } = i18n;
-const { formatCount, formatShare } = useChartFormat();
+const { formatCount, formatShare, withPollutants } = useChartFormat();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
+/** the selected pollutants, which the figure counts together */
+const eyebrowText = computed(() => withPollutants(props.eyebrow, exploreStore.parameters));
 
 /** how far a field can be relied on, by its share filled in, best first */
 const BANDS = [

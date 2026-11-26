@@ -1,5 +1,5 @@
 <template>
-  <ChartCard :eyebrow="eyebrow" :title="title" :footer-blank="!hasMore && !legend">
+  <ChartCard :eyebrow="eyebrowText" :title="title" :footer-blank="!hasMore && !legend">
     <template #actions>
       <FigureMenu
         v-if="parameterOptions.length > 1"
@@ -42,7 +42,7 @@
       </button>
       <span v-if="legend" class="distribution-figure__legend">{{ legend }}</span>
     </template>
-    <FigureDialog v-model="showAll" :eyebrow="eyebrow" :title="title" :width="1000">
+    <FigureDialog v-model="showAll" :eyebrow="eyebrowText" :title="title" :width="1000">
       <DistributionTable
         :rows="rows"
         :ticks="ticks"
@@ -90,13 +90,15 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), { limit: 6 });
 const { t } = useI18n();
-const { formatValue, formatShare, describeReference } = useChartFormat();
+const { formatValue, formatShare, describeReference, withPollutants } = useChartFormat();
 const filtersStore = useFiltersStore();
 
 const parameters = useParameterChoice({ withBenchmark: true });
 const { parameter, parameterOptions, noDataMessage } = parameters;
 const contexts = useContextChoice(parameter);
 const { context, contextOptions, contextDimension } = contexts;
+/** the pollutant shown, said in the eyebrow: the menu is there only when there is a choice */
+const eyebrowText = computed(() => withPollutants(props.eyebrow, parameter.value ? [parameter.value] : []));
 const showAll = ref(false);
 
 /** the levels per group, under the filters */

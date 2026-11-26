@@ -1,5 +1,5 @@
 <template>
-  <ChartCard :eyebrow="eyebrow" :title="title">
+  <ChartCard :eyebrow="eyebrowText" :title="title">
     <FigureFrame :height="height" :loading="loading" :error="error" :empty="empty ? t('plots.no_data') : ''">
       <e-charts autoresize :init-options="initOptions" :option="option" :update-options="updateOptions" />
     </FigureFrame>
@@ -34,11 +34,13 @@ interface Props {
   height?: number;
 }
 
-withDefaults(defineProps<Props>(), { height: 260 });
+const props = withDefaults(defineProps<Props>(), { height: 260 });
 const { t } = useI18n();
-const { formatCount } = useChartFormat();
+const { formatCount, withPollutants } = useChartFormat();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
+/** the selected pollutants, which the figure counts together */
+const eyebrowText = computed(() => withPollutants(props.eyebrow, exploreStore.parameters));
 
 const { result, loading, error, empty, load } = useExploreRequest('measurements');
 

@@ -1,5 +1,5 @@
 <template>
-  <ChartCard :eyebrow="eyebrow" :title="title">
+  <ChartCard :eyebrow="eyebrowText" :title="title">
     <RankedBars
       :rows="rows"
       :limit="limit"
@@ -7,7 +7,7 @@
       :value-header="t(`explore_figures.entities.${entity}`)"
       :highlighted="highlighted"
       :layout="layout"
-      :dialog-eyebrow="eyebrow"
+      :dialog-eyebrow="eyebrowText"
       :dialog-title="title"
       :loading="loading"
       @select="(row) => select(row.data, row.label)"
@@ -41,6 +41,7 @@ import DrillPath, { type DrillStep } from '@/components/explore/DrillPath.vue';
 import RankedBars from '@/components/explore/RankedBars.vue';
 import type { RankedRow } from '@/components/explore/ranked';
 import { isUnknownKey } from '@/components/plots/charts';
+import { useChartFormat } from '@/composables/useChartFormat';
 import { useMetadataDrill } from '@/composables/useMetadataDrill';
 import type { ExploreBucket, ExploreDimension, ExploreEntity } from '@/models';
 
@@ -73,6 +74,9 @@ const props = withDefaults(defineProps<Props>(), {
 const i18n = useI18n();
 const { t } = i18n;
 const exploreStore = useExploreStore();
+const { withPollutants } = useChartFormat();
+/** the selected pollutants, which the figure counts together */
+const eyebrowText = computed(() => withPollutants(props.eyebrow, props.withParameters ? exploreStore.parameters : []));
 
 const {
   result,
