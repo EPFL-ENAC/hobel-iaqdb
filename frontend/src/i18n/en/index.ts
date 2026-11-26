@@ -240,6 +240,18 @@ export default {
     data_embargo: 'Data embargo',
     data_embargo_hint: 'The period of time before the data is made publicly available.',
   },
+  glossary: {
+    title: 'Glossary',
+    search: 'Filter terms…',
+    no_match: 'No matching terms.',
+    categories: {
+      climate: 'Climate zones (Köppen–Geiger)',
+      ventilation: 'Ventilation',
+      pollutants: 'Pollutants & air quality indices',
+      statistics: 'Charts & statistics',
+      metadata: 'Metadata & references',
+    },
+  },
   explore_hero: {
     eyebrow: 'Explore the collection',
     title: 'Indoor air, measured in {datasets} across {countries}',

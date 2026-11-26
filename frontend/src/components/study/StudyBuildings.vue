@@ -45,7 +45,11 @@
             :key="col.name"
             :props="props"
           >
-            {{ col.value }}
+            <span v-if="col.name === 'climate_zone' && props.row.climate_zone" class="row items-center no-wrap q-gutter-x-xs">
+              <q-badge :label="col.value" />
+              <GlossaryTip :term="props.row.climate_zone" />
+            </span>
+            <template v-else>{{ col.value }}</template>
           </q-td>
         </q-tr>
         <q-tr v-show="props.expand" :props="props">
@@ -73,9 +77,11 @@
 
 <script setup lang="ts">
 import MaplibreMap from '@/components/MaplibreMap.vue';
+import GlossaryTip from '@/components/GlossaryTip.vue';
 import type { Map } from 'maplibre-gl';
 import type { Building, Space } from '@/models';
 import { outdoorEnvOptions, type OptionItem } from '@/utils/options';
+import { formatClimateZone } from '@/utils/glossary';
 import { useStudyItemsTable } from '@/composables/useStudyItemsTable';
 
 interface Props {
@@ -113,6 +119,7 @@ const columms = computed(() => {
       align: 'left' as const,
       sortable: true,
       field: 'climate_zone',
+      format: (v: string) => formatClimateZone(v),
     },
     {
       name: 'outdoor_env',

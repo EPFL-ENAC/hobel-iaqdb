@@ -15,6 +15,7 @@
       @click="toggle(option.value)"
     >
       <span class="facet-chips__label">{{ option.label }}</span>
+      <GlossaryTip :term="option.value" :fallback="option.label" />
       <span class="facet-chips__count">{{ option.count.toLocaleString() }}</span>
     </button>
     <button v-if="hidden > 0" type="button" class="facet-chips__chip facet-chips__chip--more" @click="expanded = true">
@@ -31,6 +32,7 @@
  * "Not reported"; `emptyLabel` sums up the values with no data.
  */
 import type { FacetOption } from '@/components/filters/facets';
+import GlossaryTip from '@/components/GlossaryTip.vue';
 
 interface Props {
   /** the values picked: a list, or one value or none with `single` */

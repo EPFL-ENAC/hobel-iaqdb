@@ -8,17 +8,28 @@ export const useHelpStore = defineStore('help', () => {
   async function toggleHelp(name: string) {
     if (current.value === name) {
       show.value = !show.value;
-    } else {
-      current.value = name;
-      const response = await fetch(`${name}.md`);
-      content.value = await response.text();
-      show.value = true;
+      return;
     }
+    current.value = name;
+    const response = await fetch(`/${name}.md`);
+    content.value = response.ok ? await response.text() : '';
+    show.value = true;
+  }
+
+  function toggleGlossary() {
+    if (current.value === 'glossary') {
+      show.value = !show.value;
+      return;
+    }
+    current.value = 'glossary';
+    content.value = '';
+    show.value = true;
   }
 
   return {
     show,
     content,
     toggleHelp,
+    toggleGlossary,
   };
 });

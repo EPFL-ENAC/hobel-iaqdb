@@ -11,6 +11,7 @@
     >
       <div class="range-list__line">
         <span class="range-list__label" :title="row.label">{{ row.label }}</span>
+        <GlossaryTip :term="row.key" :fallback="row.label" />
         <span v-if="row.sublabel" class="range-list__sublabel" :title="row.sublabel">· {{ row.sublabel }}</span>
         <span class="range-list__value">{{ row.value }}</span>
       </div>
@@ -55,6 +56,8 @@ export interface RangeRow {
  * under it a track with the range, a dot at its middle and a tick at the
  * reference.
  */
+import GlossaryTip from '@/components/GlossaryTip.vue';
+
 interface Props {
   rows: RangeRow[];
   /** the scale's bounds */

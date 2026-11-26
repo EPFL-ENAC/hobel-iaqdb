@@ -105,6 +105,7 @@
               multiple
               use-chips
               emit-value
+              map-options
               @update:model-value="onUpdatedFilter"
             />
             <div v-if="showClimateZoneOption" class="row q-mt-sm">
@@ -229,11 +230,11 @@
           <div
             v-for="zone in climateZonesColors"
             :key="zone.color"
-            :title="zone.title"
-            class="col-4"
+            class="col-12 row items-center no-wrap q-py-xs"
           >
-            <q-icon name="square" :style="`color: ${zone.color}`" size="sm" />
-            <span class="q-pl-md">{{ zone.label }}</span>
+            <q-icon name="square" :style="`color: ${zone.color}`" size="xs" class="q-mr-sm" />
+            <span class="ellipsis">{{ formatClimateZone(zone.label) }}</span>
+            <GlossaryTip :term="zone.label" class="q-ml-xs" />
           </div>
         </div>
       </q-item>
@@ -254,6 +255,8 @@ import {
 } from '@/utils/options';
 import type { StudySummary } from '@/models';
 import { truncateString } from '@/utils/strings';
+import { formatClimateZone } from '@/utils/glossary';
+import GlossaryTip from '@/components/GlossaryTip.vue';
 
 const { t } = useI18n();
 const mapStore = useMapStore();

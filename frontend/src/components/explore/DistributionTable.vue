@@ -21,7 +21,10 @@
 
     <template v-for="(row, i) in rows" :key="row.key">
       <div class="distribution-table__label" :style="`grid-row: ${i + 2};`">
-        <div class="distribution-table__name" :title="row.label">{{ row.label }}</div>
+        <div class="row items-center no-wrap q-gutter-x-xs" :title="row.label">
+          <span class="distribution-table__name">{{ row.label }}</span>
+          <GlossaryTip :term="row.key" :fallback="row.label" />
+        </div>
         <div v-if="row.sublabel" class="distribution-table__sublabel">{{ row.sublabel }}</div>
       </div>
       <div class="distribution-table__plot" :style="`grid-row: ${i + 2};`">
@@ -89,6 +92,8 @@ export interface DistributionRow {
  * reference and the database median run across every row, and each row
  * ends with its share at or below the reference.
  */
+import GlossaryTip from '@/components/GlossaryTip.vue';
+
 interface Props {
   rows: DistributionRow[];
   /** the scale: the first and last ticks are its bounds */

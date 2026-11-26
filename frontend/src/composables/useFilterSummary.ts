@@ -41,7 +41,7 @@ export function useFilterSummary() {
           out.push(...draft.cities.map(cityName));
           break;
         case 'climate_zones':
-          out.push(...draft.climate_zones);
+          out.push(...draft.climate_zones.map((key) => keyLabel('climate_zone', key)));
           break;
         case 'building_types':
           out.push(...draft.building_types.map((key) => keyLabel('building_type', key)));

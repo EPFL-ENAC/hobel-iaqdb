@@ -1,3 +1,5 @@
+import { KOPPEN_CLIMATES, KOPPEN_GROUPS } from '@/utils/glossary';
+
 export interface OptionItem {
   value: string;
   label: string;
@@ -7,47 +9,15 @@ function sortByLabel(opts: OptionItem[]): OptionItem[] {
   return opts.sort((a, b) => a.label.localeCompare(b.label));
 }
 
-export const climateOptions = sortByLabel([
-  { value: 'Af', label: '[Af]  Tropical, rainforest' },
-  { value: 'Am', label: '[Am]  Tropical, monsoon' },
-  { value: 'Aw', label: '[Aw]  Tropical, savannah' },
-  { value: 'BWh', label: '[BWh] Arid, desert, hot' },
-  { value: 'BWk', label: '[BWk] Arid, desert, cold' },
-  { value: 'BSh', label: '[BSh] Arid, steppe, hot' },
-  { value: 'BSk', label: '[BSk] Arid, steppe, cold' },
-  { value: 'Csa', label: '[Csa] Temperate, dry summer, hot summer' },
-  { value: 'Csb', label: '[Csb] Temperate, dry summer, warm summer' },
-  { value: 'Csc', label: '[Csc] Temperate, dry summer, cold summer' },
-  { value: 'Cwa', label: '[Cwa] Temperate, dry winter, hot summer' },
-  { value: 'Cwb', label: '[Cwb] Temperate, dry winter, warm summer' },
-  { value: 'Cwc', label: '[Cwc] Temperate, dry winter, cold summer' },
-  { value: 'Cfa', label: '[Cfa] Temperate, no dry season, hot summer' },
-  { value: 'Cfb', label: '[Cfb] Temperate, no dry season, warm summer' },
-  { value: 'Cfc', label: '[Cfc] Temperate, no dry season, cold summer' },
-  { value: 'Dsa', label: '[Dsa] Cold, dry summer, hot summer' },
-  { value: 'Dsb', label: '[Dsb] Cold, dry summer, warm summer' },
-  { value: 'Dsc', label: '[Dsc] Cold, dry summer, cold summer' },
-  { value: 'Dsd', label: '[Dsd] Cold, dry summer, very cold winter' },
-  { value: 'Dwa', label: '[Dwa] Cold, dry winter, hot summer' },
-  { value: 'Dwb', label: '[Dwb] Cold, dry winter, warm summer' },
-  { value: 'Dwc', label: '[Dwc] Cold, dry winter, cold summer' },
-  { value: 'Dwd', label: '[Dwd] Cold, dry winter, very cold winter' },
-  { value: 'Dfa', label: '[Dfa] Cold, no dry season, hot summer' },
-  { value: 'Dfb', label: '[Dfb] Cold, no dry season, warm summer' },
-  { value: 'Dfc', label: '[Dfc] Cold, no dry season, cold summer' },
-  { value: 'Dfd', label: '[Dfd] Cold, no dry season, very cold winter' },
-  { value: 'ET', label: '[ET]  Polar, tundra' },
-  { value: 'EF', label: '[EF]  Polar, frost' },
-]);
+export const climateOptions = sortByLabel(
+  KOPPEN_CLIMATES.map((c) => ({ value: c.code, label: `${c.code}, ${c.name}` })),
+);
 
 /** The main Köppen groups: the first level of the climate drill. */
-export const climateGroupOptions = [
-  { value: 'A', label: '[A] Tropical' },
-  { value: 'B', label: '[B] Dry (arid & semiarid)' },
-  { value: 'C', label: '[C] Temperate' },
-  { value: 'D', label: '[D] Continental' },
-  { value: 'E', label: '[E] Polar' },
-];
+export const climateGroupOptions = KOPPEN_GROUPS.map((g) => ({
+  value: g.code,
+  label: `${g.code}, ${g.name}`,
+}));
 
 export const occupantImpactOptions = [
   { value: 'health', label: 'Health' },
