@@ -1,5 +1,5 @@
 <template>
-  <ChartCard :eyebrow="eyebrowText" :title="title" :note="note" :footer-blank="!hasMore && !legend">
+  <ChartCard :eyebrow="eyebrowText" :title="title" :note="note" :footer-blank="!hasMore && !legend" :image="image">
     <template #actions>
       <FigureMenu
         v-if="parameterOptions.length > 1"
@@ -70,6 +70,7 @@
  * a long-term reference.
  */
 import ChartCard from '@/components/explore/ChartCard.vue';
+import type { FigureImage } from '@/components/explore/figureImage';
 import DistributionTable, { type DistributionRow } from '@/components/explore/DistributionTable.vue';
 import FigureDialog from '@/components/explore/FigureDialog.vue';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
@@ -264,6 +265,19 @@ const legend = computed(() => {
       ? []
       : [t('explore_figures.distribution.legend_median', { value: withUnit(databaseMedian.value) })]),
   ].join(' · ');
+});
+
+/** the boxes draw themselves: the image adds the units, the reference and the median */
+const image = computed<FigureImage>(() => {
+  const median =
+    benchmark.value && rows.value.length && databaseMedian.value !== null
+      ? t('explore_figures.distribution.legend_median', { value: withUnit(databaseMedian.value) })
+      : '';
+  return {
+    pollutants: parameter.value ? [parameter.value] : [],
+    reference: benchmark.value,
+    notes: [median.charAt(0).toUpperCase() + median.slice(1)],
+  };
 });
 
 /** the grain of the levels, the reference's averaging period */

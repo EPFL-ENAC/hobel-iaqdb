@@ -97,6 +97,9 @@ export interface DistributionRow {
  * reference and the database median run across every row, and each row
  * ends with its share at or below the reference.
  */
+import { drawBoxes } from '@/components/explore/figureDrawings';
+import { useImagePart } from '@/components/explore/figureImage';
+
 interface Props {
   rows: DistributionRow[];
   /** the scale: the first and last ticks are its bounds */
@@ -161,20 +164,20 @@ const lines = computed(() => {
       ? []
       : [
           {
-            kind: 'median',
+            kind: 'median' as const,
             value: median,
             text: props.medianText || tickText(median),
-            side: lowerIsMedian ? 'left' : 'right',
+            side: lowerIsMedian ? ('left' as const) : ('right' as const),
           },
         ]),
     ...(reference === null
       ? []
       : [
           {
-            kind: 'reference',
+            kind: 'reference' as const,
             value: reference,
             text: props.referenceText || tickText(reference),
-            side: lowerIsMedian || median === null ? 'right' : 'left',
+            side: lowerIsMedian || median === null ? ('right' as const) : ('left' as const),
           },
         ]),
   ];
@@ -187,6 +190,34 @@ function at(value: number): number {
   if (high === low) return 0;
   return Math.min(100, Math.max(0, ((value - low) / (high - low)) * 100));
 }
+
+useImagePart((width) =>
+  drawBoxes(
+    {
+      rows: props.rows.map((row) => ({
+        label: row.label,
+        sublabel: row.sublabel,
+        p05: at(row.stats.p05) / 100,
+        p25: at(row.stats.p25) / 100,
+        p50: at(row.stats.p50) / 100,
+        p75: at(row.stats.p75) / 100,
+        p95: at(row.stats.p95) / 100,
+        share: row.share,
+        shareText: row.share === null ? '–' : shareText(row.share),
+      })),
+      ticks: props.ticks.map((tick) => ({ at: at(tick) / 100, text: tickText(tick) })),
+      marks: lines.value.map((mark) => ({
+        kind: mark.kind,
+        at: at(mark.value) / 100,
+        text: mark.text,
+        side: mark.side,
+      })),
+      shareHeader: props.shareHeader,
+      axisTitle: props.axisTitle,
+    },
+    width,
+  ),
+);
 </script>
 
 <style scoped lang="scss">

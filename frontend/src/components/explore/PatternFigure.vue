@@ -1,5 +1,5 @@
 <template>
-  <ChartCard :eyebrow="eyebrowText" :title="title" :note="note" :footer-blank="!drilled && !hint">
+  <ChartCard :eyebrow="eyebrowText" :title="title" :note="note" :footer-blank="!drilled && !hint" :image="image">
     <template #actions>
       <FigureMenu
         v-if="parameterOptions.length > 1"
@@ -56,6 +56,7 @@ import { BarChart, LineChart } from 'echarts/charts';
 import { SVGRenderer } from 'echarts/renderers';
 import { GridComponent, MarkLineComponent, TitleComponent, TooltipComponent } from 'echarts/components';
 import ChartCard from '@/components/explore/ChartCard.vue';
+import { drawECharts, type FigureImage } from '@/components/explore/figureImage';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
 import FigureMenu from '@/components/explore/FigureMenu.vue';
 import ReferenceSource from '@/components/explore/ReferenceSource.vue';
@@ -439,6 +440,12 @@ const option = computed<EChartsOption>(() => {
     ],
   };
 });
+
+const image = computed<FigureImage>(() => ({
+  draw: (width) => drawECharts(option.value, width, props.height),
+  pollutants: parameter.value ? [parameter.value] : [],
+  reference: benchmark.value,
+}));
 
 /** a click on a month, its point or its bar, shows its days */
 function onClick(event: { componentType?: string; dataIndex?: number }): void {

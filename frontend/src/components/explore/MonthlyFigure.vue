@@ -1,5 +1,11 @@
 <template>
-  <ChartCard :eyebrow="eyebrow" :title="title" :note="t('explore_figures.records_by_month.reading')" footer-blank>
+  <ChartCard
+    :eyebrow="eyebrow"
+    :title="title"
+    :note="t('explore_figures.records_by_month.reading')"
+    :image="image"
+    footer-blank
+  >
     <FigureFrame :height="height" :loading="loading" :error="error" :empty="empty ? t('plots.no_data') : ''">
       <e-charts autoresize :init-options="initOptions" :option="option" :update-options="updateOptions" />
     </FigureFrame>
@@ -25,6 +31,7 @@ import { BarChart } from 'echarts/charts';
 import { SVGRenderer } from 'echarts/renderers';
 import { GridComponent, TooltipComponent } from 'echarts/components';
 import ChartCard from '@/components/explore/ChartCard.vue';
+import { drawECharts, type FigureImage } from '@/components/explore/figureImage';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
 import {
   FIGURE_ACCENT,
@@ -49,7 +56,7 @@ interface Props {
   height?: number;
 }
 
-withDefaults(defineProps<Props>(), { height: 260 });
+const props = withDefaults(defineProps<Props>(), { height: 260 });
 const { t, locale } = useI18n();
 const { formatCount, formatCompact } = useChartFormat();
 const filtersStore = useFiltersStore();
@@ -165,6 +172,11 @@ const option = computed<EChartsOption>(() => {
     })),
   };
 });
+
+const image = computed<FigureImage>(() => ({
+  draw: (width) => drawECharts(option.value, width, props.height),
+  legend: bands.value.map((band) => ({ color: band.color, label: band.name })),
+}));
 </script>
 
 <style scoped lang="scss">

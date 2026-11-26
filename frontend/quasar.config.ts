@@ -2,6 +2,7 @@
 // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file
 
 import { defineConfig } from '#q-app';
+import pkg from './package.json';
 
 export default defineConfig((ctx) => {
   return {
@@ -54,7 +55,8 @@ export default defineConfig((ctx) => {
 
       // publicPath: '/',
       // define: {},
-      // defineEnv: {}
+      // the release, said in the footer of a figure's image
+      defineEnv: { APP_VERSION: pkg.version },
       // ignorePublicFolder: true,
       // minify: false,
       // distDir

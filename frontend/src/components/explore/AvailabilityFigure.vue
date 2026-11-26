@@ -1,5 +1,5 @@
 <template>
-  <ChartCard :eyebrow="eyebrowText" :title="title" :note="note" :footer-blank="!hasMore">
+  <ChartCard :eyebrow="eyebrowText" :title="title" :note="note" :footer-blank="!hasMore" :image="image">
     <template #panel>
       <div class="availability-figure__label">{{ t('explore_figures.metadata_availability.score_fields_of') }}</div>
       <q-btn-toggle
@@ -60,6 +60,7 @@
  * on top.
  */
 import ChartCard from '@/components/explore/ChartCard.vue';
+import type { FigureImage } from '@/components/explore/figureImage';
 import RankedBars from '@/components/explore/RankedBars.vue';
 import type { RankedRow, RankedSummary } from '@/components/explore/ranked';
 import { FIGURE_ACCENT, FIGURE_CHECK, FIGURE_GAP } from '@/components/plots/charts';
@@ -93,6 +94,14 @@ const BANDS = [
   { key: 'check', min: 0.7, color: FIGURE_CHECK },
   { key: 'gap', min: 0, color: FIGURE_GAP },
 ] as const;
+/** the bars draw themselves: the image adds what their colours mean */
+const image = computed<FigureImage>(() => ({
+  legend: BANDS.map((band) => ({
+    color: band.color,
+    label: t(`explore_figures.metadata_availability.bands.${band.key}`),
+    detail: t(`explore_figures.metadata_availability.bands.${band.key}_range`),
+  })),
+}));
 /** where each entity's field labels live in the i18n messages */
 const LABELS: Record<ScoredEntity, string> = {
   studies: 'study',

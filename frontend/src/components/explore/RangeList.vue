@@ -74,6 +74,9 @@ export interface RangeRow {
  * under it a track with the range, a dot at its middle and a tick at the
  * reference; the scale's ticks and its title under the last track.
  */
+import { drawRanges } from '@/components/explore/figureDrawings';
+import { useImagePart } from '@/components/explore/figureImage';
+
 interface Props {
   rows: RangeRow[];
   /** the scale's bounds */
@@ -110,6 +113,25 @@ function at(value: number): number {
   if (props.max === props.min) return 0;
   return Math.min(100, Math.max(0, ((value - props.min) / (props.max - props.min)) * 100));
 }
+
+useImagePart((width) =>
+  drawRanges(
+    {
+      rows: props.rows.map((row) => ({
+        label: row.label,
+        sublabel: row.sublabel,
+        value: row.value,
+        low: at(row.low) / 100,
+        mid: at(row.mid) / 100,
+        high: at(row.high) / 100,
+      })),
+      reference: typeof props.reference === 'number' ? at(props.reference) / 100 : null,
+      ticks: props.ticks.map((tick) => ({ at: at(tick) / 100, text: tickText(tick) })),
+      axisTitle: props.axisTitle,
+    },
+    width,
+  ),
+);
 </script>
 
 <style scoped lang="scss">

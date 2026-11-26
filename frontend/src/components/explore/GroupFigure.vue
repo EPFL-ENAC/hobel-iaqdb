@@ -1,5 +1,12 @@
 <template>
-  <ChartCard :eyebrow="eyebrowText" :title="title" :note="note" :footer-blank="!hasMore && !hint">
+  <ChartCard
+    :eyebrow="eyebrowText"
+    :title="title"
+    :note="note"
+    :footer-blank="!hasMore && !hint"
+    :image="image"
+    :dropdowns="parameterOptions.length > 1"
+  >
     <template #actions>
       <FigureMenu
         v-if="parameterOptions.length > 1"
@@ -65,6 +72,7 @@
  * group, its zones), then its datasets; a click on a dataset opens its study.
  */
 import ChartCard from '@/components/explore/ChartCard.vue';
+import type { FigureImage } from '@/components/explore/figureImage';
 import DrillPath, { type DrillStep } from '@/components/explore/DrillPath.vue';
 import FigureDialog from '@/components/explore/FigureDialog.vue';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
@@ -168,6 +176,12 @@ const eyebrowText = computed(() =>
 );
 
 const { benchmark, pick } = useFigureReference(parameter);
+
+/** the ranges draw themselves: the image adds the units and the reference */
+const image = computed<FigureImage>(() => ({
+  pollutants: parameter.value ? [parameter.value] : [],
+  reference: benchmark.value,
+}));
 const reference = computed(() => benchmark.value?.value ?? null);
 /** the levels are means over the reference's averaging period, so the line and the boxes agree */
 const grain = computed(() => benchmark.value?.grain ?? 'day');

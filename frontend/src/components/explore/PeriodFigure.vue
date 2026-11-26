@@ -1,5 +1,10 @@
 <template>
-  <ChartCard :eyebrow="eyebrowText" :title="title" :note="t('explore_figures.measurement_period.reading')">
+  <ChartCard
+    :eyebrow="eyebrowText"
+    :title="title"
+    :note="t('explore_figures.measurement_period.reading')"
+    :image="image"
+  >
     <FigureFrame :height="height" :loading="loading" :error="error" :empty="empty ? t('plots.no_data') : ''">
       <e-charts autoresize :init-options="initOptions" :option="option" :update-options="updateOptions" />
     </FigureFrame>
@@ -19,6 +24,7 @@ import { LineChart } from 'echarts/charts';
 import { SVGRenderer } from 'echarts/renderers';
 import { GridComponent, TooltipComponent } from 'echarts/components';
 import ChartCard from '@/components/explore/ChartCard.vue';
+import { drawECharts, type FigureImage } from '@/components/explore/figureImage';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
 import { FIGURE_ACCENT, GRID, MUTED, axisTitle, initOptions, plotGrid, updateOptions } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
@@ -159,4 +165,7 @@ const option = computed<EChartsOption>(() => {
     ],
   };
 });
+
+/** the image draws the chart again, at its width */
+const image = computed<FigureImage>(() => ({ draw: (width) => drawECharts(option.value, width, props.height) }));
 </script>

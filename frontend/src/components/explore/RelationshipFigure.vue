@@ -1,5 +1,5 @@
 <template>
-  <ChartCard :eyebrow="eyebrowText" :title="title" :note="note">
+  <ChartCard :eyebrow="eyebrowText" :title="title" :note="note" :image="image">
     <template #controls>
       <span class="figure-field">
         <span>{{ t('explore_figures.relationship.plot_mean') }}</span>
@@ -61,6 +61,7 @@ import { LineChart, ScatterChart } from 'echarts/charts';
 import { SVGRenderer } from 'echarts/renderers';
 import { GridComponent, MarkLineComponent, TooltipComponent } from 'echarts/components';
 import ChartCard from '@/components/explore/ChartCard.vue';
+import { drawECharts, type FigureImage } from '@/components/explore/figureImage';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
 import ReferenceSource from '@/components/explore/ReferenceSource.vue';
 import {
@@ -324,6 +325,13 @@ const option = computed<EChartsOption>(() => {
     ],
   };
 });
+
+const image = computed<FigureImage>(() => ({
+  draw: (width) => drawECharts(option.value, width, props.height),
+  pollutants: parameter.value ? [parameter.value] : [],
+  reference: benchmark.value,
+  notes: [summary.value],
+}));
 </script>
 
 <style scoped lang="scss">

@@ -21,6 +21,8 @@
 
 <script setup lang="ts">
 /** A figure in full, e.g. every row of a list cut short in its card, under the card's heading. */
+import { IMAGE_PARTS } from '@/components/explore/figureImage';
+
 interface Props {
   eyebrow?: string | undefined;
   title?: string | undefined;
@@ -34,6 +36,8 @@ interface Props {
 withDefaults(defineProps<Props>(), { eyebrow: '', title: '', note: '', loading: false, width: 760 });
 const open = defineModel<boolean>({ default: false });
 const { t } = useI18n();
+// the card's image draws what the card shows, not the full list
+provide(IMAGE_PARTS, null);
 </script>
 
 <style scoped lang="scss">

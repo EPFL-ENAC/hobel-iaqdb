@@ -549,6 +549,20 @@ export default {
     records: 'Records',
     of_datasets: 'Of datasets',
   },
+  figure_image: {
+    download: 'Download image',
+    png: 'PNG image',
+    svg: 'SVG image',
+    failed: 'The image could not be made.',
+    filters: 'Filters: {filters}.',
+    no_filters: 'Filters: none, every dataset of the database.',
+    units: 'Units: {units}.',
+    unit: '{pollutant} in {unit}',
+    reference: 'Red line: the reference of {value}, {source}.',
+    source:
+      'Source: IAQ Database {version}, data version {catalog}, Human-Oriented Built Environment Lab (HOBEL), EPFL, {url}. Downloaded on {date}.',
+    cite: 'Cite the IAQ Database (overview paper in preparation) and the original studies of the datasets: see "How to cite" on {site}.',
+  },
   ranked_bars: {
     other: 'Other',
     other_hint: '{count} more, summed | {count} more, summed',
