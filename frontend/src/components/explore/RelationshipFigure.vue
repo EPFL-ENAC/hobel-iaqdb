@@ -1,5 +1,5 @@
 <template>
-  <ChartCard :eyebrow="eyebrowText" :title="title" :note="note" :image="image">
+  <ChartCard :eyebrow="eyebrowText" :title="title" :note="note" :image="image" time-note>
     <template #controls>
       <span class="figure-field">
         <span>{{ t('explore_figures.relationship.plot_mean') }}</span>

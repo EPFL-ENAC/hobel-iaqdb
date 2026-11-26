@@ -85,6 +85,30 @@
       </div>
     </q-drawer>
 
+    <!-- on Explore, the help opens over the page from a chart's footer, e.g. the note on time steps -->
+    <q-drawer
+      v-if="route.path === '/explore'"
+      v-model="helpStore.show"
+      side="right"
+      behavior="mobile"
+      bordered
+      :width="$q.screen.lt.md ? 300 : 500"
+    >
+      <div class="q-mt-xl q-pb-xl">
+        <help-drawer />
+        <div class="absolute" style="top: 10px; right: 20px">
+          <q-btn
+            dense
+            round
+            unelevated
+            icon="close"
+            :aria-label="t('explore_figures.time_note.close')"
+            @click="toggleShowHelp"
+          />
+        </div>
+      </div>
+    </q-drawer>
+
     <q-page-container>
       <!-- the room the floating bar takes at the top of the page -->
       <div v-if="floatBar" :style="{ height: `${barHeight}px` }" aria-hidden="true" />
@@ -105,6 +129,7 @@ const $q = useQuasar();
 const helpStore = useHelpStore();
 const catalogStore = useCatalogStore();
 const route = useRoute();
+const { t } = useI18n();
 
 const leftDrawerOpen = ref(false);
 const rightDrawerOpen = ref(false);

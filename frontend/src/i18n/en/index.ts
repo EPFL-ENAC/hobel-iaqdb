@@ -500,6 +500,12 @@ export default {
       space: 'Mean of each space over the period',
     },
     eyebrow_pollutants: '{eyebrow} · {pollutants}',
+    /** the footer link to public/time-resolution.md, and the drawer that shows it */
+    time_note: {
+      link: 'Hourly & daily means',
+      tooltip: 'How readings at different time steps are combined',
+      close: 'Close the note',
+    },
     pollutants_more: '{first} +{count}',
     all_parameters: 'All parameters',
     other_parameters: 'All other parameters',

@@ -1,6 +1,6 @@
 <template>
   <div ref="root">
-    <ChartCard :eyebrow="eyebrow" :title="title" :note="note" :image="image">
+    <ChartCard :eyebrow="eyebrow" :title="title" :note="note" :image="image" time-note>
       <template #actions>
         <span class="figure-field">
           <span class="pair-figure__label">{{ t('explore_figures.correlation.method') }}</span>

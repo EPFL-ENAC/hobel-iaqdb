@@ -4,7 +4,7 @@
     :title="title"
     :note="t('explore_figures.records_by_month.reading')"
     :image="image"
-    footer-blank
+    time-note
   >
     <FigureFrame :height="height" :loading="loading" :error="error" :empty="empty ? t('plots.no_data') : ''">
       <e-charts autoresize :init-options="initOptions" :option="option" :update-options="updateOptions" />

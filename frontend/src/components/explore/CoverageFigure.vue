@@ -19,6 +19,8 @@
       <template v-else-if="empty" #message>
         <span class="text-grey-7 text-caption">{{ t('plots.no_data') }}</span>
       </template>
+      <!-- the ranked bars draw this card's footer: the link to the note on time steps goes in it -->
+      <template #hint><TimeNoteLink /></template>
     </RankedBars>
   </ChartCard>
 </template>
@@ -31,6 +33,7 @@
  */
 import ChartCard from '@/components/explore/ChartCard.vue';
 import RankedBars from '@/components/explore/RankedBars.vue';
+import TimeNoteLink from '@/components/explore/TimeNoteLink.vue';
 import type { RankedColumn, RankedRow } from '@/components/explore/ranked';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';

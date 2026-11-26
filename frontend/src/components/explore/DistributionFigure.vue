@@ -1,5 +1,5 @@
 <template>
-  <ChartCard :eyebrow="eyebrowText" :title="title" :note="note" :footer-blank="!hasMore && !legend" :image="image">
+  <ChartCard :eyebrow="eyebrowText" :title="title" :note="note" :image="image" time-note>
     <template #actions>
       <FigureMenu
         v-if="parameterOptions.length > 1"

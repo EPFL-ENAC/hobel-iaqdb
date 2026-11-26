@@ -1,5 +1,5 @@
 <template>
-  <ChartCard :eyebrow="eyebrow" :title="title" :note="note" :image="image">
+  <ChartCard :eyebrow="eyebrow" :title="title" :note="note" :image="image" time-note>
     <template #controls>
       <span class="figure-field">
         <span>{{ t('explore_figures.correlation.method') }}</span>

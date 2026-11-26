@@ -3,9 +3,9 @@
     :eyebrow="eyebrowText"
     :title="title"
     :note="note"
-    :footer-blank="!hasMore && !hint"
     :image="image"
     :dropdowns="parameterOptions.length > 1"
+    time-note
   >
     <template #actions>
       <FigureMenu

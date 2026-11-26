@@ -29,16 +29,27 @@
         <div class="chart-card__panel">
           <slot name="panel" />
         </div>
-        <div v-if="$slots.footer" class="figure-footer" :class="{ 'figure-footer--blank': footerBlank }">
-          <slot name="footer" />
+        <div v-if="$slots.footer || timeNote" class="figure-footer" :class="{ 'figure-footer--blank': footerBlank }">
+          <div class="chart-card__footer">
+            <slot name="footer" />
+          </div>
+          <TimeNoteLink v-if="timeNote" />
         </div>
       </template>
     </div>
     <div class="chart-card__body">
       <slot />
     </div>
-    <div v-if="!$slots.panel && $slots.footer" class="figure-footer" :class="{ 'figure-footer--blank': footerBlank }">
-      <slot name="footer" />
+    <!-- the card's own links and hints, then the link to the note on time steps -->
+    <div
+      v-if="!$slots.panel && ($slots.footer || timeNote)"
+      class="figure-footer"
+      :class="{ 'figure-footer--blank': footerBlank }"
+    >
+      <div class="chart-card__footer">
+        <slot name="footer" />
+      </div>
+      <TimeNoteLink v-if="timeNote" />
     </div>
   </article>
 </template>
@@ -51,6 +62,7 @@
  * figure as an image, drawn by the parts it holds and by `image`.
  */
 import ImageMenu from '@/components/explore/ImageMenu.vue';
+import TimeNoteLink from '@/components/explore/TimeNoteLink.vue';
 import { IMAGE_PARTS, type Draw, type FigureImage } from '@/components/explore/figureImage';
 
 interface Props {
@@ -66,9 +78,17 @@ interface Props {
   image?: FigureImage;
   /** the menus at the right of the title hold dropdowns: the download goes under them */
   dropdowns?: boolean;
+  /** the figure shows readings: its footer links to the note on how their time steps are combined */
+  timeNote?: boolean;
 }
 
-const props = withDefaults(defineProps<Props>(), { note: '', footerBlank: false, image: () => ({}), dropdowns: true });
+const props = withDefaults(defineProps<Props>(), {
+  note: '',
+  footerBlank: false,
+  image: () => ({}),
+  dropdowns: true,
+  timeNote: false,
+});
 const slots = useSlots();
 
 /** the download under the dropdowns, else at the end of the eyebrow's line */
@@ -232,5 +252,14 @@ provide(IMAGE_PARTS, {
   font-size: 0.875rem;
   line-height: 1.45;
   color: $grey-8;
+}
+
+// the card's own footer items: one of them can push itself right with an auto margin
+.chart-card__footer {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 24px;
+  min-width: 0;
 }
 </style>
