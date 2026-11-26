@@ -24,7 +24,7 @@
         <slot name="hint" />
       </span>
     </div>
-    <FigureDialog v-model="showAll" :eyebrow="dialogEyebrow" :title="dialogTitle" :loading="loading">
+    <FigureDialog v-model="showAll" :eyebrow="dialogEyebrow" :title="dialogTitle" :note="dialogNote" :loading="loading">
       <RankedTable v-bind="tableProps" :rows="rows" @select="(row) => emit('select', row)">
         <template v-if="$slots['label-header']" #label-header><slot name="label-header" /></template>
       </RankedTable>
@@ -70,6 +70,7 @@ interface Props {
   /** heading of the full list dialog */
   dialogEyebrow?: string;
   dialogTitle?: string;
+  dialogNote?: string;
   /** dims the rows while a new set loads */
   loading?: boolean;
 }
@@ -90,6 +91,7 @@ const props = withDefaults(defineProps<Props>(), {
   footer: true,
   dialogEyebrow: '',
   dialogTitle: '',
+  dialogNote: '',
   loading: false,
 });
 const emit = defineEmits<{ select: [row: RankedRow<T>] }>();

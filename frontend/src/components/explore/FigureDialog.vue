@@ -5,6 +5,7 @@
         <div class="col">
           <div v-if="eyebrow" class="figure-dialog__eyebrow">{{ eyebrow }}</div>
           <div class="figure-dialog__title">{{ title }}</div>
+          <p v-if="note" class="figure-dialog__note">{{ note }}</p>
         </div>
         <q-btn v-close-popup class="q-ml-md" flat round dense icon="close" :aria-label="t('ranked_bars.close')" />
       </q-card-section>
@@ -20,17 +21,23 @@
 
 <script setup lang="ts">
 /** A figure in full, e.g. every row of a list cut short in its card, under the card's heading. */
+import { IMAGE_PARTS } from '@/components/explore/figureImage';
+
 interface Props {
   eyebrow?: string | undefined;
   title?: string | undefined;
+  /** how to read the figure, as under the card's title */
+  note?: string | undefined;
   /** dims the content while a new set loads */
   loading?: boolean | undefined;
   width?: number | undefined;
 }
 
-withDefaults(defineProps<Props>(), { eyebrow: '', title: '', loading: false, width: 760 });
+withDefaults(defineProps<Props>(), { eyebrow: '', title: '', note: '', loading: false, width: 760 });
 const open = defineModel<boolean>({ default: false });
 const { t } = useI18n();
+// the card's image draws what the card shows, not the full list
+provide(IMAGE_PARTS, null);
 </script>
 
 <style scoped lang="scss">
@@ -51,6 +58,14 @@ const { t } = useI18n();
   font-size: 1.375rem;
   line-height: 1.3;
   color: $grey-10;
+}
+
+.figure-dialog__note {
+  max-width: 60ch;
+  margin: 8px 0 0;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: $grey-8;
 }
 
 .figure-dialog__scroll {

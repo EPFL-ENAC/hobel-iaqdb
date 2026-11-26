@@ -1,5 +1,5 @@
 <template>
-  <ChartCard :eyebrow="eyebrow" :title="title" :footer-blank="!hasMore && !legend">
+  <ChartCard :eyebrow="eyebrowText" :title="title" :note="note" :image="image" time-note>
     <template #actions>
       <FigureMenu
         v-if="parameterOptions.length > 1"
@@ -24,6 +24,7 @@
         :reference-text="referenceLine"
         :median-text="medianLine"
         :share-header="shareHeader"
+        :axis-title="axisName"
         :min-rows="limit"
         :format-tick="formatValue"
         :format-share="formatShare"
@@ -42,7 +43,7 @@
       </button>
       <span v-if="legend" class="distribution-figure__legend">{{ legend }}</span>
     </template>
-    <FigureDialog v-model="showAll" :eyebrow="eyebrow" :title="title" :width="1000">
+    <FigureDialog v-model="showAll" :eyebrow="eyebrowText" :title="title" :note="note" :width="1000">
       <DistributionTable
         :rows="rows"
         :ticks="ticks"
@@ -51,6 +52,7 @@
         :reference-text="referenceLine"
         :median-text="medianLine"
         :share-header="shareHeader"
+        :axis-title="axisName"
         :format-tick="formatValue"
         :format-share="formatShare"
       />
@@ -68,12 +70,13 @@
  * a long-term reference.
  */
 import ChartCard from '@/components/explore/ChartCard.vue';
+import type { FigureImage } from '@/components/explore/figureImage';
 import DistributionTable, { type DistributionRow } from '@/components/explore/DistributionTable.vue';
 import FigureDialog from '@/components/explore/FigureDialog.vue';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
 import FigureMenu from '@/components/explore/FigureMenu.vue';
 import ReferenceSource from '@/components/explore/ReferenceSource.vue';
-import { keyLabel, niceTicks } from '@/components/plots/charts';
+import { keyLabel, niceTicks, withUnitName } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';
 import { useContextChoice, useParameterChoice } from '@/composables/useContextScope';
@@ -89,14 +92,17 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), { limit: 6 });
-const { t } = useI18n();
-const { formatValue, formatShare, describeReference } = useChartFormat();
+const i18n = useI18n();
+const { t } = i18n;
+const { formatValue, formatShare, describeReference, withPollutants } = useChartFormat();
 const filtersStore = useFiltersStore();
 
 const parameters = useParameterChoice({ withBenchmark: true });
 const { parameter, parameterOptions, noDataMessage } = parameters;
 const contexts = useContextChoice(parameter);
 const { context, contextOptions, contextDimension } = contexts;
+/** the pollutant shown, said in the eyebrow: the menu is there only when there is a choice */
+const eyebrowText = computed(() => withPollutants(props.eyebrow, parameter.value ? [parameter.value] : []));
 const showAll = ref(false);
 
 /** the levels per group, under the filters */
@@ -250,7 +256,7 @@ const medianLine = computed(() =>
     : t('explore_figures.distribution.line_median', { value: withUnit(databaseMedian.value) }),
 );
 
-/** what the lines and boxes stand for, under the figure */
+/** what the lines stand for, under the figure; the note says what the boxes are */
 const legend = computed(() => {
   if (!benchmark.value || !rows.value.length) return '';
   return [
@@ -258,8 +264,46 @@ const legend = computed(() => {
     ...(databaseMedian.value === null
       ? []
       : [t('explore_figures.distribution.legend_median', { value: withUnit(databaseMedian.value) })]),
-    t('explore_figures.distribution.legend_box'),
   ].join(' · ');
+});
+
+/** the boxes draw themselves: the image adds the units, the reference and the median */
+const image = computed<FigureImage>(() => {
+  const median =
+    benchmark.value && rows.value.length && databaseMedian.value !== null
+      ? t('explore_figures.distribution.legend_median', { value: withUnit(databaseMedian.value) })
+      : '';
+  return {
+    pollutants: parameter.value ? [parameter.value] : [],
+    reference: benchmark.value,
+    notes: [median.charAt(0).toUpperCase() + median.slice(1)],
+  };
+});
+
+/** the grain of the levels, the reference's averaging period */
+const grain = computed(() => benchmark.value?.grain ?? 'day');
+
+/** the scale's title, under the ticks */
+const axisName = computed(() => withUnitName(t(`explore_figures.mean_axis.${grain.value}`), unit.value));
+
+/** "building type": the context's level name, its label when not translated */
+const contextName = computed(() => {
+  const dimension = contextDimension.value;
+  if (!dimension) return '';
+  const key = `explore_figures.level_names.${dimension.key}`;
+  return i18n.te(key) ? t(key, 1) : dimension.label.toLowerCase();
+});
+
+/** what one row is, then that a gap between the groups has more causes than the context */
+const note = computed(() => {
+  if (!contextName.value || !benchmark.value) return '';
+  return [
+    t('explore_figures.distribution.reading', {
+      level: contextName.value,
+      means: t(`explore_figures.means_of.${grain.value}`),
+    }),
+    t('explore_figures.caveat', { level: contextName.value }),
+  ].join(' ');
 });
 </script>
 

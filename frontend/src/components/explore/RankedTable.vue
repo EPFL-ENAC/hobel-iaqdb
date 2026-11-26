@@ -89,6 +89,8 @@
  * then optionally one hatched row standing for the rows left out.
  */
 import type { RankedColumn, RankedRow, RankedSummary } from '@/components/explore/ranked';
+import { drawRanked } from '@/components/explore/figureDrawings';
+import { ACCENT, MUTED_FILL, useImagePart } from '@/components/explore/figureImage';
 
 interface Props {
   /** in the order shown */
@@ -155,6 +157,10 @@ interface Entry {
   cells: string[];
   barStyle: Record<string, string>;
   barClass: Record<string, boolean>;
+  /** the bar's length, 0..1 of the longest */
+  share: number;
+  /** the bar in the figure's image: a colour, a hatch, or `none` */
+  fill: string;
   title: string | undefined;
   summary: boolean;
   /** absent on the hatched line */
@@ -162,7 +168,8 @@ interface Entry {
 }
 
 function barStyle(value: number, color: string | undefined): Record<string, string> {
-  return color ? { width: widthOf(value), background: color } : { width: widthOf(value) };
+  const width = `${shareOf(value) * 100}%`;
+  return color ? { width, background: color } : { width };
 }
 
 const entries = computed<Entry[]>(() => {
@@ -177,6 +184,8 @@ const entries = computed<Entry[]>(() => {
       cells: props.columns.map((column) => (props.rows.length ? column.format(props.rows) : '')),
       barStyle: barStyle(summary.value ?? 0, summary.color),
       barClass: { 'ranked-table__bar--blank': summary.value === null },
+      share: shareOf(summary.value ?? 0),
+      fill: summary.value === null ? 'none' : (summary.color ?? ACCENT),
       title: summary.title,
       summary: true,
       row: undefined,
@@ -189,11 +198,16 @@ const entries = computed<Entry[]>(() => {
       cells: props.columns.map((column) => column.format([row])),
       barStyle: barStyle(row.value, row.color),
       barClass: { 'ranked-table__bar--muted': !row.color && !isHighlighted(row) },
+      share: shareOf(row.value),
+      fill: row.color ?? (isHighlighted(row) ? ACCENT : MUTED_FILL),
       title: row.title,
       summary: false,
       row,
     });
   const other = props.other;
+  // grey when the rows it stands for have colours of their own, or are all
+  // left out of the highlight
+  const otherMuted = !!other && (other.rows.some((row) => row.color) || !other.rows.some(isHighlighted));
   if (other)
     lines.push({
       key: ' other',
@@ -201,12 +215,9 @@ const entries = computed<Entry[]>(() => {
       value: display(other.value),
       cells: props.columns.map((column) => column.format(other.rows)),
       barStyle: barStyle(other.value, undefined),
-      barClass: {
-        'ranked-table__bar--other': true,
-        // grey when the rows it stands for have colours of their own, or
-        // are all left out of the highlight
-        'ranked-table__bar--other-muted': other.rows.some((row) => row.color) || !other.rows.some(isHighlighted),
-      },
+      barClass: { 'ranked-table__bar--other': true, 'ranked-table__bar--other-muted': otherMuted },
+      share: shareOf(other.value),
+      fill: otherMuted ? 'url(#hatch-muted)' : 'url(#hatch)',
       title: t('ranked_bars.other_hint', other.rows.length),
       summary: false,
       row: undefined,
@@ -221,13 +232,36 @@ function display(value: number): string {
   return props.formatValue ? props.formatValue(value) : value.toLocaleString();
 }
 
-function widthOf(value: number): string {
-  return max.value > 0 ? `${(value / max.value) * 100}%` : '0';
+function shareOf(value: number): number {
+  return max.value > 0 ? value / max.value : 0;
 }
 
 function isHighlighted(row: RankedRow<T>): boolean {
   return !highlightedKeys.value || highlightedKeys.value.has(row.key);
 }
+
+// the image draws the inline layout, whatever the card's: it has the room
+useImagePart((width) =>
+  drawRanked(
+    {
+      labelHeader: props.labelHeader,
+      barHeader: props.barHeader,
+      valueHeader: props.valueHeader,
+      columnHeaders: props.columns.map((column) => column.header),
+      // a percentage, as the grid takes it
+      labelShare: parseFloat(props.labelWidth) / 100,
+      lines: entries.value.map((entry) => ({
+        label: entry.label,
+        value: entry.value,
+        cells: entry.cells,
+        share: entry.share,
+        fill: entry.fill,
+        summary: entry.summary,
+      })),
+    },
+    width,
+  ),
+);
 </script>
 
 <style scoped lang="scss">

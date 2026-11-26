@@ -43,6 +43,35 @@ export const FIGURE_CHECK = '#2e6b75';
 export const FIGURE_GAP = '#e5392b';
 
 /**
+ * A plot's grid: the axes, their labels and their titles inside the margins.
+ * `containLabel` would leave the titles out.
+ */
+export function plotGrid(margins: { left: number; right: number; top: number; bottom: number }) {
+  return { ...margins, outerBoundsMode: 'same' as const, outerBoundsContain: 'all' as const };
+}
+
+/**
+ * An axis title in the figures' style: the y title above the axis, read from
+ * its left end; the x title under the labels, at the axis' right end.
+ */
+export function axisTitle(axis: 'x' | 'y', name: string) {
+  const style = { color: MUTED, fontSize: 11 };
+  if (axis === 'x')
+    return {
+      name,
+      nameLocation: 'end' as const,
+      nameGap: 0,
+      nameTextStyle: { ...style, align: 'right' as const, verticalAlign: 'top' as const, padding: [24, 0, 0, 0] },
+    };
+  return { name, nameLocation: 'end' as const, nameGap: 12, nameTextStyle: { ...style, align: 'left' as const } };
+}
+
+/** A quantity with its unit, as an axis says it: "Daily mean (ppm)". */
+export function withUnitName(name: string, unit: string | null | undefined): string {
+  return unit ? `${name} (${unit})` : name;
+}
+
+/**
  * https://echarts.apache.org/en/api.html#echarts.init
  */
 interface InitOptions {

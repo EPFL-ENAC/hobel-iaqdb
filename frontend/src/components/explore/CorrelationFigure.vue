@@ -1,5 +1,5 @@
 <template>
-  <ChartCard :eyebrow="eyebrow" :title="title">
+  <ChartCard :eyebrow="eyebrow" :title="title" :note="note" :image="image" time-note>
     <template #controls>
       <span class="figure-field">
         <span>{{ t('explore_figures.correlation.method') }}</span>
@@ -77,6 +77,8 @@
  * outlined; a click on a cell plots the pair.
  */
 import ChartCard from '@/components/explore/ChartCard.vue';
+import { drawMatrix } from '@/components/explore/figureDrawings';
+import { ACCENT, GAP, GREY_7, INK, MUTED_FILL, TRACK, type FigureImage } from '@/components/explore/figureImage';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
 import FigureToggle from '@/components/explore/FigureToggle.vue';
 import { shortParameterName } from '@/components/plots/charts';
@@ -93,7 +95,7 @@ interface Props {
 
 type Method = 'pearson' | 'spearman';
 
-withDefaults(defineProps<Props>(), { height: 380 });
+const props = withDefaults(defineProps<Props>(), { height: 380 });
 const { t, locale } = useI18n();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
@@ -116,6 +118,9 @@ const methodOptions = computed<{ value: Method; label: string }[]>(() => [
   { value: 'pearson', label: t('plots.pearson') },
   { value: 'spearman', label: t('plots.spearman') },
 ]);
+
+/** what one cell is and what its colour says */
+const note = computed(() => t('explore_figures.correlation.reading', { method: t(`plots.${method.value}`) }));
 
 const emptyMessage = computed(() => {
   if (selected.value.length < 2) return t('explore_figures.correlation.pick_two');
@@ -175,6 +180,33 @@ function cellStyle(a: string, b: string, i: number, j: number): string {
   const text = Math.abs(r) > 0.6 ? 'white' : 'inherit';
   return `${place} background: ${color}; color: ${text};`;
 }
+
+/** the matrix in the image, coloured as the cells are */
+const image = computed<FigureImage>(() => ({
+  draw: (width) =>
+    drawMatrix(
+      {
+        labels: order.value.map(shortParameterName),
+        cells: order.value.map((row) =>
+          order.value.map((col) => {
+            const r = row === col ? null : (cellOf(row, col)?.r ?? null);
+            if (row === col) return { text: '–', fill: MUTED_FILL, opacity: 1, ink: GREY_7, strongest: false };
+            if (r === null) return { text: '–', fill: TRACK, opacity: 1, ink: INK, strongest: false };
+            const depth = 0.12 + 0.88 * Math.abs(r);
+            return {
+              text: formatR(r),
+              fill: r >= 0 ? ACCENT : GAP,
+              opacity: r >= 0 ? depth : depth * 0.6,
+              ink: Math.abs(r) > 0.6 ? 'white' : INK,
+              strongest: isStrongest(row, col),
+            };
+          }),
+        ),
+        height: props.height,
+      },
+      width,
+    ),
+}));
 
 /** .28, -.21: two decimals without the leading zero */
 function formatR(r: number | null): string {

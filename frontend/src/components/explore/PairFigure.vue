@@ -1,6 +1,6 @@
 <template>
   <div ref="root">
-    <ChartCard :eyebrow="eyebrow" :title="title">
+    <ChartCard :eyebrow="eyebrow" :title="title" :note="note" :image="image" time-note>
       <template #actions>
         <span class="figure-field">
           <span class="pair-figure__label">{{ t('explore_figures.correlation.method') }}</span>
@@ -75,6 +75,7 @@ import { LineChart, ScatterChart } from 'echarts/charts';
 import { SVGRenderer } from 'echarts/renderers';
 import { GridComponent, TooltipComponent } from 'echarts/components';
 import ChartCard from '@/components/explore/ChartCard.vue';
+import { drawECharts, type FigureImage } from '@/components/explore/figureImage';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
 import FigureToggle from '@/components/explore/FigureToggle.vue';
 import { FIGURE_ACCENT, GRID, MUTED, initOptions, shortParameterName, updateOptions } from '@/components/plots/charts';
@@ -95,7 +96,7 @@ interface Props {
 
 type Method = 'pearson' | 'spearman';
 
-withDefaults(defineProps<Props>(), { height: 320 });
+const props = withDefaults(defineProps<Props>(), { height: 320 });
 const { t, locale } = useI18n();
 const { formatValue } = useChartFormat();
 const filtersStore = useFiltersStore();
@@ -156,6 +157,13 @@ const r = computed<number | null>(() => {
   if (method.value === 'pearson') return bucket.value?.fit?.r ?? null;
   return rankRequest.result.value?.buckets[0]?.fit?.r ?? null;
 });
+
+/** what one dot is, for the pair shown */
+const note = computed(() =>
+  x.value && y.value
+    ? t('explore_figures.pair.reading', { x: shortParameterName(x.value), y: shortParameterName(y.value) })
+    : '',
+);
 
 function unitOf(slug: string | null): string {
   return exploreStore.schema?.parameters.find((p) => p.slug === slug)?.unit ?? '';
@@ -393,6 +401,17 @@ const option = computed<EChartsOption>(() => {
     ],
   };
 });
+
+/** the facts beside the chart go in the image's footer */
+const image = computed<FigureImage>(() => ({
+  draw: (width) => drawECharts(option.value, width, props.height),
+  pollutants: [x.value, y.value].filter((slug): slug is string => !!slug),
+  notes: [
+    `r = ${r.value === null ? '–' : r.value.toFixed(2)}, ${methodLabel.value}`,
+    facts.value.map((fact) => `${fact.label}: ${fact.value}`).join(' · '),
+    t('explore_figures.pair.note'),
+  ],
+}));
 </script>
 
 <style scoped lang="scss">

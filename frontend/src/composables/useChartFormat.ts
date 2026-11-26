@@ -4,7 +4,8 @@
 import type { ExploreBenchmark } from '@/models';
 
 export function useChartFormat() {
-  const { locale } = useI18n();
+  const { t, locale } = useI18n();
+  const exploreStore = useExploreStore();
 
   /** a measured value: 2 decimals below 10 in magnitude, none above */
   function formatValue(value: number): string {
@@ -44,6 +45,21 @@ export function useChartFormat() {
     return `${formatValue(b.value)} ${b.unit}`;
   }
 
+  /**
+   * A figure's eyebrow with the pollutants it shows, as the filter bar counts
+   * them: "Datasets by country · Carbon dioxide, Formaldehyde", "… · Carbon
+   * dioxide +2". With none, every pollutant is shown and none is named.
+   */
+  function withPollutants(eyebrow: string, slugs: string[]): string {
+    if (!slugs.length) return eyebrow;
+    const names = slugs.map(exploreStore.parameterLabel);
+    const pollutants =
+      names.length <= 2
+        ? names.join(', ')
+        : t('explore_figures.pollutants_more', { first: names[0], count: names.length - 1 });
+    return t('explore_figures.eyebrow_pollutants', { eyebrow, pollutants });
+  }
+
   return {
     formatValue,
     formatYear,
@@ -51,5 +67,6 @@ export function useChartFormat() {
     formatCompact,
     formatShare,
     describeReference,
+    withPollutants,
   };
 }

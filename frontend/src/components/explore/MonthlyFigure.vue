@@ -1,5 +1,11 @@
 <template>
-  <ChartCard :eyebrow="eyebrow" :title="title" footer-blank>
+  <ChartCard
+    :eyebrow="eyebrow"
+    :title="title"
+    :note="t('explore_figures.records_by_month.reading')"
+    :image="image"
+    time-note
+  >
     <FigureFrame :height="height" :loading="loading" :error="error" :empty="empty ? t('plots.no_data') : ''">
       <e-charts autoresize :init-options="initOptions" :option="option" :update-options="updateOptions" />
     </FigureFrame>
@@ -25,8 +31,18 @@ import { BarChart } from 'echarts/charts';
 import { SVGRenderer } from 'echarts/renderers';
 import { GridComponent, TooltipComponent } from 'echarts/components';
 import ChartCard from '@/components/explore/ChartCard.vue';
+import { drawECharts, type FigureImage } from '@/components/explore/figureImage';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
-import { FIGURE_ACCENT, FIGURE_REST, GRID, MUTED, initOptions, updateOptions } from '@/components/plots/charts';
+import {
+  FIGURE_ACCENT,
+  FIGURE_REST,
+  GRID,
+  MUTED,
+  axisTitle,
+  initOptions,
+  plotGrid,
+  updateOptions,
+} from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';
 import { useExploreRequest } from '@/composables/useExploreQuery';
@@ -40,7 +56,7 @@ interface Props {
   height?: number;
 }
 
-withDefaults(defineProps<Props>(), { height: 260 });
+const props = withDefaults(defineProps<Props>(), { height: 260 });
 const { t, locale } = useI18n();
 const { formatCount, formatCompact } = useChartFormat();
 const filtersStore = useFiltersStore();
@@ -126,8 +142,9 @@ const option = computed<EChartsOption>(() => {
         return lines.join('<br/>');
       },
     },
-    grid: { left: 0, right: 0, top: 12, bottom: 0, containLabel: true },
+    grid: plotGrid({ left: 0, right: 0, top: 12, bottom: 0 }),
     xAxis: {
+      ...axisTitle('x', t('explore_figures.records_by_month.axis_x')),
       type: 'category',
       data: names,
       axisLine: { lineStyle: { color: GRID } },
@@ -135,6 +152,7 @@ const option = computed<EChartsOption>(() => {
       axisLabel: { color: MUTED, fontSize: 11 },
     },
     yAxis: {
+      ...axisTitle('y', t('explore_figures.records_by_month.axis_y')),
       type: 'value',
       splitNumber: 3,
       axisLine: { show: false },
@@ -154,6 +172,11 @@ const option = computed<EChartsOption>(() => {
     })),
   };
 });
+
+const image = computed<FigureImage>(() => ({
+  draw: (width) => drawECharts(option.value, width, props.height),
+  legend: bands.value.map((band) => ({ color: band.color, label: band.name })),
+}));
 </script>
 
 <style scoped lang="scss">

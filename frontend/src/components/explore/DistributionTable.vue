@@ -63,6 +63,14 @@
     >
       <span v-for="tick in ticks" :key="tick" :style="`left: ${at(tick)}%;`">{{ tickText(tick) }}</span>
     </div>
+    <div
+      v-if="axisTitle"
+      class="distribution-table__axis-title"
+      :style="`grid-row: ${rows.length + fillers + 3}; visibility: ${rows.length ? 'visible' : 'hidden'};`"
+      aria-hidden="true"
+    >
+      {{ axisTitle }}
+    </div>
   </div>
 </template>
 
@@ -89,6 +97,9 @@ export interface DistributionRow {
  * reference and the database median run across every row, and each row
  * ends with its share at or below the reference.
  */
+import { drawBoxes } from '@/components/explore/figureDrawings';
+import { useImagePart } from '@/components/explore/figureImage';
+
 interface Props {
   rows: DistributionRow[];
   /** the scale: the first and last ticks are its bounds */
@@ -102,6 +113,8 @@ interface Props {
   /** written beside the median line; its value alone when not given */
   medianText?: string;
   shareHeader?: string;
+  /** what the scale measures, with its unit, under the ticks, e.g. "Daily mean (ppm)" */
+  axisTitle?: string;
   /** blank rows are added up to this many, so the table keeps its height */
   minRows?: number | undefined;
   formatTick?: ((value: number) => string) | undefined;
@@ -114,6 +127,7 @@ const props = withDefaults(defineProps<Props>(), {
   referenceText: '',
   medianText: '',
   shareHeader: '',
+  axisTitle: '',
   minRows: 0,
   formatTick: undefined,
   formatShare: undefined,
@@ -134,7 +148,7 @@ const fillers = computed(() => Math.max(0, props.minRows - props.rows.length));
 /** explicit rows: the overlay spans them by line number */
 const gridStyle = computed(() => {
   const count = props.rows.length + fillers.value;
-  return `grid-template-rows: auto repeat(${count}, ${ROW_HEIGHT}px) auto; --rows: ${count};`;
+  return `grid-template-rows: auto repeat(${count}, ${ROW_HEIGHT}px) auto auto; --rows: ${count};`;
 });
 
 /**
@@ -150,20 +164,20 @@ const lines = computed(() => {
       ? []
       : [
           {
-            kind: 'median',
+            kind: 'median' as const,
             value: median,
             text: props.medianText || tickText(median),
-            side: lowerIsMedian ? 'left' : 'right',
+            side: lowerIsMedian ? ('left' as const) : ('right' as const),
           },
         ]),
     ...(reference === null
       ? []
       : [
           {
-            kind: 'reference',
+            kind: 'reference' as const,
             value: reference,
             text: props.referenceText || tickText(reference),
-            side: lowerIsMedian || median === null ? 'right' : 'left',
+            side: lowerIsMedian || median === null ? ('right' as const) : ('left' as const),
           },
         ]),
   ];
@@ -176,6 +190,34 @@ function at(value: number): number {
   if (high === low) return 0;
   return Math.min(100, Math.max(0, ((value - low) / (high - low)) * 100));
 }
+
+useImagePart((width) =>
+  drawBoxes(
+    {
+      rows: props.rows.map((row) => ({
+        label: row.label,
+        sublabel: row.sublabel,
+        p05: at(row.stats.p05) / 100,
+        p25: at(row.stats.p25) / 100,
+        p50: at(row.stats.p50) / 100,
+        p75: at(row.stats.p75) / 100,
+        p95: at(row.stats.p95) / 100,
+        share: row.share,
+        shareText: row.share === null ? '–' : shareText(row.share),
+      })),
+      ticks: props.ticks.map((tick) => ({ at: at(tick) / 100, text: tickText(tick) })),
+      marks: lines.value.map((mark) => ({
+        kind: mark.kind,
+        at: at(mark.value) / 100,
+        text: mark.text,
+        side: mark.side,
+      })),
+      shareHeader: props.shareHeader,
+      axisTitle: props.axisTitle,
+    },
+    width,
+  ),
+);
 </script>
 
 <style scoped lang="scss">
@@ -341,5 +383,12 @@ function at(value: number): number {
     transform: translateX(-50%);
     white-space: nowrap;
   }
+}
+
+.distribution-table__axis-title {
+  grid-column: 2;
+  font-size: 0.75rem;
+  color: $grey-7;
+  text-align: right;
 }
 </style>

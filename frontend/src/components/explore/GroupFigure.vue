@@ -1,5 +1,12 @@
 <template>
-  <ChartCard :eyebrow="eyebrowText" :title="title" :footer-blank="!hasMore && !hint">
+  <ChartCard
+    :eyebrow="eyebrowText"
+    :title="title"
+    :note="note"
+    :image="image"
+    :dropdowns="parameterOptions.length > 1"
+    time-note
+  >
     <template #actions>
       <FigureMenu
         v-if="parameterOptions.length > 1"
@@ -20,6 +27,9 @@
         :max="scale.max"
         :reference="reference"
         :min-rows="limit"
+        :ticks="ticks"
+        :format-tick="formatValue"
+        :axis-title="axisName"
         @select="onSelect"
       />
     </FigureFrame>
@@ -32,11 +42,20 @@
         <q-icon name="ads_click" size="16px" class="q-mr-xs" />{{ hint }}
       </span>
     </template>
-    <FigureDialog v-model="showAll" :eyebrow="eyebrowText" :title="title" :loading="loading">
+    <FigureDialog v-model="showAll" :eyebrow="eyebrowText" :title="title" :note="note" :loading="loading">
       <div class="group-figure__dialog-path">
         <DrillPath :steps="steps" @pop="popTo" />
       </div>
-      <RangeList :rows="rows" :min="scale.min" :max="scale.max" :reference="reference" @select="onSelect" />
+      <RangeList
+        :rows="rows"
+        :min="scale.min"
+        :max="scale.max"
+        :reference="reference"
+        :ticks="ticks"
+        :format-tick="formatValue"
+        :axis-title="axisName"
+        @select="onSelect"
+      />
       <template v-if="hint" #footer>{{ hint }}</template>
     </FigureDialog>
   </ChartCard>
@@ -53,13 +72,14 @@
  * group, its zones), then its datasets; a click on a dataset opens its study.
  */
 import ChartCard from '@/components/explore/ChartCard.vue';
+import type { FigureImage } from '@/components/explore/figureImage';
 import DrillPath, { type DrillStep } from '@/components/explore/DrillPath.vue';
 import FigureDialog from '@/components/explore/FigureDialog.vue';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
 import FigureMenu from '@/components/explore/FigureMenu.vue';
 import ReferenceSource from '@/components/explore/ReferenceSource.vue';
 import RangeList, { type RangeRow } from '@/components/explore/RangeList.vue';
-import { isUnknownKey, keyLabel, niceTicks, refine } from '@/components/plots/charts';
+import { isUnknownKey, keyLabel, niceTicks, refine, withUnitName } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';
 import { useParameterChoice } from '@/composables/useContextScope';
@@ -156,17 +176,26 @@ const eyebrowText = computed(() =>
 );
 
 const { benchmark, pick } = useFigureReference(parameter);
+
+/** the ranges draw themselves: the image adds the units and the reference */
+const image = computed<FigureImage>(() => ({
+  pollutants: parameter.value ? [parameter.value] : [],
+  reference: benchmark.value,
+}));
 const reference = computed(() => benchmark.value?.value ?? null);
 /** the levels are means over the reference's averaging period, so the line and the boxes agree */
 const grain = computed(() => benchmark.value?.grain ?? 'day');
 
+/** "climate zone" (1) or "climate zones" (2); null for the datasets */
+function levelName(by: string | null, count: number): string {
+  if (by === null) return t('explore_figures.level_names.dataset', count);
+  const levelKey = `explore_figures.level_names.${by}`;
+  return i18n.te(levelKey) ? t(levelKey, count) : (exploreStore.dimension(by)?.label ?? by).toLowerCase();
+}
+
 /** the levels of the path, then the datasets: named in the header, the one shown marked */
 const steps = computed<DrillStep[]>(() => {
-  const groups = props.path.map((by) => {
-    const levelKey = `explore_figures.level_names.${by}`;
-    return i18n.te(levelKey) ? t(levelKey, 2) : (exploreStore.dimension(by)?.label ?? by).toLowerCase();
-  });
-  const names = [...groups, t('explore_figures.level_names.dataset', 2)];
+  const names = [...props.path.map((by) => levelName(by, 2)), levelName(null, 2)];
   return names.map((name, i) => ({
     label: name.charAt(0).toUpperCase() + name.slice(1),
     state: i < stack.value.length - 1 ? 'past' : i === stack.value.length - 1 ? 'current' : 'next',
@@ -274,8 +303,28 @@ function onSelect(row: RangeRow): void {
 }
 
 const unit = computed(() => shown.value?.loaded.stats.meta.unit || '');
-/** what a bucket counts: hours, days or spaces, from the grain of the levels shown */
-const periods = computed(() => t(`explore_figures.distribution.periods.${shown.value?.level.stats.grain ?? 'day'}`));
+/** the grain of the levels shown, which can lag the reference while a new set loads */
+const shownGrain = computed(() => shown.value?.level.stats.grain ?? 'day');
+/** what a bucket counts: hours, days or spaces */
+const periods = computed(() => t(`explore_figures.distribution.periods.${shownGrain.value}`));
+/** the scale's title, under the ranges */
+const axisName = computed(() => withUnitName(t(`explore_figures.mean_axis.${shownGrain.value}`), unit.value));
+
+/**
+ * What one row is, then that a gap between the groups has more causes than
+ * the one grouped by; the datasets differ in everything, so not said there.
+ */
+const note = computed(() => {
+  const level = shown.value?.level;
+  if (!level) return '';
+  const name = levelName(level.datasets ? null : level.by, 1);
+  const parts = [
+    t('explore_figures.groups.reading', { level: name, means: t(`explore_figures.means_of.${shownGrain.value}`) }),
+  ];
+  if (reference.value !== null) parts.push(t('explore_figures.reference_line'));
+  if (!level.datasets) parts.push(t('explore_figures.caveat', { level: name }));
+  return parts.join(' ');
+});
 
 function withUnit(value: number): string {
   return unit.value ? `${formatValue(value)} ${unit.value}` : formatValue(value);
@@ -343,13 +392,13 @@ const hasMore = computed(() => rows.value.length > props.limit);
 const visible = computed(() => rows.value.slice(0, props.limit));
 
 /** one scale for the card and the dialog: every range and the reference in view */
-const scale = computed(() => {
+const ticks = computed(() => {
   const values = rows.value.flatMap((row) => [row.low, row.high]);
   if (reference.value !== null) values.push(reference.value);
-  if (!values.length) return { min: 0, max: 1 };
-  const ticks = niceTicks(Math.min(...values), Math.max(...values), 5);
-  return { min: ticks[0] ?? 0, max: ticks[ticks.length - 1] ?? 1 };
+  if (!values.length) return [0, 1];
+  return niceTicks(Math.min(...values), Math.max(...values), 5);
 });
+const scale = computed(() => ({ min: ticks.value[0] ?? 0, max: ticks.value[ticks.value.length - 1] ?? 1 }));
 </script>
 
 <style scoped lang="scss">

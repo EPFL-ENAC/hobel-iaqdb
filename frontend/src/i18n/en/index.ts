@@ -350,12 +350,15 @@ export default {
       sampled: '{count} sampled',
       all: 'all {count}',
       note: 'X and Y list only variables measured together with the other. The dots are a fixed sample; the trend line uses every pair.',
+      reading: 'One dot is one hour in one space: the hourly means of {x} and {y} there.',
     },
     relationship: {
       eyebrow: 'Relationship · {pollutant} × space metrics',
       title: 'Explore pollutant patterns',
       plot_mean: 'Plot mean',
       against: 'against',
+      reading:
+        'One point is one space: its mean {pollutant} over the selected period, against its {metric}. The black line is the least-squares fit.',
     },
     correlation: {
       eyebrow: 'Multi-pollutant correlation matrix',
@@ -364,6 +367,8 @@ export default {
       pollutants: 'No pollutants | 1 pollutant | {count} pollutants',
       pick_two: 'Pick at least two pollutants.',
       slow: 'Correlating every pair over each shared hour: this can take a few seconds.',
+      reading:
+        'One cell is one pair of pollutants: the {method} correlation r of their hourly means, over the hours both were measured in the same space. Teal: they rise together. Red: one falls as the other rises. Outlined: the strongest pair.',
     },
     groups: {
       eyebrow: 'Relationship · {pollutant} × {aspect}',
@@ -380,6 +385,7 @@ export default {
         aspect: 'building',
         title: 'Compare building uses',
       },
+      reading: 'One row is one {level}: the dot and the number are the median of {means}, the bar their middle half.',
     },
     distribution: {
       eyebrow: 'Distribution by group',
@@ -400,7 +406,8 @@ export default {
       legend_median: 'dashed: database median {value}',
       line_reference: 'reference {value}',
       line_median: 'database median {value}',
-      legend_box: 'box: middle half, whiskers: 5th–95th percentile',
+      reading:
+        'One row is one {level}: the spread of {means}. Box: the middle half. Whiskers: the 5th to 95th percentile. Tick: the median.',
     },
     pattern: {
       eyebrow: 'Monthly pattern',
@@ -414,6 +421,10 @@ export default {
       median: 'Median',
       middle: 'Middle half',
       back: 'Back to {year}',
+      reading_month:
+        'One point is one month: the median of the daily means of every space measured in it. The band is their middle half.',
+      reading_day:
+        'One point is one day: the median of the daily means of every space measured that day. The band is their middle half.',
     },
     metadata_availability: {
       eyebrow: 'Metadata availability',
@@ -424,6 +435,7 @@ export default {
       all: 'All',
       all_hint: 'Average over {count} fields | Average over {count} fields',
       filled: 'Filled in for {present} of {total}',
+      reading: 'One bar is one field: the share of the {entities} in scope that have it filled in.',
       bands: {
         reliable: 'Reliable',
         reliable_range: '80% and up',
@@ -440,6 +452,8 @@ export default {
     records_by_pollutant: {
       eyebrow: 'Records by pollutant',
       title: 'What is measured, and in how many datasets',
+      reading:
+        'One bar is one pollutant: its records, where one record is one reading of one instrument. "Of datasets" is the share of the datasets in scope that measured it.',
     },
     datasets_by_building_type: {
       eyebrow: 'Datasets by building type',
@@ -456,11 +470,43 @@ export default {
     measurement_period: {
       eyebrow: 'Measurement period',
       title: 'When were datasets measured',
+      reading:
+        'The line is the running total of datasets, each counted from the year of its first measurement. A dataset begun before the selected years counts from the first of them.',
+      axis_x: 'Year',
+      axis_y: 'Datasets so far',
     },
     records_by_month: {
       eyebrow: 'Records by calendar month',
       title: 'When in the year records are taken',
+      reading:
+        'One bar is one calendar month, all years together: the records taken in it. One record is one reading of one instrument.',
+      axis_x: 'Month',
+      axis_y: 'Records',
     },
+    datasets_reading: 'One bar is one {level}: the number of datasets in it.',
+    datasets_overlap: 'A dataset that covers several {levels} counts in each of them.',
+    reference_line: 'The red line is the reference.',
+    caveat:
+      'A gap between groups is not due to the {level} alone: the groups also differ in other ways, such as season, occupancy and the study that measured them.',
+    /** what the levels of a figure are means of, by the grain of the reference */
+    means_of: {
+      hour: 'the hourly means of its spaces',
+      day: 'the daily means of its spaces',
+      space: 'the mean of each of its spaces over the period',
+    },
+    mean_axis: {
+      hour: 'Hourly mean',
+      day: 'Daily mean',
+      space: 'Mean of each space over the period',
+    },
+    eyebrow_pollutants: '{eyebrow} · {pollutants}',
+    /** the footer link to public/time-resolution.md, and the drawer that shows it */
+    time_note: {
+      link: 'Hourly & daily means',
+      tooltip: 'How readings at different time steps are combined',
+      close: 'Close the note',
+    },
+    pollutants_more: '{first} +{count}',
     all_parameters: 'All parameters',
     other_parameters: 'All other parameters',
     entities: {
@@ -508,6 +554,20 @@ export default {
     parameters: 'Parameters',
     records: 'Records',
     of_datasets: 'Of datasets',
+  },
+  figure_image: {
+    download: 'Download image',
+    png: 'PNG image',
+    svg: 'SVG image',
+    failed: 'The image could not be made.',
+    filters: 'Filters: {filters}.',
+    no_filters: 'Filters: none, every dataset of the database.',
+    units: 'Units: {units}.',
+    unit: '{pollutant} in {unit}',
+    reference: 'Red line: the reference of {value}, {source}.',
+    source:
+      'Source: IAQ Database {version}, data version {catalog}, Human-Oriented Built Environment Lab (HOBEL), EPFL, {url}. Downloaded on {date}.',
+    cite: 'Cite the IAQ Database (overview paper in preparation) and the original studies of the datasets: see "How to cite" on {site}.',
   },
   ranked_bars: {
     other: 'Other',
@@ -614,11 +674,11 @@ export default {
     relationship_hint: 'Mean of the pollutant per space against occupancy, with a least-squares trend line. Other space and building metrics can be picked; only those with data are listed.',
     metric: 'Metric',
     metrics: {
-      space_occupancy_density: 'Occupancy density',
+      space_occupancy_density: 'Occupancy density (persons/m²)',
       space_occupancy_number: 'Number of occupants',
       space_floor_area: 'Floor area (m²)',
       space_space_volume: 'Space volume (m³)',
-      building_airtightness: 'Airtightness',
+      building_airtightness: 'Airtightness (ACH50)',
       building_construction_year: 'Construction year',
       building_altitude: 'Altitude (m)',
     },

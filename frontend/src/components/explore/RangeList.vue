@@ -27,6 +27,25 @@
       <div class="range-list__line">&nbsp;</div>
       <div class="range-list__track" />
     </div>
+    <!-- the scale under the tracks, hidden without rows: the list keeps its height -->
+    <div
+      v-if="ticks.length || axisTitle"
+      class="range-list__scale"
+      :style="`visibility: ${rows.length ? 'visible' : 'hidden'};`"
+      aria-hidden="true"
+    >
+      <div class="range-list__ticks">
+        <span
+          v-for="(tick, i) in ticks"
+          :key="tick"
+          class="range-list__tick"
+          :class="{ 'range-list__tick--first': i === 0, 'range-list__tick--last': i === ticks.length - 1 }"
+          :style="`left: ${at(tick)}%;`"
+          >{{ tickText(tick) }}</span
+        >
+      </div>
+      <div v-if="axisTitle" class="range-list__axis-title">{{ axisTitle }}</div>
+    </div>
   </div>
 </template>
 
@@ -53,8 +72,11 @@ export interface RangeRow {
 /**
  * Ranges on one scale, a row per group: the label and its value on a line,
  * under it a track with the range, a dot at its middle and a tick at the
- * reference.
+ * reference; the scale's ticks and its title under the last track.
  */
+import { drawRanges } from '@/components/explore/figureDrawings';
+import { useImagePart } from '@/components/explore/figureImage';
+
 interface Props {
   rows: RangeRow[];
   /** the scale's bounds */
@@ -64,18 +86,52 @@ interface Props {
   reference?: number | null | undefined;
   /** blank rows are added up to this many, so the list keeps its height */
   minRows?: number | undefined;
+  /** values written under the tracks, between `min` and `max` */
+  ticks?: number[] | undefined;
+  formatTick?: ((value: number) => string) | undefined;
+  /** what the scale measures, with its unit, e.g. "Daily mean (ppm)" */
+  axisTitle?: string | undefined;
 }
 
-const props = withDefaults(defineProps<Props>(), { reference: null, minRows: 0 });
+const props = withDefaults(defineProps<Props>(), {
+  reference: null,
+  minRows: 0,
+  ticks: () => [],
+  formatTick: undefined,
+  axisTitle: '',
+});
 const emit = defineEmits<{ select: [row: RangeRow] }>();
 
 const fillers = computed(() => Math.max(0, props.minRows - props.rows.length));
+
+function tickText(value: number): string {
+  return props.formatTick ? props.formatTick(value) : value.toLocaleString();
+}
 
 /** a value's place on the scale, in percent, held inside it */
 function at(value: number): number {
   if (props.max === props.min) return 0;
   return Math.min(100, Math.max(0, ((value - props.min) / (props.max - props.min)) * 100));
 }
+
+useImagePart((width) =>
+  drawRanges(
+    {
+      rows: props.rows.map((row) => ({
+        label: row.label,
+        sublabel: row.sublabel,
+        value: row.value,
+        low: at(row.low) / 100,
+        mid: at(row.mid) / 100,
+        high: at(row.high) / 100,
+      })),
+      reference: typeof props.reference === 'number' ? at(props.reference) / 100 : null,
+      ticks: props.ticks.map((tick) => ({ at: at(tick) / 100, text: tickText(tick) })),
+      axisTitle: props.axisTitle,
+    },
+    width,
+  ),
+);
 </script>
 
 <style scoped lang="scss">
@@ -190,5 +246,39 @@ function at(value: number): number {
 
 .range-list__filler {
   visibility: hidden;
+}
+
+// closer to the last track than the rows are to each other
+.range-list__scale {
+  margin-top: -8px;
+  font-size: 0.75rem;
+  color: $grey-7;
+}
+
+.range-list__ticks {
+  position: relative;
+  height: 16px;
+}
+
+// centred on its value; the first and last stay inside the track's ends
+.range-list__tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.range-list__tick--first {
+  transform: none;
+}
+
+.range-list__tick--last {
+  transform: translateX(-100%);
+}
+
+.range-list__axis-title {
+  margin-top: 4px;
+  text-align: right;
 }
 </style>

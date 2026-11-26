@@ -1,5 +1,5 @@
 <template>
-  <ChartCard :eyebrow="eyebrow" :title="title" :footer-blank="!hasMore">
+  <ChartCard :eyebrow="eyebrowText" :title="title" :note="note" :footer-blank="!hasMore" :image="image">
     <template #panel>
       <div class="availability-figure__label">{{ t('explore_figures.metadata_availability.score_fields_of') }}</div>
       <q-btn-toggle
@@ -38,8 +38,9 @@
       :label-header="t('explore_figures.metadata_availability.field_availability')"
       :value-header="t('explore_figures.metadata_availability.reliability')"
       :format-value="formatShare"
-      :dialog-eyebrow="eyebrow"
+      :dialog-eyebrow="eyebrowText"
       :dialog-title="title"
+      :dialog-note="note"
       :loading="loading"
     >
       <template v-if="error" #message>
@@ -59,6 +60,7 @@
  * on top.
  */
 import ChartCard from '@/components/explore/ChartCard.vue';
+import type { FigureImage } from '@/components/explore/figureImage';
 import RankedBars from '@/components/explore/RankedBars.vue';
 import type { RankedRow, RankedSummary } from '@/components/explore/ranked';
 import { FIGURE_ACCENT, FIGURE_CHECK, FIGURE_GAP } from '@/components/plots/charts';
@@ -80,9 +82,11 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), { limit: 15 });
 const i18n = useI18n();
 const { t } = i18n;
-const { formatCount, formatShare } = useChartFormat();
+const { formatCount, formatShare, withPollutants } = useChartFormat();
 const filtersStore = useFiltersStore();
 const exploreStore = useExploreStore();
+/** the selected pollutants, which the figure counts together */
+const eyebrowText = computed(() => withPollutants(props.eyebrow, exploreStore.parameters));
 
 /** how far a field can be relied on, by its share filled in, best first */
 const BANDS = [
@@ -90,6 +94,14 @@ const BANDS = [
   { key: 'check', min: 0.7, color: FIGURE_CHECK },
   { key: 'gap', min: 0, color: FIGURE_GAP },
 ] as const;
+/** the bars draw themselves: the image adds what their colours mean */
+const image = computed<FigureImage>(() => ({
+  legend: BANDS.map((band) => ({
+    color: band.color,
+    label: t(`explore_figures.metadata_availability.bands.${band.key}`),
+    detail: t(`explore_figures.metadata_availability.bands.${band.key}_range`),
+  })),
+}));
 /** where each entity's field labels live in the i18n messages */
 const LABELS: Record<ScoredEntity, string> = {
   studies: 'study',
@@ -110,6 +122,13 @@ const entityOptions = computed(() =>
     value,
     label: t(`explore_figures.entities.${value}`),
   })),
+);
+
+/** what one bar is, for the entity picked */
+const note = computed(() =>
+  t('explore_figures.metadata_availability.reading', {
+    entities: t(`explore_figures.entities.${entity.value}`).toLowerCase(),
+  }),
 );
 
 const { result, loading, error, load } = useExploreRequest('metadata');

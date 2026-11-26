@@ -1,5 +1,5 @@
 <template>
-  <ChartCard :eyebrow="eyebrow" :title="title" :footer-blank="!drilled && !hint">
+  <ChartCard :eyebrow="eyebrowText" :title="title" :note="note" :image="image" time-note>
     <template #actions>
       <FigureMenu
         v-if="parameterOptions.length > 1"
@@ -56,6 +56,7 @@ import { BarChart, LineChart } from 'echarts/charts';
 import { SVGRenderer } from 'echarts/renderers';
 import { GridComponent, MarkLineComponent, TitleComponent, TooltipComponent } from 'echarts/components';
 import ChartCard from '@/components/explore/ChartCard.vue';
+import { drawECharts, type FigureImage } from '@/components/explore/figureImage';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
 import FigureMenu from '@/components/explore/FigureMenu.vue';
 import ReferenceSource from '@/components/explore/ReferenceSource.vue';
@@ -64,9 +65,11 @@ import {
   FIGURE_GAP,
   GRID,
   MUTED,
+  axisTitle,
   initOptions,
   niceTicks,
   updateOptions,
+  withUnitName,
 } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';
@@ -109,9 +112,9 @@ interface Slot {
   above: number | null;
 }
 
-withDefaults(defineProps<Props>(), { height: 404 });
+const props = withDefaults(defineProps<Props>(), { height: 404 });
 const { t, locale } = useI18n();
-const { formatValue, formatShare, describeReference } = useChartFormat();
+const { formatValue, formatShare, describeReference, withPollutants } = useChartFormat();
 const filtersStore = useFiltersStore();
 
 /**
@@ -124,6 +127,8 @@ const LEFT = 48;
 
 const parameters = useParameterChoice({ withBenchmark: true });
 const { parameter, parameterOptions, noDataMessage } = parameters;
+/** the pollutant shown, said in the eyebrow: the menu is there only when there is a choice */
+const eyebrowText = computed(() => withPollutants(props.eyebrow, parameter.value ? [parameter.value] : []));
 const year = ref<number | null>(null);
 const slots = ref<Slot[]>([]);
 
@@ -278,6 +283,11 @@ const unit = computed(() => statsRequest.result.value?.meta.unit || benchmark.va
 
 const referenceText = computed(() => (benchmark.value ? describeReference(benchmark.value) : ''));
 
+/** what one point is: a month of the year, or a day of the month drilled into */
+const note = computed(() =>
+  slots.value.length ? t(`explore_figures.pattern.reading_${byMonth.value ? 'month' : 'day'}`) : '',
+);
+
 const option = computed<EChartsOption>(() => {
   const items = slots.value;
   const b = benchmark.value;
@@ -343,6 +353,8 @@ const option = computed<EChartsOption>(() => {
     ],
     yAxis: [
       {
+        // the levels are daily means, whatever the reference's averaging
+        ...axisTitle('y', withUnitName(t('explore_figures.mean_axis.day'), unit.value)),
         type: 'value',
         gridIndex: 0,
         min: low,
@@ -428,6 +440,12 @@ const option = computed<EChartsOption>(() => {
     ],
   };
 });
+
+const image = computed<FigureImage>(() => ({
+  draw: (width) => drawECharts(option.value, width, props.height),
+  pollutants: parameter.value ? [parameter.value] : [],
+  reference: benchmark.value,
+}));
 
 /** a click on a month, its point or its bar, shows its days */
 function onClick(event: { componentType?: string; dataIndex?: number }): void {
