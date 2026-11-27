@@ -85,6 +85,21 @@
       </div>
     </q-drawer>
 
+    <q-drawer
+      v-else
+      v-model="helpStore.show"
+      side="right"
+      overlay
+      bordered
+      :width="$q.screen.lt.md ? 300 : 440"
+    >
+      <div class="q-mt-xl">
+        <help-drawer />
+        <div class="absolute" style="top: 10px; right: 20px">
+          <q-btn dense round unelevated icon="close" @click="toggleShowHelp" />
+        </div>
+      </div>
+    </q-drawer>
     <q-page-container>
       <!-- the room the floating bar takes at the top of the page -->
       <div v-if="floatBar" :style="{ height: `${barHeight}px` }" aria-hidden="true" />

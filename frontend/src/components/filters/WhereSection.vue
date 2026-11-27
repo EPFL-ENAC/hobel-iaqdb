@@ -78,12 +78,8 @@ const cityOptions = computed<FacetOption[]>(() =>
   })),
 );
 
-/** "Cfb · Temperate", the full description on hover */
 const climateChips = computed<FacetOption[]>(() => {
-  const options = toOptions(climates.counts.value, (code) => {
-    const label = keyLabel('climate_zone', code).replace(/^\[\w+\]\s*/, '');
-    return `${code} · ${label.split(',')[0]}`;
-  }).map((option) => ({ ...option, title: keyLabel('climate_zone', option.value) }));
+  const options = toOptions(climates.counts.value, (code) => keyLabel('climate_zone', code));
   const unknown = notReported(climates.counts.value, t('filter_dialog.not_reported'));
   return unknown ? [...options, unknown] : options;
 });

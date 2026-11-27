@@ -40,7 +40,10 @@
       <button v-if="hasMore" type="button" class="figure-link" @click="showAll = true">
         {{ t('ranked_bars.show_all', { count: rows.length }) }}
       </button>
-      <span v-if="legend" class="distribution-figure__legend">{{ legend }}</span>
+      <span v-if="legend" class="distribution-figure__legend row items-center no-wrap q-gutter-x-xs">
+        <span class="ellipsis">{{ legend }}</span>
+        <GlossaryTip term="middle_half" />
+      </span>
     </template>
     <FigureDialog v-model="showAll" :eyebrow="eyebrow" :title="title" :width="1000">
       <DistributionTable
@@ -54,7 +57,12 @@
         :format-tick="formatValue"
         :format-share="formatShare"
       />
-      <template v-if="legend" #footer>{{ legend }}</template>
+      <template v-if="legend" #footer>
+        <span class="distribution-figure__legend row items-center no-wrap q-gutter-x-xs">
+          <span class="ellipsis">{{ legend }}</span>
+          <GlossaryTip term="middle_half" />
+        </span>
+      </template>
     </FigureDialog>
   </ChartCard>
 </template>
@@ -73,6 +81,7 @@ import FigureDialog from '@/components/explore/FigureDialog.vue';
 import FigureFrame from '@/components/explore/FigureFrame.vue';
 import FigureMenu from '@/components/explore/FigureMenu.vue';
 import ReferenceSource from '@/components/explore/ReferenceSource.vue';
+import GlossaryTip from '@/components/GlossaryTip.vue';
 import { keyLabel, niceTicks } from '@/components/plots/charts';
 import { exploreFilter, exploreRange } from '@/api/explore';
 import { useChartFormat } from '@/composables/useChartFormat';

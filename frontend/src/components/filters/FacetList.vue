@@ -27,7 +27,10 @@
         color="teal-6"
         @update:model-value="(on: boolean) => toggle(option.value, on)"
       />
-      <span class="facet-list__label">{{ option.label }}</span>
+      <span class="facet-list__label row items-center no-wrap q-gutter-x-xs">
+        <span class="ellipsis">{{ option.label }}</span>
+        <GlossaryTip :term="option.value" :fallback="option.label" />
+      </span>
       <span class="facet-list__track"><span class="facet-list__bar" :style="`width: ${widthOf(option.count)}%;`" /></span>
       <span class="facet-list__count">{{ option.count.toLocaleString() }}</span>
     </label>
@@ -44,6 +47,7 @@
  * there are many.
  */
 import type { FacetOption } from '@/components/filters/facets';
+import GlossaryTip from '@/components/GlossaryTip.vue';
 
 interface Props {
   modelValue: string[];
@@ -113,6 +117,7 @@ function toggle(value: string, on: boolean): void {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
 }
 
 .facet-list__track {

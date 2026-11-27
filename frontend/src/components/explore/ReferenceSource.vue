@@ -1,6 +1,9 @@
 <template>
   <div v-if="benchmark" class="reference-source">
-    <span class="reference-source__label">{{ t('explore_figures.reference_source.label') }}</span>
+    <span class="reference-source__label row items-center no-wrap q-gutter-x-xs">
+      <span>{{ t('explore_figures.reference_source.label') }}</span>
+      <GlossaryTip term="parameter_reference" />
+    </span>
     <ReferenceMenu
       class="reference-source__pill"
       :parameter="parameter"
@@ -38,6 +41,7 @@
  * compares with the reference. A pick goes back to the figure.
  */
 import ReferenceMenu from '@/components/explore/ReferenceMenu.vue';
+import GlossaryTip from '@/components/GlossaryTip.vue';
 import type { ExploreBenchmark } from '@/models';
 
 const props = defineProps<{

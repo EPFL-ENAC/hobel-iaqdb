@@ -29,7 +29,10 @@
       :title="entry.title"
       @click="entry.row?.clickable && emit('select', entry.row)"
     >
-      <span class="ranked-table__label" role="rowheader" :title="entry.label">{{ entry.label }}</span>
+      <span class="ranked-table__label row items-center justify-end no-wrap q-gutter-x-xs" role="rowheader" :title="entry.label">
+        <span class="ellipsis">{{ entry.label }}</span>
+        <GlossaryTip v-if="!entry.summary && entry.row" :term="entry.key" :fallback="entry.label" />
+      </span>
       <span class="ranked-table__track" role="cell">
         <span class="ranked-table__bar" :class="entry.barClass" :style="entry.barStyle" />
       </span>
@@ -66,7 +69,10 @@
       @click="entry.row?.clickable && emit('select', entry.row)"
     >
       <span class="ranked-stack__line">
-        <span class="ranked-table__label ranked-stack__label" role="rowheader">{{ entry.label }}</span>
+        <span class="ranked-table__label ranked-stack__label row items-center no-wrap q-gutter-x-xs" role="rowheader">
+          <span class="ellipsis">{{ entry.label }}</span>
+          <GlossaryTip v-if="!entry.summary && entry.row" :term="entry.key" :fallback="entry.label" />
+        </span>
         <span class="ranked-stack__values">
           <span class="ranked-table__value" role="cell">{{ entry.value }}</span>
           <span v-for="(cell, i) in entry.cells" :key="i" class="ranked-table__value" role="cell">{{ cell }}</span>
@@ -89,6 +95,7 @@
  * then optionally one hatched row standing for the rows left out.
  */
 import type { RankedColumn, RankedRow, RankedSummary } from '@/components/explore/ranked';
+import GlossaryTip from '@/components/GlossaryTip.vue';
 
 interface Props {
   /** in the order shown */
@@ -300,6 +307,7 @@ function isHighlighted(row: RankedRow<T>): boolean {
 }
 
 .ranked-table__label {
+  min-width: 0;
   text-align: right;
   white-space: nowrap;
   overflow: hidden;

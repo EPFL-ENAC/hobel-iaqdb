@@ -44,6 +44,13 @@
       <q-btn
         flat
         round
+        icon="help_outline"
+        :title="t('glossary.title')"
+        @click="helpStore.toggleGlossary()"
+      ></q-btn>
+      <q-btn
+        flat
+        round
         icon="menu_book"
         :title="t('resources')"
         @click="showResources = true"
@@ -92,6 +99,11 @@
             </q-item-section>
           </q-item>
           <q-separator v-if="$q.screen.lt.sm" />
+          <q-item clickable v-close-popup @click="helpStore.toggleGlossary()">
+            <q-item-section>
+              <q-item-label>{{ t('glossary.title') }}</q-item-label>
+            </q-item-section>
+          </q-item>
           <q-item clickable v-close-popup @click="showResources = true">
             <q-item-section>
               <q-item-label>{{ t('resources') }}</q-item-label>
@@ -162,6 +174,7 @@ const emit = defineEmits(['toggle-left', 'toggle-right']);
 const $q = useQuasar();
 const { t } = useI18n();
 const settingsStore = useSettingsStore();
+const helpStore = useHelpStore();
 const route = useRoute();
 
 const showIntro = ref(false);
