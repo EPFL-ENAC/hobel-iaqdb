@@ -27,14 +27,21 @@
       {{ t('glossary.no_match') }}
     </div>
 
-    <q-list v-else dense separator>
+    <q-list v-else separator>
       <template v-for="group in grouped" :key="group.category">
-        <q-item-label header class="text-weight-medium text-grey-8 q-px-none">
+        <q-item-label
+          header
+          class="text-subtitle2 text-grey-8 q-px-none q-pt-lg q-pb-sm"
+        >
           {{ t(`glossary.categories.${group.category}`) }}
         </q-item-label>
-        <q-item v-for="entry in group.entries" :key="entry.key" class="q-px-none">
+        <q-item
+          v-for="entry in group.entries"
+          :key="entry.key"
+          class="q-px-none q-py-md"
+        >
           <q-item-section>
-            <q-item-label class="text-weight-medium">
+            <q-item-label class="text-weight-medium q-mb-xs">
               {{ entry.term }}
             </q-item-label>
             <q-item-label caption class="text-grey-8">

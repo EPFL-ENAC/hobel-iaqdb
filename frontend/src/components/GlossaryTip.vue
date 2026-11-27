@@ -15,8 +15,8 @@
       :offset="[0, 6]"
     >
       <div class="glossary-tip__body">
-        <p class="glossary-tip__title">{{ entry.term }}</p>
-        <p>{{ entry.definition }}</p>
+        <div class="glossary-tip__title">{{ entry.term }}</div>
+        <div class="glossary-tip__text">{{ entry.definition }}</div>
       </div>
     </q-tooltip>
   </span>
@@ -52,17 +52,13 @@ const entry = computed(() => lookupGlossary(props.term, props.fallback));
 .glossary-tip__body {
   font-size: 0.75rem;
   line-height: 1.45;
-
-  p {
-    margin: 0;
-  }
-
-  p + p {
-    margin-top: 4px;
-  }
 }
 
 .glossary-tip__title {
   font-weight: 500;
+}
+
+.glossary-tip__text {
+  margin-top: 4px;
 }
 </style>
